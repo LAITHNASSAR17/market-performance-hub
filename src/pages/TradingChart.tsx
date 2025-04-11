@@ -1,5 +1,5 @@
+
 import React, { useEffect, useRef } from 'react';
-import { Helmet } from 'react-helmet';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -103,9 +103,6 @@ const TradingChart: React.FC = () => {
 
   return (
     <Layout>
-      <Helmet>
-        <title>{t('chart.title') || 'الشارت'} | {t('nav.platform')}</title>
-      </Helmet>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold tracking-tight">{t('chart.title') || 'الشارت'}</h1>
