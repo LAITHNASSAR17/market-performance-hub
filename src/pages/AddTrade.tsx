@@ -22,13 +22,14 @@ const AddTrade: React.FC = () => {
     account: '',
     date: new Date().toISOString().slice(0, 10),
     pair: '',
-    type: 'Buy',
+    type: 'Buy' as 'Buy' | 'Sell',  // Explicitly type as 'Buy' | 'Sell'
     entry: '',
     exit: '',
     lotSize: '',
     stopLoss: '',
     takeProfit: '',
     riskPercentage: '',
+    returnPercentage: '', // Add returnPercentage property
     profitLoss: '',
     durationMinutes: '',
     notes: '',
@@ -65,7 +66,7 @@ const AddTrade: React.FC = () => {
         setFormData(prev => ({
           ...prev,
           profitLoss: calculatedPL.toFixed(2),
-          returnPercentage: returnPercentage
+          returnPercentage
         }));
         setTimeout(() => setIsCalculating(false), 100);
       }

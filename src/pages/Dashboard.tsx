@@ -1,10 +1,18 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
-import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, CalendarDays, BarChart } from 'lucide-react';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Percent, Calendar, CircleInfo } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { 
+  AreaChart, 
+  Area,
+  PieChart as RechartPieChart, 
+  Pie,
   LineChart, 
   Line, 
   XAxis, 
@@ -13,12 +21,17 @@ import {
   Tooltip, 
   Legend, 
   ResponsiveContainer,
+  Cell,
   BarChart as RechartBarChart,
   Bar
 } from 'recharts';
+import { cn } from '@/lib/utils';
+
+const COLORS = ['#36B37E', '#FF5630', '#6554C0', '#FFAB00', '#00B8D9', '#6B778C'];
 
 const Dashboard: React.FC = () => {
   const { trades } = useTrade();
+  const [timeframeFilter, setTimeframeFilter] = useState('all');
 
   // Calculate some basic stats
   const totalTrades = trades.length;
@@ -36,6 +49,22 @@ const Dashboard: React.FC = () => {
     (worst, trade) => (trade.profitLoss < worst.profitLoss ? trade : worst),
     trades[0] || { profitLoss: 0, pair: 'N/A', id: '', userId: '', account: '', date: '', type: 'Buy', entry: 0, exit: 0, lotSize: 0, stopLoss: 0, takeProfit: 0, riskPercentage: 0, returnPercentage: 0, durationMinutes: 0, notes: '', imageUrl: null, hashtags: [], createdAt: '' }
   );
+
+  // Average winning & losing trades
+  const winningTradesData = trades.filter(trade => trade.profitLoss > 0);
+  const avgWinningTrade = winningTradesData.length > 0 
+    ? winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTradesData.length
+    : 0;
+
+  const losingTradesData = trades.filter(trade => trade.profitLoss < 0);
+  const avgLosingTrade = losingTradesData.length > 0 
+    ? losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTradesData.length
+    : 0;
+
+  // Profit factor
+  const grossProfit = winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : 0;
 
   // Prepare data for charts
   const getLast7Days = () => {
@@ -57,160 +86,420 @@ const Dashboard: React.FC = () => {
     
     return {
       day: dayInfo.label,
-      profit: dayProfit
+      profit: dayProfit,
+      date: dayInfo.date
     };
   });
 
-  // Prepare pair distribution data
-  const pairDistribution = trades.reduce((acc, trade) => {
-    if (!acc[trade.pair]) {
-      acc[trade.pair] = { pair: trade.pair, count: 0, profit: 0 };
-    }
-    acc[trade.pair].count++;
-    acc[trade.pair].profit += trade.profitLoss;
-    return acc;
-  }, {} as Record<string, { pair: string; count: number; profit: number }>);
+  // Prepare cumulative P&L data
+  const cumulativeProfitData = () => {
+    const sorted = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    let cumulative = 0;
+    return sorted.map(trade => {
+      cumulative += trade.profitLoss;
+      return {
+        date: trade.date,
+        value: cumulative
+      };
+    });
+  };
 
-  const pairData = Object.values(pairDistribution).sort((a, b) => b.count - a.count);
+  // Win rate by trade data
+  const winRateData = [
+    { name: 'Winning', value: winningTrades, color: '#36B37E' },
+    { name: 'Losing', value: losingTrades, color: '#FF5630' }
+  ];
+
+  // Prepare monthly performance data
+  const getMonthlyPerformanceData = () => {
+    const monthMap = new Map();
+    
+    trades.forEach(trade => {
+      const date = new Date(trade.date);
+      const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+      
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, {
+          month: date.toLocaleString('default', { month: 'short' }),
+          year: date.getFullYear(),
+          profit: 0,
+          trades: 0
+        });
+      }
+      
+      const monthData = monthMap.get(monthKey);
+      monthData.profit += trade.profitLoss;
+      monthData.trades += 1;
+    });
+    
+    return Array.from(monthMap.values())
+      .sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return new Date(0, a.month, 0).getMonth() - new Date(0, b.month, 0).getMonth();
+      })
+      .map(item => ({
+        name: `${item.month} ${item.year}`,
+        profit: item.profit,
+        trades: item.trades
+      }));
+  };
+
+  // Calendar data
+  const getCalendarData = () => {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Get first day of month and total days in month
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Generate calendar data
+    const calendarDays = [];
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < firstDay; i++) {
+      calendarDays.push(null);
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dateString = date.toISOString().slice(0, 10);
+      const dayTrades = trades.filter(trade => trade.date === dateString);
+      
+      calendarDays.push({
+        day,
+        date: dateString,
+        trades: dayTrades.length,
+        profit: dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0)
+      });
+    }
+    
+    return calendarDays;
+  };
 
   return (
     <Layout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">Trading Dashboard</h1>
-        <p className="text-gray-500">Overview of your trading performance</p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold mb-1">Trading Dashboard</h1>
+          <p className="text-gray-500">Overview of your trading performance</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select timeframe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="week">Last 7 Days</SelectItem>
+              <SelectItem value="month">Last 30 Days</SelectItem>
+              <SelectItem value="quarter">Last 3 Months</SelectItem>
+              <SelectItem value="year">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline">
+            <Calendar className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-8">
         <StatCard
-          title="Total Profit/Loss"
+          title="Total P&L"
           value={`$${totalProfit.toFixed(2)}`}
           trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
           icon={<DollarSign className="h-5 w-5" />}
-          className={totalProfit > 0 ? "border-l-4 border-profit" : totalProfit < 0 ? "border-l-4 border-loss" : ""}
+          color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
+          description={`Trades in total: ${totalTrades}`}
         />
         <StatCard
-          title="Win Rate"
-          value={`${winRate.toFixed(1)}%`}
-          description={`${winningTrades} out of ${totalTrades} trades`}
+          title="Profit factor"
+          value={profitFactor.toFixed(2)}
           icon={<Activity className="h-5 w-5" />}
+          description={`+0.12`}
         />
         <StatCard
-          title="Best Trade"
-          value={`$${bestTrade.profitLoss?.toFixed(2) || '0.00'}`}
-          description={bestTrade.pair}
+          title="Average winning trade"
+          value={`$${avgWinningTrade.toFixed(2)}`}
           icon={<TrendingUp className="h-5 w-5" />}
-          className="border-l-4 border-profit"
+          color="green"
+          description={`+17.25`}
         />
         <StatCard
-          title="Worst Trade"
-          value={`$${worstTrade.profitLoss?.toFixed(2) || '0.00'}`}
-          description={worstTrade.pair}
+          title="Average losing trade"
+          value={`$${Math.abs(avgLosingTrade).toFixed(2)}`}
           icon={<TrendingDown className="h-5 w-5" />}
-          className="border-l-4 border-loss"
+          color="red"
+          description={`-21.36`}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Daily Performance Chart */}
-        <Card className="overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Daily Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartBarChart
-                  data={dailyPerformanceData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Profit/Loss']} />
-                  <Bar
-                    dataKey="profit"
-                    fill="#3b82f6"
-                    name="Profit/Loss"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </RechartBarChart>
-              </ResponsiveContainer>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center">
+                Winning % By Trades
+                <CircleInfo className="h-4 w-4 ml-2 text-gray-400" />
+              </CardTitle>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Currency Pair Analysis */}
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Currency Pair Analysis</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RechartBarChart
-                  data={pairData.slice(0, 5)}
-                  layout="vertical"
-                  margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="pair" />
-                  <Tooltip formatter={(value, name) => [name === 'count' ? value : `$${Number(value).toFixed(2)}`, name === 'count' ? 'Trades' : 'Profit/Loss']} />
-                  <Bar dataKey="count" fill="#3b82f6" name="Trades" radius={[0, 4, 4, 0]} />
-                  <Bar dataKey="profit" fill={pairData.some(d => d.profit < 0) ? '#ef4444' : '#22c55e'} name="Profit/Loss" radius={[0, 4, 4, 0]} />
-                </RechartBarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6">
-        {/* Calendar Performance (simplified version) */}
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Recent Trade Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-2">
-              {getLast7Days().map((day, index) => {
-                const dayTrades = trades.filter(trade => trade.date === day.date);
-                const dayProfit = dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-                const tradeCount = dayTrades.length;
-                
-                return (
-                  <div 
-                    key={index}
-                    className={`p-3 rounded-lg border ${
-                      dayProfit > 0 
-                        ? 'bg-green-50 border-green-200' 
-                        : dayProfit < 0 
-                          ? 'bg-red-50 border-red-200' 
-                          : 'bg-gray-50 border-gray-200'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-sm font-medium">{day.label}</div>
-                      {tradeCount > 0 ? (
-                        <>
-                          <div className={`text-lg font-bold ${
-                            dayProfit > 0 ? 'text-profit' : dayProfit < 0 ? 'text-loss' : 'text-gray-500'
-                          }`}>
-                            ${Math.abs(dayProfit).toFixed(0)}
-                          </div>
-                          <div className="text-xs text-gray-500">{tradeCount} trade{tradeCount !== 1 ? 's' : ''}</div>
-                        </>
-                      ) : (
-                        <div className="text-xs mt-2 text-gray-400">No trades</div>
-                      )}
-                    </div>
+            <div className="h-[300px] flex items-center justify-center">
+              <div className="relative w-[220px] h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartPieChart>
+                    <Pie
+                      data={winRateData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={90}
+                      fill="#8884d8"
+                      paddingAngle={0}
+                      dataKey="value"
+                    >
+                      {winRateData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </RechartPieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
+                  <span className="text-sm text-gray-500">winrate</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <div className="mb-4">
+                  <div className="flex items-center mb-1">
+                    <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
+                    <span className="text-sm">{winningTrades} winners</span>
                   </div>
-                );
-              })}
+                  <div className="flex items-center">
+                    <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    <span className="text-sm">{losingTrades} losers</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-1">
+          <Tabs defaultValue="daily">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">P&L Analysis</CardTitle>
+                <TabsList>
+                  <TabsTrigger value="daily">Daily Net</TabsTrigger>
+                  <TabsTrigger value="cumulative">Net cumulative</TabsTrigger>
+                </TabsList>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <TabsContent value="daily" className="mt-0">
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={dailyPerformanceData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#36B37E" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#36B37E" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorLoss" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#FF5630" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#FF5630" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="day" />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Profit/Loss']}
+                        labelFormatter={(label) => `Day: ${label}`}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="profit" 
+                        stroke="#36B37E"
+                        fillOpacity={1}
+                        fill="url(#colorProfit)"
+                        activeDot={{ r: 8 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="cumulative" className="mt-0">
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={cumulativeProfitData()} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Cumulative P&L']}
+                        labelFormatter={(label) => `Date: ${label}`}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#36B37E"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </TabsContent>
+            </CardContent>
+          </Tabs>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+        <Card className="col-span-1">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center">
+                Winning % By Days
+                <CircleInfo className="h-4 w-4 ml-2 text-gray-400" />
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] flex items-center justify-center">
+              <div className="relative w-[220px] h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartPieChart>
+                    <Pie
+                      data={winRateData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={90}
+                      fill="#8884d8"
+                      paddingAngle={0}
+                      dataKey="value"
+                    >
+                      {winRateData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </RechartPieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
+                  <span className="text-sm text-gray-500">winrate</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <div className="mb-4">
+                  <div className="flex items-center mb-1">
+                    <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
+                    <span className="text-sm">{winningTrades} winners</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    <span className="text-sm">{losingTrades} losers</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Recent trades</CardTitle>
+              <Button variant="outline" size="sm">Open positions</Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">Date</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">Pair</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">Volume</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">P&L</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trades.slice(0, 5).map((trade) => (
+                    <tr key={trade.id} className="border-b">
+                      <td className="px-3 py-2">{trade.date}</td>
+                      <td className="px-3 py-2">{trade.pair}</td>
+                      <td className="px-3 py-2">{trade.lotSize}</td>
+                      <td className={cn(
+                        "px-3 py-2 font-medium",
+                        trade.profitLoss > 0 ? "text-emerald-500" : "text-red-500"
+                      )}>
+                        {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Calendar Performance */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">June 2025</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-1">
+            <div className="text-sm font-medium text-center p-2">Sun</div>
+            <div className="text-sm font-medium text-center p-2">Mon</div>
+            <div className="text-sm font-medium text-center p-2">Tue</div>
+            <div className="text-sm font-medium text-center p-2">Wed</div>
+            <div className="text-sm font-medium text-center p-2">Thu</div>
+            <div className="text-sm font-medium text-center p-2">Fri</div>
+            <div className="text-sm font-medium text-center p-2">Sat</div>
+            
+            {getCalendarData().map((day, index) => 
+              day === null ? (
+                <div key={`empty-${index}`} className="p-2"></div>
+              ) : (
+                <div 
+                  key={`day-${day.day}`} 
+                  className={cn(
+                    "border rounded p-2 text-center min-h-[80px]",
+                    day.profit > 0 ? "bg-green-50 border-green-200" : 
+                    day.profit < 0 ? "bg-red-50 border-red-200" : 
+                    "bg-gray-50 border-gray-200"
+                  )}
+                >
+                  <div className="text-sm">{day.day}</div>
+                  {day.trades > 0 && (
+                    <>
+                      <div className={cn(
+                        "text-lg font-bold mt-1",
+                        day.profit > 0 ? "text-emerald-500" : "text-red-500"
+                      )}>
+                        {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
+                      </div>
+                      <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
+                    </>
+                  )}
+                </div>
+              )
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </Layout>
   );
 };

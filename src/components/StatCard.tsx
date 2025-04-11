@@ -10,6 +10,7 @@ interface StatCardProps {
   icon?: React.ReactNode;
   trend?: 'up' | 'down' | 'neutral';
   className?: string;
+  color?: 'default' | 'green' | 'red';
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -18,7 +19,8 @@ const StatCard: React.FC<StatCardProps> = ({
   description,
   icon,
   trend,
-  className
+  className,
+  color = 'default'
 }) => {
   return (
     <Card className={cn("h-full overflow-hidden", className)}>
@@ -26,7 +28,11 @@ const StatCard: React.FC<StatCardProps> = ({
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm font-medium text-gray-500">{title}</p>
-            <h3 className="text-2xl font-bold mt-1">
+            <h3 className={cn(
+              "text-2xl font-bold mt-1",
+              color === 'green' && "text-emerald-500",
+              color === 'red' && "text-red-500"
+            )}>
               {value}
               {trend && (
                 <span 
@@ -43,7 +49,12 @@ const StatCard: React.FC<StatCardProps> = ({
             {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
           </div>
           {icon && (
-            <div className="p-2 rounded-full bg-blue-50 text-blue-500">
+            <div className={cn(
+              "p-2 rounded-full",
+              color === 'default' && "bg-blue-50 text-blue-500",
+              color === 'green' && "bg-emerald-50 text-emerald-500",
+              color === 'red' && "bg-red-50 text-red-500",
+            )}>
               {icon}
             </div>
           )}
