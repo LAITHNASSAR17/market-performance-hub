@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
-import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Percent, Calendar, CircleIcon } from 'lucide-react';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,6 +26,9 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import TradeDetailsDialog from '@/components/TradeDetailsDialog';
+import CumulativePLChart from '@/components/CumulativePLChart';
+import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO } from 'date-fns';
 
 const COLORS = ['#36B37E', '#FF5630', '#6554C0', '#FFAB00', '#00B8D9', '#6B778C'];
 
@@ -33,10 +36,12 @@ const Dashboard: React.FC = () => {
   const { trades } = useTrade();
   const { user } = useAuth();
   const [timeframeFilter, setTimeframeFilter] = useState('all');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showTradeDetails, setShowTradeDetails] = useState(false);
 
   const userTrades = user ? trades.filter(trade => trade.userId === user.id) : [];
 
-  const filteredTrades = (() => {
+  const filteredTrades = useMemo(() => {
     if (timeframeFilter === 'all') return userTrades;
     
     const now = new Date();
@@ -53,7 +58,7 @@ const Dashboard: React.FC = () => {
     }
     
     return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
-  })();
+  }, [userTrades, timeframeFilter]);
 
   const totalTrades = userTrades.length;
   const totalProfit = userTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
@@ -187,7 +192,54 @@ const Dashboard: React.FC = () => {
       });
     }
     
-    return calendarDays;
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month, daysInMonth);
+    
+    const weeks = [];
+    let currentWeek = [];
+    
+    for (let i = 0; i < calendarDays.length; i++) {
+      currentWeek.push(calendarDays[i]);
+      
+      if (currentWeek.length === 7 || i === calendarDays.length - 1) {
+        const weeklyTotal = currentWeek
+          .filter(day => day !== null)
+          .reduce((sum, day) => sum + (day?.profit || 0), 0);
+        
+        weeks.push({
+          days: [...currentWeek],
+          weeklyTotal
+        });
+        
+        currentWeek = [];
+      }
+    }
+    
+    if (currentWeek.length > 0 && currentWeek.length < 7) {
+      while (currentWeek.length < 7) {
+        currentWeek.push(null);
+      }
+      
+      const weeklyTotal = currentWeek
+        .filter(day => day !== null)
+        .reduce((sum, day) => sum + (day?.profit || 0), 0);
+      
+      weeks.push({
+        days: [...currentWeek],
+        weeklyTotal
+      });
+    }
+    
+    return weeks;
+  };
+  
+  const handleDayClick = (dateString: string) => {
+    setSelectedDate(dateString);
+    setShowTradeDetails(true);
+  };
+
+  const handleCloseTradeDetails = () => {
+    setShowTradeDetails(false);
   };
 
   return (
@@ -466,7 +518,7 @@ const Dashboard: React.FC = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">June 2025</CardTitle>
+          <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-1">
@@ -478,37 +530,61 @@ const Dashboard: React.FC = () => {
             <div className="text-sm font-medium text-center p-2">Fri</div>
             <div className="text-sm font-medium text-center p-2">Sat</div>
             
-            {getCalendarData().map((day, index) => 
-              day === null ? (
-                <div key={`empty-${index}`} className="p-2"></div>
-              ) : (
-                <div 
-                  key={`day-${day.day}`} 
-                  className={cn(
-                    "border rounded p-2 text-center min-h-[80px]",
-                    day.profit > 0 ? "bg-green-50 border-green-200" : 
-                    day.profit < 0 ? "bg-red-50 border-red-200" : 
-                    "bg-gray-50 border-gray-200"
-                  )}
-                >
-                  <div className="text-sm">{day.day}</div>
-                  {day.trades > 0 && (
-                    <>
-                      <div className={cn(
-                        "text-lg font-bold mt-1",
-                        day.profit > 0 ? "text-emerald-500" : "text-red-500"
-                      )}>
-                        {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
-                      </div>
-                      <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
-                    </>
-                  )}
-                </div>
-              )
-            )}
+            {getCalendarData().map((week, weekIndex) => (
+              <React.Fragment key={`week-${weekIndex}`}>
+                {week.days.map((day, dayIndex) => 
+                  day === null ? (
+                    <div key={`empty-${weekIndex}-${dayIndex}`} className="p-2"></div>
+                  ) : (
+                    <div 
+                      key={`day-${day.day}`} 
+                      className={cn(
+                        "border rounded p-2 text-center min-h-[80px] cursor-pointer transition-colors",
+                        day.profit > 0 ? "bg-green-50 border-green-200 hover:bg-green-100" : 
+                        day.profit < 0 ? "bg-red-50 border-red-200 hover:bg-red-100" : 
+                        "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      )}
+                      onClick={() => handleDayClick(day.date)}
+                    >
+                      <div className="text-sm">{day.day}</div>
+                      {day.trades > 0 && (
+                        <>
+                          <div className={cn(
+                            "text-lg font-bold mt-1",
+                            day.profit > 0 ? "text-emerald-500" : "text-red-500"
+                          )}>
+                            {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
+                          </div>
+                          <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
+                        </>
+                      )}
+                    </div>
+                  )
+                )}
+                
+                {weekIndex < getCalendarData().length && (
+                  <div className="col-span-7 py-1 px-4 text-right border-t mt-1">
+                    <span className="text-sm text-gray-500 mr-2">Weekly Total:</span>
+                    <span className={cn(
+                      "font-semibold",
+                      week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : ""
+                    )}>
+                      {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </CardContent>
       </Card>
+      
+      <TradeDetailsDialog 
+        isOpen={showTradeDetails}
+        onClose={handleCloseTradeDetails}
+        selectedDate={selectedDate}
+        trades={trades.filter(t => t.date === selectedDate && t.userId === user?.id)}
+      />
     </Layout>
   );
 };
