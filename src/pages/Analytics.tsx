@@ -3,7 +3,7 @@ import React from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChartLine, ChartBarIcon, Target, BookMarked } from 'lucide-react';
+import { ChartLine, ChartBarIcon, Target, BookMarked, LineChart } from 'lucide-react';
 
 // Import custom hooks
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
@@ -23,14 +23,19 @@ const Analytics: React.FC = () => {
   // Use our custom hooks to manage state
   const stats = useAnalyticsStats();
   const plData = usePlData();
-  const { mistakes, setMistakes, setups, setSetups, habits, setHabits } = useTagsState();
-  const playbooks = usePlaybooks();
+  const { mistakes, setMistakes, setups, setSetups, habits, setHabits, tradingDays } = useTagsState();
+  const { playbooks, addPlaybook, updatePlaybook, deletePlaybook } = usePlaybooks();
   
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title') || 'Analytics'}</h1>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title') || 'Analytics'}</h1>
+            <p className="text-muted-foreground mt-1">
+              {t('analytics.subtitle') || 'Track the metrics that matter for your trading journey'}
+            </p>
+          </div>
         </div>
         
         <Tabs defaultValue="overview" className="w-full">
@@ -48,7 +53,7 @@ const Analytics: React.FC = () => {
               {t('analytics.playbook') || 'Playbook'}
             </TabsTrigger>
             <TabsTrigger value="chart">
-              <ChartBarIcon className="h-4 w-4 mr-2" />
+              <LineChart className="h-4 w-4 mr-2" />
               {t('analytics.chart') || 'Chart'}
             </TabsTrigger>
           </TabsList>
@@ -72,7 +77,12 @@ const Analytics: React.FC = () => {
           
           {/* Playbook Tab */}
           <TabsContent value="playbook">
-            <PlaybookTab playbooks={playbooks} />
+            <PlaybookTab 
+              playbooks={playbooks} 
+              onAddPlaybook={addPlaybook}
+              onUpdatePlaybook={updatePlaybook}
+              onDeletePlaybook={deletePlaybook}
+            />
           </TabsContent>
           
           {/* Chart Tab */}
