@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface StatCardProps {
   title: string;
@@ -22,14 +23,16 @@ const StatCard: React.FC<StatCardProps> = ({
   className,
   color = 'default'
 }) => {
+  const isMobile = useIsMobile();
+  
   return (
     <Card className={cn("h-full overflow-hidden", className)}>
-      <CardContent className="p-6">
+      <CardContent className="p-4 md:p-6">
         <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
             <h3 className={cn(
-              "text-2xl font-bold mt-1",
+              "text-xl md:text-2xl font-bold mt-1 truncate",
               color === 'green' && "text-emerald-500",
               color === 'red' && "text-red-500"
             )}>
@@ -46,11 +49,13 @@ const StatCard: React.FC<StatCardProps> = ({
                 </span>
               )}
             </h3>
-            {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+            {description && (
+              <p className="text-xs md:text-sm text-gray-500 mt-1 truncate">{description}</p>
+            )}
           </div>
           {icon && (
             <div className={cn(
-              "p-2 rounded-full",
+              "p-2 rounded-full flex-shrink-0 ml-2",
               color === 'default' && "bg-blue-50 text-blue-500",
               color === 'green' && "bg-emerald-50 text-emerald-500",
               color === 'red' && "bg-red-50 text-red-500",

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -41,6 +40,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTrade } from '@/contexts/TradeContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   UserCheck, 
   UserX, 
@@ -64,13 +65,19 @@ import {
   Edit, 
   Trash2, 
   ArrowUpRight, 
-  RefreshCw
+  RefreshCw,
+  Percent,
+  Briefcase
 } from 'lucide-react';
 import Layout from '@/components/Layout';
+import StatCard from '@/components/StatCard';
 
 const AdminDashboard: React.FC = () => {
   const { user, isAdmin, users, getAllUsers, blockUser, unblockUser, changePassword } = useAuth();
+  const { trades } = useTrade();
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
+  
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
@@ -130,12 +137,12 @@ const AdminDashboard: React.FC = () => {
 
   const handleChangePassword = async () => {
     if (!newPassword) {
-      setError(t('admin.error.emptyPassword') || 'Please enter a new password.');
+      setError(t('error.emptyPassword') || 'Please enter a new password.');
       return;
     }
 
     if (newPassword.length < 6) {
-      setError(t('admin.error.passwordLength') || 'Password must be at least 6 characters long.');
+      setError(t('error.passwordLength') || 'Password must be at least 6 characters long.');
       return;
     }
 
@@ -144,198 +151,182 @@ const AdminDashboard: React.FC = () => {
         await changePassword(selectedUser.email, newPassword);
         handleClosePasswordModal();
       } catch (err) {
-        setError(t('admin.error.changePassword') || 'Failed to change password. Please try again.');
+        setError(t('error.changePassword') || 'Failed to change password. Please try again.');
       }
     }
   };
 
+  // Real statistics from the data
   const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
   const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
   const totalUsers = users ? users.length : 0;
+  
+  // Connect to real trade data
+  const totalTrades = trades ? trades.length : 0;
+  const allProfitLoss = trades ? trades.reduce((sum, trade) => sum + trade.profitLoss, 0) : 0;
+  
+  // Calculate win/loss statistics
+  const winningTrades = trades ? trades.filter(trade => trade.profitLoss > 0).length : 0;
+  const losingTrades = trades ? trades.filter(trade => trade.profitLoss < 0).length : 0;
+  const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+  
+  // Get today's trades
+  const today = new Date().toISOString().split('T')[0];
+  const todayTrades = trades ? trades.filter(trade => trade.date === today).length : 0;
+  const todayProfit = trades 
+    ? trades.filter(trade => trade.date === today)
+      .reduce((sum, trade) => sum + trade.profitLoss, 0)
+    : 0;
+  
+  // Find most traded pair
+  const pairCount: Record<string, number> = {};
+  trades?.forEach(trade => {
+    pairCount[trade.pair] = (pairCount[trade.pair] || 0) + 1;
+  });
+  
+  let mostTradedPair = '';
+  let highestCount = 0;
+  
+  for (const pair in pairCount) {
+    if (pairCount[pair] > highestCount) {
+      mostTradedPair = pair;
+      highestCount = pairCount[pair];
+    }
+  }
 
-  // Mock data for statistics
-  const stats = {
-    linkedAccounts: 12,
-    totalTrades: 453,
-    profitLoss: '$3,248.75',
-    totalNotes: 87,
-    mostTradedPair: 'EUR/USD',
-    todayTrades: 23,
-    todayProfit: '$148.32'
-  };
+  // Mock data for items not yet implemented
+  const linkedAccounts = 12;
+  const totalNotes = 87;
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-4 md:py-6 px-4 md:px-6">
         <div className="flex flex-col space-y-6">
           <header className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <ShieldAlert className="mr-2 h-8 w-8 text-purple-600" />
-                {t('admin.title') || 'Admin Dashboard'}
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
+                <ShieldAlert className="mr-2 h-6 md:h-8 w-6 md:w-8 text-purple-600" />
+                {t('title') || 'Admin Dashboard'}
               </h1>
-              <p className="mt-1 text-gray-500">
-                {t('admin.description') || 'Manage users, trades, and system settings.'}
+              <p className="mt-1 text-sm md:text-base text-gray-500">
+                {t('description') || 'Manage users, trades, and system settings.'}
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex items-center space-x-2 text-sm text-gray-500">
-              <span>Last refreshed: {lastRefresh.toLocaleTimeString()}</span>
+              <span className="hidden md:inline">Last refreshed: {lastRefresh.toLocaleTimeString()}</span>
               <Button 
                 variant="outline" 
-                size="sm" 
+                size={isMobile ? "sm" : "default"} 
                 onClick={handleRefreshData}
                 className="flex items-center"
               >
                 <RefreshCw className="h-4 w-4 mr-1" />
-                Refresh Data
+                {isMobile ? "Refresh" : "Refresh Data"}
               </Button>
             </div>
           </header>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-gray-700 text-lg flex items-center">
-                  <Users className="mr-2 h-5 w-5 text-blue-600" />
-                  {t('admin.stats.total') || 'Total Users'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-end">
-                  <p className="text-3xl font-bold text-blue-600">{totalUsers}</p>
-                  <p className="text-sm text-gray-500">
-                    Active: <span className="text-green-600 font-semibold">{activeUsers}</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <StatCard
+              title={t('stats.total') || 'Total Users'}
+              value={totalUsers}
+              icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+              description={`Active: ${activeUsers}`}
+            />
             
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-gray-700 text-lg flex items-center">
-                  <BarChart3 className="mr-2 h-5 w-5 text-indigo-600" />
-                  {t('admin.stats.tradingAccounts') || 'Trading Accounts'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-indigo-600">{stats.linkedAccounts}</p>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={t('stats.trades') || 'Total Trades'}
+              value={totalTrades}
+              icon={<Activity className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+              description={`Today: ${todayTrades}`}
+            />
             
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-gray-700 text-lg flex items-center">
-                  <Activity className="mr-2 h-5 w-5 text-emerald-600" />
-                  {t('admin.stats.trades') || 'Total Trades'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-end">
-                  <p className="text-3xl font-bold text-emerald-600">{stats.totalTrades}</p>
-                  <p className="text-sm text-gray-500">
-                    Today: <span className="font-semibold">{stats.todayTrades}</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={t('stats.profit') || 'Total P&L'}
+              value={`$${allProfitLoss.toFixed(2)}`}
+              icon={<DollarSign className="h-4 md:h-5 w-4 md:w-5" />}
+              color={allProfitLoss > 0 ? "green" : allProfitLoss < 0 ? "red" : "default"}
+              description={`Today: $${todayProfit.toFixed(2)}`}
+              trend={allProfitLoss > 0 ? 'up' : allProfitLoss < 0 ? 'down' : 'neutral'}
+            />
             
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-gray-700 text-lg flex items-center">
-                  <DollarSign className="mr-2 h-5 w-5 text-green-600" />
-                  {t('admin.stats.profit') || 'Total Profit/Loss'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-end">
-                  <p className="text-3xl font-bold text-green-600">{stats.profitLoss}</p>
-                  <p className="text-sm text-gray-500">
-                    Today: <span className="font-semibold">{stats.todayProfit}</span>
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={t('stats.winRate') || 'Win Rate'}
+              value={`${winRate.toFixed(0)}%`}
+              icon={<Percent className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+              description={`W: ${winningTrades} / L: ${losingTrades}`}
+            />
             
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-gray-700 text-lg flex items-center">
-                  <FileText className="mr-2 h-5 w-5 text-amber-600" />
-                  {t('admin.stats.notes') || 'Total Notes'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-amber-600">{stats.totalNotes}</p>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={t('stats.tradingAccounts') || 'Trading Accounts'}
+              value={linkedAccounts}
+              icon={<Briefcase className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+            />
             
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-gray-700 text-lg flex items-center">
-                  <TrendingUp className="mr-2 h-5 w-5 text-pink-600" />
-                  {t('admin.stats.popularPair') || 'Most Traded Pair'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-pink-600">{stats.mostTradedPair}</p>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={t('stats.notes') || 'Total Notes'}
+              value={totalNotes}
+              icon={<FileText className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+            />
             
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-gray-700 text-lg flex items-center">
-                  <UserCheck className="mr-2 h-5 w-5 text-green-600" />
-                  {t('admin.stats.active') || 'Active Users'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-green-600">{activeUsers}</p>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={t('stats.popularPair') || 'Most Traded Pair'}
+              value={mostTradedPair || 'N/A'}
+              icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+              description={highestCount > 0 ? `${highestCount} trades` : 'No trades yet'}
+            />
             
-            <Card className="bg-white shadow-sm hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-gray-700 text-lg flex items-center">
-                  <UserX className="mr-2 h-5 w-5 text-red-600" />
-                  {t('admin.stats.blocked') || 'Blocked Users'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-red-600">{blockedUsers}</p>
-              </CardContent>
-            </Card>
+            <StatCard
+              title={t('stats.blocked') || 'Blocked Users'}
+              value={blockedUsers}
+              icon={<UserX className="h-4 md:h-5 w-4 md:w-5" />}
+              color="red"
+              description={`${blockedUsers} of ${totalUsers}`}
+            />
           </div>
 
           {/* Main Content */}
           <Tabs defaultValue="users" className="w-full">
-            <TabsList className="mb-6 bg-white p-1 rounded-md">
+            <TabsList className="mb-6 bg-white p-1 rounded-md overflow-x-auto flex whitespace-nowrap">
               <TabsTrigger value="users" className="flex items-center">
                 <User className="mr-2 h-4 w-4" />
-                {t('admin.tabs.users') || 'User Management'}
+                <span className="hidden sm:inline">{t('tabs.users') || 'User Management'}</span>
+                <span className="sm:hidden">Users</span>
               </TabsTrigger>
               <TabsTrigger value="trades" className="flex items-center">
                 <Activity className="mr-2 h-4 w-4" />
-                {t('admin.tabs.trades') || 'Trade Management'}
+                <span className="hidden sm:inline">{t('tabs.trades') || 'Trade Management'}</span>
+                <span className="sm:hidden">Trades</span>
               </TabsTrigger>
               <TabsTrigger value="hashtags" className="flex items-center">
                 <Hash className="mr-2 h-4 w-4" />
-                {t('admin.tabs.hashtags') || 'Hashtag Management'}
+                <span className="hidden sm:inline">{t('tabs.hashtags') || 'Hashtag Management'}</span>
+                <span className="sm:hidden">Tags</span>
               </TabsTrigger>
               <TabsTrigger value="notes" className="flex items-center">
                 <FileText className="mr-2 h-4 w-4" />
-                {t('admin.tabs.notes') || 'Notes Management'}
+                <span className="hidden sm:inline">{t('tabs.notes') || 'Notes Management'}</span>
+                <span className="sm:hidden">Notes</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center">
                 <Settings className="mr-2 h-4 w-4" />
-                {t('admin.tabs.settings') || 'System Settings'}
+                <span className="hidden sm:inline">{t('tabs.settings') || 'System Settings'}</span>
+                <span className="sm:hidden">Settings</span>
               </TabsTrigger>
             </TabsList>
             
             <TabsContent value="users" className="mt-0">
               <Card className="bg-white shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle>{t('admin.usersTable.title') || 'User Management'}</CardTitle>
-                  <CardDescription>{t('admin.usersTable.description') || 'View and manage user accounts.'}</CardDescription>
+                  <CardTitle>{t('usersTable.title') || 'User Management'}</CardTitle>
+                  <CardDescription>{t('usersTable.description') || 'View and manage user accounts.'}</CardDescription>
                 </CardHeader>
                 
                 <CardContent>
@@ -344,109 +335,111 @@ const AdminDashboard: React.FC = () => {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                       <Input
                         className="pl-10 pr-4"
-                        placeholder={t('admin.search') || 'Search users...'}
+                        placeholder={t('search') || 'Search users...'}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
                     </div>
                   </div>
                   
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[50px]">{t('admin.id') || 'ID'}</TableHead>
-                        <TableHead>{t('admin.name') || 'Name'}</TableHead>
-                        <TableHead>{t('admin.email') || 'Email'}</TableHead>
-                        <TableHead>{t('admin.subscription') || 'Subscription'}</TableHead>
-                        <TableHead>{t('admin.status') || 'Status'}</TableHead>
-                        <TableHead className="text-right">{t('admin.actions') || 'Actions'}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.length > 0 ? (
-                        filteredUsers.map((user) => (
-                          <TableRow key={user.id} className="hover:bg-slate-50">
-                            <TableCell className="font-medium">{user.id.substring(0, 5)}</TableCell>
-                            <TableCell>{user.name}</TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                {user.isAdmin ? 'Admin' : 'Basic'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {user.isBlocked ? (
-                                <Badge variant="destructive">
-                                  {t('admin.status.blocked') || 'Blocked'}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[50px]">{t('id') || 'ID'}</TableHead>
+                          <TableHead>{t('name') || 'Name'}</TableHead>
+                          <TableHead>{t('email') || 'Email'}</TableHead>
+                          <TableHead>{t('subscription') || 'Subscription'}</TableHead>
+                          <TableHead>{t('status') || 'Status'}</TableHead>
+                          <TableHead className="text-right">{t('actions') || 'Actions'}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.length > 0 ? (
+                          filteredUsers.map((user) => (
+                            <TableRow key={user.id} className="hover:bg-slate-50">
+                              <TableCell className="font-medium">{user.id.substring(0, 5)}</TableCell>
+                              <TableCell>{user.name}</TableCell>
+                              <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                  {user.isAdmin ? 'Admin' : 'Basic'}
                                 </Badge>
-                              ) : (
-                                <Badge className="bg-green-500">
-                                  {t('admin.status.active') || 'Active'}
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
-                                  title="View User"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleOpenPasswordModal(user)}
-                                  className="text-amber-600 border-amber-600 hover:bg-amber-50 h-8 w-8 p-0"
-                                  title="Change Password"
-                                >
-                                  <Lock className="h-4 w-4" />
-                                </Button>
+                              </TableCell>
+                              <TableCell>
                                 {user.isBlocked ? (
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => handleUnblockUser(user)}
-                                    className="text-green-600 border-green-600 hover:bg-green-50 h-8 w-8 p-0"
-                                    title="Unblock User"
-                                  >
-                                    <UserCheck className="h-4 w-4" />
-                                  </Button>
+                                  <Badge variant="destructive">
+                                    {t('status.blocked') || 'Blocked'}
+                                  </Badge>
                                 ) : (
+                                  <Badge className="bg-green-500">
+                                    {t('status.active') || 'Active'}
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
                                   <Button 
                                     variant="outline" 
                                     size="sm" 
-                                    onClick={() => handleBlockUser(user)}
-                                    className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
-                                    title="Block User"
+                                    className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
+                                    title="View User"
                                   >
-                                    <UserX className="h-4 w-4" />
+                                    <Eye className="h-4 w-4" />
                                   </Button>
-                                )}
-                              </div>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleOpenPasswordModal(user)}
+                                    className="text-amber-600 border-amber-600 hover:bg-amber-50 h-8 w-8 p-0"
+                                    title="Change Password"
+                                  >
+                                    <Lock className="h-4 w-4" />
+                                  </Button>
+                                  {user.isBlocked ? (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => handleUnblockUser(user)}
+                                      className="text-green-600 border-green-600 hover:bg-green-50 h-8 w-8 p-0"
+                                      title="Unblock User"
+                                    >
+                                      <UserCheck className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => handleBlockUser(user)}
+                                      className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                                      title="Block User"
+                                    >
+                                      <UserX className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="h-24 text-center">
+                              {searchTerm 
+                                ? (t('noSearchResults') || 'No users match your search.')
+                                : (t('noUsers') || 'No users found.')}
                             </TableCell>
                           </TableRow>
-                        ))
-                      ) : (
+                        )}
+                      </TableBody>
+                      <TableFooter>
                         <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center">
-                            {searchTerm 
-                              ? (t('admin.noSearchResults') || 'No users match your search.')
-                              : (t('admin.noUsers') || 'No users found.')}
+                          <TableCell colSpan={6} className="text-right">
+                            {t('totalShowing') || 'Showing'}: {filteredUsers.length} / {totalUsers}
                           </TableCell>
                         </TableRow>
-                      )}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-right">
-                          {t('admin.totalShowing') || 'Showing'}: {filteredUsers.length} / {totalUsers}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
+                      </TableFooter>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -479,26 +472,73 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                   
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Pair</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>P/L</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                          No trades available. Trades will appear here once users start adding them.
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Pair</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>P/L</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {trades && trades.length > 0 ? (
+                          trades.slice(0, 10).map((trade) => (
+                            <TableRow key={trade.id} className="hover:bg-slate-50">
+                              <TableCell className="font-medium">{trade.id.substring(0, 5)}</TableCell>
+                              <TableCell>{trade.userId.substring(0, 5)}</TableCell>
+                              <TableCell>{trade.pair}</TableCell>
+                              <TableCell>{trade.type}</TableCell>
+                              <TableCell>{trade.date}</TableCell>
+                              <TableCell className={cn(
+                                trade.profitLoss > 0 ? "text-emerald-500" : "text-red-500"
+                              )}>
+                                ${trade.profitLoss.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
+                                    title="View Trade"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-amber-600 border-amber-600 hover:bg-amber-50 h-8 w-8 p-0"
+                                    title="Edit Trade"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                                    title="Delete Trade"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                              No trades available. Trades will appear here once users start adding them.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -525,24 +565,26 @@ const AdminDashboard: React.FC = () => {
                     </Button>
                   </div>
                   
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Hashtag</TableHead>
-                        <TableHead>Count</TableHead>
-                        <TableHead>Added By</TableHead>
-                        <TableHead>Last Used</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                          No hashtags found. Hashtags will appear here once users start using them in trades or notes.
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Hashtag</TableHead>
+                          <TableHead>Count</TableHead>
+                          <TableHead>Added By</TableHead>
+                          <TableHead>Last Used</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                            No hashtags found. Hashtags will appear here once users start using them in trades or notes.
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -565,25 +607,27 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   </div>
                   
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                          No notes found. Notes will appear here once users start creating them.
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ID</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                            No notes found. Notes will appear here once users start creating them.
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -707,9 +751,9 @@ const AdminDashboard: React.FC = () => {
         <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>{t('admin.modal.title') || 'Change Password'}</DialogTitle>
+              <DialogTitle>{t('modal.title') || 'Change Password'}</DialogTitle>
               <DialogDescription>
-                {t('admin.modal.description') || 'Enter a new password for'} {selectedUser?.email}.
+                {t('modal.description') || 'Enter a new password for'} {selectedUser?.email}.
               </DialogDescription>
             </DialogHeader>
             {error && (
@@ -720,12 +764,12 @@ const AdminDashboard: React.FC = () => {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="newPassword" className="text-right">
-                  {t('admin.modal.newPassword') || 'New Password'}
+                  {t('modal.newPassword') || 'New Password'}
                 </Label>
                 <Input
                   id="newPassword"
                   type="password"
-                  placeholder={t('admin.modal.enterPassword') || 'Enter new password'}
+                  placeholder={t('modal.enterPassword') || 'Enter new password'}
                   className="col-span-3"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -734,11 +778,11 @@ const AdminDashboard: React.FC = () => {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={handleClosePasswordModal}>
-                {t('admin.modal.cancel') || 'Cancel'}
+                {t('modal.cancel') || 'Cancel'}
               </Button>
               <Button onClick={handleChangePassword} className="bg-purple-600 hover:bg-purple-700">
                 <Lock className="mr-2 h-4 w-4" />
-                {t('admin.modal.confirm') || 'Change Password'}
+                {t('modal.confirm') || 'Change Password'}
               </Button>
             </DialogFooter>
           </DialogContent>
