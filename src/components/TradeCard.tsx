@@ -89,7 +89,6 @@ const TradeCard: React.FC<TradeCardProps> = ({ trade, onEdit, onDelete }) => {
           {t('trade.added')} {formatDistanceToNow(new Date(trade.createdAt), { addSuffix: true })}
         </span>
         
-        {/* Add this button inside the CardFooter before the closing tag */}
         <Button size="sm" variant="outline" asChild className="mr-2">
           <Link to={`/chart?trade=${trade.id}`}>
             <LineChart className="h-4 w-4 mr-1" />
