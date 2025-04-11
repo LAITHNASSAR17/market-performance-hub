@@ -17,7 +17,8 @@ import {
   X,
   UserCog,
   ShieldAlert,
-  LineChart as LineChart3
+  LineChart as LineChart3,
+  BarChart2  // Add the BarChart2 icon for Analytics
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -50,7 +51,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: t('nav.notebook'), icon: BookText, href: '/notebook' },
     { name: t('nav.reports'), icon: BarChart, href: '/reports' },
     { name: t('nav.insights'), icon: Sparkles, href: '/insights' },
-    { name: t('chart.title') || 'الشارت', icon: LineChart3, href: '/chart' },
+    { name: t('analytics.title') || 'Analytics', icon: BarChart2, href: '/analytics' }, // Add Analytics to the navigation
+    { name: t('chart.title') || 'Chart', icon: LineChart3, href: '/chart' },
   ];
 
   // Add admin link only for admin users
