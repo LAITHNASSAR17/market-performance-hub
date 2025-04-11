@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -441,8 +440,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!user) {
         toast({
           variant: "destructive",
-          title: "Email not found",
-          description: "No account is registered with this email address.",
+          title: "البريد الإلكتروني غير موجود",
+          description: "لا يوجد حساب مسجل بهذا البريد الإلكتروني.",
         });
         throw new Error("Email not found");
       }
@@ -466,11 +465,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveUsers(updatedUsers);
       
       // Simulate sending email
-      console.log(`Reset code for ${email}: ${resetCode}`);
+      console.log(`رمز إعادة التعيين للبريد ${email}: ${resetCode}`);
       
       toast({
-        title: "Reset code sent",
-        description: "A password reset code has been sent to your email. For demo purposes, check the console log.",
+        title: "تم إرسال رمز إعادة التعيين",
+        description: "تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. لأغراض العرض التوضيحي، تحقق من سجل وحدة التحكم.",
       });
     } catch (error) {
       // Don't show error toast here as it's already handled
@@ -492,8 +491,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!user) {
         toast({
           variant: "destructive",
-          title: "Email not found",
-          description: "No account is registered with this email address.",
+          title: "البريد الإلكتروني غير موجود",
+          description: "لا يوجد حساب مسجل بهذا البريد الإلكتروني.",
         });
         throw new Error("Email not found");
       }
@@ -507,8 +506,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ) {
         toast({
           variant: "destructive",
-          title: "Invalid or expired code",
-          description: "The reset code is invalid or has expired. Please request a new code.",
+          title: "رمز غير صالح أو منتهي الصلاحية",
+          description: "رمز إعادة التعيين غير صالح أو انتهت صلاحيته. يرجى طلب رمز جديد.",
         });
         throw new Error("Invalid or expired code");
       }
@@ -529,8 +528,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveUsers(updatedUsers);
       
       toast({
-        title: "Password reset successful",
-        description: "Your password has been updated. You can now log in with your new password.",
+        title: "تم إعادة تعيين كلمة المرور بنجاح",
+        description: "تم تحديث كلمة المرور الخاصة بك. يمكنك الآن تسجيل الدخول باستخدام كلمة المرور الجديدة.",
       });
     } catch (error) {
       // Don't show error toast here as it's already handled

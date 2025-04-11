@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, AlertCircle } from 'lucide-react';
+import { LineChart, AlertCircle, Mail, Lock, Key } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,16 +14,16 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  email: z.string().email({ message: "الرجاء إدخال عنوان بريد إلكتروني صالح" }),
 });
 
 const resetPasswordSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  resetCode: z.string().min(6, { message: "Reset code must be 6 digits" }),
-  newPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  email: z.string().email({ message: "الرجاء إدخال عنوان بريد إلكتروني صالح" }),
+  resetCode: z.string().min(6, { message: "يجب أن يتكون رمز إعادة التعيين من 6 أرقام" }),
+  newPassword: z.string().min(6, { message: "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل" }),
+  confirmPassword: z.string().min(6, { message: "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل" }),
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "كلمات المرور غير متطابقة",
   path: ["confirmPassword"],
 });
 
@@ -39,7 +39,7 @@ const Login: React.FC = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('clear')) {
-      console.log('Clearing local storage due to ?clear parameter');
+      console.log('تم مسح التخزين المحلي بسبب معلمة ?clear');
       localStorage.clear();
       window.location.href = window.location.pathname;
     }
@@ -67,14 +67,14 @@ const Login: React.FC = () => {
     setError('');
     
     if (!email || !password) {
-      setError('Please enter both email and password');
+      setError('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
       return;
     }
     
     try {
       await login(email, password);
     } catch (err) {
-      setError('Failed to log in. Please check your credentials.');
+      setError('فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.');
     }
   };
 
@@ -113,9 +113,9 @@ const Login: React.FC = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle className="text-center">Trading Performance Hub</CardTitle>
+            <CardTitle className="text-center">منصة أداء التداول</CardTitle>
             <CardDescription className="text-center">
-              Log in to access your trading dashboard
+              سجل الدخول للوصول إلى لوحة التحكم الخاصة بك
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -128,69 +128,79 @@ const Login: React.FC = () => {
               )}
               
               <div className="mb-4">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <Label htmlFor="email">البريد الإلكتروني</Label>
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="أدخل بريدك الإلكتروني"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
               </div>
+              
               <div className="mb-6">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">كلمة المرور</Label>
                   <Button 
                     type="button" 
                     variant="link" 
                     className="text-xs p-0 h-auto"
                     onClick={() => setForgotPasswordOpen(true)}
                   >
-                    Forgot password?
+                    نسيت كلمة المرور؟
                   </Button>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="أدخل كلمة المرور"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
               </div>
+              
               <Button
                 type="submit"
                 className="w-full"
                 disabled={loading}
               >
-                {loading ? 'Logging in...' : 'Log in'}
+                {loading ? 'جارٍ تسجيل الدخول...' : 'تسجيل الدخول'}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              ليس لديك حساب؟{' '}
               <Link to="/register" className="text-blue-600 hover:underline">
-                Register
+                التسجيل
               </Link>
             </p>
           </CardFooter>
         </Card>
         
         <div className="mt-4 text-center text-sm text-gray-500">
-          <p>Demo credentials: demo@example.com / password</p>
-          <p>Admin credentials: admin@example.com / admin123</p>
+          <p>بيانات اعتماد العرض التوضيحي: demo@example.com / password</p>
+          <p>بيانات اعتماد المسؤول: admin@example.com / admin123</p>
         </div>
       </div>
 
-      {/* Forgot Password Dialog */}
+      {/* نافذة نسيت كلمة المرور */}
       <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Forgot Password</DialogTitle>
+            <DialogTitle>نسيت كلمة المرور</DialogTitle>
             <DialogDescription>
-              Enter your email address and we'll send you a reset code.
+              أدخل عنوان بريدك الإلكتروني وسنرسل لك رمز إعادة التعيين.
             </DialogDescription>
           </DialogHeader>
           <Form {...forgotPasswordForm}>
@@ -200,9 +210,12 @@ const Login: React.FC = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>البريد الإلكتروني</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email" {...field} />
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder="أدخل بريدك الإلكتروني" {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -210,10 +223,10 @@ const Login: React.FC = () => {
               />
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)}>
-                  Cancel
+                  إلغاء
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? 'Sending...' : 'Send Reset Code'}
+                  {loading ? 'جارٍ الإرسال...' : 'إرسال رمز إعادة التعيين'}
                 </Button>
               </DialogFooter>
             </form>
@@ -221,13 +234,13 @@ const Login: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Reset Password Dialog */}
+      {/* نافذة إعادة تعيين كلمة المرور */}
       <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
+            <DialogTitle>إعادة تعيين كلمة المرور</DialogTitle>
             <DialogDescription>
-              Enter the code sent to your email and create a new password.
+              أدخل الرمز المرسل إلى بريدك الإلكتروني وأنشئ كلمة مرور جديدة.
             </DialogDescription>
           </DialogHeader>
           <Form {...resetPasswordForm}>
@@ -237,9 +250,12 @@ const Login: React.FC = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>البريد الإلكتروني</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email" {...field} readOnly />
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder="أدخل بريدك الإلكتروني" {...field} readOnly className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -250,9 +266,12 @@ const Login: React.FC = () => {
                 name="resetCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reset Code</FormLabel>
+                    <FormLabel>رمز إعادة التعيين</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter 6-digit code" {...field} />
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Key className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder="أدخل الرمز المكون من 6 أرقام" {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -263,9 +282,12 @@ const Login: React.FC = () => {
                 name="newPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>New Password</FormLabel>
+                    <FormLabel>كلمة المرور الجديدة</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Enter new password" {...field} />
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input type="password" placeholder="أدخل كلمة المرور الجديدة" {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -276,9 +298,12 @@ const Login: React.FC = () => {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel>تأكيد كلمة المرور</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Confirm new password" {...field} />
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input type="password" placeholder="تأكيد كلمة المرور الجديدة" {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -286,10 +311,10 @@ const Login: React.FC = () => {
               />
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setResetPasswordOpen(false)}>
-                  Cancel
+                  إلغاء
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? 'Resetting...' : 'Reset Password'}
+                  {loading ? 'جارٍ إعادة التعيين...' : 'إعادة تعيين كلمة المرور'}
                 </Button>
               </DialogFooter>
             </form>
