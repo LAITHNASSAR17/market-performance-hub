@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, AlertCircle } from 'lucide-react';
+import { LineChart, AlertCircle, Mail, Lock, User } from 'lucide-react';
 import LanguageToggle from '@/components/LanguageToggle';
+import { useToast } from '@/hooks/use-toast';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,8 +42,17 @@ const Register: React.FC = () => {
     
     try {
       await register(name, email, password);
+      toast({
+        title: "Registration Successful",
+        description: "Your account has been created successfully.",
+      });
     } catch (err) {
       setError(t('register.error.failed'));
+      toast({
+        title: "Registration Failed",
+        description: "There was an error creating your account.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -79,47 +90,63 @@ const Register: React.FC = () => {
               
               <div className="mb-4">
                 <Label htmlFor="name">{t('register.fullName')}</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder={t('register.fullName')}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <User className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder={t('register.fullName')}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
               </div>
               <div className="mb-4">
                 <Label htmlFor="email">{t('register.email')}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t('register.email')}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t('register.email')}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
               </div>
               <div className="mb-4">
                 <Label htmlFor="password">{t('register.password')}</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={t('register.password')}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={t('register.password')}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
               </div>
               <div className="mb-6">
                 <Label htmlFor="confirmPassword">{t('register.confirmPassword')}</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder={t('register.confirmPassword')}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder={t('register.confirmPassword')}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
               </div>
               <Button
                 type="submit"

@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
@@ -55,6 +54,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    const storedUsers = localStorage.getItem('users');
+    if (!storedUsers || JSON.parse(storedUsers).length === 0) {
+      const adminEmail = 'lnmr2001@gmail.com';
+      const adminPassword = 'password123';
+      const hashedPassword = hashPassword(adminPassword);
+      const encryptedName = encryptData('Admin User');
+      const encryptedEmail = encryptData(adminEmail);
+      
+      const adminUser: StoredUser = {
+        id: 'admin-1',
+        name: 'Admin User',
+        email: adminEmail,
+        password: hashedPassword,
+        encryptedName,
+        encryptedEmail,
+        isAdmin: true,
+        isBlocked: false,
+      };
+      
+      localStorage.setItem('users', JSON.stringify([adminUser]));
+      console.log('Test admin user created:', adminEmail);
+    }
+  }, []);
+
+  useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
@@ -100,29 +124,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
-    const allUsers = getAllUsers();
-    const foundUser = allUsers.find(user => user.email === email);
-
-    if (foundUser && foundUser.password && comparePassword(password, foundUser.password)) {
-      if (foundUser.isBlocked) {
-        setLoading(false);
-        throw new Error('User is blocked');
+    try {
+      const allUsers = getAllUsers();
+      const foundUser = allUsers.find(user => user.email === email);
+      
+      console.log('Login attempt:', email);
+      console.log('Found user:', foundUser ? 'Yes' : 'No');
+      
+      if (foundUser && foundUser.password) {
+        console.log('Password check:', comparePassword(password, foundUser.password) ? 'Match' : 'Mismatch');
+        
+        if (comparePassword(password, foundUser.password)) {
+          if (foundUser.isBlocked) {
+            setLoading(false);
+            throw new Error('User is blocked');
+          }
+          
+          const userToStore = { 
+            ...foundUser, 
+            name: foundUser.name,
+            email: foundUser.email,
+          };
+          
+          delete userToStore.password;
+          localStorage.setItem('user', encryptData(JSON.stringify(userToStore)));
+          setUser(userToStore);
+          setIsAdmin(foundUser.isAdmin || false);
+          setIsAuthenticated(true);
+          navigate('/dashboard');
+          toast({
+            title: "Login Successful",
+            description: `Welcome back, ${userToStore.name}!`,
+          });
+          console.log('Login successful for:', email);
+        } else {
+          throw new Error('Invalid credentials');
+        }
+      } else {
+        throw new Error('Invalid credentials');
       }
-      const decryptedUser = { 
-        ...foundUser, 
-        name: foundUser.encryptedName ? decryptData(foundUser.encryptedName) : foundUser.name, 
-        email: foundUser.encryptedEmail ? decryptData(foundUser.encryptedEmail) : foundUser.email 
-      };
-      localStorage.setItem('user', encryptData(JSON.stringify(decryptedUser)));
-      setUser(decryptedUser);
-      setIsAdmin(foundUser.isAdmin || false);
-      setIsAuthenticated(true);
-      navigate('/dashboard');
-    } else {
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Failed",
+        description: (error as Error).message || "Invalid credentials",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
       setLoading(false);
-      throw new Error('Invalid credentials');
     }
-    setLoading(false);
   };
 
   const logout = () => {

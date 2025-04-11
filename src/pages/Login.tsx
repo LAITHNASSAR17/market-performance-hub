@@ -7,19 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, AlertCircle, Mail, Lock, Key } from 'lucide-react';
+import { LineChart, AlertCircle, Mail, Lock, Key, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import LanguageToggle from '@/components/LanguageToggle';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 const Login: React.FC = () => {
   const { t } = useLanguage();
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showCredentials, setShowCredentials] = useState(false);
   const { login, isAuthenticated, loading, forgotPassword, resetPassword } = useAuth();
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
@@ -31,6 +35,17 @@ const Login: React.FC = () => {
       console.log('localStorage cleared due to ?clear parameter');
       localStorage.clear();
       window.location.href = window.location.pathname;
+    }
+  }, []);
+
+  useEffect(() => {
+    // Check if there's a test admin user
+    const users = localStorage.getItem('users');
+    if (users && JSON.parse(users).length > 0) {
+      const adminUser = JSON.parse(users).find((u: any) => u.isAdmin);
+      if (adminUser) {
+        setShowCredentials(true);
+      }
     }
   }, []);
 
@@ -77,6 +92,7 @@ const Login: React.FC = () => {
     try {
       await login(email, password);
     } catch (err) {
+      // Error is handled in the login function with toast
       setError(t('login.error.credentials'));
     }
   };
@@ -99,6 +115,15 @@ const Login: React.FC = () => {
     } catch (error) {
       // Error is handled in the auth context
     }
+  };
+
+  const fillDemoCredentials = () => {
+    setEmail('lnmr2001@gmail.com');
+    setPassword('password123');
+    toast({
+      title: "Demo Credentials Filled",
+      description: "You can now click login to access the admin dashboard",
+    });
   };
 
   if (isAuthenticated) {
@@ -125,6 +150,24 @@ const Login: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {showCredentials && (
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <Info className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-blue-700">
+                  <p>Admin account: <strong>lnmr2001@gmail.com</strong></p>
+                  <p>Password: <strong>password123</strong></p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 text-xs bg-blue-100 border-blue-300"
+                    onClick={fillDemoCredentials}
+                  >
+                    Use Demo Credentials
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit}>
               {error && (
                 <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-center gap-2">
