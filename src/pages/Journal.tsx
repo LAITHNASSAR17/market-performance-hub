@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon, ChevronDown, ChevronUp, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import HashtagBadge from '@/components/HashtagBadge';
 import { cn } from '@/lib/utils';
 
@@ -15,6 +15,17 @@ const Journal: React.FC = () => {
   const { trades, pairs } = useTrade();
   const [dateFilter, setDateFilter] = useState('all');
   const [pairFilter, setPairFilter] = useState('all');
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Get date from URL query parameter if present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const dateParam = params.get('date');
+    if (dateParam) {
+      setDateFilter(dateParam);
+    }
+  }, [location.search]);
 
   const filteredTrades = trades.filter(trade => {
     const matchesDate = dateFilter === 'all' || trade.date === dateFilter;
@@ -44,6 +55,11 @@ const Journal: React.FC = () => {
   const sortedDates = Object.keys(tradesByDate).sort((a, b) => 
     new Date(b).getTime() - new Date(a).getTime()
   );
+
+  // Navigate to individual trade view
+  const handleViewTrade = (tradeId: string) => {
+    navigate(`/trades/${tradeId}`);
+  };
 
   return (
     <Layout>
@@ -170,10 +186,9 @@ const Journal: React.FC = () => {
                               />
                             )}
                             
-                            <Button variant="ghost" size="sm" asChild>
-                              <Link to={`/trades/${trade.id}`}>
-                                <Eye className="h-4 w-4" />
-                              </Link>
+                            <Button variant="ghost" size="sm" onClick={() => handleViewTrade(trade.id)}>
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
                             </Button>
                           </div>
                         </div>
