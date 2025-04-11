@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
-import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon } from 'lucide-react';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,12 +29,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import TradeDetailsDialog from '@/components/TradeDetailsDialog';
 import CumulativePLChart from '@/components/CumulativePLChart';
 import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const COLORS = ['#36B37E', '#FF5630', '#6554C0', '#FFAB00', '#00B8D9', '#6B778C'];
 
 const Dashboard: React.FC = () => {
   const { trades } = useTrade();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [timeframeFilter, setTimeframeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTradeDetails, setShowTradeDetails] = useState(false);
@@ -240,6 +242,10 @@ const Dashboard: React.FC = () => {
 
   const handleCloseTradeDetails = () => {
     setShowTradeDetails(false);
+  };
+
+  const navigateToJournal = (dateString: string) => {
+    navigate(`/journal?date=${dateString}`);
   };
 
   return (
@@ -516,9 +522,20 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
+      <div className="mb-8">
+        <CumulativePLChart 
+          trades={filteredTrades} 
+          timeRange={timeframeFilter as 'week' | 'month' | 'quarter' | 'year' | 'all'} 
+        />
+      </div>
+
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
+            <Calendar className="h-4 w-4 mr-2" />
+            Journal View
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-7 gap-1">
@@ -556,23 +573,33 @@ const Dashboard: React.FC = () => {
                             {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
                           </div>
                           <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="mt-1 text-xs h-6 px-2 flex items-center"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateToJournal(day.date);
+                            }}
+                          >
+                            View
+                            <ExternalLink className="ml-1 h-3 w-3" />
+                          </Button>
                         </>
                       )}
                     </div>
                   )
                 )}
                 
-                {weekIndex < getCalendarData().length && (
-                  <div className="col-span-7 py-1 px-4 text-right border-t mt-1">
-                    <span className="text-sm text-gray-500 mr-2">Weekly Total:</span>
-                    <span className={cn(
-                      "font-semibold",
-                      week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : ""
-                    )}>
-                      {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
-                    </span>
-                  </div>
-                )}
+                <div className="col-span-7 py-1 px-4 text-right border-t mt-1 bg-gray-50">
+                  <span className="text-sm text-gray-500 mr-2">Weekly Total:</span>
+                  <span className={cn(
+                    "font-semibold",
+                    week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : ""
+                  )}>
+                    {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
+                  </span>
+                </div>
               </React.Fragment>
             ))}
           </div>

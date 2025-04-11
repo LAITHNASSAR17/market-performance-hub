@@ -4,7 +4,6 @@ import { format } from 'date-fns';
 import { 
   Dialog, 
   DialogContent,
-
   DialogHeader,
   DialogTitle,
   DialogFooter
@@ -14,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Trade } from '@/contexts/TradeContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface TradeDetailsDialogProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
   selectedDate,
   trades
 }) => {
+  const navigate = useNavigate();
+  
   if (!selectedDate) return null;
 
   const dayTrades = trades.filter(trade => trade.date === selectedDate);
@@ -59,13 +62,27 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
   });
   
   const formattedDate = selectedDate ? format(new Date(selectedDate), 'EEE, MMM d, yyyy') : '';
+  
+  const handleViewDetails = () => {
+    // Navigate to journal page with the selected date
+    navigate(`/journal?date=${selectedDate}`);
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex justify-between items-center">
-            <div>{formattedDate}</div>
+            <div className="flex items-center">
+              <Button variant="ghost" size="icon" className="mr-2">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {formattedDate}
+              <Button variant="ghost" size="icon" className="ml-2">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
             <div className={cn(
               "font-mono text-xl",
               totalProfit > 0 ? "text-emerald-500" : "text-red-500"
@@ -134,20 +151,28 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
               <tr className="border-b">
                 <th className="px-3 py-2 text-left font-medium text-gray-500">Time</th>
                 <th className="px-3 py-2 text-left font-medium text-gray-500">Symbol</th>
-                <th className="px-3 py-2 text-left font-medium text-gray-500">Type</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-500">Side</th>
                 <th className="px-3 py-2 text-left font-medium text-gray-500">Entry</th>
                 <th className="px-3 py-2 text-left font-medium text-gray-500">Exit</th>
                 <th className="px-3 py-2 text-left font-medium text-gray-500">Size</th>
                 <th className="px-3 py-2 text-left font-medium text-gray-500">P&L</th>
+                <th className="px-3 py-2 text-left font-medium text-gray-500">R-Multiple</th>
                 <th className="px-3 py-2 text-left font-medium text-gray-500">Tags</th>
               </tr>
             </thead>
             <tbody>
               {dayTrades.map((trade) => (
-                <tr key={trade.id} className="border-b">
+                <tr key={trade.id} className="border-b hover:bg-gray-50">
                   <td className="px-3 py-2">{format(new Date(), 'HH:mm:ss')}</td>
                   <td className="px-3 py-2">{trade.pair}</td>
-                  <td className="px-3 py-2">{trade.type}</td>
+                  <td className="px-3 py-2">
+                    <span className={cn(
+                      "px-2 py-1 rounded text-xs font-medium",
+                      trade.type === 'Buy' ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                    )}>
+                      {trade.type}
+                    </span>
+                  </td>
                   <td className="px-3 py-2">{trade.entry.toFixed(4)}</td>
                   <td className="px-3 py-2">{trade.exit.toFixed(4)}</td>
                   <td className="px-3 py-2">{trade.lotSize}</td>
@@ -156,6 +181,9 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                     trade.profitLoss > 0 ? "text-emerald-500" : "text-red-500"
                   )}>
                     {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss.toFixed(2)}
+                  </td>
+                  <td className="px-3 py-2">
+                    {trade.stopLoss ? (Math.abs(trade.profitLoss) / Math.abs(trade.entry - trade.stopLoss)).toFixed(2) : '-'}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex flex-wrap gap-1">
@@ -173,8 +201,12 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
           </table>
         </div>
         
-        <DialogFooter className="mt-6">
-          <Button onClick={onClose}>Close</Button>
+        <DialogFooter className="mt-6 flex justify-between">
+          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button onClick={handleViewDetails} className="flex items-center">
+            View Details
+            <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
