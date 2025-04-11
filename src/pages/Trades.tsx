@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -18,7 +17,6 @@ const Trades: React.FC = () => {
   const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Apply filters
   const filteredTrades = trades.filter(trade => {
     const matchesSearch = searchTerm === '' || 
       trade.pair.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -31,13 +29,11 @@ const Trades: React.FC = () => {
     return matchesSearch && matchesPair && matchesType;
   });
 
-  // Sort trades by date (newest first)
   const sortedTrades = [...filteredTrades].sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   const handleEditTrade = (id: string) => {
-    // Navigate to edit trade page or form
     navigate(`/edit-trade/${id}`);
   };
 
@@ -58,6 +54,14 @@ const Trades: React.FC = () => {
     setTradeTypeFilter('all');
   };
 
+  const handleReply = (trade: Trade) => {
+    console.log('Replying to trade:', trade);
+  };
+
+  const handleBackTest = (trade: Trade) => {
+    console.log('Back testing trade:', trade);
+  };
+
   return (
     <Layout>
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
@@ -75,7 +79,6 @@ const Trades: React.FC = () => {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col md:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -114,7 +117,6 @@ const Trades: React.FC = () => {
         </div>
       </div>
 
-      {/* Trades List */}
       {sortedTrades.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedTrades.map(trade => (
@@ -123,6 +125,8 @@ const Trades: React.FC = () => {
               trade={trade}
               onEdit={handleEditTrade}
               onDelete={handleDeleteTrade}
+              onReply={handleReply}
+              onBackTest={handleBackTest}
             />
           ))}
         </div>
@@ -145,7 +149,6 @@ const Trades: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!tradeToDelete} onOpenChange={(open) => !open && setTradeToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

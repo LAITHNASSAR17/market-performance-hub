@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LineChart, Edit, Trash2 } from 'lucide-react';
+import { LineChart, Edit, Trash2, Reply, BarChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Trade } from '@/contexts/TradeContext';
@@ -14,9 +15,17 @@ interface TradeCardProps {
   trade: Trade;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onReply?: (trade: Trade) => void;
+  onBackTest?: (trade: Trade) => void;
 }
 
-const TradeCard: React.FC<TradeCardProps> = ({ trade, onEdit, onDelete }) => {
+const TradeCard: React.FC<TradeCardProps> = ({ 
+  trade, 
+  onEdit, 
+  onDelete, 
+  onReply, 
+  onBackTest 
+}) => {
   const { t } = useLanguage();
   const { toast } = useToast();
 
@@ -36,6 +45,26 @@ const TradeCard: React.FC<TradeCardProps> = ({ trade, onEdit, onDelete }) => {
         </div>
       ),
     })
+  };
+
+  const handleReply = () => {
+    if (onReply) {
+      onReply(trade);
+      toast({
+        title: t('trade.replyAdded') || "تم إضافة الرد",
+        description: t('trade.replyToTradeDescription') || "تم إضافة رد على التداول",
+      });
+    }
+  };
+
+  const handleBackTest = () => {
+    if (onBackTest) {
+      onBackTest(trade);
+      toast({
+        title: t('trade.backTestStarted') || "بدأ الاختبار الرجعي",
+        description: t('trade.backTestDescription') || "جاري تشغيل الاختبار الرجعي للتداول",
+      });
+    }
   };
 
   return (
@@ -89,14 +118,37 @@ const TradeCard: React.FC<TradeCardProps> = ({ trade, onEdit, onDelete }) => {
           {t('trade.added')} {formatDistanceToNow(new Date(trade.createdAt), { addSuffix: true })}
         </span>
         
-        <Button size="sm" variant="outline" asChild className="mr-2">
-          <Link to={`/chart?trade=${trade.id}`}>
-            <LineChart className="h-4 w-4 mr-1" />
-            {t('trade.viewOnChart') || 'عرض في الشارت'}
-          </Link>
-        </Button>
-
         <div className="flex space-x-2 rtl:space-x-reverse">
+          <Button size="sm" variant="outline" asChild className="mr-2">
+            <Link to={`/chart?trade=${trade.id}`}>
+              <LineChart className="h-4 w-4 mr-1" />
+              {t('trade.viewOnChart') || 'عرض في الشارت'}
+            </Link>
+          </Button>
+
+          {onBackTest && (
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={handleBackTest}
+              className="mr-2"
+            >
+              <BarChart className="h-4 w-4 mr-1" />
+              {t('trade.backTest') || 'اختبار رجعي'}
+            </Button>
+          )}
+
+          {onReply && (
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={handleReply}
+            >
+              <Reply className="h-4 w-4 mr-1" />
+              {t('trade.reply') || 'رد'}
+            </Button>
+          )}
+
           <Button size="sm" variant="ghost" onClick={() => onEdit(trade.id)}>
             <Edit className="h-4 w-4 mr-1" />
             {t('trade.edit') || 'تعديل'}
