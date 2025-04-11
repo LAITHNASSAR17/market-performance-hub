@@ -7,12 +7,50 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+});
+
+const resetPasswordSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+  resetCode: z.string().min(6, { message: "Reset code must be 6 digits" }),
+  newPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters" }),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, forgotPassword, resetPassword } = useAuth();
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+
+  const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const resetPasswordForm = useForm<z.infer<typeof resetPasswordSchema>>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: "",
+      resetCode: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +65,26 @@ const Login: React.FC = () => {
       await login(email, password);
     } catch (err) {
       setError('Failed to log in. Please check your credentials.');
+    }
+  };
+
+  const onForgotPasswordSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    try {
+      await forgotPassword(values.email);
+      setForgotPasswordOpen(false);
+      setResetPasswordOpen(true);
+      resetPasswordForm.setValue("email", values.email);
+    } catch (error) {
+      // Error is handled in the auth context
+    }
+  };
+
+  const onResetPasswordSubmit = async (values: z.infer<typeof resetPasswordSchema>) => {
+    try {
+      await resetPassword(values.email, values.resetCode, values.newPassword);
+      setResetPasswordOpen(false);
+    } catch (error) {
+      // Error is handled in the auth context
     }
   };
 
@@ -73,9 +131,14 @@ const Login: React.FC = () => {
               <div className="mb-6">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link to="#" className="text-xs text-blue-600 hover:underline">
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="text-xs p-0 h-auto"
+                    onClick={() => setForgotPasswordOpen(true)}
+                  >
                     Forgot password?
-                  </Link>
+                  </Button>
                 </div>
                 <Input
                   id="password"
@@ -110,6 +173,119 @@ const Login: React.FC = () => {
           <p>Admin credentials: admin@example.com / admin123</p>
         </div>
       </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Forgot Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a reset code.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...forgotPasswordForm}>
+            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+              <FormField
+                control={forgotPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Sending...' : 'Send Reset Code'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Enter the code sent to your email and create a new password.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...resetPasswordForm}>
+            <form onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)} className="space-y-4">
+              <FormField
+                control={resetPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your email" {...field} readOnly />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="resetCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reset Code</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter 6-digit code" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Enter new password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Confirm new password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setResetPasswordOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Resetting...' : 'Reset Password'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

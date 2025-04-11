@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 type User = {
   id: string;
@@ -23,6 +22,8 @@ type AuthContextType = {
   unblockUser: (userId: string) => void;
   updateSystemSettings: (settings: SystemSettings) => void;
   getSystemSettings: () => SystemSettings;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
 };
 
 type StoredUser = {
@@ -32,6 +33,8 @@ type StoredUser = {
   password: string;
   isAdmin?: boolean;
   isBlocked?: boolean;
+  resetPasswordCode?: string;
+  resetPasswordExpiry?: number;
 };
 
 type SystemSettings = {
@@ -381,6 +384,122 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
+  // Generate a random 6-digit code
+  const generateResetCode = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  // Send password reset email (simulated)
+  const forgotPassword = async (email: string): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      // Check if email exists
+      const users = getUsers();
+      const user = users.find(u => u.email === email);
+      
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Email not found",
+          description: "No account is registered with this email address.",
+        });
+        throw new Error("Email not found");
+      }
+      
+      // Generate reset code and set expiry (1 hour from now)
+      const resetCode = generateResetCode();
+      const resetExpiry = Date.now() + 3600000; // 1 hour
+      
+      // Update user with reset code
+      const updatedUsers = users.map(u => {
+        if (u.email === email) {
+          return {
+            ...u,
+            resetPasswordCode: resetCode,
+            resetPasswordExpiry: resetExpiry
+          };
+        }
+        return u;
+      });
+      
+      saveUsers(updatedUsers);
+      
+      // Simulate sending email
+      console.log(`Reset code for ${email}: ${resetCode}`);
+      
+      toast({
+        title: "Reset code sent",
+        description: "A password reset code has been sent to your email. For demo purposes, check the console log.",
+      });
+    } catch (error) {
+      // Don't show error toast here as it's already handled
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reset password with code
+  const resetPassword = async (email: string, resetCode: string, newPassword: string): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      // Check if email exists
+      const users = getUsers();
+      const user = users.find(u => u.email === email);
+      
+      if (!user) {
+        toast({
+          variant: "destructive",
+          title: "Email not found",
+          description: "No account is registered with this email address.",
+        });
+        throw new Error("Email not found");
+      }
+      
+      // Check if reset code is valid and not expired
+      if (
+        !user.resetPasswordCode || 
+        user.resetPasswordCode !== resetCode ||
+        !user.resetPasswordExpiry ||
+        user.resetPasswordExpiry < Date.now()
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Invalid or expired code",
+          description: "The reset code is invalid or has expired. Please request a new code.",
+        });
+        throw new Error("Invalid or expired code");
+      }
+      
+      // Update user password and clear reset code
+      const updatedUsers = users.map(u => {
+        if (u.email === email) {
+          return {
+            ...u,
+            password: newPassword,
+            resetPasswordCode: undefined,
+            resetPasswordExpiry: undefined
+          };
+        }
+        return u;
+      });
+      
+      saveUsers(updatedUsers);
+      
+      toast({
+        title: "Password reset successful",
+        description: "Your password has been updated. You can now log in with your new password.",
+      });
+    } catch (error) {
+      // Don't show error toast here as it's already handled
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -395,7 +514,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       blockUser,
       unblockUser,
       updateSystemSettings,
-      getSystemSettings
+      getSystemSettings,
+      forgotPassword,
+      resetPassword
     }}>
       {children}
     </AuthContext.Provider>
