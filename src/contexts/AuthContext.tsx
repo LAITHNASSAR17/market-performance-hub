@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,8 +47,12 @@ type SystemSettings = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Add event listener for storage changes to sync across tabs
-const STORAGE_EVENT_KEY = 'trading_auth_change';
+// Add event keys for storage changes to sync across tabs
+const STORAGE_EVENT_KEYS = {
+  CURRENT_USER: 'currentUser',
+  USERS: 'users',
+  SYSTEM_SETTINGS: 'systemSettings'
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -56,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initialize system settings if not exists
   const initializeSystemSettings = () => {
-    const storedSettings = localStorage.getItem('systemSettings');
+    const storedSettings = localStorage.getItem(STORAGE_EVENT_KEYS.SYSTEM_SETTINGS);
     if (!storedSettings) {
       const defaultSettings = {
         platformName: 'Trading Performance Hub',
@@ -64,36 +69,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         passwordPolicy: 'medium',
         sessionTimeout: 60
       };
-      localStorage.setItem('systemSettings', JSON.stringify(defaultSettings));
+      localStorage.setItem(STORAGE_EVENT_KEYS.SYSTEM_SETTINGS, JSON.stringify(defaultSettings));
     }
   };
 
-  useEffect(() => {
-    // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    
-    // Initialize admin account if not exists
+  // Initialize demo and admin accounts if they don't exist
+  const initializeDefaultAccounts = () => {
     const users = getUsers();
+    let usersChanged = false;
+
+    // Check for admin account
     if (!users.some(user => user.email === 'admin@example.com')) {
-      const adminUser = {
+      users.push({
         id: 'admin-' + Date.now().toString(),
         name: 'Admin',
         email: 'admin@example.com',
         password: 'admin123',
         isAdmin: true
-      };
-      saveUsers([...users, adminUser]);
+      });
+      usersChanged = true;
     }
+
+    // Check for demo account
+    if (!users.some(user => user.email === 'demo@example.com')) {
+      users.push({
+        id: 'demo-' + Date.now().toString(),
+        name: 'Demo User',
+        email: 'demo@example.com',
+        password: 'password'
+      });
+      usersChanged = true;
+    }
+
+    if (usersChanged) {
+      saveUsers(users);
+    }
+  };
+
+  useEffect(() => {
+    // Check if user is logged in from localStorage
+    const storedUser = localStorage.getItem(STORAGE_EVENT_KEYS.CURRENT_USER);
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    
+    // Initialize default accounts
+    initializeDefaultAccounts();
     
     // Initialize system settings
     initializeSystemSettings();
     
     // Add storage event listener for cross-tab synchronization
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'currentUser') {
+      if (event.key === STORAGE_EVENT_KEYS.CURRENT_USER) {
         if (event.newValue) {
           setUser(JSON.parse(event.newValue));
         } else {
@@ -112,12 +140,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const getUsers = (): StoredUser[] => {
-    const users = localStorage.getItem('users');
+    const users = localStorage.getItem(STORAGE_EVENT_KEYS.USERS);
     return users ? JSON.parse(users) : [];
   };
 
   const saveUsers = (users: StoredUser[]) => {
-    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem(STORAGE_EVENT_KEYS.USERS, JSON.stringify(users));
   };
 
   const getAllUsers = () => {
@@ -263,6 +291,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "User deleted",
         description: "User has been deleted successfully",
       });
+      
+      // Dispatch a custom event to notify other tabs
+      window.dispatchEvent(new CustomEvent('user-database-changed'));
     } catch (error) {
       toast({
         variant: "destructive",
@@ -298,6 +329,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "User blocked",
         description: "User has been blocked successfully",
       });
+      
+      // Dispatch a custom event to notify other tabs
+      window.dispatchEvent(new CustomEvent('user-database-changed'));
     } catch (error) {
       toast({
         variant: "destructive",
@@ -333,6 +367,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "User unblocked",
         description: "User has been unblocked successfully",
       });
+      
+      // Dispatch a custom event to notify other tabs
+      window.dispatchEvent(new CustomEvent('user-database-changed'));
     } catch (error) {
       toast({
         variant: "destructive",
@@ -354,12 +391,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     try {
-      localStorage.setItem('systemSettings', JSON.stringify(settings));
+      localStorage.setItem(STORAGE_EVENT_KEYS.SYSTEM_SETTINGS, JSON.stringify(settings));
       
       toast({
         title: "Settings updated",
         description: "System settings have been updated successfully",
       });
+      
+      // Dispatch a custom event to notify other tabs
+      window.dispatchEvent(new CustomEvent('system-settings-changed'));
     } catch (error) {
       toast({
         variant: "destructive",
@@ -370,7 +410,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const getSystemSettings = (): SystemSettings => {
-    const settings = localStorage.getItem('systemSettings');
+    const settings = localStorage.getItem(STORAGE_EVENT_KEYS.SYSTEM_SETTINGS);
     if (settings) {
       return JSON.parse(settings);
     }

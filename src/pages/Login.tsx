@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,16 @@ const Login: React.FC = () => {
   const { login, isAuthenticated, loading, forgotPassword, resetPassword } = useAuth();
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
+
+  // Clear localStorage if URL has a clear param (for debugging purposes)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('clear')) {
+      console.log('Clearing local storage due to ?clear parameter');
+      localStorage.clear();
+      window.location.href = window.location.pathname;
+    }
+  }, []);
 
   const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),
