@@ -19,6 +19,7 @@ import Journal from "./pages/Journal";
 import Notebook from "./pages/Notebook";
 import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
+import Analytics from "./pages/Analytics"; // Add the new Analytics page
 import AdminDashboard from "./pages/AdminDashboard";
 import TradingChart from "./pages/TradingChart";
 import NotFound from "./pages/NotFound";
@@ -46,6 +47,7 @@ const App = () => (
                   <Route path="/notebook" element={<Notebook />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/insights" element={<Insights />} />
+                  <Route path="/analytics" element={<Analytics />} /> {/* Add the route for Analytics */}
                   <Route path="/chart" element={<TradingChart />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
