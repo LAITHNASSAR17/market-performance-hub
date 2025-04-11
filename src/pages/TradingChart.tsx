@@ -54,20 +54,28 @@ const TradingChart: React.FC = () => {
 
   // Initialize the chart and load trade if specified
   useEffect(() => {
+    console.log("TradingChart initialized, checking for trade params");
+    
     // Check if a trade ID was passed in the URL
     const params = new URLSearchParams(location.search);
     const tradeId = params.get('trade');
     const mode = params.get('mode');
     
+    console.log("URL params:", { tradeId, mode });
+    
     // Set replay mode based on URL
     if (mode === 'backtest' && tradeId) {
+      console.log("Setting mode to backtest");
       setReplayMode('backtest');
     } else if (mode === 'replay') {
+      console.log("Setting mode to standard replay");
       setReplayMode('standard');
     }
     
     if (tradeId) {
       const trade = getTrade(tradeId);
+      console.log("Found trade:", trade);
+      
       if (trade) {
         setCurrentTrade(trade);
         // Set symbol type based on the pair
@@ -78,10 +86,10 @@ const TradingChart: React.FC = () => {
         }
         
         // Set dates for the trade replay
-        const tradeDate = new Date(trade.date);
         setStartDate(trade.date);
         
         // Calculate end date (trade date + duration in minutes)
+        const tradeDate = new Date(trade.date);
         const endDate = new Date(tradeDate);
         endDate.setMinutes(endDate.getMinutes() + trade.durationMinutes);
         setEndDate(endDate.toISOString().split('T')[0]);
@@ -90,21 +98,42 @@ const TradingChart: React.FC = () => {
           title: t('chart.tradeLoaded') || "تم تحميل الصفقة",
           description: `${trade.pair} - ${trade.type} - ${trade.date}`,
         });
+      } else {
+        console.error("Trade not found with ID:", tradeId);
+        toast({
+          title: "خطأ",
+          description: "لم يتم العثور على الصفقة المطلوبة",
+          variant: "destructive"
+        });
       }
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/tv.js';
-    script.async = true;
-    script.onload = initWidget;
-    document.head.appendChild(script);
+    // Load TradingView script
+    if (!window.TradingView) {
+      console.log("Loading TradingView script");
+      const script = document.createElement('script');
+      script.src = 'https://s3.tradingview.com/tv.js';
+      script.async = true;
+      script.onload = () => {
+        console.log("TradingView script loaded");
+        initWidget();
+      };
+      document.head.appendChild(script);
+
+      return () => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+    } else {
+      console.log("TradingView already loaded");
+      initWidget();
+    }
 
     return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
       if (widgetRef.current) {
         try {
+          console.log("Cleaning up TradingView widget");
           widgetRef.current = null;
         } catch (e) {
           console.error('Error cleaning up TradingView widget:', e);
@@ -115,16 +144,22 @@ const TradingChart: React.FC = () => {
 
   // Initialize or update the widget when dependencies change
   useEffect(() => {
+    console.log("Dependencies changed, reinitializing widget if needed");
     if (window.TradingView && containerRef.current) {
       initWidget();
     }
   }, [symbolType, currentTrade, timeFrame]);
 
   const initWidget = () => {
-    if (!window.TradingView || !containerRef.current) return;
+    console.log("Initializing TradingView widget");
+    if (!window.TradingView || !containerRef.current) {
+      console.log("TradingView or container not available yet");
+      return;
+    }
 
     // Clean up previous widget if it exists
     if (widgetRef.current) {
+      console.log("Cleaning up previous widget");
       containerRef.current.innerHTML = '';
     }
 
@@ -133,10 +168,18 @@ const TradingChart: React.FC = () => {
     // If we have a current trade, use its pair
     if (currentTrade) {
       symbol = convertPairToTradingViewSymbol(currentTrade.pair);
+      console.log("Using trade pair for symbol:", symbol);
     }
 
     // Determine interval based on timeFrame
     const interval = timeFrameToInterval(timeFrame);
+    console.log("Using interval:", interval);
+
+    // Create a unique ID for the container
+    const containerId = containerRef.current.id || 'tradingview_chart_' + Math.random().toString(36).substring(2, 15);
+    containerRef.current.id = containerId;
+    
+    console.log("Creating widget with container ID:", containerId);
 
     widgetRef.current = new window.TradingView.widget({
       width: '100%',
@@ -160,20 +203,17 @@ const TradingChart: React.FC = () => {
         'RSI@tv-basicstudies',
         'MACD@tv-basicstudies'
       ],
-      container_id: containerRef.current.id,
+      container_id: containerId,
+      debug: true // Enable debug mode for more console logs
     });
 
     // Initialize replay mode or backtesting if needed
     if ((replayMode === 'standard' || replayMode === 'backtest') && currentTrade && widgetRef.current) {
+      console.log("Setting up trade replay/backtest");
       widgetRef.current.onChartReady(() => {
         try {
-          // Set the chart to trade date
-          console.log("Setting chart to trade date:", startDate);
-          
-          // Display trade elements on the chart
-          if (currentTrade) {
-            displayTradeOnChart(currentTrade);
-          }
+          console.log("Chart is ready, displaying trade");
+          displayTradeOnChart(currentTrade);
         } catch (error) {
           console.error("Error setting up trade replay:", error);
         }
@@ -195,12 +235,17 @@ const TradingChart: React.FC = () => {
   };
 
   const displayTradeOnChart = (trade: Trade) => {
-    if (!widgetRef.current) return;
+    console.log("Displaying trade on chart:", trade);
+    if (!widgetRef.current) {
+      console.error("Widget not available for displaying trade");
+      return;
+    }
     
     // This would typically use TradingView's drawing tools API
     widgetRef.current.onChartReady(() => {
-      console.log("Displaying trade on chart:", trade);
+      console.log("Chart ready for displaying trade");
       
+      // For demonstration, we're simulating the display with a toast
       toast({
         title: t('chart.tradeDisplayed') || "تم عرض الصفقة على الشارت",
         description: t('chart.useControls') || "استخدم أدوات التحكم لمشاهدة الصفقة",
@@ -215,11 +260,53 @@ const TradingChart: React.FC = () => {
       // Simulate this by setting replay position to start
       setCurrentPosition(0);
       setIsPlaying(false);
+      
+      // Example of what would be done with real TradingView API access:
+      /*
+      const chart = widgetRef.current.chart();
+      
+      // Convert dates to unix timestamps
+      const entryTime = new Date(trade.date).getTime() / 1000;
+      
+      // Calculate exit time based on duration
+      const exitDate = new Date(trade.date);
+      exitDate.setMinutes(exitDate.getMinutes() + trade.durationMinutes);
+      const exitTime = exitDate.getTime() / 1000;
+      
+      // Add entry line - green for buy, red for sell
+      chart.createShape(
+        { time: entryTime, price: trade.entry },
+        { shape: 'vertical_line', color: trade.type === 'Buy' ? '#22c55e' : '#ef4444' }
+      );
+      
+      // Add exit line
+      chart.createShape(
+        { time: exitTime, price: trade.exit },
+        { shape: 'vertical_line', color: '#94a3b8' }
+      );
+      
+      // Add stop loss line if available
+      if (trade.stopLoss) {
+        chart.createShape(
+          { time: entryTime, price: trade.stopLoss },
+          { shape: 'horizontal_line', color: '#ef4444' }
+        );
+      }
+      
+      // Add take profit line if available
+      if (trade.takeProfit) {
+        chart.createShape(
+          { time: entryTime, price: trade.takeProfit },
+          { shape: 'horizontal_line', color: '#22c55e' }
+        );
+      }
+      */
     });
   };
 
   const convertPairToTradingViewSymbol = (pair: string): string => {
     // Convert pairs like "EUR/USD" to TradingView format "FX:EURUSD"
+    console.log("Converting pair to TradingView symbol:", pair);
     if (pair.includes('/')) {
       if (pair.startsWith('BTC') || pair.startsWith('ETH')) {
         return `BINANCE:${pair.replace('/', '')}`;
@@ -231,6 +318,7 @@ const TradingChart: React.FC = () => {
   };
 
   const getDefaultSymbol = () => {
+    console.log("Getting default symbol for type:", symbolType);
     switch(symbolType) {
       case 'crypto':
         return 'BINANCE:BTCUSDT';
@@ -245,10 +333,12 @@ const TradingChart: React.FC = () => {
   };
 
   const changeSymbolType = (type: string) => {
+    console.log("Changing symbol type to:", type);
     setSymbolType(type);
   };
 
   const togglePlayPause = () => {
+    console.log("Toggling play/pause, current state:", isPlaying);
     setIsPlaying(!isPlaying);
     
     if (!isPlaying) {
@@ -264,10 +354,27 @@ const TradingChart: React.FC = () => {
       }
       
       // In real implementation with TradingView this would control their replay API
+      
+      // For demo, let's simulate progression
+      const interval = setInterval(() => {
+        setCurrentPosition(prev => {
+          const newPosition = prev + (replaySpeed * 0.5);
+          if (newPosition >= 100) {
+            clearInterval(interval);
+            setIsPlaying(false);
+            return 100;
+          }
+          return newPosition;
+        });
+      }, 200);
+      
+      // Store the interval ID to clean it up later
+      return () => clearInterval(interval);
     }
   };
 
   const handleSpeedChange = (value: number[]) => {
+    console.log("Changing replay speed to:", value[0]);
     setReplaySpeed(value[0]);
     
     if (isPlaying) {
@@ -280,6 +387,7 @@ const TradingChart: React.FC = () => {
 
   const skipBackward = () => {
     // Move the replay back (e.g. 10%)
+    console.log("Skipping backward");
     setCurrentPosition(Math.max(0, currentPosition - 10));
     toast({
       title: t('chart.skipBackward') || "الرجوع للخلف",
@@ -289,6 +397,7 @@ const TradingChart: React.FC = () => {
 
   const skipForward = () => {
     // Move the replay forward (e.g. 10%)
+    console.log("Skipping forward");
     setCurrentPosition(Math.min(100, currentPosition + 10));
     toast({
       title: t('chart.skipForward') || "التقدم للأمام",
@@ -298,6 +407,7 @@ const TradingChart: React.FC = () => {
 
   const jumpToEnd = () => {
     // Jump to end of replay
+    console.log("Jumping to end");
     setCurrentPosition(100);
     setIsPlaying(false);
     toast({
@@ -308,6 +418,7 @@ const TradingChart: React.FC = () => {
 
   const restartReplay = () => {
     // Restart replay from beginning
+    console.log("Restarting replay");
     setCurrentPosition(0);
     setIsPlaying(false);
     toast({
@@ -317,6 +428,7 @@ const TradingChart: React.FC = () => {
   };
 
   const startStandardReplay = () => {
+    console.log("Starting standard replay");
     setReplayMode('standard');
     setCurrentPosition(0);
     setIsPlaying(false);
@@ -328,6 +440,7 @@ const TradingChart: React.FC = () => {
   };
 
   const exitReplayMode = () => {
+    console.log("Exiting replay mode");
     setReplayMode(null);
     setCurrentTrade(null);
     setIsPlaying(false);

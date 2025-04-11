@@ -54,6 +54,8 @@ const TradeCard: React.FC<TradeCardProps> = ({
     
     if (onReply) {
       onReply(trade);
+      navigate(`/chart?trade=${trade.id}&mode=replay`);
+      
       toast({
         title: t('trade.replyAdded') || "تم إضافة الرد",
         description: t('trade.replyToTradeDescription') || "تم إضافة رد على التداول",
