@@ -224,7 +224,7 @@ const AdminDashboard: React.FC = () => {
                                   {t('admin.status.blocked') || 'Blocked'}
                                 </Badge>
                               ) : (
-                                <Badge variant="success" className="bg-green-500">
+                                <Badge className="bg-green-500">
                                   {t('admin.status.active') || 'Active'}
                                 </Badge>
                               )}
