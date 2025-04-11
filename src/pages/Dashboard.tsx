@@ -25,35 +25,39 @@ import {
   Bar
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const COLORS = ['#36B37E', '#FF5630', '#6554C0', '#FFAB00', '#00B8D9', '#6B778C'];
 
 const Dashboard: React.FC = () => {
   const { trades } = useTrade();
+  const { user } = useAuth();
   const [timeframeFilter, setTimeframeFilter] = useState('all');
 
-  const totalTrades = trades.length;
-  const totalProfit = trades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const winningTrades = trades.filter(trade => trade.profitLoss > 0).length;
-  const losingTrades = trades.filter(trade => trade.profitLoss < 0).length;
+  const userTrades = user ? trades.filter(trade => trade.userId === user.id) : [];
+
+  const totalTrades = userTrades.length;
+  const totalProfit = userTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const winningTrades = userTrades.filter(trade => trade.profitLoss > 0).length;
+  const losingTrades = userTrades.filter(trade => trade.profitLoss < 0).length;
   const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
   
-  const bestTrade = trades.reduce(
+  const bestTrade = userTrades.length > 0 ? userTrades.reduce(
     (best, trade) => (trade.profitLoss > best.profitLoss ? trade : best),
-    trades[0] || { profitLoss: 0, pair: 'N/A', id: '', userId: '', account: '', date: '', type: 'Buy', entry: 0, exit: 0, lotSize: 0, stopLoss: 0, takeProfit: 0, riskPercentage: 0, returnPercentage: 0, durationMinutes: 0, notes: '', imageUrl: null, hashtags: [], createdAt: '' }
-  );
+    userTrades[0]
+  ) : null;
   
-  const worstTrade = trades.reduce(
+  const worstTrade = userTrades.length > 0 ? userTrades.reduce(
     (worst, trade) => (trade.profitLoss < worst.profitLoss ? trade : worst),
-    trades[0] || { profitLoss: 0, pair: 'N/A', id: '', userId: '', account: '', date: '', type: 'Buy', entry: 0, exit: 0, lotSize: 0, stopLoss: 0, takeProfit: 0, riskPercentage: 0, returnPercentage: 0, durationMinutes: 0, notes: '', imageUrl: null, hashtags: [], createdAt: '' }
-  );
+    userTrades[0]
+  ) : null;
 
-  const winningTradesData = trades.filter(trade => trade.profitLoss > 0);
+  const winningTradesData = userTrades.filter(trade => trade.profitLoss > 0);
   const avgWinningTrade = winningTradesData.length > 0 
     ? winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTradesData.length
     : 0;
 
-  const losingTradesData = trades.filter(trade => trade.profitLoss < 0);
+  const losingTradesData = userTrades.filter(trade => trade.profitLoss < 0);
   const avgLosingTrade = losingTradesData.length > 0 
     ? losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTradesData.length
     : 0;
@@ -76,7 +80,7 @@ const Dashboard: React.FC = () => {
   };
 
   const dailyPerformanceData = getLast7Days().map(dayInfo => {
-    const dayTrades = trades.filter(trade => trade.date === dayInfo.date);
+    const dayTrades = filteredTrades.filter(trade => trade.date === dayInfo.date);
     const dayProfit = dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
     
     return {
@@ -87,7 +91,7 @@ const Dashboard: React.FC = () => {
   });
 
   const cumulativeProfitData = () => {
-    const sorted = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sorted = [...filteredTrades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     let cumulative = 0;
     return sorted.map(trade => {
@@ -167,6 +171,25 @@ const Dashboard: React.FC = () => {
     return calendarDays;
   };
 
+  const filteredTrades = (() => {
+    if (timeframeFilter === 'all') return userTrades;
+    
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    if (timeframeFilter === 'week') {
+      cutoffDate.setDate(now.getDate() - 7);
+    } else if (timeframeFilter === 'month') {
+      cutoffDate.setDate(now.getDate() - 30);
+    } else if (timeframeFilter === 'quarter') {
+      cutoffDate.setDate(now.getDate() - 90);
+    } else if (timeframeFilter === 'year') {
+      cutoffDate.setDate(now.getDate() - 365);
+    }
+    
+    return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
+  })();
+
   return (
     <Layout>
       <div className="mb-6 flex justify-between items-center">
@@ -207,21 +230,21 @@ const Dashboard: React.FC = () => {
           title="Profit factor"
           value={profitFactor.toFixed(2)}
           icon={<Activity className="h-5 w-5" />}
-          description={`+0.12`}
+          description={`${profitFactor > 1 ? '+' : ''}${(profitFactor - 1).toFixed(2)}`}
         />
         <StatCard
           title="Average winning trade"
           value={`$${avgWinningTrade.toFixed(2)}`}
           icon={<TrendingUp className="h-5 w-5" />}
           color="green"
-          description={`+17.25`}
+          description={winningTradesData.length > 0 ? `${winningTradesData.length} winning trades` : 'No winning trades yet'}
         />
         <StatCard
           title="Average losing trade"
           value={`$${Math.abs(avgLosingTrade).toFixed(2)}`}
           icon={<TrendingDown className="h-5 w-5" />}
           color="red"
-          description={`-21.36`}
+          description={losingTradesData.length > 0 ? `${losingTradesData.length} losing trades` : 'No losing trades yet'}
         />
       </div>
 
@@ -421,7 +444,7 @@ const Dashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {trades.slice(0, 5).map((trade) => (
+                  {filteredTrades.slice(0, 5).map((trade) => (
                     <tr key={trade.id} className="border-b">
                       <td className="px-3 py-2">{trade.date}</td>
                       <td className="px-3 py-2">{trade.pair}</td>

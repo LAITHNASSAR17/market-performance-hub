@@ -17,6 +17,13 @@ type AuthContextType = {
   loading: boolean;
 };
 
+type StoredUser = {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -26,25 +33,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem('user');
+    const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
     setLoading(false);
   }, []);
 
+  const getUsers = (): StoredUser[] => {
+    const users = localStorage.getItem('users');
+    return users ? JSON.parse(users) : [];
+  };
+
+  const saveUsers = (users: StoredUser[]) => {
+    localStorage.setItem('users', JSON.stringify(users));
+  };
+
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      // Mock login - in a real app, this would call an API
+      
+      // Check demo account
       if (email === 'demo@example.com' && password === 'password') {
-        const user = {
+        const demoUser = {
           id: '1',
           name: 'Demo User',
           email: 'demo@example.com'
         };
-        setUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
+        setUser(demoUser);
+        localStorage.setItem('currentUser', JSON.stringify(demoUser));
+        toast({
+          title: "Login successful",
+          description: "Welcome back to your trading dashboard!",
+        });
+        return;
+      }
+      
+      // Check registered users
+      const users = getUsers();
+      const foundUser = users.find(user => user.email === email && user.password === password);
+      
+      if (foundUser) {
+        const { password, ...userWithoutPassword } = foundUser;
+        setUser(userWithoutPassword);
+        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
         toast({
           title: "Login successful",
           description: "Welcome back to your trading dashboard!",
@@ -70,14 +102,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
-      // Mock registration - in a real app, this would call an API
-      const user = {
-        id: '1',
+      
+      // Check if email already exists
+      const users = getUsers();
+      if (users.some(user => user.email === email)) {
+        toast({
+          variant: "destructive",
+          title: "Registration failed",
+          description: "Email already registered. Please use a different email or login.",
+        });
+        return;
+      }
+      
+      // Create new user
+      const newUser = {
+        id: Date.now().toString(),
         name,
-        email
+        email,
+        password
       };
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Save user to "database"
+      saveUsers([...users, newUser]);
+      
+      // Log in the new user
+      const { password: _, ...userWithoutPassword } = newUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+      
       toast({
         title: "Registration successful",
         description: "Your account has been created!",
@@ -95,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem('currentUser');
     toast({
       title: "Logged out",
       description: "You have been logged out successfully",

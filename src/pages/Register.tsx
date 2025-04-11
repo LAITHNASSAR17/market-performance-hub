@@ -30,6 +30,11 @@ const Register: React.FC = () => {
       return;
     }
     
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    
     try {
       await register(name, email, password);
     } catch (err) {
@@ -38,14 +43,14 @@ const Register: React.FC = () => {
   };
 
   if (isAuthenticated) {
-    return <Navigate to="/" />;
+    return <Navigate to="/dashboard" />;
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <div className="bg-trading-blue p-3 rounded-full">
+          <div className="bg-blue-500 p-3 rounded-full">
             <LineChart className="h-8 w-8 text-white" />
           </div>
         </div>

@@ -165,19 +165,30 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     if (user) {
-      // Load trades from localStorage or use sample data
-      const storedTrades = localStorage.getItem('trades');
-      if (storedTrades) {
-        setTrades(JSON.parse(storedTrades));
+      // Load trades from localStorage
+      const allTrades = loadTradesFromStorage();
+      
+      // Filter trades for current user
+      const userTrades = allTrades.filter(trade => trade.userId === user.id);
+      
+      // If user has no trades and is demo user, provide sample data
+      if (userTrades.length === 0 && user.email === 'demo@example.com') {
+        // For demo account, use sample trades but update the userId
+        const demoTrades = sampleTrades.map(trade => ({
+          ...trade,
+          userId: user.id
+        }));
+        
+        setTrades(demoTrades);
+        // Save demo trades to storage
+        saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...demoTrades]);
       } else {
-        // Use sample data on first load
-        setTrades(sampleTrades);
-        localStorage.setItem('trades', JSON.stringify(sampleTrades));
+        setTrades(userTrades);
       }
       
       // Extract and set all unique hashtags from trades
       const hashtagSet = new Set<string>();
-      sampleTrades.forEach(trade => {
+      trades.forEach(trade => {
         trade.hashtags.forEach(tag => hashtagSet.add(tag));
       });
       setAllHashtags(Array.from(hashtagSet).concat(allHashtags));
@@ -186,6 +197,15 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     setLoading(false);
   }, [user]);
+
+  const loadTradesFromStorage = (): Trade[] => {
+    const storedTrades = localStorage.getItem('trades');
+    return storedTrades ? JSON.parse(storedTrades) : [];
+  };
+
+  const saveTradestoStorage = (trades: Trade[]) => {
+    localStorage.setItem('trades', JSON.stringify(trades));
+  };
 
   const addTrade = (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) return;
@@ -197,9 +217,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       createdAt: new Date().toISOString()
     };
 
+    // Update local state
     const updatedTrades = [...trades, newTrade];
     setTrades(updatedTrades);
-    localStorage.setItem('trades', JSON.stringify(updatedTrades));
+    
+    // Update storage with ALL trades (including from other users)
+    const allTrades = loadTradesFromStorage();
+    saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...updatedTrades]);
     
     // Update hashtags
     const newHashtags = newTrade.hashtags.filter(tag => !allHashtags.includes(tag));
@@ -214,13 +238,20 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateTrade = (id: string, tradeUpdate: Partial<Trade>) => {
+    if (!user) return;
+    
     const tradeIndex = trades.findIndex(t => t.id === id);
     if (tradeIndex === -1) return;
 
     const updatedTrades = [...trades];
     updatedTrades[tradeIndex] = { ...updatedTrades[tradeIndex], ...tradeUpdate };
+    
+    // Update local state
     setTrades(updatedTrades);
-    localStorage.setItem('trades', JSON.stringify(updatedTrades));
+    
+    // Update storage with ALL trades (including from other users)
+    const allTrades = loadTradesFromStorage();
+    saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...updatedTrades]);
 
     // Update hashtags if they changed
     if (tradeUpdate.hashtags) {
@@ -237,9 +268,15 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const deleteTrade = (id: string) => {
+    if (!user) return;
+    
+    // Update local state
     const updatedTrades = trades.filter(trade => trade.id !== id);
     setTrades(updatedTrades);
-    localStorage.setItem('trades', JSON.stringify(updatedTrades));
+    
+    // Update storage with ALL trades (including from other users)
+    const allTrades = loadTradesFromStorage();
+    saveTradestoStorage([...allTrades.filter(trade => trade.id !== id)]);
 
     toast({
       title: "Trade Deleted",
