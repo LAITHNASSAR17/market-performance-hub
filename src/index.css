@@ -99,6 +99,45 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Ensure content fits on small screens */
+  .container {
+    @apply px-4 sm:px-6 md:px-8;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Improved font sizing for better mobile readability */
+  h1 {
+    @apply text-xl sm:text-2xl md:text-3xl font-bold;
+  }
+
+  h2 {
+    @apply text-lg sm:text-xl md:text-2xl font-semibold;
+  }
+
+  h3 {
+    @apply text-base sm:text-lg md:text-xl font-medium;
+  }
+
+  p {
+    @apply text-sm sm:text-base;
+  }
+
+  /* Responsive table support */
+  .table-responsive {
+    @apply overflow-x-auto -mx-4 sm:mx-0;
+  }
+
+  /* Make form elements more touch-friendly on mobile */
+  input, select, button, .btn {
+    @apply min-h-[2.5rem] sm:min-h-[2.25rem];
+  }
+
+  /* Cards that stack well on mobile */
+  .responsive-card-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+  }
 }
 
 /* RTL Support */
@@ -155,4 +194,82 @@
 
 [dir="rtl"] .text-right {
   text-align: left;
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 640px) {
+  /* More touch-friendly buttons on mobile */
+  .btn, button {
+    @apply py-3 px-4;
+  }
+  
+  /* Full-width container on small screens */
+  .container {
+    @apply px-3;
+    max-width: 100%;
+  }
+  
+  /* Stack items vertically on small screens */
+  .sm-stack {
+    @apply flex flex-col;
+  }
+  
+  /* Collapsible items on mobile */
+  .sm-collapsible {
+    @apply hidden;
+  }
+  
+  /* Larger touch targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Adjust spacing for smaller screens */
+  .responsive-spacing {
+    @apply p-3 space-y-3;
+  }
+
+  /* Simplify tables on mobile */
+  .table-responsive table {
+    @apply block w-full;
+  }
+  
+  .table-responsive thead {
+    @apply hidden;
+  }
+  
+  .table-responsive tbody, .table-responsive tr {
+    @apply block w-full;
+  }
+  
+  .table-responsive td {
+    @apply block text-right py-2 px-3 border-b;
+  }
+  
+  .table-responsive td:before {
+    content: attr(data-label);
+    @apply float-left font-semibold text-left;
+  }
+}
+
+/* Responsive font sizes */
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+  .text-xs {
+    font-size: 0.65rem;
+  }
+}
+
+/* Better card layout on mobile */
+@media (max-width: 640px) {
+  .card {
+    @apply border-x-0 rounded-none;
+  }
+}
+
+/* Responsive charts */
+.chart-container {
+  @apply w-full h-40 sm:h-60 md:h-80;
 }

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LineChart, Edit, Trash2, Reply, BarChart } from 'lucide-react';
+import { LineChart, Edit, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Trade } from '@/contexts/TradeContext';
@@ -15,16 +15,12 @@ interface TradeCardProps {
   trade: Trade;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onReply?: (trade: Trade) => void;
-  onBackTest?: (trade: Trade) => void;
 }
 
 const TradeCard: React.FC<TradeCardProps> = ({ 
   trade, 
   onEdit, 
-  onDelete, 
-  onReply, 
-  onBackTest 
+  onDelete 
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -46,36 +42,6 @@ const TradeCard: React.FC<TradeCardProps> = ({
         </div>
       ),
     })
-  };
-
-  const handleReply = (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (onReply) {
-      onReply(trade);
-      navigate(`/chart?trade=${trade.id}&mode=replay`);
-      
-      toast({
-        title: t('trade.replyAdded') || "تم إضافة الرد",
-        description: t('trade.replyToTradeDescription') || "تم إضافة رد على التداول",
-      });
-    }
-  };
-
-  const handleBackTest = (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (onBackTest) {
-      // Direct navigation to chart with trade ID
-      navigate(`/chart?trade=${trade.id}&mode=backtest`);
-      
-      toast({
-        title: t('trade.backTestStarted') || "بدأ الاختبار الرجعي",
-        description: t('trade.backTestDescription') || "جاري تشغيل الاختبار الرجعي للتداول",
-      });
-    }
   };
 
   return (
@@ -136,29 +102,6 @@ const TradeCard: React.FC<TradeCardProps> = ({
               {t('trade.viewOnChart') || 'عرض في الشارت'}
             </Link>
           </Button>
-
-          {onBackTest && (
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={handleBackTest}
-              className="mr-2"
-            >
-              <BarChart className="h-4 w-4 mr-1" />
-              {t('trade.backTest') || 'اختبار رجعي'}
-            </Button>
-          )}
-
-          {onReply && (
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              onClick={handleReply}
-            >
-              <Reply className="h-4 w-4 mr-1" />
-              {t('trade.reply') || 'رد'}
-            </Button>
-          )}
 
           <Button size="sm" variant="ghost" onClick={() => onEdit(trade.id)}>
             <Edit className="h-4 w-4 mr-1" />

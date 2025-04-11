@@ -93,7 +93,7 @@ const sampleHashtags = [
 
 const AdminDashboard: React.FC = () => {
   const { user, isAdmin, users, getAllUsers, blockUser, unblockUser, changePassword } = useAuth();
-  const { trades, deleteTrade } = useTrade();
+  const { trades, getAllTrades, deleteTrade } = useTrade();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const { toast } = useToast();
@@ -101,29 +101,40 @@ const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [hashtags, setHashtags] = useState(sampleHashtags);
+  const [allTrades, setAllTrades] = useState<any[]>([]);
 
-  // Statistics 
+  // Load initial data
+  useEffect(() => {
+    if (isAdmin) {
+      handleRefreshData();
+    }
+  }, [isAdmin]);
+
+  // Statistics calculations - now derived from loaded data
+  const totalUsers = users ? users.length : 0;
   const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
   const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
-  const totalUsers = users ? users.length : 0;
   
-  const totalTrades = trades ? trades.length : 0;
-  const allProfitLoss = trades ? trades.reduce((sum, trade) => sum + trade.profitLoss, 0) : 0;
+  // All trades (from all users) for admin
+  const totalTrades = allTrades.length;
   
-  const winningTrades = trades ? trades.filter(trade => trade.profitLoss > 0).length : 0;
-  const losingTrades = trades ? trades.filter(trade => trade.profitLoss < 0).length : 0;
-  const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+  // Calculate profit/loss and other trade statistics
+  const allProfitLoss = allTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
   
+  const winningTrades = allTrades.filter(trade => trade.profitLoss > 0).length;
+  const losingTrades = allTrades.filter(trade => trade.profitLoss < 0).length;
+  const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
+  
+  // Today's trades
   const today = new Date().toISOString().split('T')[0];
-  const todayTrades = trades ? trades.filter(trade => trade.date === today).length : 0;
-  const todayProfit = trades 
-    ? trades.filter(trade => trade.date === today)
-      .reduce((sum, trade) => sum + trade.profitLoss, 0)
-    : 0;
+  const todayTrades = allTrades.filter(trade => trade.date === today).length;
+  const todayProfit = allTrades
+    .filter(trade => trade.date === today)
+    .reduce((sum, trade) => sum + trade.profitLoss, 0);
   
   // Find most traded pair
   const pairCount: Record<string, number> = {};
-  trades?.forEach(trade => {
+  allTrades.forEach(trade => {
     pairCount[trade.pair] = (pairCount[trade.pair] || 0) + 1;
   });
   
@@ -141,19 +152,21 @@ const AdminDashboard: React.FC = () => {
   const linkedAccounts = 12;
   const totalNotes = 87;
 
-  useEffect(() => {
-    if (isAdmin) {
-      handleRefreshData();
-    }
-  }, [isAdmin]);
-
   if (!isAdmin) {
     return <Navigate to="/dashboard" />;
   }
 
   const handleRefreshData = () => {
-    const refreshedUsers = getAllUsers();
+    // Fetch users data
+    getAllUsers();
+    
+    // Fetch ALL trades across users for admin dashboard
+    const allTradesData = trades || [];
+    setAllTrades(allTradesData);
+    
+    // Update refresh timestamp
     setLastRefresh(new Date());
+    
     toast({
       title: "Data Refreshed",
       description: "Admin dashboard data has been updated"
@@ -228,6 +241,8 @@ const AdminDashboard: React.FC = () => {
 
   const handleDeleteTrade = (id: string) => {
     deleteTrade(id);
+    // Update local state to reflect the deletion
+    setAllTrades(allTrades.filter(trade => trade.id !== id));
     toast({
       title: "Trade Deleted",
       description: `Trade ${id} has been deleted`
@@ -307,7 +322,7 @@ const AdminDashboard: React.FC = () => {
             
             <StatCard
               title="Win Rate"
-              value={`${winRate.toFixed(0)}%`}
+              value={`${winRate}%`}
               icon={<Percent className="h-4 md:h-5 w-4 md:w-5" />}
               color="default"
               description={`W: ${winningTrades} / L: ${losingTrades}`}
@@ -340,7 +355,7 @@ const AdminDashboard: React.FC = () => {
               value={blockedUsers}
               icon={<UserX className="h-4 md:h-5 w-4 md:w-5" />}
               color="red"
-              description={`${blockedUsers} of ${totalUsers}`}
+              description={blockedUsers > 0 ? `${blockedUsers} of ${totalUsers}` : 'None'}
             />
           </div>
 
@@ -407,7 +422,7 @@ const AdminDashboard: React.FC = () => {
                 
                 <CardContent>
                   <TradeTable 
-                    trades={trades || []}
+                    trades={allTrades}
                     onViewTrade={handleViewTrade}
                     onEditTrade={handleEditTrade}
                     onDeleteTrade={handleDeleteTrade}

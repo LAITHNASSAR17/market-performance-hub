@@ -31,6 +31,7 @@ type TradeContextType = {
   updateTrade: (id: string, trade: Partial<Trade>) => void;
   deleteTrade: (id: string) => void;
   getTrade: (id: string) => Trade | undefined;
+  getAllTrades: () => Trade[];
   loading: boolean;
   accounts: string[];
   pairs: string[];
@@ -288,6 +289,11 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return trades.find(trade => trade.id === id);
   };
 
+  // Function for admin to get ALL trades from all users
+  const getAllTrades = (): Trade[] => {
+    return loadTradesFromStorage();
+  };
+
   const addHashtag = (hashtag: string) => {
     if (!allHashtags.includes(hashtag)) {
       setAllHashtags([...allHashtags, hashtag]);
@@ -301,6 +307,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       updateTrade, 
       deleteTrade, 
       getTrade,
+      getAllTrades,
       loading,
       accounts: sampleAccounts,
       pairs: samplePairs,

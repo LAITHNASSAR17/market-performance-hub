@@ -1,13 +1,13 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
-import { useTrade, Trade } from '@/contexts/TradeContext';
+import { useTrade } from '@/contexts/TradeContext';
 import TradeCard from '@/components/TradeCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Search, Filter } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Plus, Search } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Trades: React.FC = () => {
@@ -53,16 +53,6 @@ const Trades: React.FC = () => {
     setSearchTerm('');
     setPairFilter('all');
     setTradeTypeFilter('all');
-  };
-
-  const handleReply = (trade: Trade) => {
-    // Open a reply form or dialog for this trade
-    console.log('Reply to trade:', trade);
-  };
-
-  const handleBackTest = (trade: Trade) => {
-    // Navigate to the chart with the trade ID and backtest mode
-    navigate(`/chart?trade=${trade.id}&mode=backtest`);
   };
 
   return (
@@ -128,8 +118,6 @@ const Trades: React.FC = () => {
               trade={trade}
               onEdit={handleEditTrade}
               onDelete={handleDeleteTrade}
-              onReply={handleReply}
-              onBackTest={handleBackTest}
             />
           ))}
         </div>
