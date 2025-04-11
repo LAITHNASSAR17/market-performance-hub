@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +15,8 @@ import {
   Menu,
   X,
   UserCog,
-  ShieldAlert
+  ShieldAlert,
+  LineChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -49,6 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: t('nav.notebook'), icon: BookText, href: '/notebook' },
     { name: t('nav.reports'), icon: BarChart, href: '/reports' },
     { name: t('nav.insights'), icon: Sparkles, href: '/insights' },
+    { name: t('chart.title') || 'الشارت', icon: LineChart3, href: '/chart' },
   ];
 
   // Add admin link only for admin users
