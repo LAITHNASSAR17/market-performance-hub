@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
-import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Percent, Calendar, CircleInfo } from 'lucide-react';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Percent, Calendar, CircleIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,7 +32,6 @@ const Dashboard: React.FC = () => {
   const { trades } = useTrade();
   const [timeframeFilter, setTimeframeFilter] = useState('all');
 
-  // Calculate some basic stats
   const totalTrades = trades.length;
   const totalProfit = trades.reduce((sum, trade) => sum + trade.profitLoss, 0);
   const winningTrades = trades.filter(trade => trade.profitLoss > 0).length;
@@ -50,7 +48,6 @@ const Dashboard: React.FC = () => {
     trades[0] || { profitLoss: 0, pair: 'N/A', id: '', userId: '', account: '', date: '', type: 'Buy', entry: 0, exit: 0, lotSize: 0, stopLoss: 0, takeProfit: 0, riskPercentage: 0, returnPercentage: 0, durationMinutes: 0, notes: '', imageUrl: null, hashtags: [], createdAt: '' }
   );
 
-  // Average winning & losing trades
   const winningTradesData = trades.filter(trade => trade.profitLoss > 0);
   const avgWinningTrade = winningTradesData.length > 0 
     ? winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTradesData.length
@@ -61,12 +58,10 @@ const Dashboard: React.FC = () => {
     ? losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTradesData.length
     : 0;
 
-  // Profit factor
   const grossProfit = winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0);
   const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : 0;
 
-  // Prepare data for charts
   const getLast7Days = () => {
     const result = [];
     for (let i = 6; i >= 0; i--) {
@@ -91,7 +86,6 @@ const Dashboard: React.FC = () => {
     };
   });
 
-  // Prepare cumulative P&L data
   const cumulativeProfitData = () => {
     const sorted = [...trades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
@@ -105,13 +99,11 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  // Win rate by trade data
   const winRateData = [
     { name: 'Winning', value: winningTrades, color: '#36B37E' },
     { name: 'Losing', value: losingTrades, color: '#FF5630' }
   ];
 
-  // Prepare monthly performance data
   const getMonthlyPerformanceData = () => {
     const monthMap = new Map();
     
@@ -145,25 +137,20 @@ const Dashboard: React.FC = () => {
       }));
   };
 
-  // Calendar data
   const getCalendarData = () => {
     const currentDate = new Date();
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     
-    // Get first day of month and total days in month
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     
-    // Generate calendar data
     const calendarDays = [];
     
-    // Add empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
       calendarDays.push(null);
     }
     
-    // Add days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dateString = date.toISOString().slice(0, 10);
@@ -244,7 +231,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center">
                 Winning % By Trades
-                <CircleInfo className="h-4 w-4 ml-2 text-gray-400" />
+                <CircleIcon className="h-4 w-4 ml-2 text-gray-400" />
               </CardTitle>
             </div>
           </CardHeader>
@@ -369,7 +356,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center">
                 Winning % By Days
-                <CircleInfo className="h-4 w-4 ml-2 text-gray-400" />
+                <CircleIcon className="h-4 w-4 ml-2 text-gray-400" />
               </CardTitle>
             </div>
           </CardHeader>
@@ -454,7 +441,6 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Calendar Performance */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">June 2025</CardTitle>
