@@ -2,13 +2,16 @@
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, AlertCircle } from 'lucide-react';
+import LanguageToggle from '@/components/LanguageToggle';
 
 const Register: React.FC = () => {
+  const { t } = useLanguage();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,24 +24,24 @@ const Register: React.FC = () => {
     setError('');
     
     if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields');
+      setError(t('register.error.fillAll'));
       return;
     }
     
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('register.error.passwordMismatch'));
       return;
     }
     
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError(t('register.error.passwordLength'));
       return;
     }
     
     try {
       await register(name, email, password);
     } catch (err) {
-      setError('Failed to register. Please try again.');
+      setError(t('register.error.failed'));
     }
   };
 
@@ -49,17 +52,20 @@ const Register: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-8 relative">
           <div className="bg-blue-500 p-3 rounded-full">
             <LineChart className="h-8 w-8 text-white" />
+          </div>
+          <div className="absolute top-0 right-0">
+            <LanguageToggle />
           </div>
         </div>
         
         <Card>
           <CardHeader>
-            <CardTitle className="text-center">Create an Account</CardTitle>
+            <CardTitle className="text-center">{t('register.title')}</CardTitle>
             <CardDescription className="text-center">
-              Register to start tracking your trading performance
+              {t('register.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -72,44 +78,44 @@ const Register: React.FC = () => {
               )}
               
               <div className="mb-4">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">{t('register.fullName')}</Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Enter your full name"
+                  placeholder={t('register.fullName')}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
                 />
               </div>
               <div className="mb-4">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('register.email')}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t('register.email')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="mb-4">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('register.password')}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Create a password"
+                  placeholder={t('register.password')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
               <div className="mb-6">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">{t('register.confirmPassword')}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="Confirm your password"
+                  placeholder={t('register.confirmPassword')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -120,15 +126,15 @@ const Register: React.FC = () => {
                 className="w-full"
                 disabled={loading}
               >
-                {loading ? 'Registering...' : 'Create Account'}
+                {loading ? t('register.registering') : t('register.createAccount')}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              Already have an account?{' '}
+              {t('register.haveAccount')}{' '}
               <Link to="/login" className="text-blue-600 hover:underline">
-                Log in
+                {t('register.login')}
               </Link>
             </p>
           </CardFooter>
