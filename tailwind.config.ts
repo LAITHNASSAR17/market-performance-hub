@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,20 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Custom trading colors
+				profit: "#22c55e",
+				loss: "#ef4444",
+				trading: {
+					blue: "#1e40af",
+					lightBlue: "#3b82f6",
+					green: "#22c55e",
+					red: "#ef4444",
+					neutral: "#64748b",
+					chart: "#0ea5e9",
+					background: "#f8fafc",
+					card: "#ffffff",
+					hover: "#f1f5f9"
 				}
 			},
 			borderRadius: {
