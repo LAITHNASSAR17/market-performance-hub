@@ -11,7 +11,8 @@ interface StatCardProps {
   icon?: React.ReactNode;
   trend?: 'up' | 'down' | 'neutral';
   className?: string;
-  color?: 'default' | 'green' | 'red';
+  color?: 'default' | 'green' | 'red' | 'purple' | 'blue';
+  onClick?: () => void;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
@@ -21,12 +22,20 @@ const StatCard: React.FC<StatCardProps> = ({
   icon,
   trend,
   className,
-  color = 'default'
+  color = 'default',
+  onClick
 }) => {
   const isMobile = useIsMobile();
   
   return (
-    <Card className={cn("h-full overflow-hidden", className)}>
+    <Card 
+      className={cn(
+        "h-full overflow-hidden transition-all duration-200", 
+        onClick && "cursor-pointer hover:shadow-md", 
+        className
+      )}
+      onClick={onClick}
+    >
       <CardContent className="p-4 md:p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -34,7 +43,9 @@ const StatCard: React.FC<StatCardProps> = ({
             <h3 className={cn(
               "text-xl md:text-2xl font-bold mt-1 truncate",
               color === 'green' && "text-emerald-500",
-              color === 'red' && "text-red-500"
+              color === 'red' && "text-red-500",
+              color === 'purple' && "text-purple-500",
+              color === 'blue' && "text-blue-500"
             )}>
               {value}
               {trend && (
@@ -59,6 +70,8 @@ const StatCard: React.FC<StatCardProps> = ({
               color === 'default' && "bg-blue-50 text-blue-500",
               color === 'green' && "bg-emerald-50 text-emerald-500",
               color === 'red' && "bg-red-50 text-red-500",
+              color === 'purple' && "bg-purple-50 text-purple-500",
+              color === 'blue' && "bg-blue-50 text-blue-500",
             )}>
               {icon}
             </div>
