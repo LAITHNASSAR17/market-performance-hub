@@ -18,6 +18,11 @@ type AuthContextType = {
   logout: () => void;
   loading: boolean;
   getAllUsers: () => StoredUser[];
+  deleteUser: (userId: string) => void;
+  blockUser: (userId: string) => void;
+  unblockUser: (userId: string) => void;
+  updateSystemSettings: (settings: SystemSettings) => void;
+  getSystemSettings: () => SystemSettings;
 };
 
 type StoredUser = {
@@ -26,14 +31,39 @@ type StoredUser = {
   email: string;
   password: string;
   isAdmin?: boolean;
+  isBlocked?: boolean;
+};
+
+type SystemSettings = {
+  platformName: string;
+  supportEmail: string;
+  passwordPolicy: string;
+  sessionTimeout: number;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Add event listener for storage changes to sync across tabs
+const STORAGE_EVENT_KEY = 'trading_auth_change';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  // Initialize system settings if not exists
+  const initializeSystemSettings = () => {
+    const storedSettings = localStorage.getItem('systemSettings');
+    if (!storedSettings) {
+      const defaultSettings = {
+        platformName: 'Trading Performance Hub',
+        supportEmail: 'support@tradingplatform.com',
+        passwordPolicy: 'medium',
+        sessionTimeout: 60
+      };
+      localStorage.setItem('systemSettings', JSON.stringify(defaultSettings));
+    }
+  };
 
   useEffect(() => {
     // Check if user is logged in from localStorage
@@ -55,7 +85,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveUsers([...users, adminUser]);
     }
     
+    // Initialize system settings
+    initializeSystemSettings();
+    
+    // Add storage event listener for cross-tab synchronization
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'currentUser') {
+        if (event.newValue) {
+          setUser(JSON.parse(event.newValue));
+        } else {
+          setUser(null);
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
     setLoading(false);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const getUsers = (): StoredUser[] => {
@@ -96,6 +146,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const foundUser = users.find(user => user.email === email && user.password === password);
       
       if (foundUser) {
+        // Check if user is blocked
+        if (foundUser.isBlocked) {
+          toast({
+            variant: "destructive",
+            title: "Account blocked",
+            description: "Your account has been blocked by an administrator. Please contact support.",
+          });
+          throw new Error("Account blocked");
+        }
+        
         const { password, ...userWithoutPassword } = foundUser;
         setUser(userWithoutPassword);
         localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
@@ -180,6 +240,147 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const deleteUser = (userId: string) => {
+    // Check if user is admin
+    if (!user?.isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only administrators can delete users",
+      });
+      return;
+    }
+    
+    try {
+      const users = getUsers();
+      const updatedUsers = users.filter(user => user.id !== userId);
+      saveUsers(updatedUsers);
+      
+      toast({
+        title: "User deleted",
+        description: "User has been deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete user",
+      });
+    }
+  };
+
+  const blockUser = (userId: string) => {
+    // Check if user is admin
+    if (!user?.isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only administrators can block users",
+      });
+      return;
+    }
+    
+    try {
+      const users = getUsers();
+      const updatedUsers = users.map(user => {
+        if (user.id === userId) {
+          return { ...user, isBlocked: true };
+        }
+        return user;
+      });
+      
+      saveUsers(updatedUsers);
+      
+      toast({
+        title: "User blocked",
+        description: "User has been blocked successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to block user",
+      });
+    }
+  };
+  
+  const unblockUser = (userId: string) => {
+    // Check if user is admin
+    if (!user?.isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only administrators can unblock users",
+      });
+      return;
+    }
+    
+    try {
+      const users = getUsers();
+      const updatedUsers = users.map(user => {
+        if (user.id === userId) {
+          return { ...user, isBlocked: false };
+        }
+        return user;
+      });
+      
+      saveUsers(updatedUsers);
+      
+      toast({
+        title: "User unblocked",
+        description: "User has been unblocked successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to unblock user",
+      });
+    }
+  };
+
+  const updateSystemSettings = (settings: SystemSettings) => {
+    // Check if user is admin
+    if (!user?.isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Permission denied",
+        description: "Only administrators can update system settings",
+      });
+      return;
+    }
+    
+    try {
+      localStorage.setItem('systemSettings', JSON.stringify(settings));
+      
+      toast({
+        title: "Settings updated",
+        description: "System settings have been updated successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update system settings",
+      });
+    }
+  };
+  
+  const getSystemSettings = (): SystemSettings => {
+    const settings = localStorage.getItem('systemSettings');
+    if (settings) {
+      return JSON.parse(settings);
+    }
+    
+    // Return default settings if not found
+    return {
+      platformName: 'Trading Performance Hub',
+      supportEmail: 'support@tradingplatform.com',
+      passwordPolicy: 'medium',
+      sessionTimeout: 60
+    };
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -189,7 +390,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       register, 
       logout,
       loading,
-      getAllUsers
+      getAllUsers,
+      deleteUser,
+      blockUser,
+      unblockUser,
+      updateSystemSettings,
+      getSystemSettings
     }}>
       {children}
     </AuthContext.Provider>

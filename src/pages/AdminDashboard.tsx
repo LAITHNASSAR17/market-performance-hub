@@ -8,17 +8,36 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Search, UserCog, Users, XCircle } from 'lucide-react';
+import { AlertCircle, Ban, Search, Shield, UserCog, Users, XCircle } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const AdminDashboard: React.FC = () => {
-  const { user, isAdmin, getAllUsers } = useAuth();
+  const { user, isAdmin, getAllUsers, deleteUser, blockUser, unblockUser, updateSystemSettings, getSystemSettings } = useAuth();
   const { trades } = useTrade();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
+  const [userToToggleBlock, setUserToToggleBlock] = useState<{id: string, isBlocked: boolean} | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [platformName, setPlatformName] = useState(getSystemSettings().platformName);
+  const [supportEmail, setSupportEmail] = useState(getSystemSettings().supportEmail);
+  const [passwordPolicy, setPasswordPolicy] = useState(getSystemSettings().passwordPolicy);
+  const [sessionTimeout, setSessionTimeout] = useState(getSystemSettings().sessionTimeout.toString());
   
   // Redirect to dashboard if not admin
   if (!isAdmin) {
@@ -58,6 +77,45 @@ const AdminDashboard: React.FC = () => {
       totalProfit: 0,
       winRate: 0
     };
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setUserToDelete(userId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = () => {
+    if (userToDelete) {
+      deleteUser(userToDelete);
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleToggleBlockUser = (userId: string, isCurrentlyBlocked: boolean) => {
+    setUserToToggleBlock({ id: userId, isBlocked: isCurrentlyBlocked });
+    setIsBlockDialogOpen(true);
+  };
+
+  const confirmToggleBlockUser = () => {
+    if (userToToggleBlock) {
+      if (userToToggleBlock.isBlocked) {
+        unblockUser(userToToggleBlock.id);
+      } else {
+        blockUser(userToToggleBlock.id);
+      }
+      setIsBlockDialogOpen(false);
+      setUserToToggleBlock(null);
+    }
+  };
+
+  const handleSaveSettings = () => {
+    updateSystemSettings({
+      platformName,
+      supportEmail,
+      passwordPolicy,
+      sessionTimeout: parseInt(sessionTimeout)
+    });
   };
 
   return (
@@ -126,6 +184,7 @@ const AdminDashboard: React.FC = () => {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Trades</TableHead>
                       <TableHead>Total P&L</TableHead>
                       <TableHead>Win Rate</TableHead>
@@ -146,6 +205,13 @@ const AdminDashboard: React.FC = () => {
                               <Badge variant="outline">User</Badge>
                             )}
                           </TableCell>
+                          <TableCell>
+                            {user.isBlocked ? (
+                              <Badge variant="destructive">Blocked</Badge>
+                            ) : (
+                              <Badge variant="default" className="bg-green-500">Active</Badge>
+                            )}
+                          </TableCell>
                           <TableCell>{stats.totalTrades}</TableCell>
                           <TableCell className={stats.totalProfit >= 0 ? "text-green-600" : "text-red-600"}>
                             ${stats.totalProfit.toFixed(2)}
@@ -154,7 +220,24 @@ const AdminDashboard: React.FC = () => {
                           <TableCell>
                             <div className="flex gap-2">
                               <Button variant="outline" size="sm">View</Button>
-                              <Button variant="destructive" size="sm">Delete</Button>
+                              {!user.isAdmin && (
+                                <>
+                                  <Button 
+                                    variant={user.isBlocked ? "default" : "secondary"} 
+                                    size="sm"
+                                    onClick={() => handleToggleBlockUser(user.id, !!user.isBlocked)}
+                                  >
+                                    {user.isBlocked ? "Unblock" : "Block"}
+                                  </Button>
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleDeleteUser(user.id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -162,7 +245,7 @@ const AdminDashboard: React.FC = () => {
                     })}
                     {filteredUsers.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
+                        <TableCell colSpan={8} className="text-center py-8">
                           <div className="flex flex-col items-center text-gray-500">
                             <AlertCircle className="h-8 w-8 mb-2" />
                             <p>No users found</p>
@@ -244,11 +327,19 @@ const AdminDashboard: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="platform-name">Platform Name</Label>
-                      <Input id="platform-name" defaultValue="Trading Performance Hub" />
+                      <Input 
+                        id="platform-name" 
+                        value={platformName}
+                        onChange={(e) => setPlatformName(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="platform-email">Support Email</Label>
-                      <Input id="platform-email" defaultValue="support@tradingplatform.com" />
+                      <Input 
+                        id="platform-email" 
+                        value={supportEmail}
+                        onChange={(e) => setSupportEmail(e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -258,8 +349,11 @@ const AdminDashboard: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="password-policy">Password Policy</Label>
-                      <Select defaultValue="medium">
-                        <SelectTrigger>
+                      <Select 
+                        value={passwordPolicy} 
+                        onValueChange={setPasswordPolicy}
+                      >
+                        <SelectTrigger id="password-policy">
                           <SelectValue placeholder="Select password policy" />
                         </SelectTrigger>
                         <SelectContent>
@@ -271,51 +365,74 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
-                      <Input id="session-timeout" type="number" defaultValue="60" />
+                      <Input 
+                        id="session-timeout" 
+                        type="number" 
+                        value={sessionTimeout}
+                        onChange={(e) => setSessionTimeout(e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
                 
-                <Button className="w-full md:w-auto">Save Settings</Button>
+                <Button className="w-full md:w-auto" onClick={handleSaveSettings}>
+                  Save Settings
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Delete User Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteUser}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Block/Unblock User Confirmation Dialog */}
+      <Dialog open={isBlockDialogOpen} onOpenChange={setIsBlockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {userToToggleBlock?.isBlocked ? "Confirm Unblock User" : "Confirm Block User"}
+            </DialogTitle>
+            <DialogDescription>
+              {userToToggleBlock?.isBlocked 
+                ? "Are you sure you want to unblock this user? They will be able to log in again."
+                : "Are you sure you want to block this user? They will not be able to log in until unblocked."
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBlockDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant={userToToggleBlock?.isBlocked ? "default" : "destructive"} 
+              onClick={confirmToggleBlockUser}
+            >
+              {userToToggleBlock?.isBlocked ? "Unblock" : "Block"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
-
-// Helper components
-const Label: React.FC<{ htmlFor: string; children: React.ReactNode }> = ({ htmlFor, children }) => (
-  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
-);
-
-const Select: React.FC<{ defaultValue: string; children: React.ReactNode }> = ({ defaultValue, children }) => (
-  <div className="relative">
-    <select 
-      className="w-full h-10 px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-      defaultValue={defaultValue}
-    >
-      {children}
-    </select>
-  </div>
-);
-
-const SelectContent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <>{children}</>
-);
-
-const SelectTrigger: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <>{children}</>
-);
-
-const SelectValue: React.FC<{ placeholder: string }> = ({ placeholder }) => (
-  <span className="text-gray-500">{placeholder}</span>
-);
-
-const SelectItem: React.FC<{ value: string; children: React.ReactNode }> = ({ value, children }) => (
-  <option value={value}>{children}</option>
-);
 
 export default AdminDashboard;
