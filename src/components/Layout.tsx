@@ -15,13 +15,15 @@ import {
   Sparkles,
   Menu,
   X,
-  UserCog
+  UserCog,
+  ShieldAlert
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import LanguageToggle from '@/components/LanguageToggle';
 
 interface LayoutProps {
@@ -51,7 +53,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Add admin link only for admin users
   if (isAdmin) {
-    navigation.push({ name: t('nav.adminPanel'), icon: UserCog, href: '/admin' });
+    navigation.push({ name: t('nav.adminPanel'), icon: ShieldAlert, href: '/admin' });
   }
 
   const toggleSidebar = () => {
@@ -141,15 +143,5 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     </div>
   );
 };
-
-// Add Badge component
-const Badge = ({ className, children }: { className?: string, children: React.ReactNode }) => (
-  <span className={cn(
-    "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-    className
-  )}>
-    {children}
-  </span>
-);
 
 export default Layout;
