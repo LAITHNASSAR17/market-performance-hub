@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +17,7 @@ import {
   X,
   UserCog,
   ShieldAlert,
-  LineChart3
+  LineChart as LineChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

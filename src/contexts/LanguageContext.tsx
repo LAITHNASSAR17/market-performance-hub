@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type Language = 'ar' | 'en';
@@ -206,6 +205,35 @@ export const translations: TranslationsType = {
   'nav.admin': {
     ar: 'مسؤول',
     en: 'Admin',
+  },
+  // Chart page translations
+  'chart.title': {
+    ar: 'الشارت',
+    en: 'Chart',
+  },
+  'chart.tradingViewChart': {
+    ar: 'مخطط التداول',
+    en: 'Trading View Chart',
+  },
+  'chart.description': {
+    ar: 'استخدم مخطط TradingView للتحليل الفني وتتبع الأسواق المالية',
+    en: 'Use TradingView chart for technical analysis and tracking financial markets',
+  },
+  'chart.forex': {
+    ar: 'العملات',
+    en: 'Forex',
+  },
+  'chart.crypto': {
+    ar: 'العملات الرقمية',
+    en: 'Crypto',
+  },
+  'chart.stocks': {
+    ar: 'الأسهم',
+    en: 'Stocks',
+  },
+  'chart.indices': {
+    ar: 'المؤشرات',
+    en: 'Indices',
   },
 };
 
