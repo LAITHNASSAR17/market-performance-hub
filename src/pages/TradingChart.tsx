@@ -8,9 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useTrade, Trade } from '@/contexts/TradeContext';
-import { useLocation } from 'react-router-dom';
-import { Play, Pause, SkipBack, SkipForward, Calendar } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Play, Pause, SkipBack, SkipForward, Calendar, RotateCcw, FastForward, X } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent
+} from '@/components/ui/chart';
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -18,22 +26,45 @@ declare global {
   }
 }
 
+type ReplayMode = 'standard' | 'backtest';
+type TimeFrame = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d';
+
 const TradingChart: React.FC = () => {
   const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<any>(null);
+  const navigate = useNavigate();
+  
+  // Chart settings
   const [symbolType, setSymbolType] = useState("forex");
-  const [replayMode, setReplayMode] = useState(false);
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>("15m");
+  
+  // Replay state
+  const [replayMode, setReplayMode] = useState<ReplayMode | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [replaySpeed, setReplaySpeed] = useState(1);
+  const [currentPosition, setCurrentPosition] = useState(0); // 0-100 for progress
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  
+  // Trade data
   const [currentTrade, setCurrentTrade] = useState<Trade | null>(null);
   const { trades, getTrade } = useTrade();
   const location = useLocation();
 
+  // Initialize the chart and load trade if specified
   useEffect(() => {
     // Check if a trade ID was passed in the URL
     const params = new URLSearchParams(location.search);
     const tradeId = params.get('trade');
+    const mode = params.get('mode');
+    
+    // Set replay mode based on URL
+    if (mode === 'backtest' && tradeId) {
+      setReplayMode('backtest');
+    } else if (mode === 'replay') {
+      setReplayMode('standard');
+    }
     
     if (tradeId) {
       const trade = getTrade(tradeId);
@@ -46,8 +77,14 @@ const TradingChart: React.FC = () => {
           setSymbolType('crypto');
         }
         
-        // Enable replay mode
-        setReplayMode(true);
+        // Set dates for the trade replay
+        const tradeDate = new Date(trade.date);
+        setStartDate(trade.date);
+        
+        // Calculate end date (trade date + duration in minutes)
+        const endDate = new Date(tradeDate);
+        endDate.setMinutes(endDate.getMinutes() + trade.durationMinutes);
+        setEndDate(endDate.toISOString().split('T')[0]);
         
         toast({
           title: t('chart.tradeLoaded') || "تم تحميل الصفقة",
@@ -67,7 +104,6 @@ const TradingChart: React.FC = () => {
         script.parentNode.removeChild(script);
       }
       if (widgetRef.current) {
-        // Clean up isn't typically required, but good practice
         try {
           widgetRef.current = null;
         } catch (e) {
@@ -77,11 +113,12 @@ const TradingChart: React.FC = () => {
     };
   }, [location, getTrade]);
 
+  // Initialize or update the widget when dependencies change
   useEffect(() => {
     if (window.TradingView && containerRef.current) {
       initWidget();
     }
-  }, [symbolType, currentTrade]);
+  }, [symbolType, currentTrade, timeFrame]);
 
   const initWidget = () => {
     if (!window.TradingView || !containerRef.current) return;
@@ -98,11 +135,14 @@ const TradingChart: React.FC = () => {
       symbol = convertPairToTradingViewSymbol(currentTrade.pair);
     }
 
+    // Determine interval based on timeFrame
+    const interval = timeFrameToInterval(timeFrame);
+
     widgetRef.current = new window.TradingView.widget({
       width: '100%',
       height: 600,
       symbol: symbol,
-      interval: 'D',
+      interval: interval,
       timezone: 'Etc/UTC',
       theme: 'dark',
       style: '1',
@@ -123,18 +163,17 @@ const TradingChart: React.FC = () => {
       container_id: containerRef.current.id,
     });
 
-    // If in replay mode and we have a trade, initialize the chart with the trade date
-    if (replayMode && currentTrade && widgetRef.current) {
-      // TradingView widget doesn't expose a direct API to set the time, 
-      // but we can attempt to navigate to the specific date once the widget is loaded
+    // Initialize replay mode or backtesting if needed
+    if ((replayMode === 'standard' || replayMode === 'backtest') && currentTrade && widgetRef.current) {
       widgetRef.current.onChartReady(() => {
         try {
-          // This is a workaround - actual implementation would depend on TradingView's API
-          const tradeDate = new Date(currentTrade.date);
-          console.log("Setting chart to trade date:", tradeDate);
+          // Set the chart to trade date
+          console.log("Setting chart to trade date:", startDate);
           
-          // Display trade entry/exit on the chart
-          displayTradeOnChart(currentTrade);
+          // Display trade elements on the chart
+          if (currentTrade) {
+            displayTradeOnChart(currentTrade);
+          }
         } catch (error) {
           console.error("Error setting up trade replay:", error);
         }
@@ -142,22 +181,40 @@ const TradingChart: React.FC = () => {
     }
   };
 
+  const timeFrameToInterval = (tf: TimeFrame): string => {
+    switch(tf) {
+      case '1m': return '1';
+      case '5m': return '5';
+      case '15m': return '15';
+      case '30m': return '30';
+      case '1h': return '60';
+      case '4h': return '240';
+      case '1d': return 'D';
+      default: return '15';
+    }
+  };
+
   const displayTradeOnChart = (trade: Trade) => {
     if (!widgetRef.current) return;
     
-    // This would typically involve using TradingView's drawing tools API
-    // to add markers for entry, exit, SL, TP points
+    // This would typically use TradingView's drawing tools API
     widgetRef.current.onChartReady(() => {
       console.log("Displaying trade on chart:", trade);
-      // In a real implementation, we would use TradingView's API to:
-      // 1. Create shapes for entry/exit points
-      // 2. Add lines for stop loss and take profit levels
-      // 3. Add annotations for trade details
       
       toast({
         title: t('chart.tradeDisplayed') || "تم عرض الصفقة على الشارت",
         description: t('chart.useControls') || "استخدم أدوات التحكم لمشاهدة الصفقة",
       });
+      
+      // In a real implementation with TradingView API access you would:
+      // 1. Create a vertical line at entry point with color based on trade type
+      // 2. Create a vertical line at exit point
+      // 3. Add horizontal lines for stop loss and take profit levels
+      // 4. Add a label with trade details
+      
+      // Simulate this by setting replay position to start
+      setCurrentPosition(0);
+      setIsPlaying(false);
     });
   };
 
@@ -193,15 +250,37 @@ const TradingChart: React.FC = () => {
 
   const togglePlayPause = () => {
     setIsPlaying(!isPlaying);
+    
+    if (!isPlaying) {
+      // Start replay animation
+      toast({
+        title: t('chart.playingReplay') || "تشغيل الإعادة",
+        description: t('chart.speedMultiplier') || `سرعة الإعادة: ${replaySpeed}x`,
+      });
+      
+      // Simulate progression with interval
+      if (currentPosition >= 100) {
+        setCurrentPosition(0);
+      }
+      
+      // In real implementation with TradingView this would control their replay API
+    }
   };
 
   const handleSpeedChange = (value: number[]) => {
     setReplaySpeed(value[0]);
+    
+    if (isPlaying) {
+      toast({
+        title: t('chart.speedChanged') || "تم تغيير السرعة",
+        description: `${value[0]}x`,
+      });
+    }
   };
 
   const skipBackward = () => {
-    console.log("Skip backward");
-    // Implementation would depend on TradingView's API
+    // Move the replay back (e.g. 10%)
+    setCurrentPosition(Math.max(0, currentPosition - 10));
     toast({
       title: t('chart.skipBackward') || "الرجوع للخلف",
       description: t('chart.movingBackward') || "جاري الرجوع للخلف في الوقت",
@@ -209,18 +288,68 @@ const TradingChart: React.FC = () => {
   };
 
   const skipForward = () => {
-    console.log("Skip forward");
-    // Implementation would depend on TradingView's API
+    // Move the replay forward (e.g. 10%)
+    setCurrentPosition(Math.min(100, currentPosition + 10));
     toast({
       title: t('chart.skipForward') || "التقدم للأمام",
       description: t('chart.movingForward') || "جاري التقدم للأمام في الوقت",
     });
   };
 
+  const jumpToEnd = () => {
+    // Jump to end of replay
+    setCurrentPosition(100);
+    setIsPlaying(false);
+    toast({
+      title: t('chart.jumpToEnd') || "الانتقال إلى النهاية",
+      description: t('chart.replayComplete') || "اكتملت إعادة التشغيل",
+    });
+  };
+
+  const restartReplay = () => {
+    // Restart replay from beginning
+    setCurrentPosition(0);
+    setIsPlaying(false);
+    toast({
+      title: t('chart.restartReplay') || "إعادة التشغيل من البداية",
+      description: t('chart.replayReset') || "تم إعادة تعيين إعادة التشغيل",
+    });
+  };
+
+  const startStandardReplay = () => {
+    setReplayMode('standard');
+    setCurrentPosition(0);
+    setIsPlaying(false);
+    
+    toast({
+      title: t('chart.replayMode') || "وضع إعادة التشغيل",
+      description: t('chart.standardReplayStarted') || "تم بدء وضع إعادة التشغيل القياسي",
+    });
+  };
+
   const exitReplayMode = () => {
-    setReplayMode(false);
+    setReplayMode(null);
     setCurrentTrade(null);
     setIsPlaying(false);
+    setCurrentPosition(0);
+    navigate('/chart');
+  };
+
+  const getTradeDuration = (): string => {
+    if (!currentTrade) return "";
+    
+    const mins = currentTrade.durationMinutes;
+    if (mins < 60) {
+      return `${mins} ${t('chart.minutes') || 'دقائق'}`;
+    } else if (mins < 1440) {
+      const hours = Math.floor(mins / 60);
+      const remainingMins = mins % 60;
+      return `${hours} ${t('chart.hours') || 'ساعات'} ${remainingMins > 0 ? `${remainingMins} ${t('chart.minutes') || 'دقائق'}` : ''}`;
+    } else {
+      const days = Math.floor(mins / 1440);
+      const remainingHours = Math.floor((mins % 1440) / 60);
+      return `${days} ${t('chart.days') || 'أيام'} ${remainingHours > 0 ? `${remainingHours} ${t('chart.hours') || 'ساعات'}` : ''}`;
+    }
   };
 
   return (
@@ -228,70 +357,176 @@ const TradingChart: React.FC = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold tracking-tight">{t('chart.title') || 'الشارت'}</h1>
-          {replayMode && (
-            <Button variant="outline" onClick={exitReplayMode}>
-              {t('chart.exitReplay') || 'إنهاء إعادة التشغيل'}
-            </Button>
-          )}
+          
+          <div className="flex space-x-2 rtl:space-x-reverse">
+            {!replayMode && (
+              <Button variant="outline" onClick={startStandardReplay}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                {t('chart.startReplay') || 'وضع إعادة التشغيل'}
+              </Button>
+            )}
+            
+            {replayMode && (
+              <Button variant="outline" onClick={exitReplayMode}>
+                <X className="h-4 w-4 mr-2" />
+                {t('chart.exitReplay') || 'إنهاء إعادة التشغيل'}
+              </Button>
+            )}
+          </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>{replayMode ? (t('chart.tradeReplay') || 'إعادة تشغيل الصفقة') : (t('chart.tradingViewChart') || 'مخطط التداول')}</CardTitle>
+            <CardTitle>
+              {replayMode === 'backtest' 
+                ? (t('chart.tradeBacktest') || 'اختبار الصفقة السابقة') 
+                : replayMode === 'standard'
+                  ? (t('chart.replayMode') || 'وضع إعادة التشغيل')
+                  : (t('chart.tradingViewChart') || 'مخطط التداول')
+              }
+            </CardTitle>
             <CardDescription>
-              {replayMode 
-                ? (currentTrade ? `${currentTrade.pair} - ${currentTrade.type} - ${currentTrade.date}` : '') 
+              {replayMode && currentTrade 
+                ? `${currentTrade.pair} - ${currentTrade.type} - ${currentTrade.date}` 
                 : (t('chart.description') || 'استخدم مخطط TradingView للتحليل الفني وتتبع الأسواق المالية')}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
+            {/* Symbol & Timeframe Selection (when not in replay mode) */}
             {!replayMode && (
-              <div className="mb-4 flex flex-wrap gap-2">
-                <Button 
-                  variant={symbolType === 'forex' ? 'default' : 'outline'} 
-                  onClick={() => changeSymbolType('forex')}
-                >
-                  {t('chart.forex') || 'العملات'}
-                </Button>
-                <Button 
-                  variant={symbolType === 'crypto' ? 'default' : 'outline'} 
-                  onClick={() => changeSymbolType('crypto')}
-                >
-                  {t('chart.crypto') || 'العملات الرقمية'}
-                </Button>
-                <Button 
-                  variant={symbolType === 'stock' ? 'default' : 'outline'} 
-                  onClick={() => changeSymbolType('stock')}
-                >
-                  {t('chart.stocks') || 'الأسهم'}
-                </Button>
-                <Button 
-                  variant={symbolType === 'index' ? 'default' : 'outline'} 
-                  onClick={() => changeSymbolType('index')}
-                >
-                  {t('chart.indices') || 'المؤشرات'}
-                </Button>
+              <div className="space-y-4">
+                <div className="mb-4 flex flex-wrap gap-2">
+                  <Button 
+                    variant={symbolType === 'forex' ? 'default' : 'outline'} 
+                    onClick={() => changeSymbolType('forex')}
+                  >
+                    {t('chart.forex') || 'العملات'}
+                  </Button>
+                  <Button 
+                    variant={symbolType === 'crypto' ? 'default' : 'outline'} 
+                    onClick={() => changeSymbolType('crypto')}
+                  >
+                    {t('chart.crypto') || 'العملات الرقمية'}
+                  </Button>
+                  <Button 
+                    variant={symbolType === 'stock' ? 'default' : 'outline'} 
+                    onClick={() => changeSymbolType('stock')}
+                  >
+                    {t('chart.stocks') || 'الأسهم'}
+                  </Button>
+                  <Button 
+                    variant={symbolType === 'index' ? 'default' : 'outline'} 
+                    onClick={() => changeSymbolType('index')}
+                  >
+                    {t('chart.indices') || 'المؤشرات'}
+                  </Button>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <Select value={timeFrame} onValueChange={(v) => setTimeFrame(v as TimeFrame)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder={t('chart.timeframe') || 'الإطار الزمني'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1m">1 {t('chart.minute') || 'دقيقة'}</SelectItem>
+                      <SelectItem value="5m">5 {t('chart.minutes') || 'دقائق'}</SelectItem>
+                      <SelectItem value="15m">15 {t('chart.minutes') || 'دقيقة'}</SelectItem>
+                      <SelectItem value="30m">30 {t('chart.minutes') || 'دقيقة'}</SelectItem>
+                      <SelectItem value="1h">1 {t('chart.hour') || 'ساعة'}</SelectItem>
+                      <SelectItem value="4h">4 {t('chart.hours') || 'ساعات'}</SelectItem>
+                      <SelectItem value="1d">1 {t('chart.day') || 'يوم'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             )}
             
+            {/* Replay Date Range Selector (for standard replay) */}
+            {replayMode === 'standard' && (
+              <div className="flex flex-wrap gap-4 mb-4">
+                <div className="space-y-1 flex-1">
+                  <label className="text-sm font-medium" htmlFor="startDate">
+                    {t('chart.startDate') || 'تاريخ البدء'}
+                  </label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <label className="text-sm font-medium" htmlFor="endDate">
+                    {t('chart.endDate') || 'تاريخ الانتهاء'}
+                  </label>
+                  <Input
+                    id="endDate" 
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <label className="text-sm font-medium">
+                    {t('chart.timeframe') || 'الإطار الزمني'}
+                  </label>
+                  <Select value={timeFrame} onValueChange={(v) => setTimeFrame(v as TimeFrame)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('chart.selectTimeframe') || 'اختر الإطار الزمني'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1m">1 {t('chart.minute') || 'دقيقة'}</SelectItem>
+                      <SelectItem value="5m">5 {t('chart.minutes') || 'دقائق'}</SelectItem>
+                      <SelectItem value="15m">15 {t('chart.minutes') || 'دقيقة'}</SelectItem>
+                      <SelectItem value="30m">30 {t('chart.minutes') || 'دقيقة'}</SelectItem>
+                      <SelectItem value="1h">1 {t('chart.hour') || 'ساعة'}</SelectItem>
+                      <SelectItem value="4h">4 {t('chart.hours') || 'ساعات'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
+            {/* Replay Controls */}
             {replayMode && (
-              <div className="mb-4 space-y-4">
+              <div className="mb-4 space-y-4 p-4 border rounded-lg bg-muted/20">
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
+                  <div 
+                    className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-in-out" 
+                    style={{ width: `${currentPosition}%` }}
+                  ></div>
+                </div>
+                
+                {/* Playback Controls */}
                 <div className="flex items-center justify-center space-x-2 rtl:space-x-reverse">
-                  <Button variant="outline" size="icon" onClick={skipBackward}>
+                  <Button variant="outline" size="icon" onClick={restartReplay} title={t('chart.restart') || 'إعادة البدء'}>
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={skipBackward} title={t('chart.skipBackward') || 'الرجوع للخلف'}>
                     <SkipBack className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="icon" onClick={togglePlayPause}>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={togglePlayPause}
+                    title={isPlaying ? (t('chart.pause') || 'إيقاف مؤقت') : (t('chart.play') || 'تشغيل')}
+                  >
                     {isPlaying ? (
                       <Pause className="h-4 w-4" />
                     ) : (
                       <Play className="h-4 w-4" />
                     )}
                   </Button>
-                  <Button variant="outline" size="icon" onClick={skipForward}>
+                  <Button variant="outline" size="icon" onClick={skipForward} title={t('chart.skipForward') || 'التقدم للأمام'}>
                     <SkipForward className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon" onClick={jumpToEnd} title={t('chart.jumpToEnd') || 'الانتقال إلى النهاية'}>
+                    <FastForward className="h-4 w-4" />
                   </Button>
                 </div>
                 
+                {/* Speed Control */}
                 <div className="flex items-center space-x-4 rtl:space-x-reverse">
                   <span className="text-sm">{t('chart.speed') || 'السرعة'}:</span>
                   <Slider
@@ -306,25 +541,57 @@ const TradingChart: React.FC = () => {
                   <span className="text-sm">x{replaySpeed}</span>
                 </div>
                 
-                {currentTrade && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                {/* Trade Details (for backtest mode) */}
+                {replayMode === 'backtest' && currentTrade && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-card rounded-lg mt-2">
                     <div>
-                      <span className="font-medium">{t('trade.entry') || 'نقطة الدخول'}:</span> {currentTrade.entry}
+                      <span className="text-muted-foreground text-xs block mb-1">{t('trade.type') || 'نوع الصفقة'}</span>
+                      <div className={cn(
+                        "flex items-center font-medium",
+                        currentTrade.type === 'Buy' ? "text-green-500" : "text-red-500"
+                      )}>
+                        {currentTrade.type}
+                      </div>
                     </div>
                     <div>
-                      <span className="font-medium">{t('trade.exit') || 'نقطة الخروج'}:</span> {currentTrade.exit}
+                      <span className="text-muted-foreground text-xs block mb-1">{t('trade.entry') || 'نقطة الدخول'}</span>
+                      <div className="font-medium">{currentTrade.entry}</div>
                     </div>
                     <div>
-                      <span className="font-medium">{t('trade.stopLoss') || 'وقف الخسارة'}:</span> {currentTrade.stopLoss || '-'}
+                      <span className="text-muted-foreground text-xs block mb-1">{t('trade.exit') || 'نقطة الخروج'}</span>
+                      <div className="font-medium">{currentTrade.exit}</div>
                     </div>
                     <div>
-                      <span className="font-medium">{t('trade.takeProfit') || 'جني الأرباح'}:</span> {currentTrade.takeProfit || '-'}
+                      <span className="text-muted-foreground text-xs block mb-1">{t('trade.profitLoss') || 'الربح/الخسارة'}</span>
+                      <div className={cn(
+                        "font-medium",
+                        currentTrade.profitLoss > 0 ? "text-green-500" : "text-red-500"
+                      )}>
+                        {currentTrade.profitLoss > 0 ? '+' : ''}{currentTrade.profitLoss.toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-xs block mb-1">{t('trade.stopLoss') || 'وقف الخسارة'}</span>
+                      <div className="font-medium">{currentTrade.stopLoss || '-'}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-xs block mb-1">{t('trade.takeProfit') || 'جني الأرباح'}</span>
+                      <div className="font-medium">{currentTrade.takeProfit || '-'}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-xs block mb-1">{t('trade.duration') || 'المدة'}</span>
+                      <div className="font-medium">{getTradeDuration()}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-xs block mb-1">{t('trade.date') || 'التاريخ'}</span>
+                      <div className="font-medium">{currentTrade.date}</div>
                     </div>
                   </div>
                 )}
               </div>
             )}
             
+            {/* Chart */}
             <div id="tradingview_chart" ref={containerRef} className="w-full rounded-lg overflow-hidden border border-border" />
           </CardContent>
         </Card>

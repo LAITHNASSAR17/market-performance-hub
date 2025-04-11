@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -55,11 +56,13 @@ const Trades: React.FC = () => {
   };
 
   const handleReply = (trade: Trade) => {
-    console.log('Replying to trade:', trade);
+    // Open a reply form or dialog for this trade
+    console.log('Reply to trade:', trade);
   };
 
   const handleBackTest = (trade: Trade) => {
-    console.log('Back testing trade:', trade);
+    // Navigate to the chart with the trade ID and backtest mode
+    navigate(`/chart?trade=${trade.id}&mode=backtest`);
   };
 
   return (

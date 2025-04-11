@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { LineChart, Edit, Trash2, Reply, BarChart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Trade } from '@/contexts/TradeContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -28,6 +28,7 @@ const TradeCard: React.FC<TradeCardProps> = ({
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleDelete = (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -47,7 +48,10 @@ const TradeCard: React.FC<TradeCardProps> = ({
     })
   };
 
-  const handleReply = () => {
+  const handleReply = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (onReply) {
       onReply(trade);
       toast({
@@ -57,9 +61,14 @@ const TradeCard: React.FC<TradeCardProps> = ({
     }
   };
 
-  const handleBackTest = () => {
+  const handleBackTest = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (onBackTest) {
-      onBackTest(trade);
+      // Direct navigation to chart with trade ID
+      navigate(`/chart?trade=${trade.id}&mode=backtest`);
+      
       toast({
         title: t('trade.backTestStarted') || "بدأ الاختبار الرجعي",
         description: t('trade.backTestDescription') || "جاري تشغيل الاختبار الرجعي للتداول",
