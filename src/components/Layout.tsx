@@ -13,7 +13,8 @@ import {
   Settings, 
   Sparkles,
   Menu,
-  X
+  X,
+  UserCog
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -26,7 +27,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout, user, isAdmin } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile);
@@ -36,7 +37,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   const navigation = [
-    { name: 'Dashboard', icon: Home, href: '/' },
+    { name: 'Dashboard', icon: Home, href: '/dashboard' },
     { name: 'Add Trade', icon: PlusCircle, href: '/add-trade' },
     { name: 'Trades', icon: BookText, href: '/trades' },
     { name: 'Daily Journal', icon: Calendar, href: '/journal' },
@@ -44,6 +45,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: 'Reports', icon: BarChart, href: '/reports' },
     { name: 'Insights', icon: Sparkles, href: '/insights' },
   ];
+
+  // Add admin link only for admin users
+  if (isAdmin) {
+    navigation.push({ name: 'Admin Panel', icon: UserCog, href: '/admin' });
+  }
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -100,6 +106,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="mb-4">
               <p className="text-sm font-medium text-gray-700">Logged in as</p>
               <p className="text-sm text-gray-500 truncate">{user?.name}</p>
+              {isAdmin && (
+                <Badge className="mt-1 bg-purple-500">Admin</Badge>
+              )}
             </div>
             <Button
               variant="outline"
@@ -128,5 +137,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     </div>
   );
 };
+
+// Add Badge component
+const Badge = ({ className, children }: { className?: string, children: React.ReactNode }) => (
+  <span className={cn(
+    "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+    className
+  )}>
+    {children}
+  </span>
+);
 
 export default Layout;

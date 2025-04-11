@@ -18,6 +18,7 @@ import Journal from "./pages/Journal";
 import Notebook from "./pages/Notebook";
 import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/notebook" element={<Notebook />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/insights" element={<Insights />} />
+                <Route path="/admin" element={<AdminDashboard />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
