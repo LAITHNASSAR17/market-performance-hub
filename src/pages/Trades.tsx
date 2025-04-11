@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Search, Filter } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Trades: React.FC = () => {
   const { trades, deleteTrade, pairs } = useTrade();
@@ -16,6 +16,7 @@ const Trades: React.FC = () => {
   const [pairFilter, setPairFilter] = useState('all');
   const [tradeTypeFilter, setTradeTypeFilter] = useState('all');
   const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Apply filters
   const filteredTrades = trades.filter(trade => {
@@ -34,6 +35,11 @@ const Trades: React.FC = () => {
   const sortedTrades = [...filteredTrades].sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
+
+  const handleEditTrade = (id: string) => {
+    // Navigate to edit trade page or form
+    navigate(`/edit-trade/${id}`);
+  };
 
   const handleDeleteTrade = (id: string) => {
     setTradeToDelete(id);
@@ -115,6 +121,7 @@ const Trades: React.FC = () => {
             <TradeCard
               key={trade.id}
               trade={trade}
+              onEdit={handleEditTrade}
               onDelete={handleDeleteTrade}
             />
           ))}
