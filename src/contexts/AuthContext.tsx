@@ -223,7 +223,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('users', JSON.stringify(allUsers));
       setUsers(allUsers);
       
-      if (user.id === this?.user?.id) {
+      if (user.id === user?.id) {
         logout();
       }
     } else {
