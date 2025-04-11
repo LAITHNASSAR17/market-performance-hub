@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,13 +8,29 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTrade, Trade } from '@/contexts/TradeContext';
-import { ChartLine, ChartBarIcon, Target, DollarSign, CircleCheck, CircleX, Lightbulb, BookMarked, Repeat, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { 
+  ChartLine, 
+  ChartBarIcon, 
+  Target, 
+  DollarSign, 
+  CircleCheck, 
+  CircleX, 
+  Lightbulb, 
+  BookMarked, 
+  Repeat, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  Star,
+  Plus
+} from 'lucide-react';
 
 import TradeStatsCard from '@/components/analytics/TradeStatsCard';
 import TagList from '@/components/analytics/TagList';
 import RunningPLChart from '@/components/analytics/RunningPLChart';
 import PlaybookCard from '@/components/analytics/PlaybookCard';
+import { Badge } from '@/components/ui/badge';
 
+// State for tags
 const Analytics: React.FC = () => {
   const { t } = useLanguage();
   const { trades } = useTrade();
