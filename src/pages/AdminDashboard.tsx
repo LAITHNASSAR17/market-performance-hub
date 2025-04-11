@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -28,8 +27,6 @@ const AdminDashboard: React.FC = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState('');
-
-  // No need to call getAllUsers here as it's now handled in the AuthContext
 
   if (!isAdmin) {
     return <Navigate to="/dashboard" />;
@@ -129,7 +126,6 @@ const AdminDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Change Password Modal */}
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
         <DialogContent>
           <DialogHeader>

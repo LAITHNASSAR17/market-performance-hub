@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
@@ -8,9 +7,11 @@ interface User {
   id: string;
   name: string;
   email: string;
-  password?: string; // Password should be optional here
+  password?: string;
   isAdmin?: boolean;
   isBlocked?: boolean;
+  encryptedName?: string;
+  encryptedEmail?: string;
 }
 
 interface AuthContextType {
@@ -18,7 +19,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isAuthenticated: boolean;
   loading: boolean;
-  users: User[]; // Add users property to the type
+  users: User[];
   register: (name: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -28,7 +29,7 @@ interface AuthContextType {
   getAllUsers: () => User[];
   blockUser: (user: User) => Promise<void>;
   unblockUser: (user: User) => Promise<void>;
-  changePassword: (email: string, newPassword: string) => Promise<void>; // Add changePassword to the type
+  changePassword: (email: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,7 +38,6 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-// Extend the User interface to include encrypted data
 interface StoredUser extends User {
   encryptedName: string;
   encryptedEmail: string;
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<User[]>([]); // Add users state
+  const [users, setUsers] = useState<User[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -67,7 +67,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }
     
-    // Load all users on initial render
     const allUsers = getAllUsers();
     setUsers(allUsers);
     
@@ -94,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     allUsers.push(newUser);
     localStorage.setItem('users', JSON.stringify(allUsers));
     setUsers(allUsers);
-    await login(email, password); // Automatically log in the user after registration
+    await login(email, password);
     setLoading(false);
   };
 
@@ -110,8 +109,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       const decryptedUser = { 
         ...foundUser, 
-        name: decryptData(foundUser.encryptedName || ''), 
-        email: decryptData(foundUser.encryptedEmail || '') 
+        name: foundUser.encryptedName ? decryptData(foundUser.encryptedName) : foundUser.name, 
+        email: foundUser.encryptedEmail ? decryptData(foundUser.encryptedEmail) : foundUser.email 
       };
       localStorage.setItem('user', encryptData(JSON.stringify(decryptedUser)));
       setUser(decryptedUser);
@@ -134,12 +133,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const forgotPassword = async (email: string): Promise<void> => {
-    // In a real application, you would send a reset code to the user's email
     console.log(`Forgot password requested for ${email}`);
-    // Here, we'll just store a reset code in localStorage for simplicity
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
     localStorage.setItem(`resetCode_${email}`, resetCode);
-    console.log(`Reset code for ${email}: ${resetCode}`); // This would be sent in email
+    console.log(`Reset code for ${email}: ${resetCode}`);
     toast({
       title: "Reset Code Generated",
       description: "Check console for the reset code (would be emailed in a real app)"
@@ -174,7 +171,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const allUsers = getAllUsers();
     const userIndex = allUsers.findIndex(user => user.id === updatedUser.id);
     if (userIndex !== -1) {
-      // Encrypt name and email before storing
       const encryptedName = encryptData(updatedUser.name);
       const encryptedEmail = encryptData(updatedUser.email);
 
@@ -190,7 +186,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('users', JSON.stringify(allUsers));
       setUsers(allUsers);
 
-      // If the updated user is the currently logged-in user, update the stored user data
       if (user && user.id === updatedUser.id) {
         const decryptedUser = { ...updatedUser, name: updatedUser.name, email: updatedUser.email };
         localStorage.setItem('user', encryptData(JSON.stringify(decryptedUser)));
@@ -209,10 +204,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const parsedUsers = JSON.parse(storedUsers);
       return parsedUsers.map((user: any) => {
-        // Make sure all users have a password field
         return {
           ...user,
-          password: user.password || '' // Use default value if not present
+          password: user.password || ''
         };
       });
     } catch (error) {
@@ -229,7 +223,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('users', JSON.stringify(allUsers));
       setUsers(allUsers);
       
-      // If the blocked user is the currently logged-in user, log them out
       if (user.id === this?.user?.id) {
         logout();
       }
@@ -250,7 +243,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Add changePassword function
   const changePassword = async (email: string, newPassword: string): Promise<void> => {
     const hashedPassword = hashPassword(newPassword);
     const allUsers = getAllUsers();
@@ -274,7 +266,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAdmin,
     isAuthenticated,
     loading,
-    users, // Expose users state
+    users,
     register,
     login,
     logout,
@@ -284,7 +276,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getAllUsers,
     blockUser,
     unblockUser,
-    changePassword, // Expose changePassword function
+    changePassword,
   };
 
   return (
