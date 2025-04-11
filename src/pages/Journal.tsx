@@ -13,12 +13,12 @@ import { cn } from '@/lib/utils';
 
 const Journal: React.FC = () => {
   const { trades, pairs } = useTrade();
-  const [dateFilter, setDateFilter] = useState('');
-  const [pairFilter, setPairFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [pairFilter, setPairFilter] = useState('all');
 
   const filteredTrades = trades.filter(trade => {
-    const matchesDate = dateFilter === '' || trade.date === dateFilter;
-    const matchesPair = pairFilter === '' || trade.pair === pairFilter;
+    const matchesDate = dateFilter === 'all' || trade.date === dateFilter;
+    const matchesPair = pairFilter === 'all' || trade.pair === pairFilter;
     return matchesDate && matchesPair;
   });
 
@@ -58,8 +58,8 @@ const Journal: React.FC = () => {
           <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
             type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+            value={dateFilter !== 'all' ? dateFilter : ''}
+            onChange={(e) => setDateFilter(e.target.value || 'all')}
             className="pl-9"
           />
         </div>
@@ -68,7 +68,7 @@ const Journal: React.FC = () => {
             <SelectValue placeholder="All pairs" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All pairs</SelectItem>
+            <SelectItem value="all">All pairs</SelectItem>
             {pairs.map(pair => (
               <SelectItem key={pair} value={pair}>{pair}</SelectItem>
             ))}
@@ -77,8 +77,8 @@ const Journal: React.FC = () => {
         <Button 
           variant="outline" 
           onClick={() => {
-            setDateFilter('');
-            setPairFilter('');
+            setDateFilter('all');
+            setPairFilter('all');
           }}
         >
           Clear Filters

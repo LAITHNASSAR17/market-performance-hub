@@ -13,8 +13,8 @@ import { Link } from 'react-router-dom';
 const Trades: React.FC = () => {
   const { trades, deleteTrade, pairs } = useTrade();
   const [searchTerm, setSearchTerm] = useState('');
-  const [pairFilter, setPairFilter] = useState('');
-  const [tradeTypeFilter, setTradeTypeFilter] = useState('');
+  const [pairFilter, setPairFilter] = useState('all');
+  const [tradeTypeFilter, setTradeTypeFilter] = useState('all');
   const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
 
   // Apply filters
@@ -24,8 +24,8 @@ const Trades: React.FC = () => {
       trade.notes.toLowerCase().includes(searchTerm.toLowerCase()) ||
       trade.hashtags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesPair = pairFilter === '' || trade.pair === pairFilter;
-    const matchesType = tradeTypeFilter === '' || trade.type === tradeTypeFilter;
+    const matchesPair = pairFilter === 'all' || trade.pair === pairFilter;
+    const matchesType = tradeTypeFilter === 'all' || trade.type === tradeTypeFilter;
     
     return matchesSearch && matchesPair && matchesType;
   });
@@ -48,8 +48,8 @@ const Trades: React.FC = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setPairFilter('');
-    setTradeTypeFilter('');
+    setPairFilter('all');
+    setTradeTypeFilter('all');
   };
 
   return (
@@ -86,7 +86,7 @@ const Trades: React.FC = () => {
               <SelectValue placeholder="All pairs" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All pairs</SelectItem>
+              <SelectItem value="all">All pairs</SelectItem>
               {pairs.map(pair => (
                 <SelectItem key={pair} value={pair}>{pair}</SelectItem>
               ))}
@@ -97,7 +97,7 @@ const Trades: React.FC = () => {
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All types</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               <SelectItem value="Buy">Buy</SelectItem>
               <SelectItem value="Sell">Sell</SelectItem>
             </SelectContent>
