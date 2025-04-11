@@ -22,7 +22,7 @@ const Notebook: React.FC = () => {
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [tagFilter, setTagFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -41,7 +41,7 @@ const Notebook: React.FC = () => {
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
       note.content.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesTag = tagFilter === '' || note.tags.includes(tagFilter);
+    const matchesTag = tagFilter === 'all' || note.tags.includes(tagFilter);
     
     return matchesSearch && matchesTag;
   });
@@ -161,7 +161,7 @@ const Notebook: React.FC = () => {
               <SelectValue placeholder="All tags" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All tags</SelectItem>
+              <SelectItem value="all">All tags</SelectItem>
               {noteTags.map(tag => (
                 <SelectItem key={tag} value={tag}>{tag}</SelectItem>
               ))}
@@ -169,7 +169,7 @@ const Notebook: React.FC = () => {
           </Select>
           <Button variant="outline" onClick={() => {
             setSearchTerm('');
-            setTagFilter('');
+            setTagFilter('all');
           }}>
             Clear Filters
           </Button>
@@ -300,7 +300,7 @@ const Notebook: React.FC = () => {
                   <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}
@@ -364,7 +364,7 @@ const Notebook: React.FC = () => {
                   <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}
