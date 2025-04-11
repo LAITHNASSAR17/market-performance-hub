@@ -33,6 +33,8 @@ import {
 } from 'lucide-react';
 import Layout from '@/components/Layout';
 import StatCard from '@/components/StatCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Tabs,
   TabsContent,
