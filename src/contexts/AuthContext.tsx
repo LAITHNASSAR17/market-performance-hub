@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
 
 type User = {
   id: string;
@@ -24,6 +25,7 @@ type AuthContextType = {
   getSystemSettings: () => SystemSettings;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
+  getUserDetails: (userId: string) => UserDetails | null;
 };
 
 type StoredUser = {
@@ -35,6 +37,26 @@ type StoredUser = {
   isBlocked?: boolean;
   resetPasswordCode?: string;
   resetPasswordExpiry?: number;
+  lastLogin?: string;
+  createdAt: string;
+  loginAttempts?: number;
+};
+
+type UserDetails = {
+  id: string;
+  name: string;
+  email: string;
+  isAdmin?: boolean;
+  isBlocked?: boolean;
+  lastLogin?: string;
+  createdAt: string;
+  loginHistory: LoginRecord[];
+};
+
+type LoginRecord = {
+  timestamp: string;
+  success: boolean;
+  ipAddress?: string;
 };
 
 type SystemSettings = {
@@ -42,6 +64,8 @@ type SystemSettings = {
   supportEmail: string;
   passwordPolicy: string;
   sessionTimeout: number;
+  dataEncryption: boolean;
+  maxLoginAttempts: number;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,7 +74,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const STORAGE_EVENT_KEYS = {
   CURRENT_USER: 'currentUser',
   USERS: 'users',
-  SYSTEM_SETTINGS: 'systemSettings'
+  SYSTEM_SETTINGS: 'systemSettings',
+  LOGIN_HISTORY: 'loginHistory'
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -66,7 +91,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         platformName: 'Trading Performance Hub',
         supportEmail: 'support@tradingplatform.com',
         passwordPolicy: 'medium',
-        sessionTimeout: 60
+        sessionTimeout: 60,
+        dataEncryption: true,
+        maxLoginAttempts: 5
       };
       localStorage.setItem(STORAGE_EVENT_KEYS.SYSTEM_SETTINGS, JSON.stringify(defaultSettings));
     }
@@ -83,10 +110,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: 'admin-' + Date.now().toString(),
         name: 'Admin',
         email: 'admin@example.com',
-        password: 'admin123',
-        isAdmin: true
+        password: hashPassword('admin123'),
+        isAdmin: true,
+        createdAt: new Date().toISOString()
       });
       usersChanged = true;
+    } else {
+      // Update existing admin account to use hashed password
+      const adminIndex = users.findIndex(user => user.email === 'admin@example.com');
+      if (adminIndex !== -1 && !users[adminIndex].password.startsWith('0x')) {
+        users[adminIndex].password = hashPassword('admin123');
+        usersChanged = true;
+      }
     }
 
     // Check for demo account
@@ -95,9 +130,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: 'demo-' + Date.now().toString(),
         name: 'Demo User',
         email: 'demo@example.com',
-        password: 'password'
+        password: hashPassword('password'),
+        createdAt: new Date().toISOString()
       });
       usersChanged = true;
+    } else {
+      // Update existing demo account to use hashed password
+      const demoIndex = users.findIndex(user => user.email === 'demo@example.com');
+      if (demoIndex !== -1 && !users[demoIndex].password.startsWith('0x')) {
+        users[demoIndex].password = hashPassword('password');
+        usersChanged = true;
+      }
     }
 
     if (usersChanged) {
@@ -148,65 +191,169 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const getAllUsers = () => {
-    return getUsers();
+    // Admin can see all user data
+    if (user?.isAdmin) {
+      return getUsers();
+    }
+    
+    // Non-admin users only see limited user data
+    const users = getUsers();
+    return users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      isAdmin: u.isAdmin,
+      isBlocked: u.isBlocked,
+      createdAt: u.createdAt
+    }));
+  };
+
+  const getUserDetails = (userId: string): UserDetails | null => {
+    // Only admin can access full user details
+    if (!user?.isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "الوصول مرفوض",
+        description: "فقط المسؤولون يمكنهم الوصول إلى تفاصيل المستخدم",
+      });
+      return null;
+    }
+    
+    const users = getUsers();
+    const foundUser = users.find(u => u.id === userId);
+    
+    if (!foundUser) {
+      return null;
+    }
+    
+    // Get login history for user (if implemented)
+    const loginHistory = getLoginHistory(userId);
+    
+    return {
+      id: foundUser.id,
+      name: foundUser.name,
+      email: foundUser.email,
+      isAdmin: foundUser.isAdmin,
+      isBlocked: foundUser.isBlocked,
+      lastLogin: foundUser.lastLogin,
+      createdAt: foundUser.createdAt,
+      loginHistory: loginHistory || []
+    };
+  };
+
+  const getLoginHistory = (userId: string): LoginRecord[] => {
+    const historyData = localStorage.getItem(STORAGE_EVENT_KEYS.LOGIN_HISTORY);
+    if (!historyData) return [];
+    
+    const allHistory = JSON.parse(historyData);
+    return allHistory[userId] || [];
+  };
+
+  const addLoginRecord = (userId: string, success: boolean) => {
+    const historyData = localStorage.getItem(STORAGE_EVENT_KEYS.LOGIN_HISTORY);
+    const allHistory = historyData ? JSON.parse(historyData) : {};
+    
+    if (!allHistory[userId]) {
+      allHistory[userId] = [];
+    }
+    
+    // Add new login record
+    allHistory[userId].push({
+      timestamp: new Date().toISOString(),
+      success: success
+    });
+    
+    // Keep only last 50 records
+    if (allHistory[userId].length > 50) {
+      allHistory[userId] = allHistory[userId].slice(-50);
+    }
+    
+    localStorage.setItem(STORAGE_EVENT_KEYS.LOGIN_HISTORY, JSON.stringify(allHistory));
   };
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
       
-      // Check demo account
-      if (email === 'demo@example.com' && password === 'password') {
-        const demoUser = {
-          id: '1',
-          name: 'Demo User',
-          email: 'demo@example.com'
-        };
-        setUser(demoUser);
-        localStorage.setItem('currentUser', JSON.stringify(demoUser));
-        toast({
-          title: "Login successful",
-          description: "Welcome back to your trading dashboard!",
-        });
-        return;
-      }
+      // Get system settings
+      const settings = getSystemSettings();
       
       // Check registered users
       const users = getUsers();
-      const foundUser = users.find(user => user.email === email && user.password === password);
+      const foundUser = users.find(user => user.email === email);
       
-      if (foundUser) {
-        // Check if user is blocked
-        if (foundUser.isBlocked) {
-          toast({
-            variant: "destructive",
-            title: "Account blocked",
-            description: "Your account has been blocked by an administrator. Please contact support.",
-          });
-          throw new Error("Account blocked");
-        }
-        
-        const { password, ...userWithoutPassword } = foundUser;
-        setUser(userWithoutPassword);
-        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
-        toast({
-          title: "Login successful",
-          description: `Welcome back ${userWithoutPassword.isAdmin ? 'Admin' : ''} to your trading dashboard!`,
-        });
-      } else {
+      if (!foundUser) {
+        // Don't reveal if user exists or not
         toast({
           variant: "destructive",
-          title: "Login failed",
-          description: "Invalid email or password. Try demo@example.com / password or admin@example.com / admin123",
+          title: "فشل تسجيل الدخول",
+          description: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
         });
+        addLoginRecord(email, false);
         throw new Error("Invalid credentials");
       }
-    } catch (error) {
+      
+      // Check if user is blocked
+      if (foundUser.isBlocked) {
+        toast({
+          variant: "destructive",
+          title: "الحساب محظور",
+          description: "تم حظر حسابك من قبل المسؤول. يرجى الاتصال بالدعم.",
+        });
+        addLoginRecord(foundUser.id, false);
+        throw new Error("Account blocked");
+      }
+      
+      // Check login attempts
+      if (foundUser.loginAttempts && foundUser.loginAttempts >= settings.maxLoginAttempts) {
+        // Auto-block account if max attempts reached
+        foundUser.isBlocked = true;
+        saveUsers(users);
+        
+        toast({
+          variant: "destructive",
+          title: "الحساب محظور",
+          description: "تم حظر الحساب بسبب محاولات تسجيل دخول متعددة فاشلة",
+        });
+        addLoginRecord(foundUser.id, false);
+        throw new Error("Account blocked due to too many failed attempts");
+      }
+      
+      // Verify password
+      const passwordMatches = comparePassword(password, foundUser.password);
+      
+      if (!passwordMatches) {
+        // Increment failed login attempts
+        foundUser.loginAttempts = (foundUser.loginAttempts || 0) + 1;
+        saveUsers(users);
+        
+        toast({
+          variant: "destructive",
+          title: "فشل تسجيل الدخول",
+          description: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+        });
+        addLoginRecord(foundUser.id, false);
+        throw new Error("Invalid credentials");
+      }
+      
+      // Login successful, reset login attempts and update last login
+      foundUser.loginAttempts = 0;
+      foundUser.lastLogin = new Date().toISOString();
+      saveUsers(users);
+      
+      // Create user object without sensitive information
+      const { password: _, ...userWithoutPassword } = foundUser;
+      setUser(userWithoutPassword);
+      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+      
       toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: "An error occurred during login",
+        title: "تم تسجيل الدخول بنجاح",
+        description: `مرحباً بعودتك ${userWithoutPassword.isAdmin ? 'مسؤول' : ''} إلى لوحة التحكم!`,
       });
+      
+      addLoginRecord(foundUser.id, true);
+    } catch (error) {
+      // Toast notifications are handled in the code above
       throw error;
     } finally {
       setLoading(false);
@@ -222,19 +369,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (users.some(user => user.email === email)) {
         toast({
           variant: "destructive",
-          title: "Registration failed",
-          description: "Email already registered. Please use a different email or login.",
+          title: "فشل التسجيل",
+          description: "البريد الإلكتروني مسجل بالفعل. يرجى استخدام بريد إلكتروني مختلف أو تسجيل الدخول.",
         });
         throw new Error("Email already registered");
       }
+      
+      // Hash password before storing
+      const hashedPassword = hashPassword(password);
       
       // Create new user
       const newUser = {
         id: Date.now().toString(),
         name,
         email,
-        password,
-        isAdmin: false
+        password: hashedPassword,
+        isAdmin: false,
+        createdAt: new Date().toISOString(),
+        loginAttempts: 0
       };
       
       // Save user to "database"
@@ -246,15 +398,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
       
       toast({
-        title: "Registration successful",
-        description: "Your account has been created!",
+        title: "تم التسجيل بنجاح",
+        description: "تم إنشاء حسابك!",
       });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Registration failed",
-        description: "An error occurred during registration",
-      });
+      // Toast is already handled above
       throw error;
     } finally {
       setLoading(false);
@@ -265,8 +413,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem('currentUser');
     toast({
-      title: "Logged out",
-      description: "You have been logged out successfully",
+      title: "تم تسجيل الخروج",
+      description: "تم تسجيل خروجك بنجاح",
     });
   };
 
@@ -275,8 +423,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user?.isAdmin) {
       toast({
         variant: "destructive",
-        title: "Permission denied",
-        description: "Only administrators can delete users",
+        title: "الإذن مرفوض",
+        description: "فقط المسؤولون يمكنهم حذف المستخدمين",
       });
       return;
     }
@@ -287,8 +435,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveUsers(updatedUsers);
       
       toast({
-        title: "User deleted",
-        description: "User has been deleted successfully",
+        title: "تم حذف المستخدم",
+        description: "تم حذف المستخدم بنجاح",
       });
       
       // Dispatch a custom event to notify other tabs
@@ -296,8 +444,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to delete user",
+        title: "خطأ",
+        description: "فشل حذف المستخدم",
       });
     }
   };
@@ -307,8 +455,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user?.isAdmin) {
       toast({
         variant: "destructive",
-        title: "Permission denied",
-        description: "Only administrators can block users",
+        title: "الإذن مرفوض",
+        description: "فقط المسؤولون يمكنهم حظر المستخدمين",
       });
       return;
     }
@@ -325,8 +473,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveUsers(updatedUsers);
       
       toast({
-        title: "User blocked",
-        description: "User has been blocked successfully",
+        title: "تم حظر المستخدم",
+        description: "تم حظر المستخدم بنجاح",
       });
       
       // Dispatch a custom event to notify other tabs
@@ -334,8 +482,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to block user",
+        title: "خطأ",
+        description: "فشل حظر المستخدم",
       });
     }
   };
@@ -345,8 +493,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user?.isAdmin) {
       toast({
         variant: "destructive",
-        title: "Permission denied",
-        description: "Only administrators can unblock users",
+        title: "الإذن مرفوض",
+        description: "فقط المسؤولون يمكنهم إلغاء حظر المستخدمين",
       });
       return;
     }
@@ -355,7 +503,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const users = getUsers();
       const updatedUsers = users.map(user => {
         if (user.id === userId) {
-          return { ...user, isBlocked: false };
+          return { ...user, isBlocked: false, loginAttempts: 0 };
         }
         return user;
       });
@@ -363,8 +511,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveUsers(updatedUsers);
       
       toast({
-        title: "User unblocked",
-        description: "User has been unblocked successfully",
+        title: "تم إلغاء حظر المستخدم",
+        description: "تم إلغاء حظر المستخدم بنجاح",
       });
       
       // Dispatch a custom event to notify other tabs
@@ -372,8 +520,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to unblock user",
+        title: "خطأ",
+        description: "فشل إلغاء حظر المستخدم",
       });
     }
   };
@@ -383,8 +531,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user?.isAdmin) {
       toast({
         variant: "destructive",
-        title: "Permission denied",
-        description: "Only administrators can update system settings",
+        title: "الإذن مرفوض",
+        description: "فقط المسؤولون يمكنهم تحديث إعدادات النظام",
       });
       return;
     }
@@ -393,8 +541,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem(STORAGE_EVENT_KEYS.SYSTEM_SETTINGS, JSON.stringify(settings));
       
       toast({
-        title: "Settings updated",
-        description: "System settings have been updated successfully",
+        title: "تم تحديث الإعدادات",
+        description: "تم تحديث إعدادات النظام بنجاح",
       });
       
       // Dispatch a custom event to notify other tabs
@@ -402,8 +550,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to update system settings",
+        title: "خطأ",
+        description: "فشل تحديث إعدادات النظام",
       });
     }
   };
@@ -419,7 +567,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       platformName: 'Trading Performance Hub',
       supportEmail: 'support@tradingplatform.com',
       passwordPolicy: 'medium',
-      sessionTimeout: 60
+      sessionTimeout: 60,
+      dataEncryption: true,
+      maxLoginAttempts: 5
     };
   };
 
@@ -512,12 +662,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Invalid or expired code");
       }
       
+      // Hash the new password
+      const hashedPassword = hashPassword(newPassword);
+      
       // Update user password and clear reset code
       const updatedUsers = users.map(u => {
         if (u.email === email) {
           return {
             ...u,
-            password: newPassword,
+            password: hashedPassword,
             resetPasswordCode: undefined,
             resetPasswordExpiry: undefined
           };
@@ -555,7 +708,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateSystemSettings,
       getSystemSettings,
       forgotPassword,
-      resetPassword
+      resetPassword,
+      getUserDetails
     }}>
       {children}
     </AuthContext.Provider>
