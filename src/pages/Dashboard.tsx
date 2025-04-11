@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -21,20 +20,21 @@ import {
 const Dashboard: React.FC = () => {
   const { trades } = useTrade();
 
-  // Calculate stats from trades
-  const totalProfit = trades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  // Calculate some basic stats
   const totalTrades = trades.length;
+  const totalProfit = trades.reduce((sum, trade) => sum + trade.profitLoss, 0);
   const winningTrades = trades.filter(trade => trade.profitLoss > 0).length;
+  const losingTrades = trades.filter(trade => trade.profitLoss < 0).length;
   const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
   
   const bestTrade = trades.reduce(
     (best, trade) => (trade.profitLoss > best.profitLoss ? trade : best),
-    trades[0] || { profitLoss: 0 }
+    trades[0] || { profitLoss: 0, pair: 'N/A', id: '', userId: '', account: '', date: '', type: 'Buy', entry: 0, exit: 0, lotSize: 0, stopLoss: 0, takeProfit: 0, riskPercentage: 0, returnPercentage: 0, durationMinutes: 0, notes: '', imageUrl: null, hashtags: [], createdAt: '' }
   );
   
   const worstTrade = trades.reduce(
     (worst, trade) => (trade.profitLoss < worst.profitLoss ? trade : worst),
-    trades[0] || { profitLoss: 0 }
+    trades[0] || { profitLoss: 0, pair: 'N/A', id: '', userId: '', account: '', date: '', type: 'Buy', entry: 0, exit: 0, lotSize: 0, stopLoss: 0, takeProfit: 0, riskPercentage: 0, returnPercentage: 0, durationMinutes: 0, notes: '', imageUrl: null, hashtags: [], createdAt: '' }
   );
 
   // Prepare data for charts

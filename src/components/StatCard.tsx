@@ -32,8 +32,8 @@ const StatCard: React.FC<StatCardProps> = ({
                 <span 
                   className={cn(
                     "ml-2 text-sm", 
-                    trend === 'up' ? 'text-profit' : 
-                    trend === 'down' ? 'text-loss' : 'text-gray-500'
+                    trend === 'up' ? 'text-green-500' : 
+                    trend === 'down' ? 'text-red-500' : 'text-gray-500'
                   )}
                 >
                   {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '•'}
@@ -43,7 +43,7 @@ const StatCard: React.FC<StatCardProps> = ({
             {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
           </div>
           {icon && (
-            <div className="p-2 rounded-full bg-blue-50 text-trading-blue">
+            <div className="p-2 rounded-full bg-blue-50 text-blue-500">
               {icon}
             </div>
           )}

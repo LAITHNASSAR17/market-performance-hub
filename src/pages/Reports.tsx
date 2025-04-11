@@ -1,13 +1,12 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { BarChart, Calendar, Download, DollarSign, Percent, PieChart, LineChart as LineChartIcon, Clock, BarChart as BarChartIcon } from 'lucide-react';
+import { BarChart, Calendar, Download, DollarSign, Percent as PercentIcon, PieChart as PieChartIcon, LineChart as LineChartIcon, Clock, BarChart as BarChartIcon } from 'lucide-react';
 import {
-  PieChart,
+  PieChart as RechartPieChart,
   Pie,
   LineChart,
   Line,
@@ -33,7 +32,6 @@ const Reports: React.FC = () => {
   const [timeframeFilter, setTimeframeFilter] = useState('all');
   const [filterType, setFilterType] = useState('pair');
 
-  // Apply timeframe filter
   const filteredTrades = trades.filter(trade => {
     if (timeframeFilter === 'all') return true;
     
@@ -62,7 +60,6 @@ const Reports: React.FC = () => {
     }
   });
 
-  // Calculate summary stats
   const totalTrades = filteredTrades.length;
   const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
   const winningTrades = filteredTrades.filter(trade => trade.profitLoss > 0).length;
@@ -81,7 +78,6 @@ const Reports: React.FC = () => {
 
   const avgProfitPerTrade = totalTrades > 0 ? totalProfit / totalTrades : 0;
 
-  // Prepare data for breakdown charts
   const getBreakdownData = () => {
     switch (filterType) {
       case 'pair': 
@@ -155,7 +151,6 @@ const Reports: React.FC = () => {
   const getDayOfWeekBreakdown = () => {
     const dayMap = new Map<number, { name: string; count: number; profit: number }>();
     
-    // Initialize map with all days of the week
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     dayNames.forEach((name, index) => {
       dayMap.set(index, { name, count: 0, profit: 0 });
@@ -201,9 +196,7 @@ const Reports: React.FC = () => {
     ];
   };
 
-  // Prepare monthly performance data
   const getMonthlyPerformanceData = () => {
-    // Get last 6 months
     const months = [];
     const now = new Date();
     
@@ -233,11 +226,9 @@ const Reports: React.FC = () => {
     });
   };
 
-  // Prepare data for bar chart by day
   const getProfitByDayData = () => {
     const dayMap = new Map<string, { profit: number; trades: number }>();
     
-    // Get last 7 days
     const days = [];
     const now = new Date();
     
@@ -298,7 +289,6 @@ const Reports: React.FC = () => {
     
     const csvContent = [headers, ...rows].join('\n');
     
-    // Create file and download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -337,7 +327,6 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total Profit/Loss"
@@ -349,12 +338,12 @@ const Reports: React.FC = () => {
           title="Win Rate"
           value={`${winRate.toFixed(1)}%`}
           description={`${winningTrades}/${totalTrades} trades`}
-          icon={<Percent className="h-5 w-5" />}
+          icon={<PercentIcon className="h-5 w-5" />}
         />
         <StatCard
           title="Best Trade"
           value={`$${bestTrade.profitLoss?.toFixed(2) || '0.00'}`}
-          description={bestTrade.pair}
+          description={bestTrade.pair?.toString() || 'N/A'}
           icon={<LineChartIcon className="h-5 w-5" />}
         />
         <StatCard
@@ -365,7 +354,6 @@ const Reports: React.FC = () => {
         />
       </div>
 
-      {/* Monthly Performance Chart */}
       <Card className="mb-8">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center">
@@ -398,9 +386,7 @@ const Reports: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Profit by Day and Breakdown Analysis */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Profit by Day Chart */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center">
@@ -429,12 +415,11 @@ const Reports: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Breakdown Analysis */}
         <Card>
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="flex items-center">
-                <PieChart className="h-5 w-5 mr-2" />
+                <PieChartIcon className="h-5 w-5 mr-2" />
                 Trading Breakdown
               </CardTitle>
               <Select value={filterType} onValueChange={setFilterType}>
@@ -454,7 +439,7 @@ const Reports: React.FC = () => {
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <RechartPieChart>
                   <Pie
                     data={getBreakdownData()}
                     cx="50%"
@@ -476,14 +461,13 @@ const Reports: React.FC = () => {
                       props.payload.name
                     ]} 
                   />
-                </PieChart>
+                </RechartPieChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Detailed Metrics */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
@@ -518,14 +502,14 @@ const Reports: React.FC = () => {
                 <p className="text-xl font-bold mt-1 text-profit">
                   ${bestTrade.profitLoss?.toFixed(2) || '0.00'}
                 </p>
-                <p className="text-xs text-gray-500">{bestTrade.pair}</p>
+                <p className="text-xs text-gray-500">{bestTrade.pair?.toString() || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Worst Trade</p>
                 <p className="text-xl font-bold mt-1 text-loss">
                   ${worstTrade.profitLoss?.toFixed(2) || '0.00'}
                 </p>
-                <p className="text-xs text-gray-500">{worstTrade.pair}</p>
+                <p className="text-xs text-gray-500">{worstTrade.pair?.toString() || 'N/A'}</p>
               </div>
             </div>
             
