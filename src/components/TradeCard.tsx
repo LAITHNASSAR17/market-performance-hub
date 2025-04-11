@@ -1,103 +1,110 @@
-
 import React from 'react';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, Eye } from 'lucide-react';
-import { Trade } from '@/contexts/TradeContext';
-import HashtagBadge from './HashtagBadge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { LineChart, Edit, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { Trade } from '@/contexts/TradeContext';
+import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 interface TradeCardProps {
   trade: Trade;
+  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-const TradeCard: React.FC<TradeCardProps> = ({ trade, onDelete }) => {
-  const isProfit = trade.profitLoss > 0;
-  
+const TradeCard: React.FC<TradeCardProps> = ({ trade, onEdit, onDelete }) => {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+
+  const handleDelete = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    toast({
+      title: "Are you sure?",
+      description: (
+        <div className="grid gap-1">
+          <p>Are you sure you want to delete this trade?</p>
+          <div className="flex justify-end space-x-2">
+            <Button variant="ghost">Cancel</Button>
+            <Button variant="destructive" onClick={() => onDelete(trade.id)}>Delete</Button>
+          </div>
+        </div>
+      ),
+    })
+  };
+
   return (
-    <Card className="h-full overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-lg font-bold">{trade.pair}</h3>
-            <p className="text-sm text-gray-500">
-              {new Date(trade.date).toLocaleDateString()} • {trade.account}
-            </p>
-          </div>
-          <div className={cn(
-            "px-2 py-1 rounded text-sm font-medium",
-            isProfit ? "bg-green-100 text-profit" : "bg-red-100 text-loss"
-          )}>
-            {trade.type}
+    <Card className="bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow duration-200">
+      <CardHeader>
+        <div className="flex items-center">
+          <Avatar className="mr-4">
+            <AvatarImage src={`https://avatar.vercel.sh/${trade.account}.png`} />
+            <AvatarFallback>{trade.account.substring(0, 2)}</AvatarFallback>
+          </Avatar>
+          <div className="space-y-0.5">
+            <CardTitle className="text-base font-semibold">{trade.pair} - {trade.type}</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              {t('trade.account') || 'الحساب'}: {trade.account}
+            </CardDescription>
           </div>
         </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
+      </CardHeader>
+      <CardContent className="py-2 grid gap-4">
+        <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <p className="text-sm text-gray-500">Entry</p>
-            <p className="font-medium">{trade.entry.toFixed(4)}</p>
+            <span className="text-muted-foreground">{t('trade.entry') || 'نقطة الدخول'}:</span> {trade.entry}
           </div>
           <div>
-            <p className="text-sm text-gray-500">Exit</p>
-            <p className="font-medium">{trade.exit.toFixed(4)}</p>
+            <span className="text-muted-foreground">{t('trade.exit') || 'نقطة الخروج'}:</span> {trade.exit}
           </div>
           <div>
-            <p className="text-sm text-gray-500">Lot Size</p>
-            <p className="font-medium">{trade.lotSize}</p>
+            <span className="text-muted-foreground">{t('trade.lotSize') || 'حجم اللوت'}:</span> {trade.lotSize}
           </div>
           <div>
-            <p className="text-sm text-gray-500">Duration</p>
-            <p className="font-medium">{trade.durationMinutes} min</p>
+            <span className="text-muted-foreground">{t('trade.duration') || 'المدة'}:</span> {trade.durationMinutes} min
+          </div>
+          <div>
+            <span className="text-muted-foreground">{t('trade.profitLoss') || 'الربح/الخسارة'}:</span> ${trade.profitLoss.toFixed(2)}
+          </div>
+          <div>
+            <span className="text-muted-foreground">{t('trade.date') || 'التاريخ'}:</span> {trade.date}
           </div>
         </div>
-        
-        <div className="mb-3">
-          <p className={cn(
-            "text-lg font-bold",
-            isProfit ? "text-profit" : "text-loss"
-          )}>
-            {isProfit ? '+' : ''}{trade.profitLoss.toFixed(2)} ({trade.returnPercentage}%)
-          </p>
+        <div>
+          <span className="text-muted-foreground">{t('trade.notes') || 'ملاحظات'}:</span> {trade.notes.substring(0, 80)}...
         </div>
-        
-        {trade.notes && (
-          <div className="mb-3">
-            <p className="text-sm text-gray-500">Notes</p>
-            <p className="text-sm">{trade.notes}</p>
-          </div>
-        )}
-        
-        {trade.hashtags && trade.hashtags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {trade.hashtags.map(tag => (
-              <HashtagBadge key={tag} tag={tag} size="sm" />
-            ))}
-          </div>
-        )}
+        <div>
+          {trade.hashtags.map((tag) => (
+            <Badge key={tag} variant="secondary" className="mr-1">{tag}</Badge>
+          ))}
+        </div>
       </CardContent>
-      <CardFooter className="px-6 py-4 bg-gray-50 border-t flex justify-between">
-        <Button variant="outline" size="sm" asChild>
-          <Link to={`/trades/${trade.id}`}>
-            <Eye className="h-4 w-4 mr-1" />
-            View
+      <CardFooter className="flex justify-between items-center py-3">
+        <span className="text-xs text-muted-foreground">
+          {t('trade.added')} {formatDistanceToNow(new Date(trade.createdAt), { addSuffix: true })}
+        </span>
+        
+        {/* Add this button inside the CardFooter before the closing tag */}
+        <Button size="sm" variant="outline" asChild className="mr-2">
+          <Link to={`/chart?trade=${trade.id}`}>
+            <LineChart className="h-4 w-4 mr-1" />
+            {t('trade.viewOnChart') || 'عرض في الشارت'}
           </Link>
         </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/trades/${trade.id}/edit`}>
-              <Pencil className="h-4 w-4 mr-1" />
-              Edit
-            </Link>
+
+        <div className="flex space-x-2 rtl:space-x-reverse">
+          <Button size="sm" variant="ghost" onClick={() => onEdit(trade.id)}>
+            <Edit className="h-4 w-4 mr-1" />
+            {t('trade.edit') || 'تعديل'}
           </Button>
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            onClick={() => onDelete(trade.id)}
-          >
+          <Button size="sm" variant="ghost" onClick={handleDelete}>
             <Trash2 className="h-4 w-4 mr-1" />
-            Delete
+            {t('trade.delete') || 'حذف'}
           </Button>
         </div>
       </CardFooter>
