@@ -36,6 +36,25 @@ const Dashboard: React.FC = () => {
 
   const userTrades = user ? trades.filter(trade => trade.userId === user.id) : [];
 
+  const filteredTrades = (() => {
+    if (timeframeFilter === 'all') return userTrades;
+    
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    if (timeframeFilter === 'week') {
+      cutoffDate.setDate(now.getDate() - 7);
+    } else if (timeframeFilter === 'month') {
+      cutoffDate.setDate(now.getDate() - 30);
+    } else if (timeframeFilter === 'quarter') {
+      cutoffDate.setDate(now.getDate() - 90);
+    } else if (timeframeFilter === 'year') {
+      cutoffDate.setDate(now.getDate() - 365);
+    }
+    
+    return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
+  })();
+
   const totalTrades = userTrades.length;
   const totalProfit = userTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
   const winningTrades = userTrades.filter(trade => trade.profitLoss > 0).length;
@@ -170,25 +189,6 @@ const Dashboard: React.FC = () => {
     
     return calendarDays;
   };
-
-  const filteredTrades = (() => {
-    if (timeframeFilter === 'all') return userTrades;
-    
-    const now = new Date();
-    const cutoffDate = new Date();
-    
-    if (timeframeFilter === 'week') {
-      cutoffDate.setDate(now.getDate() - 7);
-    } else if (timeframeFilter === 'month') {
-      cutoffDate.setDate(now.getDate() - 30);
-    } else if (timeframeFilter === 'quarter') {
-      cutoffDate.setDate(now.getDate() - 90);
-    } else if (timeframeFilter === 'year') {
-      cutoffDate.setDate(now.getDate() - 365);
-    }
-    
-    return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
-  })();
 
   return (
     <Layout>
