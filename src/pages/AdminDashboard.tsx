@@ -204,7 +204,7 @@ const AdminDashboard: React.FC = () => {
                           <TableCell>{trade.date}</TableCell>
                           <TableCell>{tradeUser?.name || 'Unknown'}</TableCell>
                           <TableCell>{trade.pair}</TableCell>
-                          <TableCell>{trade.entryType}</TableCell>
+                          <TableCell>{trade.type}</TableCell>
                           <TableCell className={trade.profitLoss >= 0 ? "text-green-600" : "text-red-600"}>
                             ${trade.profitLoss.toFixed(2)}
                           </TableCell>
