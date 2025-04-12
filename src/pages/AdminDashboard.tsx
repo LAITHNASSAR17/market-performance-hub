@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -31,7 +30,7 @@ import {
   Percent,
   Briefcase
 } from 'lucide-react';
-import Layout from '@/components/Layout';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import StatCard from '@/components/StatCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -266,7 +265,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <Layout>
+    <AdminLayout>
       <div className="container mx-auto py-4 md:py-6 px-4 md:px-6">
         <div className="flex flex-col space-y-6">
           <header className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -486,7 +485,7 @@ const AdminDashboard: React.FC = () => {
           </Tabs>
         </div>
       </div>
-    </Layout>
+    </AdminLayout>
   );
 };
 
