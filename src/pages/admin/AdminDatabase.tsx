@@ -1,112 +1,98 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Database, Download, RefreshCw, Shield, FileUp, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Database, HardDrive, RefreshCw, Download, Play, AlertCircle } from 'lucide-react';
+import { AdminController } from '@/controllers/AdminController';
 
-// Sample table names
-const tables = [
-  'users',
-  'trades',
-  'notes',
-  'hashtags',
-  'settings',
-  'subscriptions',
-  'logs'
-];
-
-// Sample table structure
-const tableStructure = [
-  { Field: 'id', Type: 'int', Null: 'NO', Key: 'PRI', Default: null, Extra: 'auto_increment' },
-  { Field: 'username', Type: 'varchar(255)', Null: 'NO', Key: '', Default: null, Extra: '' },
-  { Field: 'email', Type: 'varchar(255)', Null: 'NO', Key: 'UNI', Default: null, Extra: '' },
-  { Field: 'password', Type: 'varchar(255)', Null: 'NO', Key: '', Default: null, Extra: '' },
-  { Field: 'isAdmin', Type: 'tinyint(1)', Null: 'NO', Key: '', Default: '0', Extra: '' },
-  { Field: 'isBlocked', Type: 'tinyint(1)', Null: 'NO', Key: '', Default: '0', Extra: '' },
-  { Field: 'createdAt', Type: 'timestamp', Null: 'NO', Key: '', Default: 'CURRENT_TIMESTAMP', Extra: '' },
-  { Field: 'lastLogin', Type: 'timestamp', Null: 'YES', Key: '', Default: null, Extra: '' }
-];
-
-// Sample table data
-const tableData = [
-  { id: 1, username: 'admin', email: 'admin@example.com', isAdmin: 1, isBlocked: 0, createdAt: '2025-01-01 00:00:00', lastLogin: '2025-04-12 10:30:00' },
-  { id: 2, username: 'user1', email: 'user1@example.com', isAdmin: 0, isBlocked: 0, createdAt: '2025-01-15 00:00:00', lastLogin: '2025-04-11 14:20:00' },
-  { id: 3, username: 'user2', email: 'user2@example.com', isAdmin: 0, isBlocked: 1, createdAt: '2025-02-01 00:00:00', lastLogin: '2025-03-25 09:15:00' }
-];
+interface TableStructure {
+  Field: string;
+  Type: string;
+  Null: string;
+  Key: string;
+  Default: string | null;
+  Extra: string;
+}
 
 const AdminDatabase: React.FC = () => {
-  const [selectedTable, setSelectedTable] = useState(tables[0]);
-  const [backupHistory] = useState([
-    { date: '2025-04-10 23:00:00', size: '42.5 MB', status: 'Success' },
-    { date: '2025-04-09 23:00:00', size: '41.8 MB', status: 'Success' },
-    { date: '2025-04-08 23:00:00', size: '41.2 MB', status: 'Success' },
-    { date: '2025-04-07 23:00:00', size: '40.9 MB', status: 'Success' },
-    { date: '2025-04-06 23:00:00', size: '40.5 MB', status: 'Success' }
+  const [tables, setTables] = useState<string[]>([
+    'users', 'trades', 'tags', 'settings', 'notes', 'calendar_events'
   ]);
+  const [selectedTable, setSelectedTable] = useState<string>('users');
+  const [tableStructure, setTableStructure] = useState<TableStructure[]>([]);
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const { toast } = useToast();
+  
+  const adminController = new AdminController();
 
-  const handleBackupNow = () => {
-    toast({
-      title: "Backup Started",
-      description: "Database backup has been initiated"
-    });
-    
-    // In a real app, this would trigger an actual backup
-    setTimeout(() => {
+  const loadTableStructure = async (tableName: string) => {
+    setLoading(true);
+    try {
+      const structure = await adminController.getDatabaseTableStructure(tableName);
+      setTableStructure(structure);
+      const data = await adminController.getDatabaseTableData(tableName);
+      setTableData(data);
+    } catch (error) {
+      console.error(`Error loading table ${tableName}:`, error);
       toast({
-        title: "Backup Complete",
-        description: "Database backup completed successfully"
+        title: "Error",
+        description: `Failed to load table ${tableName}`,
+        variant: "destructive"
       });
-    }, 3000);
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  const handleOptimizeDatabase = () => {
+
+  const handleSelectTable = (tableName: string) => {
+    setSelectedTable(tableName);
+    loadTableStructure(tableName);
+  };
+
+  const handleRefresh = () => {
+    loadTableStructure(selectedTable);
     toast({
-      title: "Optimization Started",
-      description: "Database optimization has been initiated"
+      title: "Refreshed",
+      description: `Table ${selectedTable} refreshed`
     });
-    
-    // In a real app, this would trigger actual optimization
-    setTimeout(() => {
+  };
+
+  const handleBackupDatabase = async () => {
+    try {
+      const result = await adminController.createSystemBackup();
+      if (result.success) {
+        toast({
+          title: "Backup Created",
+          description: `Backup file: ${result.filename}`
+        });
+      }
+    } catch (error) {
+      console.error("Error creating backup:", error);
       toast({
-        title: "Optimization Complete",
-        description: "Database has been optimized successfully"
+        title: "Error",
+        description: "Failed to create backup",
+        variant: "destructive"
       });
-    }, 2000);
+    }
   };
-  
-  const handleRestoreBackup = (date: string) => {
+
+  const handleRunQuery = () => {
     toast({
-      title: "Restore Initiated",
-      description: `Restoring backup from ${date}`
-    });
-  };
-  
-  const handleDownloadBackup = (date: string) => {
-    toast({
-      title: "Download Started",
-      description: `Downloading backup from ${date}`
+      title: "Feature Not Available",
+      description: "SQL query execution is not available in this demo",
+      variant: "destructive"
     });
   };
 
@@ -116,204 +102,157 @@ const AdminDatabase: React.FC = () => {
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
           Database Management
         </h1>
-        <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1">
-          View and manage the database structure and perform maintenance tasks.
-        </p>
-      </header>
-      
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="tables">Tables</TabsTrigger>
-          <TabsTrigger value="backup">Backup & Restore</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <div className="flex items-center">
-                <Database className="h-8 w-8 text-blue-500 mr-3" />
-                <div>
-                  <h3 className="text-lg font-medium">Database Status</h3>
-                  <p className="text-sm text-gray-500">Connected</p>
-                </div>
-              </div>
-              <div className="mt-4 text-sm">
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Version:</span>
-                  <span>MySQL 8.0.28</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Tables:</span>
-                  <span>15</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Total Size:</span>
-                  <span>42.5 MB</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <div className="flex items-center">
-                <Clock className="h-8 w-8 text-emerald-500 mr-3" />
-                <div>
-                  <h3 className="text-lg font-medium">Last Backup</h3>
-                  <p className="text-sm text-gray-500">12 hours ago</p>
-                </div>
-              </div>
-              <div className="mt-4">
-                <Button onClick={handleBackupNow} className="w-full">
-                  <FileUp className="h-4 w-4 mr-2" />
-                  Backup Now
-                </Button>
-              </div>
-            </div>
-            
-            <div className="bg-white p-6 rounded-lg shadow-sm border">
-              <div className="flex items-center">
-                <Shield className="h-8 w-8 text-amber-500 mr-3" />
-                <div>
-                  <h3 className="text-lg font-medium">Database Health</h3>
-                  <p className="text-sm text-gray-500">Good Condition</p>
-                </div>
-              </div>
-              <div className="mt-4">
-                <Button variant="outline" onClick={handleOptimizeDatabase} className="w-full">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Optimize Database
-                </Button>
-              </div>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="tables" className="space-y-4">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-64">
-              <Select value={selectedTable} onValueChange={setSelectedTable}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a table" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tables.map(table => (
-                    <SelectItem key={table} value={table}>{table}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+        <div className="flex justify-between items-center mt-1">
+          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">
+            Manage database tables and run queries.
+          </p>
+          <div className="space-x-2">
+            <Button 
+              onClick={handleBackupDatabase}
+              variant="outline"
+              size="sm"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Backup Database
             </Button>
           </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-            <h3 className="text-lg font-medium p-4 border-b">Table Structure: {selectedTable}</h3>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Field</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Null</TableHead>
-                    <TableHead>Key</TableHead>
-                    <TableHead>Default</TableHead>
-                    <TableHead>Extra</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tableStructure.map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{row.Field}</TableCell>
-                      <TableCell>{row.Type}</TableCell>
-                      <TableCell>{row.Null}</TableCell>
-                      <TableCell>{row.Key}</TableCell>
-                      <TableCell>{row.Default ?? 'NULL'}</TableCell>
-                      <TableCell>{row.Extra}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Database Tables</CardTitle>
+            <CardDescription>Select a table to view</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {tables.map((table) => (
+                <Button
+                  key={table}
+                  variant={selectedTable === table ? "default" : "outline"}
+                  className="w-full justify-start mb-1"
+                  onClick={() => handleSelectTable(table)}
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  {table}
+                </Button>
+              ))}
             </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-sm border overflow-hidden mt-4">
-            <h3 className="text-lg font-medium p-4 border-b">Table Data: {selectedTable}</h3>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {Object.keys(tableData[0]).map(key => (
-                      <TableHead key={key}>{key}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tableData.map((row, rowIndex) => (
-                    <TableRow key={rowIndex}>
-                      {Object.values(row).map((value, cellIndex) => (
-                        <TableCell key={cellIndex}>{value !== null ? String(value) : 'NULL'}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="backup" className="space-y-4">
-          <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
-            <h3 className="text-lg font-medium p-4 border-b">Backup History</h3>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {backupHistory.map((backup, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{backup.date}</TableCell>
-                      <TableCell>{backup.size}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          {backup.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleRestoreBackup(backup.date)}
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleDownloadBackup(backup.date)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </CardContent>
+        </Card>
+
+        <div className="lg:col-span-3 space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Table: {selectedTable}</CardTitle>
+                <CardDescription>Structure and data</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="structure">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="structure">Structure</TabsTrigger>
+                  <TabsTrigger value="data">Data</TabsTrigger>
+                  <TabsTrigger value="query">SQL Query</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="structure">
+                  {loading ? (
+                    <div className="p-8 text-center">
+                      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+                      <p className="mt-2 text-gray-500">Loading table structure...</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Field</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Null</TableHead>
+                          <TableHead>Key</TableHead>
+                          <TableHead>Default</TableHead>
+                          <TableHead>Extra</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {tableStructure.map((column, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{column.Field}</TableCell>
+                            <TableCell>{column.Type}</TableCell>
+                            <TableCell>{column.Null}</TableCell>
+                            <TableCell>{column.Key}</TableCell>
+                            <TableCell>{column.Default}</TableCell>
+                            <TableCell>{column.Extra}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="data">
+                  {loading ? (
+                    <div className="p-8 text-center">
+                      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+                      <p className="mt-2 text-gray-500">Loading table data...</p>
+                    </div>
+                  ) : tableData.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            {Object.keys(tableData[0]).map((key) => (
+                              <TableHead key={key}>{key}</TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {tableData.map((row, rowIndex) => (
+                            <TableRow key={rowIndex}>
+                              {Object.entries(row).map(([key, value], cellIndex) => (
+                                <TableCell key={cellIndex}>
+                                  {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">No data available</div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="query">
+                  <div className="space-y-4">
+                    <textarea 
+                      className="w-full h-32 p-3 border border-gray-300 rounded"
+                      placeholder="Enter SQL query here..."
+                    />
+                    <div className="flex justify-between">
+                      <div className="flex items-center text-amber-600">
+                        <AlertCircle className="h-4 w-4 mr-2" />
+                        <span className="text-xs">Use with caution. Changes may affect your application.</span>
+                      </div>
+                      <Button onClick={handleRunQuery}>
+                        <Play className="h-4 w-4 mr-2" />
+                        Run Query
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </>
   );
 };

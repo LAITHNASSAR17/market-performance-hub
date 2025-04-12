@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import UserTable from '@/components/admin/UserTable';
@@ -9,8 +8,12 @@ import { UserPlus } from 'lucide-react';
 import AddUserDialog from '@/components/admin/AddUserDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface DisplayUser extends Omit<User, 'id'> {
+  id: string | number;
+}
+
 const AdminUsers: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<DisplayUser[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
@@ -19,7 +22,6 @@ const AdminUsers: React.FC = () => {
   
   const adminController = new AdminController();
 
-  // Load users on component mount
   useEffect(() => {
     loadUsers();
   }, []);
@@ -27,15 +29,16 @@ const AdminUsers: React.FC = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Using Auth context instead of AdminController due to database errors
       const allUsers = getAllUsers();
       
-      // Make sure all users have the required properties
       const completeUsers = allUsers.map(user => ({
         ...user,
+        id: user.id,
         username: user.username || user.name || '',
-        createdAt: user.createdAt || new Date(),
-        isBlocked: user.isBlocked || false
+        name: user.name || '',
+        email: user.email || '',
+        isBlocked: user.isBlocked || false,
+        createdAt: user.createdAt || new Date()
       }));
       
       setUsers(completeUsers);
@@ -53,13 +56,11 @@ const AdminUsers: React.FC = () => {
 
   const handleAddUser = async (userData: Partial<User>) => {
     try {
-      // Add user implementation
-      // This would call the AdminController's createUser method
       toast({
         title: "User Created",
         description: `User ${userData.username || userData.name} has been created successfully`
       });
-      loadUsers(); // Refresh user list
+      loadUsers();
       return true;
     } catch (error) {
       console.error("Error creating user:", error);
@@ -77,19 +78,17 @@ const AdminUsers: React.FC = () => {
       title: "View User",
       description: `Viewing user ${userId}`
     });
-    // Navigate to user detail page or open modal
   };
 
   const handleBlockUser = async (user: any) => {
     try {
-      // Convert string to number if needed
       const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       await adminController.blockUser(userId);
       toast({
         title: "User Blocked",
         description: `${user.name} has been blocked`
       });
-      loadUsers(); // Refresh user list
+      loadUsers();
     } catch (error) {
       console.error("Error blocking user:", error);
       toast({
@@ -102,14 +101,13 @@ const AdminUsers: React.FC = () => {
 
   const handleUnblockUser = async (user: any) => {
     try {
-      // Convert string to number if needed
       const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       await adminController.unblockUser(userId);
       toast({
         title: "User Unblocked",
         description: `${user.name} has been unblocked`
       });
-      loadUsers(); // Refresh user list
+      loadUsers();
     } catch (error) {
       console.error("Error unblocking user:", error);
       toast({
@@ -124,7 +122,6 @@ const AdminUsers: React.FC = () => {
     try {
       const user = users.find(u => u.email === email);
       if (user) {
-        // Convert string to number if needed
         const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
         await adminController.resetUserPassword(userId, password);
         toast({
@@ -141,7 +138,7 @@ const AdminUsers: React.FC = () => {
         description: "Failed to change password",
         variant: "destructive"
       });
-      throw error; // Re-throw to notify calling component
+      throw error;
     }
   };
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -67,6 +68,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
         email,
         password,
         isAdmin: userType === 'admin',
+        isBlocked: false,
       };
       
       const success = await onAddUser(userData);

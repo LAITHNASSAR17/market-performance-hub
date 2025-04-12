@@ -1,57 +1,93 @@
 
 import React, { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PlusCircle, Globe, FileText, Edit, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useToast } from '@/hooks/use-toast';
+import { Edit, Eye, Trash, Plus, RefreshCw } from 'lucide-react';
 
-// Sample pages data
-const samplePages = [
-  { id: 1, title: 'Home', slug: 'home', status: 'published', lastUpdated: '2025-04-01' },
-  { id: 2, title: 'About Us', slug: 'about-us', status: 'published', lastUpdated: '2025-04-02' },
-  { id: 3, title: 'Services', slug: 'services', status: 'published', lastUpdated: '2025-04-03' },
-  { id: 4, title: 'Contact', slug: 'contact', status: 'published', lastUpdated: '2025-04-04' },
-  { id: 5, title: 'Blog', slug: 'blog', status: 'published', lastUpdated: '2025-04-05' },
-  { id: 6, title: 'FAQ', slug: 'faq', status: 'draft', lastUpdated: '2025-04-06' },
-];
+interface Page {
+  id: string;
+  title: string;
+  slug: string;
+  status: 'published' | 'draft';
+  lastModified: Date;
+}
 
 const AdminPages: React.FC = () => {
-  const [pages, setPages] = useState(samplePages);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [pages, setPages] = useState<Page[]>([
+    {
+      id: '1',
+      title: 'الصفحة الرئيسية',
+      slug: 'home',
+      status: 'published',
+      lastModified: new Date(2023, 3, 15)
+    },
+    {
+      id: '2',
+      title: 'من نحن',
+      slug: 'about',
+      status: 'published',
+      lastModified: new Date(2023, 2, 20)
+    },
+    {
+      id: '3',
+      title: 'الخدمات',
+      slug: 'services',
+      status: 'draft',
+      lastModified: new Date(2023, 3, 10)
+    },
+    {
+      id: '4',
+      title: 'اتصل بنا',
+      slug: 'contact',
+      status: 'published',
+      lastModified: new Date(2023, 3, 1)
+    }
+  ]);
+  
   const { toast } = useToast();
 
-  const filteredPages = pages.filter(page => 
-    page.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    page.slug.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleEditPage = (pageId: number) => {
+  const handleViewPage = (id: string) => {
     toast({
-      title: "Edit Page",
-      description: `Editing page with ID: ${pageId}`
+      title: "View Page",
+      description: `Viewing page with ID: ${id}`
     });
   };
 
-  const handleDeletePage = (pageId: number) => {
-    setPages(pages.filter(page => page.id !== pageId));
+  const handleEditPage = (id: string) => {
+    toast({
+      title: "Edit Page",
+      description: `Editing page with ID: ${id}`
+    });
+  };
+
+  const handleDeletePage = (id: string) => {
+    setPages(pages.filter(page => page.id !== id));
     toast({
       title: "Page Deleted",
       description: "The page has been deleted successfully"
     });
   };
 
-  const handleCreatePage = () => {
+  const handleAddPage = () => {
     toast({
-      title: "Create Page",
+      title: "Add Page",
       description: "Creating a new page"
+    });
+  };
+
+  const handleRefresh = () => {
+    toast({
+      title: "Refreshed",
+      description: "Page list refreshed"
     });
   };
 
@@ -65,94 +101,85 @@ const AdminPages: React.FC = () => {
           <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">
             Manage website pages and content.
           </p>
-          <Button 
-            onClick={handleCreatePage}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Page
-          </Button>
+          <div className="space-x-2">
+            <Button 
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button 
+              onClick={handleAddPage}
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Page
+            </Button>
+          </div>
         </div>
       </header>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-        <div className="flex mb-4">
-          <div className="relative w-full">
-            <Input
-              className="pl-10 pr-4"
-              placeholder="Search pages..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Globe className="h-5 w-5 text-gray-400" />
-            </div>
-          </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]">ID</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Updated</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <Table>
+          <TableCaption>List of website pages</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">ID</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Slug</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Last Modified</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pages.map((page) => (
+              <TableRow key={page.id}>
+                <TableCell className="font-medium">{page.id}</TableCell>
+                <TableCell>{page.title}</TableCell>
+                <TableCell>{page.slug}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs ${
+                    page.status === 'published' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {page.status === 'published' ? 'Published' : 'Draft'}
+                  </span>
+                </TableCell>
+                <TableCell>{page.lastModified.toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      onClick={() => handleViewPage(page.id)}
+                      variant="ghost" 
+                      size="sm"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      onClick={() => handleEditPage(page.id)}
+                      variant="ghost" 
+                      size="sm"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      onClick={() => handleDeletePage(page.id)}
+                      variant="ghost" 
+                      size="sm"
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPages.length > 0 ? (
-                filteredPages.map((page) => (
-                  <TableRow key={page.id} className="hover:bg-slate-50">
-                    <TableCell className="font-medium">{page.id}</TableCell>
-                    <TableCell>{page.title}</TableCell>
-                    <TableCell>/{page.slug}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        page.status === 'published' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {page.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>{page.lastUpdated}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 text-blue-600"
-                          onClick={() => handleEditPage(page.id)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 w-8 p-0 text-red-600"
-                          onClick={() => handleDeletePage(page.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    {searchTerm 
-                      ? "No pages found matching your search."
-                      : "No pages have been created yet."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </>
   );
