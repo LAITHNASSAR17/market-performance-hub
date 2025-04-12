@@ -1,149 +1,239 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import ThemeToggle from '@/components/ThemeToggle';
-import LanguageToggle from '@/components/LanguageToggle';
-import { FileImage, Palette, Globe } from 'lucide-react';
-import FaviconUpload from '@/components/FaviconUpload';
+import { Globe, Palette, User, CreditCard } from 'lucide-react';
 
 const Settings: React.FC = () => {
-  const { t, language } = useLanguage();
-  const { theme } = useTheme();
-  const [faviconModalOpen, setFaviconModalOpen] = React.useState(false);
+  const { user, updateUser, cancelSubscription } = useAuth();
+  const { toast } = useToast();
+  const [userData, setUserData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    password: '',
+    confirmPassword: ''
+  });
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUserData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (userData.password && userData.password !== userData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Only include password if it's been changed
+    const updatedData = {
+      name: userData.name,
+      email: userData.email,
+      ...(userData.password ? { password: userData.password } : {})
+    };
+    
+    updateUser(updatedData);
+    toast({
+      title: "Profile Updated",
+      description: "Your profile has been updated successfully"
+    });
+  };
+  
+  const handleCancelSubscription = () => {
+    if (window.confirm("Are you sure you want to cancel your subscription?")) {
+      cancelSubscription();
+      toast({
+        title: "Subscription Cancelled",
+        description: "Your subscription has been cancelled successfully"
+      });
+    }
+  };
 
   return (
     <Layout>
       <div className="container mx-auto py-6">
         <h1 className="text-3xl font-bold mb-4 dark:text-white">
-          {language === 'ar' ? 'الإعدادات' : 'Settings'}
+          Settings
         </h1>
         
-        <Tabs defaultValue="appearance" className="w-full">
+        <Tabs defaultValue="profile" className="w-full">
           <TabsList className="mb-4 flex w-full sm:w-auto">
+            <TabsTrigger value="profile" className="flex-1">
+              <User className="h-4 w-4 mr-2" />
+              Profile
+            </TabsTrigger>
             <TabsTrigger value="appearance" className="flex-1">
               <Palette className="h-4 w-4 mr-2" />
-              {language === 'ar' ? 'المظهر' : 'Appearance'}
+              Appearance
             </TabsTrigger>
-            <TabsTrigger value="language" className="flex-1">
-              <Globe className="h-4 w-4 mr-2" />
-              {language === 'ar' ? 'اللغة' : 'Language'}
-            </TabsTrigger>
-            <TabsTrigger value="favicon" className="flex-1">
-              <FileImage className="h-4 w-4 mr-2" />
-              {language === 'ar' ? 'أيقونة الموقع' : 'Favicon'}
+            <TabsTrigger value="subscription" className="flex-1">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Subscription
             </TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="profile">
+            <Card>
+              <CardHeader>
+                <CardTitle className="dark:text-white">
+                  User Profile
+                </CardTitle>
+                <CardDescription className="dark:text-gray-300">
+                  Manage your personal information and account settings.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input 
+                      id="name"
+                      name="name"
+                      value={userData.name}
+                      onChange={handleInputChange}
+                      className="dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input 
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={userData.email}
+                      onChange={handleInputChange}
+                      className="dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="password">New Password (leave blank to keep current)</Label>
+                    <Input 
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={userData.password}
+                      onChange={handleInputChange}
+                      className="dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <Input 
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={userData.confirmPassword}
+                      onChange={handleInputChange}
+                      className="dark:bg-gray-700 dark:text-white"
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full">
+                    Update Profile
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
           
           <TabsContent value="appearance">
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'المظهر والسمة' : 'Appearance & Theme'}
+                  Appearance
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تخصيص مظهر التطبيق، بما في ذلك الوضع الفاتح/الداكن.' 
-                    : 'Customize the look of the application, including light/dark mode.'}
+                  Customize the look of the application, including light/dark mode.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div>
                     <h3 className="font-medium dark:text-white">
-                      {language === 'ar' ? 'وضع العرض' : 'Display Mode'}
+                      Display Mode
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {theme === 'dark' 
-                        ? (language === 'ar' ? 'الوضع الداكن نشط حاليًا' : 'Dark mode is currently active') 
-                        : (language === 'ar' ? 'الوضع الفاتح نشط حاليًا' : 'Light mode is currently active')}
+                      Choose between light and dark mode for the application interface.
                     </p>
                   </div>
-                  <ThemeToggle />
+                  <ThemeToggle variant="switch" />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
           
-          <TabsContent value="language">
+          <TabsContent value="subscription">
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'إعدادات اللغة' : 'Language Settings'}
+                  Subscription Management
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تغيير لغة واجهة المستخدم للتطبيق.' 
-                    : 'Change the interface language of the application.'}
+                  Manage your subscription plan and billing information.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div>
-                    <h3 className="font-medium dark:text-white">
-                      {language === 'ar' ? 'لغة التطبيق' : 'Application Language'}
+                <div className="space-y-4">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h3 className="font-medium dark:text-white mb-2">
+                      Current Plan
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {language === 'ar' 
-                        ? 'اللغة العربية نشطة حاليًا' 
-                        : 'English is currently active'}
-                    </p>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                          {user?.subscription?.plan || "Free Plan"}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {user?.subscription?.status === 'active' 
+                            ? `Next billing on ${user?.subscription?.nextBillingDate || 'N/A'}` 
+                            : 'No active subscription'}
+                        </p>
+                      </div>
+                      
+                      {user?.subscription?.status === 'active' && (
+                        <Button 
+                          variant="destructive" 
+                          onClick={handleCancelSubscription}
+                        >
+                          Cancel Plan
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <LanguageToggle variant="switch" />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="favicon">
-            <Card>
-              <CardHeader>
-                <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'أيقونة الموقع' : 'Favicon'}
-                </CardTitle>
-                <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تغيير أيقونة الموقع التي تظهر في علامة تبويب المتصفح.' 
-                    : 'Change the favicon that appears in your browser tab.'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="flex-1">
-                    <h3 className="font-medium dark:text-white">
-                      {language === 'ar' ? 'الأيقونة الحالية' : 'Current Favicon'}
+                  
+                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <h3 className="font-medium dark:text-white mb-2">
+                      Upgrade Your Plan
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {language === 'ar' 
-                        ? 'يمكنك تغيير أيقونة الموقع بالنقر على الزر أدناه.' 
-                        : 'You can change the favicon by clicking the button below.'}
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      Unlock premium features to enhance your trading experience.
                     </p>
+                    <Button asChild>
+                      <a href="/subscriptions">View Plans</a>
+                    </Button>
                   </div>
-                  <div className="w-12 h-12 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
-                    <img src="/favicon.ico" alt="Current Favicon" className="max-w-full max-h-full" />
-                  </div>
-                </div>
-                <div>
-                  <button 
-                    onClick={() => setFaviconModalOpen(true)}
-                    className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
-                  >
-                    {language === 'ar' ? 'تحميل أيقونة جديدة' : 'Upload New Favicon'}
-                  </button>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
-      
-      {/* Favicon Upload Modal */}
-      {faviconModalOpen && (
-        <FaviconUpload isOpen={faviconModalOpen} onClose={() => setFaviconModalOpen(false)} />
-      )}
     </Layout>
   );
 };

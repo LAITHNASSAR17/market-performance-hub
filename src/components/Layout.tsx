@@ -2,20 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, FileImage, CreditCard, Moon, Sun, ShieldAlert } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LogOut, PlusCircle, Settings, Sparkles, Menu, LineChart as LineChart3, BarChart2, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Badge } from '@/components/ui/badge';
-import ThemeToggle from '@/components/ThemeToggle';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import FaviconUpload from '@/components/FaviconUpload';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -33,8 +29,6 @@ const Layout: React.FC<LayoutProps> = ({
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  const [showFaviconModal, setShowFaviconModal] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (isMobile) {
@@ -129,37 +123,6 @@ const Layout: React.FC<LayoutProps> = ({
                 <h2 className="text-xl font-bold flex-1 text-center dark:text-white">TradeTracker</h2>
               )}
             </div>
-            
-            <div className="flex items-center gap-2 mt-4 w-full">
-              <div className="flex flex-col flex-1">
-                <span className="text-sm font-medium dark:text-white">{user?.name}</span>
-                <span className="text-xs text-muted-foreground dark:text-gray-300">{user?.email}</span>
-              </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={logout}>
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  Logout
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            {!sidebarOpen && (
-              <div className="mt-4 flex justify-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={logout}>
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    Logout
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
           </div>
 
           <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
@@ -191,30 +154,7 @@ const Layout: React.FC<LayoutProps> = ({
             })}
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 py-4 px-4 space-y-2">
-            {/* Theme Toggle */}
-            <div className={cn(
-              "flex items-center justify-between bg-gray-100 dark:bg-indigo-800/60 px-2 py-2 rounded-lg mb-2",
-              !sidebarOpen && "flex-col gap-2"
-            )}>
-              <span className={cn(
-                "text-sm text-gray-700 dark:text-gray-300",
-                !sidebarOpen && "hidden"
-              )}>
-                Theme
-              </span>
-              <button 
-                onClick={toggleTheme}
-                className="p-1.5 rounded-md bg-gray-200 dark:bg-gray-600"
-              >
-                {theme === 'dark' ? (
-                  <Sun className="h-4 w-4 text-amber-500" />
-                ) : (
-                  <Moon className="h-4 w-4 text-indigo-600" />
-                )}
-              </button>
-            </div>
-            
+          <div className="absolute bottom-0 left-0 right-0 py-4 px-4 space-y-2">            
             {/* Admin Link (if user is admin) */}
             {isAdmin && (
               <Tooltip>
@@ -229,7 +169,10 @@ const Layout: React.FC<LayoutProps> = ({
                     )}
                   >
                     <Link to="/admin">
-                      <ShieldAlert className="h-4 w-4" />
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                        <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+                        <path d="M12 7v6l4 2"/>
+                      </svg>
                       {sidebarOpen && <span className="ml-2">Admin Panel</span>}
                     </Link>
                   </Button>
@@ -270,6 +213,31 @@ const Layout: React.FC<LayoutProps> = ({
                 Settings
               </TooltipContent>
             </Tooltip>
+            
+            {/* Logout Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={logout}
+                  className={cn(
+                    "w-full flex items-center justify-center text-red-600",
+                    !sidebarOpen && "px-2"
+                  )}
+                >
+                  <LogOut className="h-4 w-4" />
+                  {sidebarOpen && <span className="ml-2">Logout</span>}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent 
+                side="right" 
+                align="center"
+                hidden={sidebarOpen}
+              >
+                Logout
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -284,11 +252,6 @@ const Layout: React.FC<LayoutProps> = ({
           {children}
         </main>
       </div>
-      
-      {/* Favicon Upload Modal */}
-      {showFaviconModal && (
-        <FaviconUpload isOpen={showFaviconModal} onClose={() => setShowFaviconModal(false)} />
-      )}
     </TooltipProvider>
   );
 };
