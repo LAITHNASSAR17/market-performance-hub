@@ -1,17 +1,12 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
-
-// الملاحظة: يجب تغيير هذا إلى مفتاح Stripe الخاص بك
-const stripePromise = loadStripe('pk_test_TYooMQauvdEDq54NiTphI7jx');
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -82,10 +77,9 @@ const Payment = () => {
                 />
               </div>
               
-              {/* في النسخة الكاملة، ستضيف هنا حقول بطاقة Stripe */}
               <div className="p-4 bg-gray-50 rounded-md">
                 <p className="text-center text-gray-500 text-sm">
-                  هذه واجهة تجريبية. لتكامل Stripe الكامل، تحتاج إلى إعداد خادم خلفي (backend) لمعالجة المدفوعات بشكل آمن.
+                  هذه واجهة تجريبية. لتكامل الدفع الكامل، تحتاج إلى إعداد خادم خلفي (backend) لمعالجة المدفوعات بشكل آمن.
                 </p>
               </div>
             </form>
