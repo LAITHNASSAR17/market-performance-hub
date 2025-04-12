@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
@@ -149,23 +150,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error || !data) throw new Error('Invalid credentials');
       
-      if (data) {
-        console.log('Login attempt:', email);
-        console.log('Found user:', data ? 'Yes' : 'No');
+      console.log('Login attempt:', email);
+      console.log('Found user:', data ? 'Yes' : 'No');
+      
+      if (comparePassword(password, data.password)) {
+        if (data.is_blocked) {
+          throw new Error('User is blocked');
+        }
         
-        if (comparePassword(password, data.password)) {
-          if (data.is_blocked) {
-            throw new Error('User is blocked');
-          }
-          
-          const userToStore = { 
-            id: data.id,
-            name: data.name,
-            email: data.email,
-            role: data.role,
-            isAdmin: data.role === 'admin'
-          };
-        
+        const userToStore = { 
+          id: data.id,
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          isAdmin: data.role === 'admin'
+        };
+      
         // Ensure robust local storage
         localStorage.setItem('user', encryptData(JSON.stringify(userToStore)));
         
