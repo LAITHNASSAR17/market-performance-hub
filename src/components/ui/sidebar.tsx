@@ -251,7 +251,7 @@ export function SidebarMenuButton({
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           // Apply styling to icons
-          if (child.type === "svg" || (typeof child.type === "function" && child.type.displayName?.includes("Icon"))) {
+          if (child.type === "svg" || (typeof child.type === "function" && child.type.name?.includes("Icon"))) {
             return React.cloneElement(child, {
               ...child.props,
               className: cn("h-5 w-5", expanded && "mr-3", child.props.className),
