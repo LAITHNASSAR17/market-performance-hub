@@ -66,12 +66,12 @@ const UserTable: React.FC<UserTableProps> = ({
 
   const handleChangePassword = async () => {
     if (!newPassword) {
-      setError('Please enter a new password.');
+      setError('الرجاء إدخال كلمة مرور جديدة.');
       return;
     }
 
     if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError('يجب أن تكون كلمة المرور 6 أحرف على الأقل.');
       return;
     }
 
@@ -80,7 +80,7 @@ const UserTable: React.FC<UserTableProps> = ({
         await onChangePassword(selectedUser.email, newPassword);
         handleClosePasswordModal();
       } catch (err) {
-        setError('Failed to change password. Please try again.');
+        setError('فشل تغيير كلمة المرور. الرجاء المحاولة مرة أخرى.');
       }
     }
   };
@@ -97,7 +97,7 @@ const UserTable: React.FC<UserTableProps> = ({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
             className="pl-10 pr-4"
-            placeholder="Search users..."
+            placeholder="بحث عن المستخدمين..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -108,12 +108,12 @@ const UserTable: React.FC<UserTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Subscription</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[50px]">المعرف</TableHead>
+              <TableHead>الاسم</TableHead>
+              <TableHead>البريد الإلكتروني</TableHead>
+              <TableHead>الاشتراك</TableHead>
+              <TableHead>الحالة</TableHead>
+              <TableHead className="text-right">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -125,17 +125,17 @@ const UserTable: React.FC<UserTableProps> = ({
                   <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {user.isAdmin ? 'Admin' : 'Basic'}
+                      {user.isAdmin ? 'أدمن' : 'أساسي'}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     {user.isBlocked ? (
                       <Badge variant="destructive">
-                        Blocked
+                        محظور
                       </Badge>
                     ) : (
                       <Badge className="bg-green-500">
-                        Active
+                        نشط
                       </Badge>
                     )}
                   </TableCell>
@@ -145,7 +145,7 @@ const UserTable: React.FC<UserTableProps> = ({
                         variant="outline" 
                         size="sm" 
                         className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
-                        title="View User"
+                        title="عرض المستخدم"
                         onClick={() => onViewUser(user.id)}
                       >
                         <Eye className="h-4 w-4" />
@@ -155,7 +155,7 @@ const UserTable: React.FC<UserTableProps> = ({
                         size="sm"
                         onClick={() => handleOpenPasswordModal(user)}
                         className="text-amber-600 border-amber-600 hover:bg-amber-50 h-8 w-8 p-0"
-                        title="Change Password"
+                        title="تغيير كلمة المرور"
                       >
                         <Lock className="h-4 w-4" />
                       </Button>
@@ -163,7 +163,7 @@ const UserTable: React.FC<UserTableProps> = ({
                         variant="outline" 
                         size="sm"
                         className="text-indigo-600 border-indigo-600 hover:bg-indigo-50 h-8 w-8 p-0"
-                        title="Send Message"
+                        title="إرسال رسالة"
                       >
                         <Send className="h-4 w-4" />
                       </Button>
@@ -173,7 +173,7 @@ const UserTable: React.FC<UserTableProps> = ({
                           size="sm" 
                           onClick={() => onUnblock(user)}
                           className="text-green-600 border-green-600 hover:bg-green-50 h-8 w-8 p-0"
-                          title="Unblock User"
+                          title="إلغاء حظر المستخدم"
                         >
                           <UserCheck className="h-4 w-4" />
                         </Button>
@@ -183,7 +183,7 @@ const UserTable: React.FC<UserTableProps> = ({
                           size="sm" 
                           onClick={() => onBlock(user)}
                           className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
-                          title="Block User"
+                          title="حظر المستخدم"
                         >
                           <UserX className="h-4 w-4" />
                         </Button>
@@ -196,8 +196,8 @@ const UserTable: React.FC<UserTableProps> = ({
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
                   {searchTerm 
-                    ? "No users match your search."
-                    : "No users found."}
+                    ? "لا يوجد مستخدمين يطابقون البحث."
+                    : "لم يتم العثور على مستخدمين."}
                 </TableCell>
               </TableRow>
             )}
@@ -205,7 +205,7 @@ const UserTable: React.FC<UserTableProps> = ({
           <TableFooter>
             <TableRow>
               <TableCell colSpan={6} className="text-right">
-                Showing: {filteredUsers.length} / {users.length}
+                يتم عرض: {filteredUsers.length} / {users.length}
               </TableCell>
             </TableRow>
           </TableFooter>
@@ -215,9 +215,9 @@ const UserTable: React.FC<UserTableProps> = ({
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>تغيير كلمة المرور</DialogTitle>
             <DialogDescription>
-              Enter a new password for {selectedUser?.email}.
+              أدخل كلمة مرور جديدة لـ {selectedUser?.email}.
             </DialogDescription>
           </DialogHeader>
           {error && (
@@ -228,12 +228,12 @@ const UserTable: React.FC<UserTableProps> = ({
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="newPassword" className="text-right">
-                New Password
+                كلمة المرور الجديدة
               </Label>
               <Input
                 id="newPassword"
                 type="password"
-                placeholder="Enter new password"
+                placeholder="أدخل كلمة المرور الجديدة"
                 className="col-span-3"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -242,11 +242,11 @@ const UserTable: React.FC<UserTableProps> = ({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleClosePasswordModal}>
-              Cancel
+              إلغاء
             </Button>
             <Button onClick={handleChangePassword} className="bg-purple-600 hover:bg-purple-700">
               <Lock className="mr-2 h-4 w-4" />
-              Change Password
+              تغيير كلمة المرور
             </Button>
           </DialogFooter>
         </DialogContent>

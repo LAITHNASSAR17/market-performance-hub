@@ -49,8 +49,8 @@ const tradedPairsData = [
 ];
 
 const winLossRatioData = [
-  { name: 'Winning', value: 65 },
-  { name: 'Losing', value: 35 },
+  { name: 'رابحة', value: 65 },
+  { name: 'خاسرة', value: 35 },
 ];
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -65,7 +65,7 @@ const AdminCharts: React.FC<AdminChartsProps> = ({ className }) => {
     <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${className}`}>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Monthly User Growth</CardTitle>
+          <CardTitle className="text-base font-medium">نمو المستخدمين الشهري</CardTitle>
         </CardHeader>
         <CardContent className="p-2">
           <ResponsiveContainer width="100%" height={200}>
@@ -85,7 +85,7 @@ const AdminCharts: React.FC<AdminChartsProps> = ({ className }) => {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Daily Activity</CardTitle>
+          <CardTitle className="text-base font-medium">النشاط اليومي</CardTitle>
         </CardHeader>
         <CardContent className="p-2">
           <ResponsiveContainer width="100%" height={200}>
@@ -98,8 +98,8 @@ const AdminCharts: React.FC<AdminChartsProps> = ({ className }) => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="trades" fill="#8884d8" />
-              <Bar dataKey="notes" fill="#82ca9d" />
+              <Bar dataKey="trades" fill="#8884d8" name="الصفقات" />
+              <Bar dataKey="notes" fill="#82ca9d" name="الملاحظات" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -107,7 +107,7 @@ const AdminCharts: React.FC<AdminChartsProps> = ({ className }) => {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Most Traded Pairs</CardTitle>
+          <CardTitle className="text-base font-medium">أزواج العملات الأكثر تداولاً</CardTitle>
         </CardHeader>
         <CardContent className="p-2">
           <ResponsiveContainer width="100%" height={200}>
@@ -135,7 +135,7 @@ const AdminCharts: React.FC<AdminChartsProps> = ({ className }) => {
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-medium">Win/Loss Ratio</CardTitle>
+          <CardTitle className="text-base font-medium">نسبة الربح/الخسارة</CardTitle>
         </CardHeader>
         <CardContent className="p-2">
           <ResponsiveContainer width="100%" height={200}>

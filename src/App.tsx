@@ -21,7 +21,7 @@ import Notebook from "./pages/Notebook";
 import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
 import Analytics from "./pages/Analytics";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import TradingChart from "./pages/TradingChart";
 import TradeTracking from "./pages/TradeTracking";
 import Payment from "./pages/Payment";

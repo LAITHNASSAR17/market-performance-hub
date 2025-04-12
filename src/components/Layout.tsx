@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -89,7 +90,7 @@ const Layout: React.FC<LayoutProps> = ({
 
   if (isAdmin) {
     navigation.push({
-      name: t('nav.adminPanel'),
+      name: t('nav.adminPanel') || 'لوحة الأدمن',
       icon: ShieldAlert,
       href: '/admin'
     });

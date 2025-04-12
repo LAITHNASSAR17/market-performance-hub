@@ -38,17 +38,17 @@ const TradeTable: React.FC<TradeTableProps> = ({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
             className="pl-10 pr-4"
-            placeholder="Search trades..."
+            placeholder="بحث في الصفقات..."
           />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="flex items-center" onClick={onExport}>
             <FileUp className="mr-1 h-4 w-4" />
-            Export
+            تصدير
           </Button>
           <Button size="sm" className="flex items-center" onClick={onRefresh}>
             <RefreshCw className="mr-1 h-4 w-4" />
-            Refresh
+            تحديث
           </Button>
         </div>
       </div>
@@ -57,13 +57,13 @@ const TradeTable: React.FC<TradeTableProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Pair</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>P/L</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>المعرف</TableHead>
+              <TableHead>المستخدم</TableHead>
+              <TableHead>الزوج</TableHead>
+              <TableHead>النوع</TableHead>
+              <TableHead>التاريخ</TableHead>
+              <TableHead>الربح/الخسارة</TableHead>
+              <TableHead className="text-right">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -87,7 +87,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         size="sm" 
                         onClick={() => onViewTrade(trade.id)}
                         className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
-                        title="View Trade"
+                        title="عرض الصفقة"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -96,7 +96,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         size="sm" 
                         onClick={() => onEditTrade(trade.id)}
                         className="text-amber-600 border-amber-600 hover:bg-amber-50 h-8 w-8 p-0"
-                        title="Edit Trade"
+                        title="تعديل الصفقة"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -105,7 +105,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
                         size="sm" 
                         onClick={() => onDeleteTrade(trade.id)}
                         className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
-                        title="Delete Trade"
+                        title="حذف الصفقة"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -116,7 +116,7 @@ const TradeTable: React.FC<TradeTableProps> = ({
             ) : (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  No trades available. Trades will appear here once users start adding them.
+                  لا توجد صفقات متاحة. ستظهر الصفقات هنا بمجرد أن يبدأ المستخدمون في إضافتها.
                 </TableCell>
               </TableRow>
             )}
