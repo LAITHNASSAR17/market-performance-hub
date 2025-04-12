@@ -29,7 +29,16 @@ const AdminUsers: React.FC = () => {
     try {
       // Using Auth context instead of AdminController due to database errors
       const allUsers = getAllUsers();
-      setUsers(allUsers);
+      
+      // Make sure all users have the required properties
+      const completeUsers = allUsers.map(user => ({
+        ...user,
+        username: user.username || user.name || '',
+        createdAt: user.createdAt || new Date(),
+        isBlocked: user.isBlocked || false
+      }));
+      
+      setUsers(completeUsers);
     } catch (error) {
       console.error("Error loading users:", error);
       toast({
