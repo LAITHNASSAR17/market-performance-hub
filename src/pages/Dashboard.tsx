@@ -39,14 +39,12 @@ const Dashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTradeDetails, setShowTradeDetails] = useState(false);
   
-  // Effect to handle export report functionality
   const exportReport = () => {
     toast({
       title: "Exporting report",
       description: "Your trading report is being generated and will download shortly."
     });
     
-    // Simulation of report export - in a real app, this would generate a PDF or CSV
     setTimeout(() => {
       toast({
         title: "Report exported",
@@ -172,7 +170,6 @@ const Dashboard: React.FC = () => {
           .filter(day => day !== null)
           .reduce((sum, day) => sum + (day?.trades || 0), 0);
         
-        // Get the week number
         const weekNumber = currentWeek.some(day => day !== null) ? 
           getWeek(new Date(currentWeek.find(day => day !== null)?.date || new Date())) : 0;
         
@@ -242,14 +239,14 @@ const Dashboard: React.FC = () => {
 
   return (
     <Layout>
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Trading Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold mb-1">Trading Dashboard</h1>
           <p className="text-gray-500">Overview of your trading performance</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Select timeframe" />
             </SelectTrigger>
             <SelectContent>
@@ -260,14 +257,14 @@ const Dashboard: React.FC = () => {
               <SelectItem value="year">Last Year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={exportReport}>
+          <Button variant="outline" onClick={exportReport} className="w-full sm:w-auto">
             <Calendar className="h-4 w-4 mr-2" />
             Export Report
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <StatCard
           title="Total P&L"
           value={`$${totalProfit.toLocaleString('en-US', {
@@ -286,7 +283,7 @@ const Dashboard: React.FC = () => {
           description={`${profitFactor > 1 ? '+' : ''}${profitFactor === Infinity ? "" : (profitFactor - 1).toFixed(2)}`}
         />
         
-        <div className="lg:col-span-2">
+        <div className="md:col-span-2">
           <AverageTradeCards 
             avgWin={avgWinningTrade} 
             avgLoss={avgLosingTrade}
@@ -296,7 +293,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <Card className="col-span-1">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -307,10 +304,10 @@ const Dashboard: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center">
-              <div className="relative w-[220px] h-[220px]">
+            <div className="h-[250px] sm:h-[300px] flex flex-col sm:flex-row items-center justify-center">
+              <div className="relative w-[180px] sm:w-[220px] h-[180px] sm:h-[220px]">
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
+                  <span className="text-3xl sm:text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
                   <span className="text-sm text-gray-500">winrate</span>
                 </div>
                 <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -335,7 +332,7 @@ const Dashboard: React.FC = () => {
                   />
                 </svg>
               </div>
-              <div className="ml-4">
+              <div className="ml-0 mt-4 sm:mt-0 sm:ml-4">
                 <div className="mb-4">
                   <div className="flex items-center mb-1">
                     <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
@@ -356,7 +353,7 @@ const Dashboard: React.FC = () => {
             <CardTitle className="text-lg">P&L Analysis</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[250px] sm:h-[300px]">
               <DailyPLBarChart 
                 data={dailyPerformanceData}
                 title=""
@@ -366,12 +363,12 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg">Daily Net Cumulative P&L</CardTitle>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[250px] sm:h-[300px]">
             <DailyPLBarChart 
               data={dailyPerformanceData}
               title=""
@@ -380,90 +377,91 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <Card className="mb-6">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
           <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
           <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
             <Calendar className="h-4 w-4 mr-2" />
             Journal View
           </Button>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-1">
-            <div className="text-sm font-medium text-center p-2">Sun</div>
-            <div className="text-sm font-medium text-center p-2">Mon</div>
-            <div className="text-sm font-medium text-center p-2">Tue</div>
-            <div className="text-sm font-medium text-center p-2">Wed</div>
-            <div className="text-sm font-medium text-center p-2">Thu</div>
-            <div className="text-sm font-medium text-center p-2">Fri</div>
-            <div className="text-sm font-medium text-center p-2">Sat</div>
-            
-            {getCalendarData().map((week, weekIndex) => (
-              <React.Fragment key={`week-${weekIndex}`}>
-                {week.days.map((day, dayIndex) => 
-                  day === null ? (
-                    <div key={`empty-${weekIndex}-${dayIndex}`} className="p-2"></div>
-                  ) : (
-                    <div 
-                      key={`day-${day.day}`} 
-                      className={cn(
-                        "border rounded p-2 text-center min-h-[80px] cursor-pointer transition-colors",
-                        day.profit > 0 ? "bg-green-50 border-green-200 hover:bg-green-100" : 
-                        day.profit < 0 ? "bg-red-50 border-red-200 hover:bg-red-100" : 
-                        "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                      )}
-                      onClick={() => handleDayClick(day.date)}
-                    >
-                      <div className="text-sm">{day.day}</div>
-                      {day.trades > 0 && (
-                        <>
-                          <div className={cn(
-                            "text-lg font-bold mt-1",
-                            day.profit > 0 ? "text-emerald-500" : "text-red-500"
-                          )}>
-                            {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
-                          </div>
-                          <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="mt-1 text-xs h-6 px-2 flex items-center"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigateToJournal(day.date);
-                            }}
-                          >
-                            View
-                            <ExternalLink className="ml-1 h-3 w-3" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )
-                )}
-                
-                {/* Weekly summary - separate card on the right */}
-                <div className="col-span-7 mt-1 mb-4 flex justify-end">
-                  <div className="w-[200px] bg-gray-50 border rounded-md p-3 flex flex-col">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">Week {week.weekNumber}</span>
-                      <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
-                        {week.weeklyTrades} {week.weeklyTrades === 1 ? 'trade' : 'trades'}
-                      </span>
-                    </div>
-                    <div className={cn(
-                      "font-bold text-lg",
-                      week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : "text-gray-600"
-                    )}>
-                      {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Net P&L for week {week.weekNumber}
+        <CardContent className="overflow-x-auto">
+          <div className="min-w-[768px] md:min-w-0">
+            <div className="grid grid-cols-7 gap-1">
+              <div className="text-sm font-medium text-center p-2">Sun</div>
+              <div className="text-sm font-medium text-center p-2">Mon</div>
+              <div className="text-sm font-medium text-center p-2">Tue</div>
+              <div className="text-sm font-medium text-center p-2">Wed</div>
+              <div className="text-sm font-medium text-center p-2">Thu</div>
+              <div className="text-sm font-medium text-center p-2">Fri</div>
+              <div className="text-sm font-medium text-center p-2">Sat</div>
+              
+              {getCalendarData().map((week, weekIndex) => (
+                <React.Fragment key={`week-${weekIndex}`}>
+                  {week.days.map((day, dayIndex) => 
+                    day === null ? (
+                      <div key={`empty-${weekIndex}-${dayIndex}`} className="p-2"></div>
+                    ) : (
+                      <div 
+                        key={`day-${day.day}`} 
+                        className={cn(
+                          "border rounded p-2 text-center min-h-[70px] sm:min-h-[80px] cursor-pointer transition-colors",
+                          day.profit > 0 ? "bg-green-50 border-green-200 hover:bg-green-100" : 
+                          day.profit < 0 ? "bg-red-50 border-red-200 hover:bg-red-100" : 
+                          "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                        )}
+                        onClick={() => handleDayClick(day.date)}
+                      >
+                        <div className="text-sm">{day.day}</div>
+                        {day.trades > 0 && (
+                          <>
+                            <div className={cn(
+                              "text-base sm:text-lg font-bold mt-1",
+                              day.profit > 0 ? "text-emerald-500" : "text-red-500"
+                            )}>
+                              {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
+                            </div>
+                            <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="mt-1 text-xs h-6 px-2 flex items-center"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigateToJournal(day.date);
+                              }}
+                            >
+                              View
+                              <ExternalLink className="ml-1 h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )
+                  )}
+                  
+                  <div className="col-span-7 mt-1 mb-4 flex justify-end">
+                    <div className="w-full sm:w-[200px] bg-gray-50 border rounded-md p-3 flex flex-col">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Week {week.weekNumber}</span>
+                        <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                          {week.weeklyTrades} {week.weeklyTrades === 1 ? 'trade' : 'trades'}
+                        </span>
+                      </div>
+                      <div className={cn(
+                        "font-bold text-lg",
+                        week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : "text-gray-600"
+                      )}>
+                        {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Net P&L for week {week.weekNumber}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </React.Fragment>
-            ))}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>

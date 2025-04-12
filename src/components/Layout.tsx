@@ -3,12 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, ShieldAlert, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, ShieldAlert, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
-import LanguageToggle from '@/components/LanguageToggle';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   SidebarProvider,
   Sidebar,
@@ -36,7 +41,8 @@ const Layout: React.FC<LayoutProps> = ({
   } = useAuth();
   const {
     t,
-    language
+    language,
+    setLanguage
   } = useLanguage();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -106,8 +112,12 @@ const Layout: React.FC<LayoutProps> = ({
     setSidebarOpen(!sidebarOpen);
   };
 
+  const toggleLanguage = () => {
+    setLanguage(language === 'ar' ? 'en' : 'ar');
+  };
+
   return (
-    <SidebarProvider defaultOpen={!isMobile}>
+    <TooltipProvider delayDuration={300}>
       <div className="flex h-screen bg-gray-50" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         {/* Sidebar */}
         <div className={cn(
@@ -131,7 +141,27 @@ const Layout: React.FC<LayoutProps> = ({
                 <h2 className="text-xl font-bold flex-1 text-center">{t('app.name') || 'TradeTracker'}</h2>
               )}
               
-              <LanguageToggle />
+              {/* Language toggle - only show text when sidebar is open */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    onClick={toggleLanguage}
+                    className="flex items-center"
+                    size={sidebarOpen ? "default" : "icon"}
+                  >
+                    <Globe className="h-5 w-5" />
+                    {sidebarOpen && (
+                      <span className="ml-2">
+                        {language === 'ar' ? 'English' : 'العربية'}
+                      </span>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center" hidden={sidebarOpen}>
+                  {language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+                </TooltipContent>
+              </Tooltip>
             </div>
             
             {sidebarOpen && (
@@ -140,9 +170,30 @@ const Layout: React.FC<LayoutProps> = ({
                   <span className="text-sm font-medium">{user?.name}</span>
                   <span className="text-xs text-muted-foreground">{user?.email}</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={logout} title={t('auth.logout')}>
-                  <LogOut className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={logout}>
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                    {t('auth.logout')}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+            {!sidebarOpen && (
+              <div className="mt-4 flex justify-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={logout}>
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                    {t('auth.logout')}
+                  </TooltipContent>
+                </Tooltip>
               </div>
             )}
           </div>
@@ -151,39 +202,58 @@ const Layout: React.FC<LayoutProps> = ({
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
-                <Link 
-                  key={item.href} 
-                  to={item.href} 
-                  className={cn(
-                    "flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  )}
-                  title={!sidebarOpen ? item.name : undefined}
-                >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  {sidebarOpen && <span className="ml-3">{item.name}</span>}
-                </Link>
+                <Tooltip key={item.href}>
+                  <TooltipTrigger asChild>
+                    <Link 
+                      to={item.href} 
+                      className={cn(
+                        "flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5 flex-shrink-0" />
+                      {sidebarOpen && <span className="ml-3">{item.name}</span>}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side={language === 'ar' ? 'left' : 'right'} 
+                    align="center"
+                    hidden={sidebarOpen}
+                  >
+                    {item.name}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
 
           {/* Footer */}
           <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              asChild 
-              className={cn(
-                "w-full flex items-center justify-center",
-                !sidebarOpen && "px-2"
-              )}
-              title={!sidebarOpen ? t('nav.settings') : undefined}
-            >
-              <Link to="/settings">
-                <Settings className="h-4 w-4" />
-                {sidebarOpen && <span className="ml-2">{t('nav.settings') || 'Settings'}</span>}
-              </Link>
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  asChild 
+                  className={cn(
+                    "w-full flex items-center justify-center",
+                    !sidebarOpen && "px-2"
+                  )}
+                >
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4" />
+                    {sidebarOpen && <span className="ml-2">{t('nav.settings') || 'Settings'}</span>}
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent 
+                side={language === 'ar' ? 'left' : 'right'} 
+                align="center"
+                hidden={sidebarOpen}
+              >
+                {t('nav.settings') || 'Settings'}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -196,11 +266,11 @@ const Layout: React.FC<LayoutProps> = ({
         )}
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto bg-trading-background p-6">
+        <main className="flex-1 overflow-y-auto bg-trading-background p-4 md:p-6">
           {children}
         </main>
       </div>
-    </SidebarProvider>
+    </TooltipProvider>
   );
 };
 
