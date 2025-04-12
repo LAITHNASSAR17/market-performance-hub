@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +16,6 @@ import * as z from 'zod';
 import LanguageToggle from '@/components/LanguageToggle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { TooltipProvider } from '@/components/ui/tooltip';
 
 const Login: React.FC = () => {
   const { t } = useLanguage();
@@ -28,6 +28,7 @@ const Login: React.FC = () => {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
+  // Clear localStorage if URL has a clear param (for debugging purposes)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('clear')) {
@@ -38,6 +39,7 @@ const Login: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Check if there's a test admin user
     const users = localStorage.getItem('users');
     if (users && JSON.parse(users).length > 0) {
       const adminUser = JSON.parse(users).find((u: any) => u.isAdmin);
@@ -90,6 +92,7 @@ const Login: React.FC = () => {
     try {
       await login(email, password);
     } catch (err) {
+      // Error is handled in the login function with toast
       setError(t('login.error.credentials'));
     }
   };
@@ -101,6 +104,7 @@ const Login: React.FC = () => {
       setResetPasswordOpen(true);
       resetPasswordForm.setValue("email", values.email);
     } catch (error) {
+      // Error is handled in the auth context
     }
   };
 
@@ -109,6 +113,7 @@ const Login: React.FC = () => {
       await resetPassword(values.email, values.resetCode, values.newPassword);
       setResetPasswordOpen(false);
     } catch (error) {
+      // Error is handled in the auth context
     }
   };
 
@@ -126,243 +131,241 @@ const Login: React.FC = () => {
   }
 
   return (
-    <TooltipProvider>
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md">
-          <div className="flex justify-center mb-8 relative">
-            <div className="bg-blue-500 p-3 rounded-full">
-              <LineChart className="h-8 w-8 text-white" />
-            </div>
-            <div className="absolute top-0 right-0">
-              <LanguageToggle />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-8 relative">
+          <div className="bg-blue-500 p-3 rounded-full">
+            <LineChart className="h-8 w-8 text-white" />
           </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center">{t('login.title')}</CardTitle>
-              <CardDescription className="text-center">
-                {t('login.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {showCredentials && (
-                <Alert className="mb-4 bg-blue-50 border-blue-200">
-                  <Info className="h-4 w-4 text-blue-500" />
-                  <AlertDescription className="text-blue-700">
-                    <p>Admin account: <strong>lnmr2001@gmail.com</strong></p>
-                    <p>Password: <strong>password123</strong></p>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-2 text-xs bg-blue-100 border-blue-300"
-                      onClick={fillDemoCredentials}
-                    >
-                      Use Demo Credentials
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                {error && (
-                  <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="text-sm">{error}</span>
-                  </div>
-                )}
-                
-                <div className="mb-4">
-                  <Label htmlFor="email">{t('login.email')}</Label>
-                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                    <Mail className="h-4 w-4 mx-3 text-gray-500" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder={t('login.email')}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">{t('login.password')}</Label>
-                    <Button 
-                      type="button" 
-                      variant="link" 
-                      className="text-xs p-0 h-auto"
-                      onClick={() => setForgotPasswordOpen(true)}
-                    >
-                      {t('login.forgotPassword')}
-                    </Button>
-                  </div>
-                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                    <Lock className="h-4 w-4 mx-3 text-gray-500" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder={t('login.password')}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? t('login.loggingIn') : t('login.loginButton')}
-                </Button>
-              </form>
-            </CardContent>
-            <CardFooter className="flex justify-center">
-              <p className="text-sm text-gray-600">
-                {t('login.noAccount')}{' '}
-                <Link to="/register" className="text-blue-600 hover:underline">
-                  {t('login.register')}
-                </Link>
-              </p>
-            </CardFooter>
-          </Card>
+          <div className="absolute top-0 right-0">
+            <LanguageToggle />
+          </div>
         </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center">{t('login.title')}</CardTitle>
+            <CardDescription className="text-center">
+              {t('login.description')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {showCredentials && (
+              <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <Info className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-blue-700">
+                  <p>Admin account: <strong>lnmr2001@gmail.com</strong></p>
+                  <p>Password: <strong>password123</strong></p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 text-xs bg-blue-100 border-blue-300"
+                    onClick={fillDemoCredentials}
+                  >
+                    Use Demo Credentials
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
 
-        {/* Forgot Password Dialog */}
-        <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('forgotPassword.title')}</DialogTitle>
-              <DialogDescription>
-                {t('forgotPassword.description')}
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...forgotPasswordForm}>
-              <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
-                <FormField
-                  control={forgotPasswordForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('login.email')}</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                          <Mail className="h-4 w-4 mx-3 text-gray-500" />
-                          <Input placeholder={t('login.email')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)}>
-                    {t('forgotPassword.cancel')}
+            <form onSubmit={handleSubmit}>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+              
+              <div className="mb-4">
+                <Label htmlFor="email">{t('login.email')}</Label>
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t('login.email')}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t('login.password')}</Label>
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="text-xs p-0 h-auto"
+                    onClick={() => setForgotPasswordOpen(true)}
+                  >
+                    {t('login.forgotPassword')}
                   </Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? t('forgotPassword.sending') : t('forgotPassword.button')}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Reset Password Dialog */}
-        <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('resetPassword.title')}</DialogTitle>
-              <DialogDescription>
-                {t('resetPassword.description')}
-              </DialogDescription>
-            </DialogHeader>
-            <Form {...resetPasswordForm}>
-              <form onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)} className="space-y-4">
-                <FormField
-                  control={resetPasswordForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('login.email')}</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                          <Mail className="h-4 w-4 mx-3 text-gray-500" />
-                          <Input placeholder={t('login.email')} {...field} readOnly className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={resetPasswordForm.control}
-                  name="resetCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('resetPassword.code')}</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                          <Key className="h-4 w-4 mx-3 text-gray-500" />
-                          <Input placeholder={t('resetPassword.code')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={resetPasswordForm.control}
-                  name="newPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('resetPassword.newPassword')}</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                          <Lock className="h-4 w-4 mx-3 text-gray-500" />
-                          <Input type="password" placeholder={t('resetPassword.newPassword')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={resetPasswordForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('resetPassword.confirmPassword')}</FormLabel>
-                      <FormControl>
-                        <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                          <Lock className="h-4 w-4 mx-3 text-gray-500" />
-                          <Input type="password" placeholder={t('resetPassword.confirmPassword')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setResetPasswordOpen(false)}>
-                    {t('forgotPassword.cancel')}
-                  </Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? t('resetPassword.resetting') : t('resetPassword.button')}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+                </div>
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={t('login.password')}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? t('login.loggingIn') : t('login.loginButton')}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-gray-600">
+              {t('login.noAccount')}{' '}
+              <Link to="/register" className="text-blue-600 hover:underline">
+                {t('login.register')}
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
       </div>
-    </TooltipProvider>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('forgotPassword.title')}</DialogTitle>
+            <DialogDescription>
+              {t('forgotPassword.description')}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...forgotPasswordForm}>
+            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+              <FormField
+                control={forgotPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('login.email')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder={t('login.email')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)}>
+                  {t('forgotPassword.cancel')}
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? t('forgotPassword.sending') : t('forgotPassword.button')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('resetPassword.title')}</DialogTitle>
+            <DialogDescription>
+              {t('resetPassword.description')}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...resetPasswordForm}>
+            <form onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)} className="space-y-4">
+              <FormField
+                control={resetPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('login.email')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder={t('login.email')} {...field} readOnly className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="resetCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('resetPassword.code')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Key className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder={t('resetPassword.code')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('resetPassword.newPassword')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input type="password" placeholder={t('resetPassword.newPassword')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('resetPassword.confirmPassword')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input type="password" placeholder={t('resetPassword.confirmPassword')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setResetPasswordOpen(false)}>
+                  {t('forgotPassword.cancel')}
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? t('resetPassword.resetting') : t('resetPassword.button')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

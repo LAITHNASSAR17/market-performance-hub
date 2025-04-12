@@ -1,3 +1,4 @@
+
 import { BaseModel } from './BaseModel';
 
 export interface ChartData {
@@ -58,9 +59,7 @@ export class ChartModel extends BaseModel {
         updatedAt: now
       };
       
-      const result = await this.create(dataWithTimestamps);
-      // Convert string IDs to number if needed
-      return typeof result === 'string' ? parseInt(result, 10) : result;
+      return this.create(dataWithTimestamps);
     }
   }
 
@@ -68,7 +67,7 @@ export class ChartModel extends BaseModel {
   async deleteChartSettings(id: number, userId: number): Promise<boolean> {
     const sql = "DELETE FROM chart_settings WHERE id = ? AND userId = ?";
     const result = await this.query(sql, [id, userId]);
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
   // Get P&L data by day for charting

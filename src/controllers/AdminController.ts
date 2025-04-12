@@ -1,4 +1,3 @@
-
 import { UserController } from './UserController';
 import { TradeController } from './TradeController';
 import { TagController } from './TagController';
@@ -199,10 +198,8 @@ export class AdminController {
     return this.themeController.getAllThemes();
   }
   
-  async setDefaultTheme(themeId: number | string) {
-    // Convert themeId to number if it's a string
-    const numericThemeId = typeof themeId === 'string' ? parseInt(themeId, 10) : themeId;
-    return this.themeController.setDefaultTheme(numericThemeId);
+  async setDefaultTheme(themeId: number) {
+    return this.themeController.setDefaultTheme(themeId);
   }
 
   async getAllTranslations() {

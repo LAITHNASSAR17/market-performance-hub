@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -26,7 +26,6 @@ interface CurrencyPairInputProps {
   placeholder?: string;
   className?: string;
   error?: string;
-  onAddTrade?: () => void; // Prop to trigger trade addition
 }
 
 const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
@@ -35,8 +34,7 @@ const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
   options,
   placeholder = "Select or type currency pair",
   className,
-  error,
-  onAddTrade
+  error
 }) => {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -52,13 +50,6 @@ const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
   const handleSelect = (currentValue: string) => {
     onChange(currentValue);
     setInputValue(currentValue);
-    
-    // Call onAddTrade if provided and close dropdown
-    if (onAddTrade) {
-      onAddTrade();
-    }
-    
-    // Always close the dropdown after selection
     setOpen(false);
   };
 
@@ -67,13 +58,6 @@ const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
     const newValue = e.target.value;
     setInputValue(newValue);
     onChange(newValue);
-  };
-  
-  // Clear the input field
-  const handleClear = () => {
-    setInputValue('');
-    onChange('');
-    inputRef.current?.focus();
   };
 
   // Filtered options based on current input
@@ -97,31 +81,15 @@ const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
               onChange={handleInputChange}
               onFocus={() => setOpen(true)}
             />
-            <div className="absolute right-0 h-full px-3 flex items-center">
-              {inputValue && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  className="h-5 w-5 p-0 mr-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClear();
-                  }}
-                >
-                  <X className="h-3 w-3 shrink-0" />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                type="button"
-                className="h-8 w-8 p-0"
-                onClick={() => setOpen(!open)}
-              >
-                <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              className="absolute right-0 h-full px-3"
+              onClick={() => setOpen(!open)}
+            >
+              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            </Button>
           </div>
         </PopoverTrigger>
         <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
@@ -129,7 +97,6 @@ const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
             <CommandInput
               placeholder={t('addTrade.searchSymbols') || "Search symbols..."}
               className="h-9"
-              autoFocus={false}
             />
             <CommandList>
               {filteredOptions.length === 0 && (

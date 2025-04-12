@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
@@ -45,6 +45,7 @@ const AddTrade: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
 
+  // Calculate profit/loss and return percentage automatically when entry, exit, and lotSize are provided
   useEffect(() => {
     if (isCalculating) return;
 
@@ -117,21 +118,8 @@ const AddTrade: React.FC = () => {
       addSymbol(newSymbol);
     }
   };
-
-  const handleAddSymbol = () => {
-    const { pair } = formData;
-    if (pair && !pairs.includes(pair)) {
-      const symbolType = determineSymbolType(pair);
-      const newSymbol = {
-        symbol: pair,
-        name: pair,
-        type: symbolType
-      };
-      
-      addSymbol(newSymbol);
-    }
-  };
-
+  
+  // Helper function to determine symbol type based on naming pattern
   const determineSymbolType = (symbol: string): 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other' => {
     if (symbol.includes('/')) {
       if (symbol.includes('BTC') || symbol.includes('ETH') || symbol.includes('USDT')) {
@@ -249,7 +237,6 @@ const AddTrade: React.FC = () => {
                   options={pairs}
                   placeholder={t('addTrade.selectOrType') || "Select or type currency pair"}
                   error={errors.pair}
-                  onAddTrade={handleAddSymbol}
                 />
               </div>
 

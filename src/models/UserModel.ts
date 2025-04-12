@@ -1,3 +1,4 @@
+
 import { BaseModel } from './BaseModel';
 import * as crypto from 'crypto-js';
 
@@ -79,10 +80,7 @@ export class UserModel extends BaseModel {
       dataToInsert.createdAt
     ]);
 
-    // Extract insertId from MongoDB-compatible result
-    return result.length > 0 && result[0].insertId ? 
-      (typeof result[0].insertId === 'string' ? parseInt(result[0].insertId, 10) : result[0].insertId) : 
-      Date.now();
+    return result.insertId;
   }
 
   async update(id: number, userData: Partial<User>): Promise<boolean> {
@@ -130,7 +128,7 @@ export class UserModel extends BaseModel {
     const sql = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
     const result = await this.query(sql, values);
 
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
   async updateLastLogin(id: number): Promise<boolean> {
@@ -138,7 +136,7 @@ export class UserModel extends BaseModel {
     const sql = 'UPDATE users SET lastLogin = ? WHERE id = ?';
     const result = await this.query(sql, [now, id]);
     
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
   async delete(id: number): Promise<boolean> {

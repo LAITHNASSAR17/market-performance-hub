@@ -1,3 +1,4 @@
+
 import { BaseModel } from './BaseModel';
 
 export interface CalendarEvent {
@@ -60,9 +61,7 @@ export class CalendarModel extends BaseModel {
       updatedAt: now
     };
     
-    const result = await this.create(eventWithTimestamps);
-    // Convert string IDs to number if needed
-    return typeof result === 'string' ? parseInt(result, 10) : result;
+    return this.create(eventWithTimestamps);
   }
 
   // Update a calendar event
@@ -78,14 +77,14 @@ export class CalendarModel extends BaseModel {
     
     const sql = "UPDATE calendar_events SET ? WHERE id = ? AND userId = ?";
     const result = await this.query(sql, [dataWithTimestamp, id, userId]);
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
   // Delete a calendar event
   async deleteEvent(id: number, userId: number): Promise<boolean> {
     const sql = "DELETE FROM calendar_events WHERE id = ? AND userId = ?";
     const result = await this.query(sql, [id, userId]);
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
   // Get events by type

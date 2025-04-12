@@ -300,7 +300,7 @@ const Notebook: React.FC = () => {
                   <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}
@@ -364,7 +364,7 @@ const Notebook: React.FC = () => {
                   <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}
