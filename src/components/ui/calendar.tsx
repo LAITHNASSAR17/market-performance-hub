@@ -56,9 +56,9 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
       }}
-      // Hide week row
+      // Hide week numbers by passing an empty formatter for week numbers
       formatters={{
-        formatWeek: () => "", // Empty formatter removes the week display
+        formatWeekNumber: () => "",
       }}
       // Remove footer to hide week summary
       footer={null}
