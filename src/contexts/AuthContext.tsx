@@ -1,7 +1,9 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface User {
   id: string;
@@ -10,8 +12,7 @@ interface User {
   password?: string;
   isAdmin?: boolean;
   isBlocked?: boolean;
-  encryptedName?: string;
-  encryptedEmail?: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -26,7 +27,7 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
   updateUser: (updatedUser: User) => Promise<void>;
-  getAllUsers: () => User[];
+  getAllUsers: () => Promise<User[]>;
   blockUser: (user: User) => Promise<void>;
   unblockUser: (user: User) => Promise<void>;
   changePassword: (email: string, newPassword: string) => Promise<void>;
@@ -38,12 +39,6 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-interface StoredUser extends User {
-  encryptedName: string;
-  encryptedEmail: string;
-  password?: string;
-}
-
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -53,103 +48,136 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Initialize the admin user in Supabase if it doesn't exist
   useEffect(() => {
-    const storedUsers = localStorage.getItem('users');
-    if (!storedUsers || JSON.parse(storedUsers).length === 0) {
-      const adminEmail = 'lnmr2001@gmail.com';
-      const adminPassword = 'password123';
-      const hashedPassword = hashPassword(adminPassword);
-      const encryptedName = encryptData('Admin User');
-      const encryptedEmail = encryptData(adminEmail);
-      
-      const adminUser: StoredUser = {
-        id: 'admin-1',
-        name: 'Admin User',
-        email: adminEmail,
-        password: hashedPassword,
-        encryptedName,
-        encryptedEmail,
-        isAdmin: true,
-        isBlocked: false,
-      };
-      
-      localStorage.setItem('users', JSON.stringify([adminUser]));
-      console.log('Test admin user created:', adminEmail);
-    }
+    const initializeAdminUser = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', 'lnmr2001@gmail.com')
+        .single();
+
+      if (error && error.code === 'PGRST116') {
+        // User doesn't exist, create the admin
+        const adminEmail = 'lnmr2001@gmail.com';
+        const adminPassword = hashPassword('password123');
+        
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            name: 'Admin User',
+            email: adminEmail,
+            password: adminPassword,
+            role: 'admin',
+            is_blocked: false
+          });
+          
+        if (insertError) {
+          console.error('Error creating admin user:', insertError);
+        } else {
+          console.log('Test admin user created:', adminEmail);
+        }
+      }
+    };
+
+    initializeAdminUser();
   }, []);
 
+  // Check for authenticated user on load
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const decryptedUser = JSON.parse(decryptData(storedUser));
-        setUser(decryptedUser);
-        setIsAuthenticated(true);
-        setIsAdmin(decryptedUser.isAdmin || false);
-      } catch (error) {
-        console.error('Error decrypting user data:', error);
-        localStorage.removeItem('user');
+    const loadUser = async () => {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const decryptedUser = JSON.parse(decryptData(storedUser));
+          setUser(decryptedUser);
+          setIsAuthenticated(true);
+          setIsAdmin(decryptedUser.role === 'admin' || decryptedUser.isAdmin || false);
+        } catch (error) {
+          console.error('Error decrypting user data:', error);
+          localStorage.removeItem('user');
+        }
       }
-    }
+      
+      // Load all users from Supabase
+      try {
+        const allUsers = await getAllUsers();
+        setUsers(allUsers);
+      } catch (error) {
+        console.error('Error loading users:', error);
+      }
+      
+      setLoading(false);
+    };
     
-    const allUsers = getAllUsers();
-    setUsers(allUsers);
-    
-    setLoading(false);
+    loadUser();
   }, []);
 
   const register = async (name: string, email: string, password: string): Promise<void> => {
     setLoading(true);
-    const hashedPassword = hashPassword(password);
-    const encryptedName = encryptData(name);
-    const encryptedEmail = encryptData(email);
-    const newUser: StoredUser = {
-      id: Math.random().toString(36).substring(2, 15),
-      name,
-      email,
-      password: hashedPassword,
-      encryptedName,
-      encryptedEmail,
-      isAdmin: false,
-      isBlocked: false,
-    };
-
-    const allUsers = getAllUsers();
-    allUsers.push(newUser);
-    localStorage.setItem('users', JSON.stringify(allUsers));
-    setUsers(allUsers);
-    await login(email, password);
-    setLoading(false);
+    try {
+      const hashedPassword = hashPassword(password);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          name,
+          email,
+          password: hashedPassword,
+          role: 'user',
+          is_blocked: false
+        })
+        .select()
+        .single();
+      
+      if (error) throw new Error(error.message);
+      
+      // Auto login after registration
+      await login(email, password);
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast({
+        title: "Registration Failed",
+        description: (error as Error).message || "Could not register user",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     try {
-      const allUsers = getAllUsers();
-      const foundUser = allUsers.find(user => user.email === email);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
       
-      console.log('Login attempt:', email);
-      console.log('Found user:', foundUser ? 'Yes' : 'No');
+      if (error) throw new Error('Invalid credentials');
       
-      if (foundUser && foundUser.password) {
-        console.log('Password check:', comparePassword(password, foundUser.password) ? 'Match' : 'Mismatch');
+      if (data) {
+        console.log('Login attempt:', email);
+        console.log('Found user:', data ? 'Yes' : 'No');
         
-        if (comparePassword(password, foundUser.password)) {
-          if (foundUser.isBlocked) {
-            setLoading(false);
+        if (comparePassword(password, data.password)) {
+          if (data.is_blocked) {
             throw new Error('User is blocked');
           }
           
           const userToStore = { 
-            ...foundUser, 
-            name: foundUser.name,
-            email: foundUser.email,
+            id: data.id,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            isAdmin: data.role === 'admin'
           };
           
-          delete userToStore.password;
           localStorage.setItem('user', encryptData(JSON.stringify(userToStore)));
           setUser(userToStore);
-          setIsAdmin(foundUser.isAdmin || false);
+          setIsAdmin(data.role === 'admin');
           setIsAuthenticated(true);
           navigate('/dashboard');
           toast({
@@ -199,68 +227,76 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const storedResetCode = localStorage.getItem(`resetCode_${email}`);
     if (storedResetCode === resetCode) {
       const hashedPassword = hashPassword(newPassword);
-      const allUsers = getAllUsers();
-      const userIndex = allUsers.findIndex(user => user.email === email);
-      if (userIndex !== -1) {
-        allUsers[userIndex] = { ...allUsers[userIndex], password: hashedPassword };
-        localStorage.setItem('users', JSON.stringify(allUsers));
-        setUsers(allUsers);
-        localStorage.removeItem(`resetCode_${email}`);
-        toast({
-          title: "Success",
-          description: "Password reset successfully",
-        });
-        navigate('/login');
-      } else {
-        throw new Error('User not found');
-      }
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ password: hashedPassword })
+        .eq('email', email);
+      
+      if (error) throw new Error('Failed to reset password');
+      
+      localStorage.removeItem(`resetCode_${email}`);
+      toast({
+        title: "Success",
+        description: "Password reset successfully",
+      });
+      navigate('/login');
     } else {
       throw new Error('Invalid reset code');
     }
   };
 
   const updateUser = async (updatedUser: User): Promise<void> => {
-    const allUsers = getAllUsers();
-    const userIndex = allUsers.findIndex(user => user.id === updatedUser.id);
-    if (userIndex !== -1) {
-      const encryptedName = encryptData(updatedUser.name);
-      const encryptedEmail = encryptData(updatedUser.email);
-
-      allUsers[userIndex] = {
-        ...allUsers[userIndex],
-        name: updatedUser.name,
-        email: updatedUser.email,
-        encryptedName: encryptedName,
-        encryptedEmail: encryptedEmail,
-        isAdmin: updatedUser.isAdmin,
-        isBlocked: updatedUser.isBlocked,
-      };
-      localStorage.setItem('users', JSON.stringify(allUsers));
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
+          is_blocked: updatedUser.isBlocked || false
+        })
+        .eq('id', updatedUser.id);
+      
+      if (error) throw error;
+      
+      // Refresh users list
+      const allUsers = await getAllUsers();
       setUsers(allUsers);
-
+      
+      // Update local user if it's the current user
       if (user && user.id === updatedUser.id) {
-        const decryptedUser = { ...updatedUser, name: updatedUser.name, email: updatedUser.email };
-        localStorage.setItem('user', encryptData(JSON.stringify(decryptedUser)));
-        setUser(decryptedUser);
-        setIsAdmin(updatedUser.isAdmin || false);
+        const updatedCurrentUser = {
+          ...updatedUser,
+          role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user')
+        };
+        localStorage.setItem('user', encryptData(JSON.stringify(updatedCurrentUser)));
+        setUser(updatedCurrentUser);
+        setIsAdmin(updatedCurrentUser.role === 'admin' || updatedCurrentUser.isAdmin || false);
       }
-    } else {
-      throw new Error('User not found');
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
     }
   };
 
-  const getAllUsers = (): User[] => {
+  const getAllUsers = async (): Promise<User[]> => {
     try {
-      const storedUsers = localStorage.getItem('users');
-      if (!storedUsers) return [];
+      const { data, error } = await supabase
+        .from('users')
+        .select('*');
       
-      const parsedUsers = JSON.parse(storedUsers);
-      return parsedUsers.map((user: any) => {
-        return {
-          ...user,
-          password: user.password || ''
-        };
-      });
+      if (error) throw error;
+      
+      return data.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        role: user.role,
+        isAdmin: user.role === 'admin',
+        isBlocked: user.is_blocked
+      }));
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
@@ -268,48 +304,64 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const blockUser = async (user: User): Promise<void> => {
-    const allUsers = getAllUsers();
-    const userIndex = allUsers.findIndex(u => u.id === user.id);
-    if (userIndex !== -1) {
-      allUsers[userIndex] = { ...allUsers[userIndex], isBlocked: true };
-      localStorage.setItem('users', JSON.stringify(allUsers));
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_blocked: true })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Refresh users list
+      const allUsers = await getAllUsers();
       setUsers(allUsers);
       
+      // Logout if blocked user is current user
       if (user.id === user?.id) {
         logout();
       }
-    } else {
-      throw new Error('User not found');
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      throw error;
     }
   };
 
   const unblockUser = async (user: User): Promise<void> => {
-    const allUsers = getAllUsers();
-    const userIndex = allUsers.findIndex(u => u.id === user.id);
-    if (userIndex !== -1) {
-      allUsers[userIndex] = { ...allUsers[userIndex], isBlocked: false };
-      localStorage.setItem('users', JSON.stringify(allUsers));
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_blocked: false })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Refresh users list
+      const allUsers = await getAllUsers();
       setUsers(allUsers);
-    } else {
-      throw new Error('User not found');
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      throw error;
     }
   };
 
   const changePassword = async (email: string, newPassword: string): Promise<void> => {
-    const hashedPassword = hashPassword(newPassword);
-    const allUsers = getAllUsers();
-    const userIndex = allUsers.findIndex(user => user.email === email);
-    
-    if (userIndex !== -1) {
-      allUsers[userIndex] = { ...allUsers[userIndex], password: hashedPassword };
-      localStorage.setItem('users', JSON.stringify(allUsers));
-      setUsers(allUsers);
+    try {
+      const hashedPassword = hashPassword(newPassword);
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ password: hashedPassword })
+        .eq('email', email);
+      
+      if (error) throw error;
+      
       toast({
         title: "Success", 
         description: "Password changed successfully"
       });
-    } else {
-      throw new Error('User not found');
+    } catch (error) {
+      console.error('Error changing password:', error);
+      throw error;
     }
   };
 
