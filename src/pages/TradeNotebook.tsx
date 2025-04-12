@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 
 interface Note {
   id: string;
+  userId: string;
   title: string;
   content: string;
   folderId: string;
@@ -246,6 +247,7 @@ const Notebook = () => {
     const newNoteWithId: Note = {
       ...newNote,
       id: Date.now().toString(),
+      userId: user?.id || '1',
       createdAt: now,
       updatedAt: now
     };
@@ -341,8 +343,8 @@ const Notebook = () => {
     
     setIsDeleteDialogOpen(false);
     
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
+      // Convert string ID to number and ensure it's valid
       const noteId = parseInt(selectedNoteId, 10);
       if (!isNaN(noteId)) {
         mysql.deleteNote(noteId).catch(error => {
@@ -373,8 +375,8 @@ const Notebook = () => {
     
     setNotes(updatedNotes);
     
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
+      // Convert string ID to number and ensure it's valid
       const noteId = parseInt(selectedNoteId, 10);
       if (!isNaN(noteId)) {
         mysql.updateNote(noteId, { content }).catch(error => {
@@ -400,8 +402,8 @@ const Notebook = () => {
     
     setNotes(updatedNotes);
     
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
+      // Convert string ID to number and ensure it's valid
       const noteId = parseInt(selectedNoteId, 10);
       if (!isNaN(noteId)) {
         mysql.updateNote(noteId, { title }).catch(error => {
@@ -444,8 +446,8 @@ const Notebook = () => {
       }
     });
     
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
+      // Convert string ID to number and ensure it's valid
       const noteId = parseInt(selectedNoteId, 10);
       if (!isNaN(noteId)) {
         mysql.updateNote(noteId, { tags }).catch(error => {
@@ -479,8 +481,8 @@ const Notebook = () => {
     
     setTemplates(updatedTemplates);
     
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && template.id) {
+      // Convert string ID to number and ensure it's valid
       const templateId = parseInt(template.id, 10);
       if (!isNaN(templateId)) {
         mysql.updateTemplate(templateId, { type: 'favorite' }).catch(error => {

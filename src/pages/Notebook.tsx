@@ -363,8 +363,8 @@ const Notebook = () => {
     setIsDeleteDialogOpen(false);
     
     // If connected to MySQL, delete from database
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
+      // Convert string ID to number and ensure it's valid
       const noteId = parseInt(selectedNoteId, 10);
       if (!isNaN(noteId)) {
         mysql.deleteNote(noteId).catch(error => {
@@ -396,8 +396,8 @@ const Notebook = () => {
     setNotes(updatedNotes);
     
     // If connected to MySQL, update in database
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
+      // Convert string ID to number and ensure it's valid
       const noteId = parseInt(selectedNoteId, 10);
       if (!isNaN(noteId)) {
         mysql.updateNote(noteId, { content }).catch(error => {
@@ -424,8 +424,8 @@ const Notebook = () => {
     setNotes(updatedNotes);
     
     // If connected to MySQL, update in database
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
+      // Convert string ID to number and ensure it's valid
       const noteId = parseInt(selectedNoteId, 10);
       if (!isNaN(noteId)) {
         mysql.updateNote(noteId, { title }).catch(error => {
@@ -472,8 +472,8 @@ const Notebook = () => {
     });
     
     // If connected to MySQL, update in database
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
+      // Convert string ID to number and ensure it's valid
       const noteId = parseInt(selectedNoteId, 10);
       if (!isNaN(noteId)) {
         mysql.updateNote(noteId, { tags }).catch(error => {
@@ -508,8 +508,8 @@ const Notebook = () => {
     setTemplates(updatedTemplates);
     
     // If connected to MySQL, update in database
-    if (mysql.connectionStatus === 'connected') {
-      // Convert string ID to number
+    if (mysql.connectionStatus === 'connected' && template.id) {
+      // Convert string ID to number and ensure it's valid
       const templateId = parseInt(template.id, 10);
       if (!isNaN(templateId)) {
         mysql.updateTemplate(templateId, { type: 'favorite' }).catch(error => {
