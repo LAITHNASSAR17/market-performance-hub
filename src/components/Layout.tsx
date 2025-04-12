@@ -3,19 +3,16 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, FileImage } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
-import ThemeToggle from '@/components/ThemeToggle';
-import LanguageToggle from '@/components/LanguageToggle';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import FaviconUpload from '@/components/FaviconUpload';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,7 +33,6 @@ const Layout: React.FC<LayoutProps> = ({
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  const [showFaviconModal, setShowFaviconModal] = useState(false);
 
   useEffect(() => {
     if (isMobile) {
@@ -117,9 +113,22 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
           
           <div className="flex items-center gap-2 mt-4 w-full">
-            <div className="flex flex-col flex-1">
-              <span className="text-sm font-medium dark:text-white">{user?.name}</span>
-              <span className="text-xs text-muted-foreground dark:text-gray-300">{user?.email}</span>
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-sm font-medium dark:text-white truncate">{user?.name}</span>
+              {user?.isAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/admin">
+                      <Button variant="ghost" size="icon" className="h-6 w-6 p-1">
+                        <UserCog className="h-4 w-4 text-purple-500" />
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                    {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </div>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -134,6 +143,20 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
           {!sidebarOpen && (
             <div className="mt-4 flex justify-center">
+              {user?.isAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/admin">
+                      <Button variant="ghost" size="icon" className="h-6 w-6 p-1">
+                        <UserCog className="h-4 w-4 text-purple-500" />
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                    {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" onClick={logout}>
@@ -177,35 +200,7 @@ const Layout: React.FC<LayoutProps> = ({
           })}
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 py-4 px-4 space-y-2">
-          {/* Theme & Language Controls */}
-          <div className={cn(
-            "flex items-center justify-between bg-gray-100 dark:bg-indigo-800/60 px-2 py-2 rounded-lg mb-2",
-            !sidebarOpen && "flex-col gap-2"
-          )}>
-            <div className={cn(
-              "flex items-center",
-              !sidebarOpen && "flex-col gap-2"
-            )}>
-              <ThemeToggle variant={sidebarOpen ? "icon" : "switch"} />
-              {sidebarOpen && <span className="text-xs mx-2 dark:text-gray-300">|</span>}
-              <LanguageToggle variant={sidebarOpen ? "icon" : "switch"} />
-            </div>
-            
-            {sidebarOpen && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={() => setShowFaviconModal(true)}>
-                    <FileImage className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {language === 'ar' ? 'تغيير أيقونة الموقع' : 'Change Favicon'}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-          
+        <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
           {/* Settings Button */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -245,11 +240,6 @@ const Layout: React.FC<LayoutProps> = ({
       <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
         {children}
       </main>
-      
-      {/* Favicon Upload Modal */}
-      {showFaviconModal && (
-        <FaviconUpload isOpen={showFaviconModal} onClose={() => setShowFaviconModal(false)} />
-      )}
     </div>
   );
 };
