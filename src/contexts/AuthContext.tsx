@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
@@ -83,34 +82,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAdminUser();
   }, []);
 
-  // Check for authenticated user on load
+  // Improved local storage management
   useEffect(() => {
-    const loadUser = async () => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          const decryptedUser = JSON.parse(decryptData(storedUser));
-          setUser(decryptedUser);
-          setIsAuthenticated(true);
-          setIsAdmin(decryptedUser.role === 'admin' || decryptedUser.isAdmin || false);
-        } catch (error) {
-          console.error('Error decrypting user data:', error);
-          localStorage.removeItem('user');
-        }
-      }
-      
-      // Load all users from Supabase
+    const loadUserFromStorage = () => {
       try {
-        const allUsers = await getAllUsers();
-        setUsers(allUsers);
+        const storedUserData = localStorage.getItem('user');
+        if (storedUserData) {
+          const decryptedUser = JSON.parse(decryptData(storedUserData));
+          setUser(decryptedUser);
+          setIsAuthenticated(!!decryptedUser);
+          setIsAdmin(decryptedUser.role === 'admin');
+        }
       } catch (error) {
-        console.error('Error loading users:', error);
+        console.error('Error loading user from storage:', error);
+        localStorage.removeItem('user');
       }
-      
       setLoading(false);
     };
-    
-    loadUser();
+
+    loadUserFromStorage();
   }, []);
 
   const register = async (name: string, email: string, password: string): Promise<void> => {
@@ -147,6 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Modify login method to ensure proper local storage
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     try {
@@ -156,7 +147,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .eq('email', email)
         .single();
       
-      if (error) throw new Error('Invalid credentials');
+      if (error || !data) throw new Error('Invalid credentials');
       
       if (data) {
         console.log('Login attempt:', email);
@@ -174,20 +165,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             role: data.role,
             isAdmin: data.role === 'admin'
           };
-          
-          localStorage.setItem('user', encryptData(JSON.stringify(userToStore)));
-          setUser(userToStore);
-          setIsAdmin(data.role === 'admin');
-          setIsAuthenticated(true);
-          navigate('/dashboard');
-          toast({
-            title: "Login Successful",
-            description: `Welcome back, ${userToStore.name}!`,
-          });
-          console.log('Login successful for:', email);
-        } else {
-          throw new Error('Invalid credentials');
-        }
+        
+        // Ensure robust local storage
+        localStorage.setItem('user', encryptData(JSON.stringify(userToStore)));
+        
+        setUser(userToStore);
+        setIsAdmin(data.role === 'admin');
+        setIsAuthenticated(true);
+        
+        navigate('/dashboard');
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${userToStore.name}!`,
+        });
       } else {
         throw new Error('Invalid credentials');
       }
