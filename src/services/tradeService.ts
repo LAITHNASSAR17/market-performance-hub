@@ -29,33 +29,40 @@ interface TradeData {
   createdAt?: Date;
 }
 
-export async function getTradeById(id: string) {
+// Define a document type that extends TradeData with MongoDB fields
+type TradeDocument = TradeData & mongoose.Document;
+
+export async function getTradeById(id: string): Promise<TradeDocument | null> {
   await connectToDatabase();
-  return Trade.findById(id);
+  return Trade.findById(id).lean().exec();
 }
 
-export async function getTradesByUserId(userId: string) {
+export async function getTradesByUserId(userId: string): Promise<TradeDocument[]> {
   await connectToDatabase();
-  return Trade.find({ userId });
+  return Trade.find({ userId }).lean().exec();
 }
 
-export async function createTrade(tradeData: TradeData) {
+export async function createTrade(tradeData: TradeData): Promise<TradeDocument> {
   await connectToDatabase();
   const trade = new Trade(tradeData);
   return trade.save();
 }
 
-export async function updateTrade(id: string, tradeData: Partial<TradeData>) {
+export async function updateTrade(id: string, tradeData: Partial<TradeData>): Promise<TradeDocument | null> {
   await connectToDatabase();
-  return Trade.findByIdAndUpdate(id, tradeData, { new: true });
+  return Trade.findByIdAndUpdate(
+    id,
+    tradeData,
+    { new: true }
+  ).lean().exec();
 }
 
-export async function deleteTrade(id: string) {
+export async function deleteTrade(id: string): Promise<TradeDocument | null> {
   await connectToDatabase();
-  return Trade.findByIdAndDelete(id);
+  return Trade.findByIdAndDelete(id).lean().exec();
 }
 
-export async function getAllTrades() {
+export async function getAllTrades(): Promise<TradeDocument[]> {
   await connectToDatabase();
-  return Trade.find({});
+  return Trade.find({}).lean().exec();
 }

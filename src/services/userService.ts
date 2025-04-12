@@ -12,33 +12,40 @@ interface UserData {
   createdAt?: Date;
 }
 
-export async function getUserById(id: string) {
+// Define a document type that extends UserData with MongoDB fields
+type UserDocument = UserData & mongoose.Document;
+
+export async function getUserById(id: string): Promise<UserDocument | null> {
   await connectToDatabase();
-  return User.findById(id);
+  return User.findById(id).lean().exec();
 }
 
-export async function getUserByEmail(email: string) {
+export async function getUserByEmail(email: string): Promise<UserDocument | null> {
   await connectToDatabase();
-  return User.findOne({ email });
+  return User.findOne({ email }).lean().exec();
 }
 
-export async function createUser(userData: UserData) {
+export async function createUser(userData: UserData): Promise<UserDocument> {
   await connectToDatabase();
   const user = new User(userData);
   return user.save();
 }
 
-export async function updateUser(id: string, userData: Partial<UserData>) {
+export async function updateUser(id: string, userData: Partial<UserData>): Promise<UserDocument | null> {
   await connectToDatabase();
-  return User.findByIdAndUpdate(id, userData, { new: true });
+  return User.findByIdAndUpdate(
+    id, 
+    userData, 
+    { new: true }
+  ).lean().exec();
 }
 
-export async function deleteUser(id: string) {
+export async function deleteUser(id: string): Promise<UserDocument | null> {
   await connectToDatabase();
-  return User.findByIdAndDelete(id);
+  return User.findByIdAndDelete(id).lean().exec();
 }
 
-export async function getAllUsers() {
+export async function getAllUsers(): Promise<UserDocument[]> {
   await connectToDatabase();
-  return User.find({});
+  return User.find({}).lean().exec();
 }

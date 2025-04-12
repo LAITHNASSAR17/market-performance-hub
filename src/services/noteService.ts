@@ -14,33 +14,40 @@ interface NoteData {
   updatedAt?: Date;
 }
 
-export async function getNoteById(id: string) {
+// Define a document type that extends NoteData with MongoDB fields
+type NoteDocument = NoteData & mongoose.Document;
+
+export async function getNoteById(id: string): Promise<NoteDocument | null> {
   await connectToDatabase();
-  return Note.findById(id);
+  return Note.findById(id).lean().exec();
 }
 
-export async function getNotesByUserId(userId: string) {
+export async function getNotesByUserId(userId: string): Promise<NoteDocument[]> {
   await connectToDatabase();
-  return Note.find({ userId });
+  return Note.find({ userId }).lean().exec();
 }
 
-export async function createNote(noteData: NoteData) {
+export async function createNote(noteData: NoteData): Promise<NoteDocument> {
   await connectToDatabase();
   const note = new Note(noteData);
   return note.save();
 }
 
-export async function updateNote(id: string, noteData: Partial<NoteData>) {
+export async function updateNote(id: string, noteData: Partial<NoteData>): Promise<NoteDocument | null> {
   await connectToDatabase();
-  return Note.findByIdAndUpdate(id, noteData, { new: true });
+  return Note.findByIdAndUpdate(
+    id,
+    noteData,
+    { new: true }
+  ).lean().exec();
 }
 
-export async function deleteNote(id: string) {
+export async function deleteNote(id: string): Promise<NoteDocument | null> {
   await connectToDatabase();
-  return Note.findByIdAndDelete(id);
+  return Note.findByIdAndDelete(id).lean().exec();
 }
 
-export async function getAllNotes() {
+export async function getAllNotes(): Promise<NoteDocument[]> {
   await connectToDatabase();
-  return Note.find({});
+  return Note.find({}).lean().exec();
 }
