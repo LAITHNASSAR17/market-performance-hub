@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { useMySQL } from '@/contexts/MySQLContext';
@@ -35,7 +34,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Define types
 interface Note {
   id: string;
   title: string;
@@ -82,7 +80,6 @@ const Notebook = () => {
   const { toast } = useToast();
   const mysql = useMySQL();
   
-  // State
   const [folders, setFolders] = useState<Folder[]>([
     { id: 'all', name: 'All notes' },
     { id: 'trade-notes', name: 'Trade Notes', color: '#9c59ff' },
@@ -135,10 +132,8 @@ const Notebook = () => {
     color: '#9c59ff'
   });
 
-  // Get the selected note
   const selectedNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) : null;
   
-  // Filter notes based on current folder and search term
   const filteredNotes = notes.filter(note => {
     const matchesSearch = searchTerm === '' || 
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -150,12 +145,10 @@ const Notebook = () => {
     return matchesSearch && matchesFolder && matchesTag;
   });
 
-  // Sort notes by updated date (newest first)
   const sortedNotes = [...filteredNotes].sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
-  // Filter templates based on type
   const filteredTemplates = templates.filter(template => 
     templateType === 'favorite' ? template.type === 'favorite' : 
     templateType === 'recommended' ? template.type === 'recommended' : 
@@ -163,32 +156,31 @@ const Notebook = () => {
   );
 
   useEffect(() => {
-    // Select the first note by default if available
     if (sortedNotes.length > 0 && !selectedNoteId) {
       setSelectedNoteId(sortedNotes[0].id);
     }
   }, [sortedNotes, selectedNoteId]);
 
-  // Load data from MySQL or fetch sample data
   useEffect(() => {
-    // For now, we'll load sample data
-    // In a real implementation, we would fetch from MySQL
     loadSampleData();
     
-    // If connected to MySQL, fetch data
     if (mysql.connectionStatus === 'connected') {
       fetchDataFromMySQL();
     }
   }, [mysql.connectionStatus]);
 
   const loadSampleData = () => {
-    // Load sample folders, notes, tags, and templates
-    // The initial state is already populated with sample data
+    setFolders([
+      { id: 'all', name: 'All notes' },
+      { id: 'recently-deleted', name: 'Recently Deleted', color: '#ff6b6b' }
+    ]);
+    setNotes([]);
+    setTags([]);
+    setTemplates([]);
   };
 
   const fetchDataFromMySQL = async () => {
     try {
-      // Fetch folders
       const foldersResult = await mysql.getFolders(user?.id);
       if (foldersResult.length > 0) {
         setFolders([
@@ -202,7 +194,6 @@ const Notebook = () => {
         ]);
       }
       
-      // Fetch notes
       const notesResult = await mysql.getNotes(undefined, user?.id);
       if (notesResult.length > 0) {
         setNotes(notesResult.map((note: any) => ({
@@ -217,7 +208,6 @@ const Notebook = () => {
         })));
       }
       
-      // Fetch tags
       const tagsResult = await mysql.getTags(user?.id);
       if (tagsResult.length > 0) {
         setTags(tagsResult.map((tag: any) => ({
@@ -227,7 +217,6 @@ const Notebook = () => {
         })));
       }
       
-      // Fetch templates
       const templatesResult = await mysql.getTemplates(user?.id);
       if (templatesResult.length > 0) {
         setTemplates(templatesResult.map((template: any) => ({
@@ -270,7 +259,6 @@ const Notebook = () => {
     setSelectedNoteId(newNoteWithId.id);
     setIsAddDialogOpen(false);
     
-    // Reset new note form
     setNewNote({
       title: '',
       content: '',
@@ -278,7 +266,6 @@ const Notebook = () => {
       tags: []
     });
     
-    // If connected to MySQL, save to database
     if (mysql.connectionStatus === 'connected') {
       mysql.createNote({
         title: newNote.title,
@@ -322,13 +309,11 @@ const Notebook = () => {
     setSelectedFolderId(newFolderWithId.id);
     setIsAddFolderDialogOpen(false);
     
-    // Reset new folder form
     setNewFolder({
       name: '',
       color: '#9c59ff'
     });
     
-    // If connected to MySQL, save to database
     if (mysql.connectionStatus === 'connected') {
       mysql.createFolder(newFolder.name, newFolder.color, user?.id).catch(error => {
         console.error("Error creating folder in MySQL:", error);
@@ -351,7 +336,6 @@ const Notebook = () => {
     
     setNotes(notes.filter(note => note.id !== selectedNoteId));
     
-    // Select the first note after deletion
     if (sortedNotes.length > 1) {
       const index = sortedNotes.findIndex(note => note.id === selectedNoteId);
       const nextNote = sortedNotes[index + 1] || sortedNotes[index - 1];
@@ -362,7 +346,6 @@ const Notebook = () => {
     
     setIsDeleteDialogOpen(false);
     
-    // If connected to MySQL, delete from database
     if (mysql.connectionStatus === 'connected') {
       mysql.deleteNote(parseInt(selectedNoteId)).catch(error => {
         console.error("Error deleting note from MySQL:", error);
@@ -391,7 +374,6 @@ const Notebook = () => {
     
     setNotes(updatedNotes);
     
-    // If connected to MySQL, update in database
     if (mysql.connectionStatus === 'connected') {
       mysql.updateNote(parseInt(selectedNoteId), { content }).catch(error => {
         console.error("Error updating note in MySQL:", error);
@@ -415,7 +397,6 @@ const Notebook = () => {
     
     setNotes(updatedNotes);
     
-    // If connected to MySQL, update in database
     if (mysql.connectionStatus === 'connected') {
       mysql.updateNote(parseInt(selectedNoteId), { title }).catch(error => {
         console.error("Error updating note in MySQL:", error);
@@ -439,21 +420,23 @@ const Notebook = () => {
     
     setNotes(updatedNotes);
     
-    // Update tag counts and ensure all tags exist
     const tagMap = new Map<string, number>();
     
-    tags.forEach(tag => {
-      if (!tags.some(t => t === tag)) {
-        setTags([...tags, { id: Date.now().toString(), name: tag, count: 1 }]);
+    tags.forEach(tagName => {
+      if (!tags.some(t => t === tagName)) {
+        setTags(prevTags => [...prevTags, { 
+          id: Date.now().toString(), 
+          name: tagName, 
+          count: 1 
+        }]);
       } else {
-        const existingTag = tags.find(t => t === tag);
+        const existingTag = tags.find(t => t === tagName);
         if (existingTag) {
           tagMap.set(existingTag, (tagMap.get(existingTag) || 0) + 1);
         }
       }
     });
     
-    // If connected to MySQL, update in database
     if (mysql.connectionStatus === 'connected') {
       mysql.updateNote(parseInt(selectedNoteId), { tags }).catch(error => {
         console.error("Error updating note tags in MySQL:", error);
@@ -485,7 +468,6 @@ const Notebook = () => {
     
     setTemplates(updatedTemplates);
     
-    // If connected to MySQL, update in database
     if (mysql.connectionStatus === 'connected') {
       mysql.updateTemplate(parseInt(template.id), { type: 'favorite' }).catch(error => {
         console.error("Error updating template in MySQL:", error);
@@ -736,16 +718,13 @@ const Notebook = () => {
             <div className="p-2">
               {sortedNotes.length > 0 ? (
                 sortedNotes.map((note) => {
-                  // Get trade information if this note is linked to a trade
                   const linkedTrade = note.tradeId 
                     ? trades.find(t => t.id === note.tradeId)
                     : undefined;
                   
-                  // Determine if this note has P&L info
                   const hasPL = note.tradingData?.netPL !== undefined || 
                                 (linkedTrade && linkedTrade.profitLoss !== undefined);
                   
-                  // Get P&L value
                   const pl = note.tradingData?.netPL !== undefined 
                     ? note.tradingData.netPL
                     : (linkedTrade && linkedTrade.profitLoss !== undefined)
@@ -902,7 +881,7 @@ const Notebook = () => {
                   value={selectedNote.content}
                   onChange={(e) => handleContentChange(e.target.value)}
                   className="w-full h-full border-none focus-visible:ring-0 resize-none bg-transparent"
-                  placeholder="Write your note here..."
+                  placeholder="Write your note content here..."
                 />
               </div>
             </>
@@ -932,7 +911,6 @@ const Notebook = () => {
         </div>
       </div>
       
-      {/* Add Note Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -1018,7 +996,6 @@ const Notebook = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Add Folder Dialog */}
       <Dialog open={isAddFolderDialogOpen} onOpenChange={setIsAddFolderDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1068,7 +1045,6 @@ const Notebook = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Template Selection Dialog */}
       <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
         <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
@@ -1167,7 +1143,6 @@ const Notebook = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
