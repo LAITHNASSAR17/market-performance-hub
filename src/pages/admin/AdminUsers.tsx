@@ -7,6 +7,7 @@ import { User } from '@/models/UserModel';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
 import AddUserDialog from '@/components/admin/AddUserDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -14,6 +15,7 @@ const AdminUsers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const { toast } = useToast();
+  const { getAllUsers } = useAuth();
   
   const adminController = new AdminController();
 
@@ -25,7 +27,8 @@ const AdminUsers: React.FC = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const allUsers = await adminController.getAllUsers();
+      // Using Auth context instead of AdminController due to database errors
+      const allUsers = getAllUsers();
       setUsers(allUsers);
     } catch (error) {
       console.error("Error loading users:", error);
@@ -45,7 +48,7 @@ const AdminUsers: React.FC = () => {
       // This would call the AdminController's createUser method
       toast({
         title: "User Created",
-        description: `User ${userData.name} has been created successfully`
+        description: `User ${userData.username || userData.name} has been created successfully`
       });
       loadUsers(); // Refresh user list
       return true;

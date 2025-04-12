@@ -1,543 +1,320 @@
 
-import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import AdminLayout from '@/components/layouts/AdminLayout';
-import { AdminController } from '@/controllers/AdminController';
-import { useMySQL } from '@/contexts/MySQLContext';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, Save, RefreshCw, Table, FileDown, FilePlus2, Play } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Database, Download, RefreshCw, Shield, FileUp, Clock } from 'lucide-react';
+
+// Sample table names
+const tables = [
+  'users',
+  'trades',
+  'notes',
+  'hashtags',
+  'settings',
+  'subscriptions',
+  'logs'
+];
+
+// Sample table structure
+const tableStructure = [
+  { Field: 'id', Type: 'int', Null: 'NO', Key: 'PRI', Default: null, Extra: 'auto_increment' },
+  { Field: 'username', Type: 'varchar(255)', Null: 'NO', Key: '', Default: null, Extra: '' },
+  { Field: 'email', Type: 'varchar(255)', Null: 'NO', Key: 'UNI', Default: null, Extra: '' },
+  { Field: 'password', Type: 'varchar(255)', Null: 'NO', Key: '', Default: null, Extra: '' },
+  { Field: 'isAdmin', Type: 'tinyint(1)', Null: 'NO', Key: '', Default: '0', Extra: '' },
+  { Field: 'isBlocked', Type: 'tinyint(1)', Null: 'NO', Key: '', Default: '0', Extra: '' },
+  { Field: 'createdAt', Type: 'timestamp', Null: 'NO', Key: '', Default: 'CURRENT_TIMESTAMP', Extra: '' },
+  { Field: 'lastLogin', Type: 'timestamp', Null: 'YES', Key: '', Default: null, Extra: '' }
+];
+
+// Sample table data
+const tableData = [
+  { id: 1, username: 'admin', email: 'admin@example.com', isAdmin: 1, isBlocked: 0, createdAt: '2025-01-01 00:00:00', lastLogin: '2025-04-12 10:30:00' },
+  { id: 2, username: 'user1', email: 'user1@example.com', isAdmin: 0, isBlocked: 0, createdAt: '2025-01-15 00:00:00', lastLogin: '2025-04-11 14:20:00' },
+  { id: 3, username: 'user2', email: 'user2@example.com', isAdmin: 0, isBlocked: 1, createdAt: '2025-02-01 00:00:00', lastLogin: '2025-03-25 09:15:00' }
+];
 
 const AdminDatabase: React.FC = () => {
+  const [selectedTable, setSelectedTable] = useState(tables[0]);
+  const [backupHistory] = useState([
+    { date: '2025-04-10 23:00:00', size: '42.5 MB', status: 'Success' },
+    { date: '2025-04-09 23:00:00', size: '41.8 MB', status: 'Success' },
+    { date: '2025-04-08 23:00:00', size: '41.2 MB', status: 'Success' },
+    { date: '2025-04-07 23:00:00', size: '40.9 MB', status: 'Success' },
+    { date: '2025-04-06 23:00:00', size: '40.5 MB', status: 'Success' }
+  ]);
   const { toast } = useToast();
-  const adminController = new AdminController();
-  const { 
-    connect, 
-    disconnect, 
-    isConfigured, 
-    config, 
-    setConfig, 
-    connectionStatus, 
-    tables, 
-    fetchTables, 
-    executeQuery 
-  } = useMySQL();
 
-  const [dbStatus, setDbStatus] = useState<{status: string, tables: number, size: string} | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [backupLoading, setBackupLoading] = useState(false);
-  const [sqlQuery, setSqlQuery] = useState('');
-  const [queryResult, setQueryResult] = useState<any>(null);
-  const [selectedTable, setSelectedTable] = useState<string>('');
-  const [tableData, setTableData] = useState<any[]>([]);
-  const [tableColumns, setTableColumns] = useState<string[]>([]);
-
-  useEffect(() => {
-    loadDbStatus();
-  }, []);
-
-  const loadDbStatus = async () => {
-    try {
-      const status = await adminController.getDatabaseStatus();
-      setDbStatus(status);
-    } catch (error) {
-      console.error("Error loading database status:", error);
-    }
-  };
-
-  const handleConnect = async () => {
-    setLoading(true);
-    try {
-      await connect();
-      if (connectionStatus === 'connected') {
-        await fetchTables();
-      }
-    } catch (error) {
-      console.error("Error connecting to database:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDisconnect = () => {
-    disconnect();
-    setSelectedTable('');
-    setTableData([]);
-    setTableColumns([]);
-  };
-
-  const handleBackupDatabase = async () => {
-    setBackupLoading(true);
-    try {
-      const result = await adminController.backupDatabase();
-      if (result) {
-        toast({
-          title: "Backup Successful",
-          description: "Database has been backed up successfully"
-        });
-      } else {
-        throw new Error("Backup failed");
-      }
-    } catch (error) {
-      console.error("Error backing up database:", error);
+  const handleBackupNow = () => {
+    toast({
+      title: "Backup Started",
+      description: "Database backup has been initiated"
+    });
+    
+    // In a real app, this would trigger an actual backup
+    setTimeout(() => {
       toast({
-        title: "Backup Failed",
-        description: "Failed to backup database",
-        variant: "destructive"
+        title: "Backup Complete",
+        description: "Database backup completed successfully"
       });
-    } finally {
-      setBackupLoading(false);
-    }
+    }, 3000);
   };
-
-  const handleExecuteQuery = async () => {
-    if (!sqlQuery.trim()) {
+  
+  const handleOptimizeDatabase = () => {
+    toast({
+      title: "Optimization Started",
+      description: "Database optimization has been initiated"
+    });
+    
+    // In a real app, this would trigger actual optimization
+    setTimeout(() => {
       toast({
-        title: "Empty Query",
-        description: "Please enter a SQL query",
-        variant: "destructive"
+        title: "Optimization Complete",
+        description: "Database has been optimized successfully"
       });
-      return;
-    }
-
-    try {
-      const result = await executeQuery(sqlQuery);
-      setQueryResult(result);
-      if (result.success) {
-        toast({
-          title: "Query Executed",
-          description: result.data ? `Returned ${Array.isArray(result.data) ? result.data.length : 1} results` 
-            : `Affected ${result.affectedRows || 0} rows`
-        });
-      } else {
-        toast({
-          title: "Query Failed",
-          description: result.error || "Unknown error",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error executing query:", error);
-      setQueryResult({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
-    }
+    }, 2000);
   };
-
-  const handleSelectTable = async (tableName: string) => {
-    setSelectedTable(tableName);
-    try {
-      // Fetch table structure to get columns
-      const structure = await adminController.getDatabaseTableStructure(tableName);
-      if (structure && Array.isArray(structure)) {
-        setTableColumns(structure.map(col => col.Field || col.name));
-      } else {
-        setTableColumns([]);
-      }
-      
-      // Fetch sample data
-      const data = await adminController.getDatabaseTableData(tableName);
-      setTableData(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(`Error fetching data for table ${tableName}:`, error);
-      setTableColumns([]);
-      setTableData([]);
-    }
+  
+  const handleRestoreBackup = (date: string) => {
+    toast({
+      title: "Restore Initiated",
+      description: `Restoring backup from ${date}`
+    });
+  };
+  
+  const handleDownloadBackup = (date: string) => {
+    toast({
+      title: "Download Started",
+      description: `Downloading backup from ${date}`
+    });
   };
 
   return (
-    <AdminLayout>
+    <>
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
           Database Management
         </h1>
-        <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-          Connect to MySQL database and perform operations.
+        <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1">
+          View and manage the database structure and perform maintenance tasks.
         </p>
       </header>
-
-      <div className="grid gap-6">
-        {/* Connection Status Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Database className="mr-2 h-5 w-5" />
-              Database Connection
-            </CardTitle>
-            <CardDescription>
-              {connectionStatus === 'connected' 
-                ? `Connected to ${config.database} on ${config.host}`
-                : 'Configure your database connection'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {connectionStatus !== 'connected' ? (
-              <div className="grid gap-4 sm:grid-cols-2">
+      
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="tables">Tables</TabsTrigger>
+          <TabsTrigger value="backup">Backup & Restore</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center">
+                <Database className="h-8 w-8 text-blue-500 mr-3" />
                 <div>
-                  <label className="block text-sm font-medium mb-1">Host</label>
-                  <Input
-                    value={config.host}
-                    onChange={(e) => setConfig({ ...config, host: e.target.value })}
-                    placeholder="localhost"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Port</label>
-                  <Input
-                    value={config.port}
-                    onChange={(e) => setConfig({ ...config, port: e.target.value })}
-                    placeholder="3306"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Username</label>
-                  <Input
-                    value={config.username}
-                    onChange={(e) => setConfig({ ...config, username: e.target.value })}
-                    placeholder="root"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Password</label>
-                  <Input
-                    type="password"
-                    value={config.password}
-                    onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                    placeholder="********"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Database</label>
-                  <Input
-                    value={config.database}
-                    onChange={(e) => setConfig({ ...config, database: e.target.value })}
-                    placeholder="trading_journal"
-                  />
+                  <h3 className="text-lg font-medium">Database Status</h3>
+                  <p className="text-sm text-gray-500">Connected</p>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Status:</span>
-                  <span className="text-green-600 dark:text-green-400">Connected</span>
+              <div className="mt-4 text-sm">
+                <div className="flex justify-between py-1">
+                  <span className="text-gray-500">Version:</span>
+                  <span>MySQL 8.0.28</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Host:</span>
-                  <span>{config.host}:{config.port}</span>
+                <div className="flex justify-between py-1">
+                  <span className="text-gray-500">Tables:</span>
+                  <span>15</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Database:</span>
-                  <span>{config.database}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Tables:</span>
-                  <span>{tables.length}</span>
+                <div className="flex justify-between py-1">
+                  <span className="text-gray-500">Total Size:</span>
+                  <span>42.5 MB</span>
                 </div>
               </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            {connectionStatus === 'connected' ? (
-              <>
-                <Button variant="outline" onClick={handleDisconnect}>
-                  Disconnect
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center">
+                <Clock className="h-8 w-8 text-emerald-500 mr-3" />
+                <div>
+                  <h3 className="text-lg font-medium">Last Backup</h3>
+                  <p className="text-sm text-gray-500">12 hours ago</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Button onClick={handleBackupNow} className="w-full">
+                  <FileUp className="h-4 w-4 mr-2" />
+                  Backup Now
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleBackupDatabase} 
-                  disabled={backupLoading}
-                  className="flex items-center"
-                >
-                  {backupLoading ? (
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Backup Database
+              </div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm border">
+              <div className="flex items-center">
+                <Shield className="h-8 w-8 text-amber-500 mr-3" />
+                <div>
+                  <h3 className="text-lg font-medium">Database Health</h3>
+                  <p className="text-sm text-gray-500">Good Condition</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Button variant="outline" onClick={handleOptimizeDatabase} className="w-full">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Optimize Database
                 </Button>
-              </>
-            ) : (
-              <Button 
-                onClick={handleConnect} 
-                disabled={loading || !isConfigured}
-                className="flex items-center"
-              >
-                {loading ? (
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Database className="mr-2 h-4 w-4" />
-                )}
-                Connect
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-
-        {/* Database Tools */}
-        {connectionStatus === 'connected' && (
-          <Tabs defaultValue="query" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="query" className="flex items-center">
-                <Play className="mr-2 h-4 w-4" />
-                SQL Query
-              </TabsTrigger>
-              <TabsTrigger value="tables" className="flex items-center">
-                <Table className="mr-2 h-4 w-4" />
-                Tables
-              </TabsTrigger>
-              <TabsTrigger value="export" className="flex items-center">
-                <FileDown className="mr-2 h-4 w-4" />
-                Export
-              </TabsTrigger>
-              <TabsTrigger value="import" className="flex items-center">
-                <FilePlus2 className="mr-2 h-4 w-4" />
-                Import
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="query">
-              <Card>
-                <CardHeader>
-                  <CardTitle>SQL Query</CardTitle>
-                  <CardDescription>
-                    Execute custom SQL queries on the database
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <Textarea
-                      value={sqlQuery}
-                      onChange={(e) => setSqlQuery(e.target.value)}
-                      placeholder="SELECT * FROM users LIMIT 10;"
-                      className="font-mono h-32"
-                    />
-                    
-                    {queryResult && (
-                      <div className="border rounded-md overflow-hidden">
-                        {queryResult.success ? (
-                          queryResult.data && Array.isArray(queryResult.data) ? (
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm">
-                                <thead className="bg-gray-100 dark:bg-gray-800">
-                                  <tr>
-                                    {queryResult.data.length > 0 && 
-                                      Object.keys(queryResult.data[0]).map((col, i) => (
-                                        <th key={i} className="px-4 py-2 text-left font-medium">{col}</th>
-                                      ))
-                                    }
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {queryResult.data.map((row, i) => (
-                                    <tr key={i} className="border-t">
-                                      {Object.values(row).map((cell, j) => (
-                                        <td key={j} className="px-4 py-2">{String(cell)}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <div className="p-4 text-green-600">
-                              Query executed successfully. {queryResult.affectedRows && `Affected rows: ${queryResult.affectedRows}`}
-                            </div>
-                          )
-                        ) : (
-                          <div className="p-4 text-red-600">
-                            {queryResult.error || 'Error executing query'}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button onClick={handleExecuteQuery}>Execute Query</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="tables">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Database Tables</CardTitle>
-                  <CardDescription>
-                    Browse tables in the database
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-4 gap-6">
-                    <div className="border rounded-md overflow-hidden">
-                      <div className="p-3 bg-gray-50 dark:bg-gray-800 font-medium">
-                        Tables
-                      </div>
-                      <div className="p-2 max-h-96 overflow-y-auto">
-                        <ul className="space-y-1">
-                          {tables.map((table) => (
-                            <li key={table.name}>
-                              <button
-                                onClick={() => handleSelectTable(table.name)}
-                                className={`w-full text-left px-3 py-2 rounded text-sm ${
-                                  selectedTable === table.name 
-                                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
-                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                                }`}
-                              >
-                                {table.name}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                    
-                    <div className="md:col-span-3 border rounded-md overflow-hidden">
-                      {selectedTable ? (
-                        <div>
-                          <div className="p-3 bg-gray-50 dark:bg-gray-800 font-medium flex items-center justify-between">
-                            <span>Table: {selectedTable}</span>
-                            <span className="text-sm text-gray-500">
-                              {tableData.length} rows
-                            </span>
-                          </div>
-                          <div className="overflow-x-auto">
-                            {tableColumns.length > 0 && tableData.length > 0 ? (
-                              <table className="w-full text-sm">
-                                <thead className="bg-gray-50 dark:bg-gray-800">
-                                  <tr>
-                                    {tableColumns.map((col, i) => (
-                                      <th key={i} className="px-4 py-2 text-left font-medium">{col}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {tableData.slice(0, 10).map((row, i) => (
-                                    <tr key={i} className="border-t">
-                                      {tableColumns.map((col, j) => (
-                                        <td key={j} className="px-4 py-2">{String(row[col] !== undefined ? row[col] : '')}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            ) : (
-                              <div className="p-4 text-center text-gray-500">
-                                {tableData.length === 0 ? 'No data in table' : 'Loading table data...'}
-                              </div>
-                            )}
-                          </div>
-                          {tableData.length > 10 && (
-                            <div className="p-2 text-center text-sm text-gray-500">
-                              Showing 10 of {tableData.length} rows
-                            </div>
-                          )}
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="tables" className="space-y-4">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-64">
+              <Select value={selectedTable} onValueChange={setSelectedTable}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a table" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tables.map(table => (
+                    <SelectItem key={table} value={table}>{table}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+            <h3 className="text-lg font-medium p-4 border-b">Table Structure: {selectedTable}</h3>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Field</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Null</TableHead>
+                    <TableHead>Key</TableHead>
+                    <TableHead>Default</TableHead>
+                    <TableHead>Extra</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tableStructure.map((row, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{row.Field}</TableCell>
+                      <TableCell>{row.Type}</TableCell>
+                      <TableCell>{row.Null}</TableCell>
+                      <TableCell>{row.Key}</TableCell>
+                      <TableCell>{row.Default ?? 'NULL'}</TableCell>
+                      <TableCell>{row.Extra}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border overflow-hidden mt-4">
+            <h3 className="text-lg font-medium p-4 border-b">Table Data: {selectedTable}</h3>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {Object.keys(tableData[0]).map(key => (
+                      <TableHead key={key}>{key}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tableData.map((row, rowIndex) => (
+                    <TableRow key={rowIndex}>
+                      {Object.values(row).map((value, cellIndex) => (
+                        <TableCell key={cellIndex}>{value !== null ? String(value) : 'NULL'}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="backup" className="space-y-4">
+          <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+            <h3 className="text-lg font-medium p-4 border-b">Backup History</h3>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {backupHistory.map((backup, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{backup.date}</TableCell>
+                      <TableCell>{backup.size}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {backup.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleRestoreBackup(backup.date)}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleDownloadBackup(backup.date)}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
                         </div>
-                      ) : (
-                        <div className="p-8 text-center text-gray-500">
-                          Select a table to view its data
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="export">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Export Database</CardTitle>
-                  <CardDescription>
-                    Export database tables to SQL or CSV files
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="border rounded-md p-4">
-                      <h3 className="font-medium mb-2">Select tables to export</h3>
-                      <div className="grid grid-cols-3 gap-2 mb-4">
-                        {tables.map((table) => (
-                          <label key={table.name} className="flex items-center space-x-2">
-                            <input type="checkbox" className="rounded" />
-                            <span>{table.name}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <div className="flex space-x-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Export format</label>
-                          <select className="w-full rounded-md border border-input px-3 py-2">
-                            <option value="sql">SQL</option>
-                            <option value="csv">CSV</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Options</label>
-                          <select className="w-full rounded-md border border-input px-3 py-2">
-                            <option value="data">Data only</option>
-                            <option value="structure">Structure only</option>
-                            <option value="both">Both structure and data</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Export Database
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="import">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Import Data</CardTitle>
-                  <CardDescription>
-                    Import data from SQL or CSV files
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="border-2 border-dashed rounded-md p-8 text-center">
-                      <FilePlus2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                      <p className="mb-2 text-sm">Drag and drop SQL or CSV files here</p>
-                      <p className="text-xs text-gray-500 mb-4">Or click to browse files</p>
-                      <Button variant="outline" size="sm">
-                        Choose File
-                      </Button>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Import options</label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <select className="rounded-md border border-input px-3 py-2">
-                          <option value="add">Add to existing data</option>
-                          <option value="replace">Replace existing data</option>
-                        </select>
-                        <select className="rounded-md border border-input px-3 py-2">
-                          <option value="ignore">Ignore errors</option>
-                          <option value="stop">Stop on error</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button disabled>
-                    Import Data
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
-      </div>
-    </AdminLayout>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </>
   );
 };
 

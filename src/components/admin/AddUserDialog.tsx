@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -63,6 +62,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     
     try {
       const userData: Partial<User> = {
+        username: name,
         name,
         email,
         password,
