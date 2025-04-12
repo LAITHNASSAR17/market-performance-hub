@@ -29,6 +29,7 @@ import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseIS
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import AverageTradeCards from '@/components/AverageTradeCards';
+import TradingTips from '@/components/TradingTips';
 
 const Dashboard: React.FC = () => {
   const { trades, deleteTrade } = useTrade();
@@ -293,7 +294,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-5 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <Card className="col-span-1">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -361,6 +362,10 @@ const Dashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+
+        <div className="col-span-1">
+          <TradingTips className="h-full" />
+        </div>
       </div>
 
       <div className="mb-6 sm:mb-8">

@@ -3,7 +3,7 @@ import React from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChartLine, ChartBarIcon, Target, BookMarked, LineChart } from 'lucide-react';
+import { ChartLine, ChartBarIcon, Target, BookMarked, LineChart, Lightbulb } from 'lucide-react';
 
 // Import custom hooks
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
@@ -16,6 +16,7 @@ import OverviewTab from '@/components/analytics/OverviewTab';
 import TagsTab from '@/components/analytics/TagsTab';
 import PlaybookTab from '@/components/analytics/PlaybookTab';
 import ChartTab from '@/components/analytics/ChartTab';
+import TradingTips from '@/components/TradingTips';
 
 const Analytics: React.FC = () => {
   const { t } = useLanguage();
@@ -39,7 +40,7 @@ const Analytics: React.FC = () => {
         </div>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid grid-cols-4 md:w-[400px] mb-4">
+          <TabsList className="grid grid-cols-5 md:w-[500px] mb-4">
             <TabsTrigger value="overview">
               <ChartLine className="h-4 w-4 mr-2" />
               {t('analytics.overview') || 'Overview'}
@@ -55,6 +56,10 @@ const Analytics: React.FC = () => {
             <TabsTrigger value="chart">
               <LineChart className="h-4 w-4 mr-2" />
               {t('analytics.chart') || 'Chart'}
+            </TabsTrigger>
+            <TabsTrigger value="tips">
+              <Lightbulb className="h-4 w-4 mr-2" />
+              {t('analytics.tips') || 'Tips'}
             </TabsTrigger>
           </TabsList>
           
@@ -88,6 +93,11 @@ const Analytics: React.FC = () => {
           {/* Chart Tab */}
           <TabsContent value="chart">
             <ChartTab plData={plData} />
+          </TabsContent>
+          
+          {/* Tips Tab */}
+          <TabsContent value="tips">
+            <TradingTips />
           </TabsContent>
         </Tabs>
       </div>
