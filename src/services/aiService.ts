@@ -11,13 +11,16 @@ export interface TradingTip {
   priority: 'high' | 'medium' | 'low';
 }
 
+// مفتاح API الافتراضي
+const DEFAULT_API_KEY = "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";
+
 // دالة لإرسال طلب إلى Perplexity API
-const callPerplexityAPI = async (prompt: string, apiKey: string): Promise<string> => {
+const callPerplexityAPI = async (prompt: string): Promise<string> => {
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${DEFAULT_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -53,12 +56,7 @@ const callPerplexityAPI = async (prompt: string, apiKey: string): Promise<string
 };
 
 // دالة لتحليل أداء المتداول وإنشاء نصائح باستخدام Perplexity API
-export const analyzeTradingPerformance = async (trades: Trade[], stats: TradeStats, apiKey: string = ""): Promise<TradingTip[]> => {
-  // التحقق من وجود مفتاح API
-  if (!apiKey) {
-    return getDefaultTips(trades);
-  }
-
+export const analyzeTradingPerformance = async (trades: Trade[], stats: TradeStats): Promise<TradingTip[]> => {
   // التحقق من وجود صفقات كافية للتحليل
   if (trades.length < 3) {
     return getDefaultTips(trades);
@@ -103,7 +101,7 @@ export const analyzeTradingPerformance = async (trades: Trade[], stats: TradeSta
     `;
 
     // استدعاء الـ API
-    const apiResponse = await callPerplexityAPI(prompt, apiKey);
+    const apiResponse = await callPerplexityAPI(prompt);
     
     // تحليل الاستجابة JSON
     try {
@@ -168,9 +166,9 @@ const getDefaultTips = (trades: Trade[]): TradingTip[] => {
 };
 
 // توليد نصيحة AI مفصلة
-export const generateAIAdvice = async (tradeData: Trade[], stats: TradeStats, apiKey: string = ""): Promise<string> => {
-  // التحقق من وجود مفتاح API
-  if (!apiKey || tradeData.length < 3) {
+export const generateAIAdvice = async (tradeData: Trade[], stats: TradeStats): Promise<string> => {
+  // التحقق من وجود صفقات كافية
+  if (tradeData.length < 3) {
     return getDefaultAdvice(tradeData, stats);
   }
 
@@ -197,7 +195,7 @@ export const generateAIAdvice = async (tradeData: Trade[], stats: TradeStats, ap
     `;
 
     // استدعاء الـ API
-    const advice = await callPerplexityAPI(prompt, apiKey);
+    const advice = await callPerplexityAPI(prompt);
     return advice || getDefaultAdvice(tradeData, stats);
   } catch (error) {
     console.error("Error generating AI advice:", error);
@@ -239,9 +237,9 @@ const getDefaultAdvice = (tradeData: Trade[], stats: TradeStats): string => {
 };
 
 // توليد نصائح متعددة باستخدام الـ API
-export const getAITradingTips = async (trades: Trade[], stats: TradeStats, apiKey: string = ""): Promise<TradingTip[]> => {
+export const getAITradingTips = async (trades: Trade[], stats: TradeStats): Promise<TradingTip[]> => {
   try {
-    return await analyzeTradingPerformance(trades, stats, apiKey);
+    return await analyzeTradingPerformance(trades, stats);
   } catch (error) {
     console.error("Error getting AI trading tips:", error);
     return [{

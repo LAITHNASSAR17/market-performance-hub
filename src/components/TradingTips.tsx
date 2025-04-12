@@ -2,15 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lightbulb, RefreshCw, ChevronRight, ChevronLeft, Settings } from 'lucide-react';
+import { Lightbulb, RefreshCw, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { TradingTip, getAITradingTips, generateAIAdvice } from '@/services/aiService';
 import { useTrade } from '@/contexts/TradeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 interface TradingTipsProps {
   className?: string;
@@ -25,28 +22,16 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   const [loading, setLoading] = useState(false);
   const [aiAdvice, setAiAdvice] = useState<string>('');
   const [loadingAdvice, setLoadingAdvice] = useState(false);
-  const [apiKey, setApiKey] = useState<string>(() => {
-    // استرجاع المفتاح من التخزين المحلي إذا كان موجوداً
-    return localStorage.getItem('perplexity_api_key') || '';
-  });
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  // حفظ مفتاح API في التخزين المحلي عند تغييره
-  useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('perplexity_api_key', apiKey);
-    }
-  }, [apiKey]);
 
   // تحميل النصائح عند تغير البيانات
   useEffect(() => {
     loadTips();
-  }, [trades, stats, apiKey]);
+  }, [trades, stats]);
 
   const loadTips = async () => {
     setLoading(true);
     try {
-      const newTips = await getAITradingTips(trades, stats, apiKey);
+      const newTips = await getAITradingTips(trades, stats);
       setTips(newTips);
       if (newTips.length > 0) {
         setCurrentTip(0);
@@ -61,7 +46,7 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   const loadAIAdvice = async () => {
     setLoadingAdvice(true);
     try {
-      const advice = await generateAIAdvice(trades, stats, apiKey);
+      const advice = await generateAIAdvice(trades, stats);
       setAiAdvice(advice);
     } catch (error) {
       console.error("Error loading AI advice:", error);
@@ -89,13 +74,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   const refreshTips = () => {
     loadTips();
     loadAIAdvice();
-  };
-
-  const saveApiKey = (newKey: string) => {
-    setApiKey(newKey);
-    setIsDialogOpen(false);
-    // تحديث النصائح بعد تعيين المفتاح
-    refreshTips();
   };
 
   const getPriorityColor = (priority: string) => {
@@ -176,44 +154,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
               {language === 'ar' ? 'نصائح ذكية' : 'AI Trading Tips'}
             </CardTitle>
             <div className="flex space-x-2">
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{language === 'ar' ? 'إعدادات AI' : 'AI Settings'}</DialogTitle>
-                    <DialogDescription>
-                      {language === 'ar' 
-                        ? 'أدخل مفتاح Perplexity API الخاص بك لتلقي نصائح ذكية.' 
-                        : 'Enter your Perplexity API key to receive smart tips.'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <Label htmlFor="apiKey">{language === 'ar' ? 'مفتاح API' : 'API Key'}</Label>
-                    <Input 
-                      id="apiKey" 
-                      value={apiKey} 
-                      onChange={(e) => setApiKey(e.target.value)}
-                      placeholder="pk-..."
-                      type="password"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {language === 'ar' 
-                        ? 'احصل على مفتاح API من موقع Perplexity AI' 
-                        : 'Get your API key from Perplexity AI website'}
-                    </p>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={() => saveApiKey(apiKey)}>
-                      {language === 'ar' ? 'حفظ' : 'Save'}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-              
               <Button variant="ghost" size="sm" onClick={refreshTips} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
@@ -224,13 +164,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
               ? 'نصائح مخصصة بناءً على أنماط التداول الخاصة بك' 
               : 'Personalized tips based on your trading patterns'}
           </CardDescription>
-          {!apiKey && (
-            <div className="mt-2 text-sm text-amber-500">
-              {language === 'ar' 
-                ? 'لتلقي نصائح أكثر دقة، يرجى إضافة مفتاح Perplexity API' 
-                : 'For more accurate tips, please add a Perplexity API key'}
-            </div>
-          )}
         </CardHeader>
         
         <CardContent>
