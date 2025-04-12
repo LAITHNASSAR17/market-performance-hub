@@ -50,7 +50,7 @@ export class AdminController {
     this.analyticsController = new AnalyticsController();
   }
 
-  async verifyAdminAccess(userId: number): Promise<boolean> {
+  async verifyAdminAccess(userId: string): Promise<boolean> {
     try {
       const user = await this.userController.getUser(userId);
       return user !== null && user.isAdmin === true;
@@ -122,19 +122,19 @@ export class AdminController {
     return this.userController.getAllUsers();
   }
   
-  async blockUser(userId: number) {
+  async blockUser(userId: string) {
     return this.userController.blockUser(userId);
   }
   
-  async unblockUser(userId: number) {
+  async unblockUser(userId: string) {
     return this.userController.unblockUser(userId);
   }
   
-  async deleteUser(userId: number) {
+  async deleteUser(userId: string) {
     return this.userController.deleteUser(userId);
   }
   
-  async resetUserPassword(userId: number, newPassword: string) {
+  async resetUserPassword(userId: string, newPassword: string) {
     return this.userController.updateUser(userId, { password: newPassword });
   }
 
@@ -145,18 +145,18 @@ export class AdminController {
   async getAllTrades() {
     // Use the model's method that returns all trades
     try {
-      return await this.tradeController.getUserTrades(0, 9999); // Using a large limit as a workaround
+      return await this.tradeController.getUserTrades("0", 9999); // Using "0" as a string and a large limit as a workaround
     } catch (error) {
       console.error('Error getting all trades:', error);
       return [];
     }
   }
   
-  async getUserTrades(userId: number) {
+  async getUserTrades(userId: string) {
     return this.tradeController.getUserTrades(userId);
   }
   
-  async deleteTrade(tradeId: number) {
+  async deleteTrade(tradeId: string) {
     return this.tradeController.deleteTrade(tradeId);
   }
 
@@ -178,27 +178,25 @@ export class AdminController {
     });
   }
   
-  async deleteTag(tagId: number) {
+  async deleteTag(tagId: string) {
     return this.tagController.deleteTag(tagId);
   }
 
   async getSystemSettings() {
-    // The getUserSettings method expects a userId as a number, but "system" is being passed as a string
-    // We need to update our approach here - either modify the SettingsController to accept string ids
-    // or use a special numeric value for system settings
-    return this.settingsController.getUserSettings("system" as any); // Using type assertion as a temporary fix
+    // Use "system" as a string ID for system settings
+    return this.settingsController.getUserSettings("system");
   }
   
   async updateSystemSetting(key: string, value: string) {
-    // Similar issue here - updateSetting expects userId as a number but "system" is a string
-    return this.settingsController.updateSetting("system" as any, key, value, "system" as any);
+    // Use "system" as a string ID for system settings
+    return this.settingsController.updateSetting("system", key, value, "system");
   }
 
   async getAllThemes() {
     return this.themeController.getAllThemes();
   }
   
-  async setDefaultTheme(themeId: number) {
+  async setDefaultTheme(themeId: string) {
     return this.themeController.setDefaultTheme(themeId);
   }
 
@@ -242,7 +240,6 @@ export class AdminController {
     };
   }
 
-  // Add missing methods for AdminDatabase
   async getDatabaseTableStructure(tableName: string): Promise<any[]> {
     try {
       return [
