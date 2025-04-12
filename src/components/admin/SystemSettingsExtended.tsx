@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Info, Check } from 'lucide-react';
+import { AlertCircle, Info, Check, Copy } from 'lucide-react';
 import FaviconUpload from '@/components/FaviconUpload';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ const SystemSettingsExtended: React.FC<SystemSettingsExtendedProps> = () => {
   const { users, getAllUsers } = useAuth();
   const { toast } = useToast();
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [isResetSuccess, setIsResetSuccess] = useState(false);
 
   useEffect(() => {
     // Get all users from localStorage directly to verify consistency
@@ -80,12 +81,25 @@ const SystemSettingsExtended: React.FC<SystemSettingsExtendedProps> = () => {
     
     // Show confirmation toast
     toast({
-      title: "Admin Account Reset",
-      description: "The admin account has been reset successfully.",
+      title: "حساب المسؤول تم إعادة ضبطه",
+      description: "تم إعادة ضبط حساب المسؤول بنجاح.",
     });
 
-    // Reload the page to reflect changes
-    window.location.reload();
+    // Set reset success state
+    setIsResetSuccess(true);
+
+    // Reset success message after 5 seconds
+    setTimeout(() => {
+      setIsResetSuccess(false);
+    }, 5000);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "تم النسخ",
+      description: "تم نسخ النص إلى الحافظة",
+    });
   };
 
   return (
@@ -93,8 +107,8 @@ const SystemSettingsExtended: React.FC<SystemSettingsExtendedProps> = () => {
       {/* Favicon Upload Component */}
       <Card>
         <CardHeader>
-          <CardTitle>Favicon Settings</CardTitle>
-          <CardDescription>Upload and manage the website favicon</CardDescription>
+          <CardTitle>إعدادات أيقونة الموقع</CardTitle>
+          <CardDescription>تحميل وإدارة أيقونة الموقع</CardDescription>
         </CardHeader>
         <CardContent>
           <FaviconUpload />
@@ -104,16 +118,59 @@ const SystemSettingsExtended: React.FC<SystemSettingsExtendedProps> = () => {
       {/* Admin Account Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Admin Accounts</CardTitle>
-          <CardDescription>View and manage admin accounts</CardDescription>
+          <CardTitle>حسابات المسؤولين</CardTitle>
+          <CardDescription>عرض وإدارة حسابات المسؤولين</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {isResetSuccess && (
+            <Alert className="bg-green-50 border-green-200 mb-4">
+              <Check className="h-4 w-4 text-green-500" />
+              <AlertDescription className="text-green-700">
+                تم إعادة ضبط حساب المسؤول بنجاح. يمكنك الآن تسجيل الدخول باستخدام البيانات الموضحة أدناه.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Alert className="bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="text-blue-700">
+              <p className="font-bold">معلومات تسجيل دخول المسؤول:</p>
+            </AlertDescription>
+          </Alert>
+          
+          <div className="bg-gray-100 p-4 rounded-md">
+            <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center mb-2">
+              <div className="font-semibold">البريد الإلكتروني:</div>
+              <div className="font-mono">lnmr2001@gmail.com</div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => copyToClipboard('lnmr2001@gmail.com')}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-center">
+              <div className="font-semibold">كلمة المرور:</div>
+              <div className="font-mono">password123</div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => copyToClipboard('password123')}
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
           {adminUsers.length > 0 ? (
             <>
-              <Alert className="bg-blue-50 border-blue-200">
+              <Alert className="bg-blue-50 border-blue-200 mt-4">
                 <Info className="h-4 w-4 text-blue-500" />
                 <AlertDescription className="text-blue-700">
-                  <p>The following admin accounts are currently active:</p>
+                  <p>حسابات المسؤولين النشطة حالياً:</p>
                 </AlertDescription>
               </Alert>
               
@@ -121,9 +178,9 @@ const SystemSettingsExtended: React.FC<SystemSettingsExtendedProps> = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الاسم</th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">البريد الإلكتروني</th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -134,11 +191,11 @@ const SystemSettingsExtended: React.FC<SystemSettingsExtendedProps> = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {admin.isBlocked ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              Blocked
+                              محظور
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Active
+                              نشط
                             </span>
                           )}
                         </td>
@@ -152,33 +209,22 @@ const SystemSettingsExtended: React.FC<SystemSettingsExtendedProps> = () => {
             <Alert className="bg-amber-50 border-amber-200">
               <AlertCircle className="h-4 w-4 text-amber-500" />
               <AlertDescription className="text-amber-700">
-                No admin accounts were found. Use the reset button below to create a default admin account.
+                لم يتم العثور على حسابات للمسؤولين. استخدم زر إعادة الضبط أدناه لإنشاء حساب مسؤول افتراضي.
               </AlertDescription>
             </Alert>
           )}
           
           <div className="mt-4 pt-4 border-t flex flex-col space-y-2">
-            <Label className="font-medium">Reset Admin Account</Label>
-            <p className="text-sm text-gray-600 mb-2">
-              This will reset the admin account to its default settings. Use this if you're having trouble logging in.
+            <Label className="font-medium">إعادة ضبط حساب المسؤول</Label>
+            <p className="text-sm text-gray-600 mb-2 text-right">
+              سيؤدي هذا إلى إعادة ضبط حساب المسؤول إلى إعداداته الافتراضية. استخدم هذا إذا كنت تواجه مشكلة في تسجيل الدخول.
             </p>
-            <div className="flex items-start space-x-4">
-              <div className="bg-gray-100 p-3 rounded-md flex-grow">
-                <p className="font-medium text-sm">Admin Credentials:</p>
-                <div className="mt-1 grid grid-cols-2 gap-2 text-sm">
-                  <div>Email:</div>
-                  <div className="font-mono">lnmr2001@gmail.com</div>
-                  <div>Password:</div>
-                  <div className="font-mono">password123</div>
-                </div>
-              </div>
-              <Button 
-                onClick={handleResetAdmin} 
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-              >
-                Reset Admin Account
-              </Button>
-            </div>
+            <Button 
+              onClick={handleResetAdmin} 
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              إعادة ضبط حساب المسؤول
+            </Button>
           </div>
         </CardContent>
       </Card>
