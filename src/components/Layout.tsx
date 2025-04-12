@@ -13,7 +13,6 @@ import LanguageToggle from '@/components/LanguageToggle';
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import FaviconUpload from '@/components/FaviconUpload';
@@ -94,35 +93,47 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-900" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        <div className={cn(
-          "relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30",
-          sidebarOpen ? "w-64" : "w-16",
-          language === 'ar' ? "border-l" : "border-r",
-          "dark:bg-indigo-900/90 dark:border-indigo-800"
-        )}>
-          <div className="flex flex-col items-center py-4 px-4">
-            <div className="flex items-center justify-between w-full">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleSidebar}
-                className="text-sidebar-foreground dark:text-white"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              
-              {sidebarOpen && (
-                <h2 className="text-xl font-bold flex-1 text-center dark:text-white">{t('app.name') || 'TradeTracker'}</h2>
-              )}
-            </div>
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className={cn(
+        "relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30",
+        sidebarOpen ? "w-64" : "w-16",
+        language === 'ar' ? "border-l" : "border-r",
+        "dark:bg-indigo-900/90 dark:border-indigo-800"
+      )}>
+        <div className="flex flex-col items-center py-4 px-4">
+          <div className="flex items-center justify-between w-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSidebar}
+              className="text-sidebar-foreground dark:text-white"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
             
-            <div className="flex items-center gap-2 mt-4 w-full">
-              <div className="flex flex-col flex-1">
-                <span className="text-sm font-medium dark:text-white">{user?.name}</span>
-                <span className="text-xs text-muted-foreground dark:text-gray-300">{user?.email}</span>
-              </div>
+            {sidebarOpen && (
+              <h2 className="text-xl font-bold flex-1 text-center dark:text-white">{t('app.name') || 'TradeTracker'}</h2>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2 mt-4 w-full">
+            <div className="flex flex-col flex-1">
+              <span className="text-sm font-medium dark:text-white">{user?.name}</span>
+              <span className="text-xs text-muted-foreground dark:text-gray-300">{user?.email}</span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={logout}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                {t('auth.logout')}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          {!sidebarOpen && (
+            <div className="mt-4 flex justify-center">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" onClick={logout}>
@@ -134,126 +145,112 @@ const Layout: React.FC<LayoutProps> = ({
                 </TooltipContent>
               </Tooltip>
             </div>
-            {!sidebarOpen && (
-              <div className="mt-4 flex justify-center">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={logout}>
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
-                    {t('auth.logout')}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>
-                    <Link 
-                      to={item.href} 
-                      className={cn(
-                        "flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-indigo-800 dark:hover:text-white",
-                        isActive && "bg-sidebar-accent text-sidebar-accent-foreground dark:bg-indigo-800 dark:text-white font-medium"
-                      )}
-                    >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {sidebarOpen && <span className="ml-3">{item.name}</span>}
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    side={language === 'ar' ? 'left' : 'right'} 
-                    align="center"
-                    hidden={sidebarOpen}
-                  >
-                    {item.name}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
-
-          <div className="absolute bottom-0 left-0 right-0 py-4 px-4 space-y-2">
-            {/* Theme & Language Controls */}
-            <div className={cn(
-              "flex items-center justify-between bg-gray-100 dark:bg-indigo-800/60 px-2 py-2 rounded-lg mb-2",
-              !sidebarOpen && "flex-col gap-2"
-            )}>
-              <div className={cn(
-                "flex items-center",
-                !sidebarOpen && "flex-col gap-2"
-              )}>
-                <ThemeToggle variant={sidebarOpen ? "icon" : "switch"} />
-                {sidebarOpen && <span className="text-xs mx-2 dark:text-gray-300">|</span>}
-                <LanguageToggle variant={sidebarOpen ? "icon" : "switch"} />
-              </div>
-              
-              {sidebarOpen && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => setShowFaviconModal(true)}>
-                      <FileImage className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {language === 'ar' ? 'تغيير أيقونة الموقع' : 'Change Favicon'}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-            
-            {/* Settings Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  asChild 
-                  className={cn(
-                    "w-full flex items-center justify-center",
-                    !sidebarOpen && "px-2"
-                  )}
-                >
-                  <Link to="/settings">
-                    <Settings className="h-4 w-4" />
-                    {sidebarOpen && <span className="ml-2">{t('nav.settings') || 'Settings'}</span>}
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent 
-                side={language === 'ar' ? 'left' : 'right'} 
-                align="center"
-                hidden={sidebarOpen}
-              >
-                {t('nav.settings') || 'Settings'}
-              </TooltipContent>
-            </Tooltip>
-          </div>
+          )}
         </div>
 
-        {sidebarOpen && isMobile && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-20" 
-            onClick={() => setSidebarOpen(false)} 
-          />
-        )}
+        <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <Tooltip key={item.href}>
+                <TooltipTrigger asChild>
+                  <Link 
+                    to={item.href} 
+                    className={cn(
+                      "flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-indigo-800 dark:hover:text-white",
+                      isActive && "bg-sidebar-accent text-sidebar-accent-foreground dark:bg-indigo-800 dark:text-white font-medium"
+                    )}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    {sidebarOpen && <span className="ml-3">{item.name}</span>}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side={language === 'ar' ? 'left' : 'right'} 
+                  align="center"
+                  hidden={sidebarOpen}
+                >
+                  {item.name}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
 
-        <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
-          {children}
-        </main>
+        <div className="absolute bottom-0 left-0 right-0 py-4 px-4 space-y-2">
+          {/* Theme & Language Controls */}
+          <div className={cn(
+            "flex items-center justify-between bg-gray-100 dark:bg-indigo-800/60 px-2 py-2 rounded-lg mb-2",
+            !sidebarOpen && "flex-col gap-2"
+          )}>
+            <div className={cn(
+              "flex items-center",
+              !sidebarOpen && "flex-col gap-2"
+            )}>
+              <ThemeToggle variant={sidebarOpen ? "icon" : "switch"} />
+              {sidebarOpen && <span className="text-xs mx-2 dark:text-gray-300">|</span>}
+              <LanguageToggle variant={sidebarOpen ? "icon" : "switch"} />
+            </div>
+            
+            {sidebarOpen && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={() => setShowFaviconModal(true)}>
+                    <FileImage className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {language === 'ar' ? 'تغيير أيقونة الموقع' : 'Change Favicon'}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+          
+          {/* Settings Button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                asChild 
+                className={cn(
+                  "w-full flex items-center justify-center",
+                  !sidebarOpen && "px-2"
+                )}
+              >
+                <Link to="/settings">
+                  <Settings className="h-4 w-4" />
+                  {sidebarOpen && <span className="ml-2">{t('nav.settings') || 'Settings'}</span>}
+                </Link>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent 
+              side={language === 'ar' ? 'left' : 'right'} 
+              align="center"
+              hidden={sidebarOpen}
+            >
+              {t('nav.settings') || 'Settings'}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
+
+      {sidebarOpen && isMobile && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20" 
+          onClick={() => setSidebarOpen(false)} 
+        />
+      )}
+
+      <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
+        {children}
+      </main>
       
       {/* Favicon Upload Modal */}
       {showFaviconModal && (
         <FaviconUpload isOpen={showFaviconModal} onClose={() => setShowFaviconModal(false)} />
       )}
-    </TooltipProvider>
+    </div>
   );
 };
 

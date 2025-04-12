@@ -40,14 +40,14 @@ import AdminLayout from "./components/layouts/AdminLayout";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <LanguageProvider>
-        <ThemeProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <TradeProvider>
-                <NotebookProvider>
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <TradeProvider>
+              <NotebookProvider>
+                <TooltipProvider>
                   <Toaster />
                   <Sonner />
                   <Routes>
@@ -80,14 +80,14 @@ const App = () => (
                     {/* Catch-all route */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                </NotebookProvider>
-              </TradeProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </ThemeProvider>
-      </LanguageProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+                </TooltipProvider>
+              </NotebookProvider>
+            </TradeProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </BrowserRouter>
 );
 
 export default App;
