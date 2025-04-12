@@ -21,16 +21,21 @@ interface MySQLContextType {
 const MySQLContext = createContext<MySQLContextType | undefined>(undefined);
 
 export const MySQLProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<MySQLConfig>(() => MySQLController.loadConfig());
+  const [config, setConfig] = useState<MySQLConfig>(() => MySQLController.getConfig());
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connected' | 'error'>(
-    MySQLController.loadConnectionStatus()
+    MySQLController.getConnectionStatus()
   );
-  const [tables, setTables] = useState<MySQLTable[]>(() => MySQLController.loadTables());
+  const [tables, setTables] = useState<MySQLTable[]>(() => MySQLController.getTables());
   const { toast } = useToast();
 
   const isConfigured = Boolean(
     config.host && config.port && config.username && config.database
   );
+
+  // Update the controller when config changes
+  useEffect(() => {
+    MySQLController.updateConfig(config);
+  }, [config]);
 
   const connect = async (): Promise<boolean> => {
     if (!isConfigured) {
@@ -147,6 +152,11 @@ export const MySQLProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchTableData = async (tableName: string, limit = 100) => {
     return MySQLController.fetchTableData(tableName, limit);
   };
+
+  // Update state when connection status changes
+  useEffect(() => {
+    setConnectionStatus(MySQLController.getConnectionStatus());
+  }, []);
 
   return (
     <MySQLContext.Provider
