@@ -1,5 +1,6 @@
-
 // MySQL Data Model - Handles database logic and data structures
+
+import { Database } from '../utils/database';
 
 export interface MySQLConfig {
   host: string;
@@ -34,7 +35,13 @@ export interface MySQLQueryResult {
 
 // Model functions for handling MySQL operations
 export const MySQLModel = {
-  // Load configuration from storage
+  private: {
+    db: Database.getInstance(),
+    config: null as MySQLConfig | null,
+    connectionStatus: 'disconnected' as 'disconnected' | 'connected' | 'error',
+    tables: [] as MySQLTable[]
+  },
+
   loadConfig: (): MySQLConfig => {
     const savedConfig = localStorage.getItem('mysqlConfig');
     return savedConfig ? JSON.parse(savedConfig) : {
@@ -46,37 +53,45 @@ export const MySQLModel = {
     };
   },
 
-  // Save configuration to storage
   saveConfig: (config: MySQLConfig): void => {
     localStorage.setItem('mysqlConfig', JSON.stringify(config));
+    MySQLModel.private.config = config;
   },
 
-  // Check if configuration is valid
   isConfigValid: (config: MySQLConfig): boolean => {
     return Boolean(
       config.host && config.port && config.username && config.database
     );
   },
 
-  // Load saved tables from storage
-  loadTables: (): MySQLTable[] => {
-    const savedTables = localStorage.getItem('mysqlTables');
-    return savedTables ? JSON.parse(savedTables) : [];
+  loadConnectionStatus: (): 'disconnected' | 'connected' | 'error' => {
+    return MySQLModel.private.connectionStatus;
   },
 
-  // Save tables to storage
+  saveConnectionStatus: (status: 'disconnected' | 'connected' | 'error'): void => {
+    MySQLModel.private.connectionStatus = status;
+    localStorage.setItem('mysqlConnectionStatus', status);
+  },
+
+  loadTables: (): MySQLTable[] => {
+    return MySQLModel.private.tables;
+  },
+
   saveTables: (tables: MySQLTable[]): void => {
+    MySQLModel.private.tables = tables;
     localStorage.setItem('mysqlTables', JSON.stringify(tables));
   },
 
-  // Load connection status from storage
-  loadConnectionStatus: (): 'disconnected' | 'connected' | 'error' => {
-    const status = localStorage.getItem('mysqlConnectionStatus');
-    return (status as 'disconnected' | 'connected' | 'error') || 'disconnected';
-  },
-
-  // Save connection status to storage
-  saveConnectionStatus: (status: 'disconnected' | 'connected' | 'error'): void => {
-    localStorage.setItem('mysqlConnectionStatus', status);
+  connect: async (): Promise<boolean> => {
+    if (!MySQLModel.private.config) return false;
+    
+    try {
+      const connected = await MySQLModel.private.db.connect(MySQLModel.private.config);
+      MySQLModel.saveConnectionStatus(connected ? 'connected' : 'error');
+      return connected;
+    } catch (error) {
+      MySQLModel.saveConnectionStatus('error');
+      return false;
+    }
   }
 };
