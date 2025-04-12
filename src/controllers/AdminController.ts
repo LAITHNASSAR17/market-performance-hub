@@ -193,7 +193,7 @@ export class AdminController {
     return this.themeController.getAllThemes();
   }
   
-  async setDefaultTheme(themeId: string) {
+  async setDefaultTheme(themeId: string): Promise<boolean> {
     // Convert string themeId to number since ThemeController expects a number
     return this.themeController.setDefaultTheme(Number(themeId));
   }
