@@ -138,6 +138,10 @@ export class AdminController {
     return this.userController.updateUser(userId, { password: newPassword });
   }
 
+  async createUser(userData: any) {
+    return this.userController.createUser(userData);
+  }
+
   async getAllTrades() {
     // Use the model's method that returns all trades
     try {

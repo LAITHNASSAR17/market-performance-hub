@@ -26,10 +26,11 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
   updateUser: (updatedUser: User) => Promise<void>;
+  updateUserProfile: (userData: Partial<User>) => Promise<void>;
   getAllUsers: () => User[];
   blockUser: (user: User) => Promise<void>;
   unblockUser: (user: User) => Promise<void>;
-  changePassword: (email: string, newPassword: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -249,6 +250,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const updateUserProfile = async (userData: Partial<User>): Promise<void> => {
+    if (!user) {
+      throw new Error('No user is currently logged in');
+    }
+    
+    const updatedUser = {
+      ...user,
+      ...userData
+    };
+    
+    await updateUser(updatedUser);
+    
+    toast({
+      title: "Profile Updated",
+      description: "Your profile has been updated successfully"
+    });
+  };
+
   const getAllUsers = (): User[] => {
     try {
       const storedUsers = localStorage.getItem('users');
@@ -295,12 +314,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const changePassword = async (email: string, newPassword: string): Promise<void> => {
-    const hashedPassword = hashPassword(newPassword);
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+    if (!user) {
+      throw new Error('No user is currently logged in');
+    }
+    
     const allUsers = getAllUsers();
-    const userIndex = allUsers.findIndex(user => user.email === email);
+    const userIndex = allUsers.findIndex(u => u.id === user.id);
     
     if (userIndex !== -1) {
+      const userWithPassword = allUsers[userIndex];
+      
+      if (!userWithPassword.password || !comparePassword(currentPassword, userWithPassword.password)) {
+        throw new Error('Current password is incorrect');
+      }
+      
+      const hashedPassword = hashPassword(newPassword);
       allUsers[userIndex] = { ...allUsers[userIndex], password: hashedPassword };
       localStorage.setItem('users', JSON.stringify(allUsers));
       setUsers(allUsers);
@@ -325,6 +354,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     forgotPassword,
     resetPassword,
     updateUser,
+    updateUserProfile,
     getAllUsers,
     blockUser,
     unblockUser,

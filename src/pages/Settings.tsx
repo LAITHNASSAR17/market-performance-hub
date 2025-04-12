@@ -38,7 +38,10 @@ const Settings: React.FC = () => {
         await changePassword(userData.currentPassword, userData.newPassword);
       } else {
         // If updating profile info
-        await updateUserProfile(userData);
+        await updateUserProfile({
+          name: userData.username,
+          email: userData.email
+        });
       }
       
       setShowProfileDialog(false);
