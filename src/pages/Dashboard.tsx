@@ -32,14 +32,9 @@ import {
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const { trades, getTrades } = useTrade();
+  const { trades } = useTrade();
   const [timeFilter, setTimeFilter] = useState('all');
   
-  useEffect(() => {
-    // Fetch the trades based on timeFilter
-    getTrades(user?.id, timeFilter);
-  }, [user, timeFilter]);
-
   // Calculate statistics based on filtered trades
   const totalTrades = trades?.length || 0;
   const winningTrades = trades?.filter(trade => trade.profitLoss > 0).length || 0;
@@ -69,10 +64,10 @@ const Dashboard: React.FC = () => {
         [
           trade.date, 
           trade.pair, 
-          trade.direction, 
-          trade.entryPrice, 
-          trade.exitPrice, 
-          trade.size, 
+          trade.type, 
+          trade.entry, 
+          trade.exit, 
+          trade.lotSize, 
           trade.profitLoss
         ].join(',')
       )
@@ -148,7 +143,7 @@ const Dashboard: React.FC = () => {
             title="Win Rate"
             value={`${winRate}%`}
             icon={<BarChart className="h-5 w-5" />}
-            color={winRate > 50 ? 'green' : winRate < 50 ? 'amber' : 'default'}
+            color={winRate > 50 ? 'green' : winRate < 50 ? 'red' : 'default'}
           />
           
           <StatCard
@@ -163,7 +158,6 @@ const Dashboard: React.FC = () => {
             value={`${trades?.filter(trade => trade.notes?.length > 0).length || 0} notes`}
             icon={<FileText className="h-5 w-5" />}
             description="View your journal"
-            actionUrl="/journal"
           />
         </div>
 
