@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Lock, UserCheck, UserX, Eye, Send } from 'lucide-react';
+import { Search, Lock, UserCheck, UserX, Eye, Send, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -32,6 +33,8 @@ interface UserTableProps {
   onUnblock: (user: any) => void;
   onChangePassword: (email: string, password: string) => Promise<void>;
   onViewUser: (userId: string) => void;
+  onSetAdmin: (user: any, isAdmin: boolean) => void;
+  onAddUser: (userData: { name: string, email: string, password: string, isAdmin: boolean }) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 }
@@ -42,15 +45,26 @@ const UserTable: React.FC<UserTableProps> = ({
   onUnblock,
   onChangePassword,
   onViewUser,
+  onSetAdmin,
+  onAddUser,
   searchTerm,
   setSearchTerm
 }) => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState('');
   const { toast } = useToast();
   const { t } = useLanguage();
+  
+  // New user form state
+  const [newUserData, setNewUserData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    isAdmin: false
+  });
 
   const handleOpenPasswordModal = (user: any) => {
     setSelectedUser(user);
@@ -62,6 +76,21 @@ const UserTable: React.FC<UserTableProps> = ({
     setNewPassword('');
     setError('');
     setSelectedUser(null);
+  };
+
+  const handleOpenAddUserModal = () => {
+    setShowAddUserModal(true);
+    setNewUserData({
+      name: '',
+      email: '',
+      password: '',
+      isAdmin: false
+    });
+  };
+
+  const handleCloseAddUserModal = () => {
+    setShowAddUserModal(false);
+    setError('');
   };
 
   const handleChangePassword = async () => {
@@ -85,6 +114,41 @@ const UserTable: React.FC<UserTableProps> = ({
     }
   };
 
+  const handleAddUser = () => {
+    // Validate form data
+    if (!newUserData.name || !newUserData.email || !newUserData.password) {
+      setError('جميع الحقول مطلوبة');
+      return;
+    }
+
+    if (newUserData.password.length < 6) {
+      setError('يجب أن تكون كلمة المرور 6 أحرف على الأقل.');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newUserData.email)) {
+      setError('الرجاء إدخال بريد إلكتروني صحيح.');
+      return;
+    }
+
+    try {
+      onAddUser(newUserData);
+      handleCloseAddUserModal();
+      toast({
+        title: "تمت الإضافة بنجاح",
+        description: `تم إضافة المستخدم ${newUserData.name} بنجاح`,
+      });
+    } catch (err) {
+      setError('فشل إضافة المستخدم. الرجاء المحاولة مرة أخرى.');
+    }
+  };
+
+  const handleToggleAdmin = (user: any) => {
+    onSetAdmin(user, !user.isAdmin);
+  };
+
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -92,16 +156,19 @@ const UserTable: React.FC<UserTableProps> = ({
 
   return (
     <>
-      <div className="flex mb-4">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
-            className="pl-10 pr-4"
+            className="pr-10"
             placeholder="بحث عن المستخدمين..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        <Button onClick={handleOpenAddUserModal} className="mr-2 bg-indigo-600 hover:bg-indigo-700">
+          إضافة مستخدم جديد
+        </Button>
       </div>
       
       <div className="overflow-x-auto">
@@ -111,9 +178,9 @@ const UserTable: React.FC<UserTableProps> = ({
               <TableHead className="w-[50px]">المعرف</TableHead>
               <TableHead>الاسم</TableHead>
               <TableHead>البريد الإلكتروني</TableHead>
-              <TableHead>الاشتراك</TableHead>
+              <TableHead>الصلاحية</TableHead>
               <TableHead>الحالة</TableHead>
-              <TableHead className="text-right">الإجراءات</TableHead>
+              <TableHead className="text-left">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -124,9 +191,15 @@ const UserTable: React.FC<UserTableProps> = ({
                   <TableCell>{user.name}</TableCell>
                   <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      {user.isAdmin ? 'أدمن' : 'أساسي'}
-                    </Badge>
+                    {user.isAdmin ? (
+                      <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                        أدمن
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        مستخدم
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     {user.isBlocked ? (
@@ -139,7 +212,7 @@ const UserTable: React.FC<UserTableProps> = ({
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-left">
                     <div className="flex justify-end gap-2">
                       <Button 
                         variant="outline" 
@@ -162,10 +235,13 @@ const UserTable: React.FC<UserTableProps> = ({
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="text-indigo-600 border-indigo-600 hover:bg-indigo-50 h-8 w-8 p-0"
-                        title="إرسال رسالة"
+                        onClick={() => handleToggleAdmin(user)}
+                        className={user.isAdmin 
+                          ? "text-purple-600 border-purple-600 hover:bg-purple-50 h-8 w-8 p-0"
+                          : "text-indigo-600 border-indigo-600 hover:bg-indigo-50 h-8 w-8 p-0"}
+                        title={user.isAdmin ? "إزالة صلاحيات الأدمن" : "منح صلاحيات الأدمن"}
                       >
-                        <Send className="h-4 w-4" />
+                        {user.isAdmin ? <ShieldAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
                       </Button>
                       {user.isBlocked ? (
                         <Button 
@@ -204,7 +280,7 @@ const UserTable: React.FC<UserTableProps> = ({
           </TableBody>
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={6} className="text-right">
+              <TableCell colSpan={6} className="text-left">
                 يتم عرض: {filteredUsers.length} / {users.length}
               </TableCell>
             </TableRow>
@@ -212,6 +288,7 @@ const UserTable: React.FC<UserTableProps> = ({
         </Table>
       </div>
 
+      {/* Change Password Modal */}
       <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -240,13 +317,95 @@ const UserTable: React.FC<UserTableProps> = ({
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleClosePasswordModal}>
+          <DialogFooter className="sm:justify-start">
+            <Button type="button" variant="outline" onClick={handleClosePasswordModal}>
               إلغاء
             </Button>
-            <Button onClick={handleChangePassword} className="bg-purple-600 hover:bg-purple-700">
-              <Lock className="mr-2 h-4 w-4" />
+            <Button type="button" onClick={handleChangePassword} className="bg-purple-600 hover:bg-purple-700">
+              <Lock className="ml-2 h-4 w-4" />
               تغيير كلمة المرور
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add User Modal */}
+      <Dialog open={showAddUserModal} onOpenChange={setShowAddUserModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>إضافة مستخدم جديد</DialogTitle>
+            <DialogDescription>
+              أدخل بيانات المستخدم الجديد للنظام
+            </DialogDescription>
+          </DialogHeader>
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md">
+              {error}
+            </div>
+          )}
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                الاسم
+              </Label>
+              <Input
+                id="name"
+                placeholder="أدخل اسم المستخدم"
+                className="col-span-3"
+                value={newUserData.name}
+                onChange={(e) => setNewUserData({...newUserData, name: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                البريد الإلكتروني
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="أدخل البريد الإلكتروني"
+                className="col-span-3"
+                value={newUserData.email}
+                onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                كلمة المرور
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="أدخل كلمة المرور"
+                className="col-span-3"
+                value={newUserData.password}
+                onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">
+                صلاحيات الأدمن
+              </Label>
+              <div className="col-span-3 flex items-center space-x-2 space-x-reverse">
+                <Checkbox 
+                  id="isAdmin" 
+                  checked={newUserData.isAdmin}
+                  onCheckedChange={(checked) => 
+                    setNewUserData({...newUserData, isAdmin: checked as boolean})
+                  }
+                />
+                <Label htmlFor="isAdmin" className="mr-2">
+                  منح صلاحيات المدير
+                </Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-start">
+            <Button type="button" variant="outline" onClick={handleCloseAddUserModal}>
+              إلغاء
+            </Button>
+            <Button type="button" onClick={handleAddUser} className="bg-indigo-600 hover:bg-indigo-700">
+              إضافة المستخدم
             </Button>
           </DialogFooter>
         </DialogContent>
