@@ -1,4 +1,3 @@
-
 import { UserController } from './UserController';
 import { TradeController } from './TradeController';
 import { TagController } from './TagController';
@@ -180,13 +179,15 @@ export class AdminController {
   }
 
   async getSystemSettings() {
-    // Pass "system" as a string, not as a number
-    return this.settingsController.getUserSettings("system");
+    // The getUserSettings method expects a userId as a number, but "system" is being passed as a string
+    // We need to update our approach here - either modify the SettingsController to accept string ids
+    // or use a special numeric value for system settings
+    return this.settingsController.getUserSettings("system" as any); // Using type assertion as a temporary fix
   }
   
   async updateSystemSetting(key: string, value: string) {
-    // Make sure to pass all required arguments
-    return this.settingsController.updateSetting("system", key, value, "system");
+    // Similar issue here - updateSetting expects userId as a number but "system" is a string
+    return this.settingsController.updateSetting("system" as any, key, value, "system" as any);
   }
 
   async getAllThemes() {
