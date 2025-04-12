@@ -2,23 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import UserTable from '@/components/admin/UserTable';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import { AdminController } from '@/controllers/AdminController';
-import { User } from '@/models/UserModel';
-import { Button } from '@/components/ui/button';
-import { UserPlus } from 'lucide-react';
-import AddUserDialog from '@/components/admin/AddUserDialog';
-
-// Interface to handle display data with potentially missing fields
-interface DisplayUser extends Partial<User> {
-  username?: string;
-  name?: string;
-}
+import { User } from '@/models/UserModel'; // Import User type
 
 const AdminUsers: React.FC = () => {
-  const [users, setUsers] = useState<DisplayUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const { toast } = useToast();
   
   const adminController = new AdminController();
@@ -32,13 +23,7 @@ const AdminUsers: React.FC = () => {
     setLoading(true);
     try {
       const allUsers = await adminController.getAllUsers();
-      // Map users to ensure they have all required properties
-      const displayUsers = allUsers.map(user => ({
-        ...user,
-        // Ensure username exists (use name as fallback if needed)
-        username: user.username || user.name || '',
-      }));
-      setUsers(displayUsers);
+      setUsers(allUsers);
     } catch (error) {
       console.error("Error loading users:", error);
       toast({
@@ -48,27 +33,6 @@ const AdminUsers: React.FC = () => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAddUser = async (userData: Partial<User>) => {
-    try {
-      // Add user implementation
-      // This would call the AdminController's createUser method
-      toast({
-        title: "User Created",
-        description: `User ${userData.username || ''} has been created successfully`
-      });
-      loadUsers(); // Refresh user list
-      return true;
-    } catch (error) {
-      console.error("Error creating user:", error);
-      toast({
-        title: "Error",
-        description: "Failed to create user",
-        variant: "destructive"
-      });
-      return false;
     }
   };
 
@@ -146,23 +110,14 @@ const AdminUsers: React.FC = () => {
   };
 
   return (
-    <>
+    <AdminLayout>
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
           User Management
         </h1>
-        <div className="flex justify-between items-center mt-1">
-          <p className="text-sm md:text-base text-gray-500 dark:text-gray-400">
-            View and manage user accounts on the platform.
-          </p>
-          <Button 
-            onClick={() => setShowAddUserDialog(true)}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            إضافة مستخدم
-          </Button>
-        </div>
+        <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
+          View and manage user accounts on the platform.
+        </p>
       </header>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
@@ -183,13 +138,7 @@ const AdminUsers: React.FC = () => {
           />
         )}
       </div>
-
-      <AddUserDialog 
-        open={showAddUserDialog} 
-        onOpenChange={setShowAddUserDialog}
-        onAddUser={handleAddUser}
-      />
-    </>
+    </AdminLayout>
   );
 };
 

@@ -75,17 +75,15 @@ const App = () => (
                       <Route path="/subscriptions" element={<Subscriptions />} />
                       <Route path="/settings" element={<Settings />} />
                       
-                      {/* Admin Routes - Using a single AdminLayout for all admin pages */}
-                      <Route path="/admin" element={<AdminLayout />}>
-                        <Route index element={<AdminDashboard />} />
-                        <Route path="users" element={<AdminUsers />} />
-                        <Route path="trades" element={<AdminTrades />} />
-                        <Route path="hashtags" element={<AdminHashtags />} />
-                        <Route path="notes" element={<AdminNotes />} />
-                        <Route path="pages" element={<AdminPages />} />
-                        <Route path="settings" element={<AdminSettings />} />
-                        <Route path="database" element={<AdminDatabase />} />
-                      </Route>
+                      {/* Admin Routes */}
+                      <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+                      <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
+                      <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
+                      <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
+                      <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
+                      <Route path="/admin/pages" element={<AdminLayout><AdminPages /></AdminLayout>} />
+                      <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
+                      <Route path="/admin/database" element={<AdminLayout><AdminDatabase /></AdminLayout>} />
                       
                       {/* Catch-all route */}
                       <Route path="*" element={<NotFound />} />

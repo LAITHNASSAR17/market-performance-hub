@@ -63,9 +63,9 @@ const AdminNotes: React.FC = () => {
   const filteredNotes = notes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           note.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesUser = userFilter && userFilter !== 'all' ? note.userId === userFilter : true;
-    const matchesTag = tagFilter && tagFilter !== 'all' ? note.tags.includes(tagFilter) : true;
-    const matchesType = typeFilter && typeFilter !== 'all' ? 
+    const matchesUser = userFilter ? note.userId === userFilter : true;
+    const matchesTag = tagFilter ? note.tags.includes(tagFilter) : true;
+    const matchesType = typeFilter ? 
                         (typeFilter === 'psychology' && note.tags.some(tag => tag.includes('psychology'))) ||
                         (typeFilter === 'strategy' && note.tags.some(tag => tag.includes('strategy')))
                         : true;
@@ -98,7 +98,7 @@ const AdminNotes: React.FC = () => {
   };
 
   return (
-    <>
+    <div>
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
           Notes Management
@@ -270,7 +270,7 @@ const AdminNotes: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 
