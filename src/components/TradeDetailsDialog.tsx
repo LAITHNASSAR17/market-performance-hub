@@ -10,12 +10,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trade } from '@/contexts/TradeContext';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTrade, Trade } from '@/contexts/TradeContext';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, ExternalLink, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Eye, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePlaybooks } from '@/hooks/usePlaybooks';
 
 interface TradeDetailsDialogProps {
   isOpen: boolean;
@@ -32,6 +33,8 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('stats');
+  const { deleteTrade } = useTrade();
+  const { playbooks } = usePlaybooks();
   
   if (!selectedDate) return null;
 
@@ -47,9 +50,12 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
     .filter(trade => trade.profitLoss > 0)
     .reduce((sum, trade) => sum + trade.profitLoss, 0);
   
-  const grossLoss = dayTrades
+  const grossLoss = Math.abs(dayTrades
     .filter(trade => trade.profitLoss < 0)
-    .reduce((sum, trade) => sum + trade.profitLoss, 0);
+    .reduce((sum, trade) => sum + trade.profitLoss, 0));
+  
+  // Calculate profit factor correctly
+  const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (winners > 0 ? "∞" : "0.00");
   
   const netROI = dayTrades.length > 0 
     ? (totalProfit / volume) * 100 
@@ -57,25 +63,23 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
   
   const adjustedCost = Math.abs(grossLoss) * 0.05; // Just a sample calculation
   
-  // Generate intraday P&L chart data (simplified)
-  const chartData = dayTrades.map((trade, index) => {
-    // We'll simulate intraday P&L by creating points at different times
+  // Generate intraday P&L chart data with better simulation
+  const chartData = [];
+  let runningTotal = 0;
+
+  // Sort trades by time (if available) or just use index for simulation
+  dayTrades.forEach((trade, index) => {
     const hour = 9 + Math.floor(index / 2);
     const minute = (index % 2) * 30;
-    return {
-      time: `${hour}:${minute < 10 ? '0' + minute : minute}`,
-      value: trade.profitLoss
-    };
-  });
-
-  // Calculate cumulative P&L for the chart
-  let cumulative = 0;
-  const cumulativeData = chartData.map(point => {
-    cumulative += point.value;
-    return {
-      time: point.time,
-      value: cumulative
-    };
+    const timeLabel = `${hour}:${minute < 10 ? '0' + minute : minute}`;
+    
+    runningTotal += trade.profitLoss;
+    
+    chartData.push({
+      time: timeLabel,
+      value: runningTotal,
+      tradeValue: trade.profitLoss
+    });
   });
   
   const formattedDate = selectedDate ? format(new Date(selectedDate), 'EEE, MMM d, yyyy') : '';
@@ -90,6 +94,14 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
     navigate(`/trades/${tradeId}`);
     onClose();
   };
+  
+  const handleDeleteTrade = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteTrade(id);
+  };
+
+  // Get relevant playbooks for this day
+  const relevantPlaybooks = playbooks.slice(0, 2); // Just take the first two for demo purposes
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
@@ -121,27 +133,59 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
           </TabsList>
           
           <TabsContent value="stats" className="space-y-6">
-            <div className="h-[120px] mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={cumulativeData}>
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#36B37E" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#36B37E" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="time" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'P&L']} />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke={totalProfit > 0 ? "#36B37E" : "#FF5630"}
-                    fill={totalProfit > 0 ? "url(#colorValue)" : "#FFE2DD"}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="h-[160px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#36B37E" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#36B37E" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="time" />
+                    <YAxis 
+                      domain={['auto', 'auto']}
+                      tickFormatter={(value) => `$${value}`}
+                    />
+                    <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Cumulative P&L']} />
+                    <Area 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke={totalProfit >= 0 ? "#36B37E" : "#FF5630"}
+                      fill={totalProfit >= 0 ? "url(#colorValue)" : "#FFE2DD"}
+                      isAnimationActive={true}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="h-[160px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="time" />
+                    <YAxis 
+                      tickFormatter={(value) => `$${value}`}
+                    />
+                    <Tooltip formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Trade P&L']} />
+                    <ReferenceLine y={0} stroke="#666" />
+                    <Bar 
+                      dataKey="tradeValue" 
+                      fill="#36B37E" 
+                      radius={[4, 4, 0, 0]}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Bar 
+                          key={`bar-${index}`} 
+                          fill={entry.tradeValue >= 0 ? "#36B37E" : "#FF5630"} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
             
             <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6">
@@ -167,10 +211,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-500">Profit Factor</div>
-                <div className="font-bold text-lg">
-                  {losers === 0 ? "∞" : (Math.abs(dayTrades.filter(t => t.profitLoss > 0).reduce((sum, t) => sum + t.profitLoss, 0)) / 
-                  Math.abs(dayTrades.filter(t => t.profitLoss < 0).reduce((sum, t) => sum + t.profitLoss, 0) || 1)).toFixed(2)}
-                </div>
+                <div className="font-bold text-lg">{profitFactor}</div>
               </div>
             </div>
             
@@ -214,28 +255,38 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
               
               <div>
                 <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Profit target</span>
-                  <span className="font-medium">$</span>
+                  <span className="text-sm font-medium">Avg Win Size</span>
+                  <span className="font-medium text-emerald-500">
+                    ${winners > 0 ? (grossProfit / winners).toFixed(2) : "0.00"}
+                  </span>
                 </div>
                 
                 <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Stop Loss</span>
-                  <span className="font-medium">$</span>
+                  <span className="text-sm font-medium">Avg Loss Size</span>
+                  <span className="font-medium text-red-500">
+                    -${losers > 0 ? (grossLoss / losers).toFixed(2) : "0.00"}
+                  </span>
                 </div>
                 
                 <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Initial Target</span>
-                  <span className="font-medium">-</span>
+                  <span className="text-sm font-medium">Largest Win</span>
+                  <span className="font-medium text-emerald-500">
+                    ${winners > 0 ? Math.max(...dayTrades.filter(t => t.profitLoss > 0).map(t => t.profitLoss)).toFixed(2) : "0.00"}
+                  </span>
                 </div>
                 
                 <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Trade Risk</span>
-                  <span className="font-medium">-</span>
+                  <span className="text-sm font-medium">Largest Loss</span>
+                  <span className="font-medium text-red-500">
+                    ${losers > 0 ? Math.abs(Math.min(...dayTrades.filter(t => t.profitLoss < 0).map(t => t.profitLoss))).toFixed(2) : "0.00"}
+                  </span>
                 </div>
                 
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">Planned R-Multiple</span>
-                  <span className="font-medium">-</span>
+                  <span className="text-sm font-medium">Win/Loss Ratio</span>
+                  <span className="font-medium">
+                    {losers > 0 ? (winners / losers).toFixed(2) : (winners > 0 ? "∞" : "0.00")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -257,7 +308,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {dayTrades.map((trade) => (
+                  {dayTrades.map((trade, index) => (
                     <tr key={trade.id} className="border-b hover:bg-gray-50">
                       <td className="px-3 py-2">{format(new Date(), 'HH:mm:ss')}</td>
                       <td className="px-3 py-2">{trade.pair}</td>
@@ -292,14 +343,24 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                         </div>
                       </td>
                       <td className="px-3 py-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => navigateToTrade(trade.id)}
-                          className="h-8 w-8"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex space-x-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => navigateToTrade(trade.id)}
+                            className="h-8 w-8"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={(e) => handleDeleteTrade(trade.id, e)}
+                            className="h-8 w-8 text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -309,9 +370,45 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
           </TabsContent>
           
           <TabsContent value="playbooks">
-            <div className="p-8 text-center text-gray-500">
-              <p>No playbooks defined for this day</p>
-            </div>
+            {relevantPlaybooks.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {relevantPlaybooks.map(playbook => (
+                  <div key={playbook.id} className="border rounded-lg p-4">
+                    <h3 className="text-lg font-bold">{playbook.name}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{playbook.description}</p>
+                    
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="text-sm text-gray-500">Win Rate</div>
+                        <div className="font-bold">{playbook.winRate}%</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">R-Multiple</div>
+                        <div className="font-bold">{playbook.rMultiple}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">Expected Value</div>
+                        <div className="font-bold">{playbook.expectedValue}</div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-500">Rating</div>
+                        <div className="font-bold">{playbook.rating}/5</div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 flex flex-wrap gap-1">
+                      {playbook.tags.map((tag, index) => (
+                        <Badge key={index} variant="secondary">{tag}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-gray-500">
+                <p>No playbooks defined for this day</p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
         

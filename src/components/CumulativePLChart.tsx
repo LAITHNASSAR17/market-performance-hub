@@ -7,11 +7,13 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer 
+  ResponsiveContainer,
+  ReferenceLine
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trade } from '@/contexts/TradeContext';
 import { format, parseISO, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { Info } from 'lucide-react';
 
 interface CumulativePLChartProps {
   trades: Trade[];
@@ -82,15 +84,33 @@ const CumulativePLChart: React.FC<CumulativePLChartProps> = ({
     return format(parseISO(dateStr), 'MMM d, yyyy');
   };
   
+  // Calculate the min and max values for better Y-axis scaling
+  const dataMin = Math.min(...chartData.map(d => d.cumulativePL));
+  const dataMax = Math.max(...chartData.map(d => d.cumulativePL));
+  
+  // Add some padding to the domain
+  const yDomain = [
+    dataMin < 0 ? dataMin * 1.1 : dataMin * 0.9,
+    dataMax > 0 ? dataMax * 1.1 : dataMax * 0.9
+  ];
+  
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            {title}
+            <Info className="h-4 w-4 text-gray-400" />
+          </CardTitle>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+            <AreaChart 
+              data={chartData} 
+              margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+            >
               <defs>
                 <linearGradient id="colorPL" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#36B37E" stopOpacity={0.3} />
@@ -109,12 +129,19 @@ const CumulativePLChart: React.FC<CumulativePLChartProps> = ({
                 minTickGap={30}
               />
               <YAxis 
-                tickFormatter={(value) => `$${value.toLocaleString()}`} 
+                tickFormatter={(value) => `$${value.toLocaleString()}`}
+                domain={yDomain}
               />
               <Tooltip 
                 formatter={(value: number) => [`$${value.toFixed(2)}`, 'P&L']}
                 labelFormatter={formatTooltipDate}
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  border: '1px solid #eee',
+                  borderRadius: '4px'
+                }}
               />
+              <ReferenceLine y={0} stroke="#666" strokeDasharray="3 3" />
               <Area 
                 type="monotone" 
                 dataKey="cumulativePL" 
