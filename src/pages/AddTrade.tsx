@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -35,15 +34,14 @@ const AddTrade: React.FC = () => {
     durationMinutes: '',
     notes: '',
     imageUrl: null as string | null,
-    beforeImageUrl: null as string | null,  // Added for before image
-    afterImageUrl: null as string | null,   // Added for after image
+    beforeImageUrl: null as string | null,
+    afterImageUrl: null as string | null,
     hashtags: [] as string[]
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Calculate profit/loss and return percentage automatically when entry, exit, and lotSize are provided
   useEffect(() => {
     if (isCalculating) return;
 
@@ -59,10 +57,9 @@ const AddTrade: React.FC = () => {
           ? (exitValue - entryValue) * 10000 
           : (entryValue - exitValue) * 10000;
           
-        const pipsPerLot = 10; // Simplified calculation, adjust based on actual pip value
+        const pipsPerLot = 10;
         const calculatedPL = pipsValue * pipsPerLot * lotSizeValue;
         
-        // Calculate return % (simplified)
         const returnPercentage = ((calculatedPL / 1000) * 100).toFixed(2);
         
         setIsCalculating(true);
@@ -80,7 +77,6 @@ const AddTrade: React.FC = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
-    // Clear error when field is edited
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
@@ -89,7 +85,6 @@ const AddTrade: React.FC = () => {
   const handleSelectChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
     
-    // Clear error when field is edited
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
@@ -98,7 +93,6 @@ const AddTrade: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form
     const newErrors: Record<string, string> = {};
     if (!formData.account) newErrors.account = 'Account is required';
     if (!formData.pair) newErrors.pair = 'Currency pair is required';
@@ -111,7 +105,6 @@ const AddTrade: React.FC = () => {
       return;
     }
     
-    // Convert string values to numbers
     const tradeData = {
       ...formData,
       entry: parseFloat(formData.entry),
@@ -146,9 +139,7 @@ const AddTrade: React.FC = () => {
             <CardTitle>Trade Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Basic Trade Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Account */}
               <div>
                 <Label htmlFor="account">Account</Label>
                 <Select
@@ -171,7 +162,6 @@ const AddTrade: React.FC = () => {
                 {errors.account && <p className="text-red-500 text-sm mt-1">{errors.account}</p>}
               </div>
 
-              {/* Date */}
               <div>
                 <Label htmlFor="date">Date</Label>
                 <Input
@@ -184,9 +174,7 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
-            {/* Trade Pair and Type */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Pair */}
               <div>
                 <Label htmlFor="pair">Currency Pair</Label>
                 <Select
@@ -209,7 +197,6 @@ const AddTrade: React.FC = () => {
                 {errors.pair && <p className="text-red-500 text-sm mt-1">{errors.pair}</p>}
               </div>
 
-              {/* Type */}
               <div>
                 <Label htmlFor="type">Type</Label>
                 <Select
@@ -227,9 +214,7 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
-            {/* Entry, Exit, Lot Size */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Entry */}
               <div>
                 <Label htmlFor="entry">Entry Price</Label>
                 <Input
@@ -245,7 +230,6 @@ const AddTrade: React.FC = () => {
                 {errors.entry && <p className="text-red-500 text-sm mt-1">{errors.entry}</p>}
               </div>
 
-              {/* Exit */}
               <div>
                 <Label htmlFor="exit">Exit Price</Label>
                 <Input
@@ -261,7 +245,6 @@ const AddTrade: React.FC = () => {
                 {errors.exit && <p className="text-red-500 text-sm mt-1">{errors.exit}</p>}
               </div>
 
-              {/* Lot Size */}
               <div>
                 <Label htmlFor="lotSize">Lot Size</Label>
                 <Input
@@ -278,9 +261,7 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
-            {/* Stop Loss, Take Profit */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Stop Loss */}
               <div>
                 <Label htmlFor="stopLoss">Stop Loss (optional)</Label>
                 <Input
@@ -294,7 +275,6 @@ const AddTrade: React.FC = () => {
                 />
               </div>
 
-              {/* Take Profit */}
               <div>
                 <Label htmlFor="takeProfit">Take Profit (optional)</Label>
                 <Input
@@ -309,9 +289,7 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
-            {/* Risk %, Profit/Loss, Duration */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Risk % */}
               <div>
                 <Label htmlFor="riskPercentage">Risk %</Label>
                 <Input
@@ -325,7 +303,6 @@ const AddTrade: React.FC = () => {
                 />
               </div>
 
-              {/* Profit/Loss */}
               <div>
                 <Label htmlFor="profitLoss">Profit/Loss</Label>
                 <Input
@@ -339,7 +316,6 @@ const AddTrade: React.FC = () => {
                 />
               </div>
 
-              {/* Duration */}
               <div>
                 <Label htmlFor="durationMinutes">Duration (minutes)</Label>
                 <Input
@@ -353,7 +329,6 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
-            {/* Notes */}
             <div>
               <Label htmlFor="notes">Notes</Label>
               <Textarea
@@ -366,7 +341,6 @@ const AddTrade: React.FC = () => {
               />
             </div>
 
-            {/* Hashtags */}
             <div>
               <Label htmlFor="hashtags">Hashtags</Label>
               <HashtagInput
@@ -382,9 +356,7 @@ const AddTrade: React.FC = () => {
             
             <h3 className="text-lg font-medium">Trade Images</h3>
             
-            {/* Before/After Trade Images */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Before Image */}
               <div>
                 <Label htmlFor="beforeImage">Before Trade Image</Label>
                 <p className="text-sm text-gray-500 mb-2">Upload an image of the chart before your entry</p>
@@ -394,7 +366,6 @@ const AddTrade: React.FC = () => {
                 />
               </div>
 
-              {/* After Image */}
               <div>
                 <Label htmlFor="afterImage">After Trade Image</Label>
                 <p className="text-sm text-gray-500 mb-2">Upload an image of the chart after your exit</p>
@@ -405,7 +376,6 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
             
-            {/* Original chart image */}
             <div>
               <Label htmlFor="image">Additional Chart Image (Optional)</Label>
               <p className="text-sm text-gray-500 mb-2">Upload any other relevant chart image</p>

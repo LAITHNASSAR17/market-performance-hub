@@ -53,9 +53,9 @@ const AdminNotes: React.FC = () => {
   const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [userFilter, setUserFilter] = useState('');
-  const [tagFilter, setTagFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [userFilter, setUserFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
 
@@ -63,12 +63,11 @@ const AdminNotes: React.FC = () => {
   const filteredNotes = notes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           note.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesUser = userFilter ? note.userId === userFilter : true;
-    const matchesTag = tagFilter ? note.tags.includes(tagFilter) : true;
-    const matchesType = typeFilter ? 
+    const matchesUser = userFilter === 'all' ? true : note.userId === userFilter;
+    const matchesTag = tagFilter === 'all' ? true : note.tags.includes(tagFilter);
+    const matchesType = typeFilter === 'all' ? true : 
                         (typeFilter === 'psychology' && note.tags.some(tag => tag.includes('psychology'))) ||
-                        (typeFilter === 'strategy' && note.tags.some(tag => tag.includes('strategy')))
-                        : true;
+                        (typeFilter === 'strategy' && note.tags.some(tag => tag.includes('strategy')));
     
     return matchesSearch && matchesUser && matchesTag && matchesType;
   });
@@ -126,7 +125,7 @@ const AdminNotes: React.FC = () => {
               <SelectValue placeholder="Filter by user" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Users</SelectItem>
+              <SelectItem value="all">All Users</SelectItem>
               {users.map(user => (
                 <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
               ))}
@@ -138,7 +137,7 @@ const AdminNotes: React.FC = () => {
               <SelectValue placeholder="Filter by tag" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Tags</SelectItem>
+              <SelectItem value="all">All Tags</SelectItem>
               {noteTags.map(tag => (
                 <SelectItem key={tag} value={tag}>#{tag}</SelectItem>
               ))}
@@ -150,7 +149,7 @@ const AdminNotes: React.FC = () => {
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="psychology">Psychology</SelectItem>
               <SelectItem value="strategy">Strategy</SelectItem>
             </SelectContent>
@@ -160,9 +159,9 @@ const AdminNotes: React.FC = () => {
             variant="outline" 
             onClick={() => {
               setSearchTerm('');
-              setUserFilter('');
-              setTagFilter('');
-              setTypeFilter('');
+              setUserFilter('all');
+              setTagFilter('all');
+              setTypeFilter('all');
             }}
             className="flex items-center gap-1"
           >
@@ -240,7 +239,7 @@ const AdminNotes: React.FC = () => {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    {searchTerm || userFilter || tagFilter || typeFilter 
+                    {searchTerm || userFilter !== 'all' || tagFilter !== 'all' || typeFilter !== 'all'
                       ? "No notes match the current filters." 
                       : "No notes found in the system."}
                   </TableCell>
