@@ -3,7 +3,7 @@ import React from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, ShieldAlert, LineChart as LineChart3, BarChart2 } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, ShieldAlert, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -99,66 +99,86 @@ const Layout: React.FC<LayoutProps> = ({
   return (
     <SidebarProvider defaultOpen={!isMobile}>
       <div className="flex h-screen bg-gray-50" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        {/* Mobile menu button */}
-        <div className={`fixed top-4 ${language === 'ar' ? 'right-4' : 'left-4'} z-50 md:hidden`}>
-          <Button variant="outline" size="icon" onClick={toggleSidebar} className="rounded-full bg-white shadow-md">
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
-        </div>
-
         {/* Sidebar */}
-        <Sidebar collapsible="offcanvas" side={language === 'ar' ? 'right' : 'left'}>
-          <SidebarHeader className="flex flex-col items-center gap-2 py-4">
-            <div className="flex items-center justify-between w-full px-4">
-              <h2 className="text-xl font-bold">{t('app.name') || 'TradeTracker'}</h2>
+        <div className={cn(
+          "relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30",
+          sidebarOpen ? "w-64" : "w-16",
+          language === 'ar' ? "border-l" : "border-r"
+        )}>
+          {/* Collapse/Expand button */}
+          <button 
+            onClick={toggleSidebar}
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 bg-white p-1 rounded-full shadow-md z-40 border",
+              language === 'ar' ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2"
+            )}
+          >
+            {language === 'ar' ? (
+              sidebarOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />
+            ) : (
+              sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
+
+          {/* Sidebar Header */}
+          <div className="flex flex-col items-center gap-2 py-4 px-4">
+            <div className="flex items-center justify-between w-full">
+              {sidebarOpen && <h2 className="text-xl font-bold">{t('app.name') || 'TradeTracker'}</h2>}
               <LanguageToggle />
             </div>
-            <div className="flex items-center gap-2 px-4 mt-2 w-full">
-              <div className="flex flex-col flex-1">
-                <span className="text-sm font-medium">{user?.name}</span>
-                <span className="text-xs text-muted-foreground">{user?.email}</span>
+            {sidebarOpen && (
+              <div className="flex items-center gap-2 mt-2 w-full">
+                <div className="flex flex-col flex-1">
+                  <span className="text-sm font-medium">{user?.name}</span>
+                  <span className="text-xs text-muted-foreground">{user?.email}</span>
+                </div>
+                <Button variant="ghost" size="icon" onClick={logout}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
               </div>
-              <Button variant="ghost" size="icon" onClick={logout}>
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </SidebarHeader>
-          <SidebarSeparator />
-          <SidebarContent>
-            <SidebarMenu>
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton 
-                      isActive={isActive}
-                      asChild
-                      tooltip={item.name}
-                    >
-                      <Link to={item.href} className="w-full flex items-center">
-                        <item.icon className="mr-2 h-4 w-4" />
-                        <span>{item.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarContent>
-          <SidebarFooter className="py-4">
-            <div className="flex items-center justify-center">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  {t('nav.settings') || 'Settings'}
+            )}
+          </div>
+
+          <div className="mt-4">
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link 
+                  key={item.href} 
+                  to={item.href} 
+                  className={cn(
+                    "flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  )}
+                >
+                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  {sidebarOpen && <span className="ml-3">{item.name}</span>}
                 </Link>
-              </Button>
-            </div>
-          </SidebarFooter>
-        </Sidebar>
+              );
+            })}
+          </div>
+
+          {/* Footer */}
+          <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild 
+              className={cn(
+                "w-full flex items-center justify-center",
+                !sidebarOpen && "px-2"
+              )}
+            >
+              <Link to="/settings">
+                <Settings className="h-4 w-4" />
+                {sidebarOpen && <span className="ml-2">{t('nav.settings') || 'Settings'}</span>}
+              </Link>
+            </Button>
+          </div>
+        </div>
 
         {/* Overlay for mobile */}
-        {sidebarOpen && isMobile && <div className="fixed inset-0 bg-black bg-opacity-50 z-30" onClick={() => setSidebarOpen(false)} />}
+        {sidebarOpen && isMobile && <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={() => setSidebarOpen(false)} />}
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto bg-trading-background p-6">
