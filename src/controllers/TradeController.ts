@@ -1,4 +1,3 @@
-
 import { TradeModel, Trade } from '../models/TradeModel';
 
 export class TradeController {
@@ -112,6 +111,15 @@ export class TradeController {
       return await this.model.getUserAccounts(userId);
     } catch (error) {
       console.error('Error getting user accounts:', error);
+      return [];
+    }
+  }
+
+  async getAllTrades(): Promise<Trade[]> {
+    try {
+      return await this.model.findAll();
+    } catch (error) {
+      console.error('Error getting all trades:', error);
       return [];
     }
   }

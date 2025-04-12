@@ -1,4 +1,3 @@
-
 import { TagModel, Tag } from '../models/TagModel';
 
 export class TagController {
@@ -6,6 +5,15 @@ export class TagController {
 
   constructor() {
     this.model = new TagModel();
+  }
+
+  async getAllTags(): Promise<Tag[]> {
+    try {
+      return await this.model.getAllTags();
+    } catch (error) {
+      console.error('Error getting all tags:', error);
+      return [];
+    }
   }
 
   async getTag(id: number): Promise<Tag | null> {
@@ -97,7 +105,6 @@ export class TagController {
     }
   }
 
-  // Methods for working with trade tags
   async addTagToTrade(tradeId: number, tagName: string, userId: number, category: 'mistake' | 'setup' | 'habit' | 'general' = 'general'): Promise<boolean> {
     try {
       // First, check if the tag exists or create it

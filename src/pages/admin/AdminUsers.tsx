@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import UserTable from '@/components/admin/UserTable';
@@ -46,7 +45,7 @@ const AdminUsers: React.FC = () => {
 
   const handleBlockUser = async (user: any) => {
     try {
-      await adminController.blockUser(parseInt(user.id));
+      await adminController.blockUser(user.id.toString());
       toast({
         title: "User Blocked",
         description: `${user.name} has been blocked`
@@ -64,7 +63,7 @@ const AdminUsers: React.FC = () => {
 
   const handleUnblockUser = async (user: any) => {
     try {
-      await adminController.unblockUser(parseInt(user.id));
+      await adminController.unblockUser(user.id.toString());
       toast({
         title: "User Unblocked",
         description: `${user.name} has been unblocked`
@@ -82,10 +81,9 @@ const AdminUsers: React.FC = () => {
 
   const handleChangePassword = async (email: string, password: string) => {
     try {
-      // Find user by email to get ID
       const user = users.find(u => u.email === email);
       if (user) {
-        await adminController.resetUserPassword(parseInt(user.id), password);
+        await adminController.resetUserPassword(user.id.toString(), password);
         toast({
           title: "Password Changed",
           description: "Password has been updated successfully"

@@ -1,4 +1,3 @@
-
 import { SettingsModel, UserSettings } from '../models/SettingsModel';
 
 export class SettingsController {
@@ -104,6 +103,34 @@ export class SettingsController {
       return await this.model.setSetting(userId, 'general', 'language', language);
     } catch (error) {
       console.error('Error updating language:', error);
+      return false;
+    }
+  }
+
+  // Get system settings
+  async getSystemSettings(): Promise<Record<string, string>> {
+    try {
+      // System settings are stored with userId = 0 or null
+      const settings = await this.model.getSettingsByCategory(0, 'system');
+      const result: Record<string, string> = {};
+      
+      for (const setting of settings) {
+        result[setting.settingKey] = setting.settingValue;
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting system settings:', error);
+      return {};
+    }
+  }
+
+  // Update system setting
+  async updateSystemSetting(key: string, value: string): Promise<boolean> {
+    try {
+      return await this.model.setSetting(0, 'system', key, value);
+    } catch (error) {
+      console.error('Error updating system setting:', error);
       return false;
     }
   }

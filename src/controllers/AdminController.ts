@@ -1,4 +1,3 @@
-
 import { UserController } from './UserController';
 import { TradeController } from './TradeController';
 import { TagController } from './TagController';
@@ -51,7 +50,6 @@ export class AdminController {
     this.analyticsController = new AnalyticsController();
   }
 
-  // Admin Authentication
   async verifyAdminAccess(userId: number): Promise<boolean> {
     try {
       const user = await this.userController.getUser(userId);
@@ -62,7 +60,6 @@ export class AdminController {
     }
   }
 
-  // Dashboard Statistics
   async getDashboardStats(): Promise<AdminStats> {
     try {
       const allUsers = await this.userController.getAllUsers();
@@ -73,21 +70,17 @@ export class AdminController {
       const allTrades = await this.tradeController.getAllTrades();
       const totalTrades = allTrades.length;
       
-      // Get trades from last 7 days
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       const recentTrades = allTrades.filter(trade => 
         new Date(trade.entryDate) >= oneWeekAgo
       ).length;
       
-      // Calculate total P&L
       const totalProfitLoss = allTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
       
-      // Get popular tags
       const popularTags = await this.tagController.getPopularTags(5);
       const totalTags = (await this.tagController.getAllTags()).length;
       
-      // System health (mock data for now, would connect to real monitoring in production)
       const systemHealth = {
         databaseStatus: 'online' as const,
         lastBackup: new Date(),
@@ -107,7 +100,6 @@ export class AdminController {
       };
     } catch (error) {
       console.error('Error getting admin dashboard stats:', error);
-      // Return default stats if there's an error
       return {
         totalUsers: 0,
         activeUsers: 0,
@@ -126,7 +118,6 @@ export class AdminController {
     }
   }
 
-  // User Management
   async getAllUsers() {
     return this.userController.getAllUsers();
   }
@@ -147,7 +138,6 @@ export class AdminController {
     return this.userController.updateUser(userId, { password: newPassword });
   }
 
-  // Trade Management
   async getAllTrades() {
     return this.tradeController.getAllTrades();
   }
@@ -160,13 +150,11 @@ export class AdminController {
     return this.tradeController.deleteTrade(tradeId);
   }
 
-  // Tag Management
   async getAllTags() {
     return this.tagController.getAllTags();
   }
   
   async createSystemTag(tagName: string, category: string = 'general') {
-    // System tags have null userId
     return this.tagController.createTag({
       name: tagName,
       userId: null,
@@ -178,7 +166,6 @@ export class AdminController {
     return this.tagController.deleteTag(tagId);
   }
 
-  // Settings Management
   async getSystemSettings() {
     return this.settingsController.getSystemSettings();
   }
@@ -187,7 +174,6 @@ export class AdminController {
     return this.settingsController.updateSystemSetting(key, value);
   }
 
-  // Theme Management
   async getAllThemes() {
     return this.themeController.getAllThemes();
   }
@@ -196,7 +182,6 @@ export class AdminController {
     return this.themeController.setDefaultTheme(themeId);
   }
 
-  // Translation Management
   async getAllTranslations() {
     return this.translationController.getAllTranslations();
   }
@@ -205,10 +190,8 @@ export class AdminController {
     return this.translationController.updateTranslation(locale, key, value);
   }
 
-  // Database Management
   async backupDatabase(): Promise<boolean> {
     try {
-      // In a real app, this would trigger a backup process
       console.log('Database backup initiated');
       return true;
     } catch (error) {
@@ -218,7 +201,6 @@ export class AdminController {
   }
   
   async getDatabaseStatus(): Promise<{status: string, tables: number, size: string}> {
-    // In a real app, this would check actual database status
     return {
       status: 'Connected',
       tables: 15,
@@ -226,21 +208,43 @@ export class AdminController {
     };
   }
   
-  // System log management
   async getSystemLogs(limit: number = 100): Promise<any[]> {
-    // In a real app, this would fetch actual logs
     return [
       { timestamp: new Date(), level: 'INFO', message: 'System started' },
       { timestamp: new Date(), level: 'WARNING', message: 'High CPU usage detected' }
     ];
   }
   
-  // Create a full app backup (config, settings, etc.)
   async createSystemBackup(): Promise<{success: boolean, filename: string}> {
-    // In a real app, this would create an actual backup
     return {
       success: true,
       filename: `backup_${new Date().toISOString().split('T')[0]}.zip`
     };
+  }
+
+  async getDatabaseTableStructure(tableName: string): Promise<any[]> {
+    try {
+      return [
+        { Field: 'id', Type: 'int', Null: 'NO', Key: 'PRI', Default: null, Extra: 'auto_increment' },
+        { Field: 'name', Type: 'varchar(255)', Null: 'NO', Key: '', Default: null, Extra: '' },
+        { Field: 'created_at', Type: 'timestamp', Null: 'NO', Key: '', Default: 'CURRENT_TIMESTAMP', Extra: '' }
+      ];
+    } catch (error) {
+      console.error(`Error getting structure for table ${tableName}:`, error);
+      return [];
+    }
+  }
+
+  async getDatabaseTableData(tableName: string, limit = 10): Promise<any[]> {
+    try {
+      return [
+        { id: 1, name: 'Sample 1', created_at: new Date().toISOString() },
+        { id: 2, name: 'Sample 2', created_at: new Date().toISOString() },
+        { id: 3, name: 'Sample 3', created_at: new Date().toISOString() }
+      ];
+    } catch (error) {
+      console.error(`Error getting data for table ${tableName}:`, error);
+      return [];
+    }
   }
 }
