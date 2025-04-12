@@ -1,79 +1,55 @@
 
-import { Database } from '../utils/database';
+import { MongoDB } from '../utils/mongodb';
 
 export abstract class BaseModel {
-  protected db: Database;
-  protected tableName: string;
+  protected db: MongoDB;
+  protected collectionName: string;
 
-  constructor(tableName: string) {
-    this.db = Database.getInstance();
-    this.tableName = tableName;
+  constructor(collectionName: string) {
+    this.db = MongoDB.getInstance();
+    this.collectionName = collectionName;
   }
 
-  protected async query(sql: string, params: any[] = []): Promise<any> {
-    return this.db.query(sql, params);
+  protected async findAll(conditions: Record<string, any> = {}, limit?: number, skip?: number): Promise<any[]> {
+    const collection = this.db.collection(this.collectionName);
+    
+    const options: any = {};
+    if (limit) options.limit = limit;
+    if (skip) options.skip = skip;
+    
+    return collection.find(conditions, options);
   }
 
-  // Common CRUD operations that all models can use
-  protected async findAll(conditions: Record<string, any> = {}, limit?: number, offset?: number): Promise<any[]> {
-    let sql = `SELECT * FROM ${this.tableName}`;
-    const params: any[] = [];
-    
-    // Add WHERE conditions if provided
-    if (Object.keys(conditions).length > 0) {
-      const whereConditions = Object.keys(conditions).map((key, index) => {
-        params.push(conditions[key]);
-        return `${key} = ?`;
-      });
-      sql += ` WHERE ${whereConditions.join(' AND ')}`;
-    }
-    
-    // Add pagination if provided
-    if (limit !== undefined) {
-      sql += ` LIMIT ?`;
-      params.push(limit);
-      
-      if (offset !== undefined) {
-        sql += ` OFFSET ?`;
-        params.push(offset);
-      }
-    }
-    
-    return this.query(sql, params);
+  protected async findById(id: string): Promise<any> {
+    const collection = this.db.collection(this.collectionName);
+    return collection.findOne({ _id: id });
   }
 
-  protected async findById(id: number | string): Promise<any> {
-    const sql = `SELECT * FROM ${this.tableName} WHERE id = ? LIMIT 1`;
-    const result = await this.query(sql, [id]);
-    return result[0] || null;
+  protected async create(data: Record<string, any>): Promise<string> {
+    const collection = this.db.collection(this.collectionName);
+    const sanitizedData = this.sanitizeObject(data);
+    
+    const result = await collection.insertOne(sanitizedData);
+    return result.insertedId;
   }
 
-  protected async create(data: Record<string, any>): Promise<number> {
-    const columns = Object.keys(data).join(', ');
-    const placeholders = Object.keys(data).map(() => '?').join(', ');
-    const values = Object.values(data);
+  protected async update(id: string, data: Record<string, any>): Promise<boolean> {
+    const collection = this.db.collection(this.collectionName);
+    const sanitizedData = this.sanitizeObject(data);
     
-    const sql = `INSERT INTO ${this.tableName} (${columns}) VALUES (${placeholders})`;
-    const result = await this.query(sql, values);
+    const result = await collection.updateOne(
+      { _id: id },
+      { $set: sanitizedData }
+    );
     
-    return result.insertId;
+    return result.modifiedCount > 0;
   }
 
-  protected async update(id: number | string, data: Record<string, any>): Promise<boolean> {
-    const updates = Object.keys(data).map(key => `${key} = ?`).join(', ');
-    const values = [...Object.values(data), id];
+  protected async delete(id: string): Promise<boolean> {
+    const collection = this.db.collection(this.collectionName);
+    const result = await collection.deleteOne({ _id: id });
     
-    const sql = `UPDATE ${this.tableName} SET ${updates} WHERE id = ?`;
-    const result = await this.query(sql, values);
-    
-    return result.affectedRows > 0;
-  }
-
-  protected async delete(id: number | string): Promise<boolean> {
-    const sql = `DELETE FROM ${this.tableName} WHERE id = ?`;
-    const result = await this.query(sql, [id]);
-    
-    return result.affectedRows > 0;
+    return result.deletedCount > 0;
   }
 
   // Common validation methods
