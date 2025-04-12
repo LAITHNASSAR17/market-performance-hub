@@ -2,18 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BarChart, BookText, Calendar, Home, LogOut, PlusCircle, Settings, Sparkles, Menu, LineChart as LineChart3, BarChart2, CreditCard, UserCircle, BookOpen, FolderKanban } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, FileImage } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Badge } from '@/components/ui/badge';
+import ThemeToggle from '@/components/ThemeToggle';
+import LanguageToggle from '@/components/LanguageToggle';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useLanguage } from '@/contexts/LanguageContext';
-import AdminButton from './AdminButton';
+import FaviconUpload from '@/components/FaviconUpload';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,13 +28,16 @@ const Layout: React.FC<LayoutProps> = ({
   const {
     isAuthenticated,
     logout,
-    user,
-    isAdmin
+    user
   } = useAuth();
-  const { t } = useLanguage();
+  const {
+    t,
+    language
+  } = useLanguage();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [showFaviconModal, setShowFaviconModal] = useState(false);
 
   useEffect(() => {
     if (isMobile) {
@@ -45,63 +51,43 @@ const Layout: React.FC<LayoutProps> = ({
     return <Navigate to="/login" />;
   }
 
-  const navigation = [
-    {
-      name: t('nav.dashboard') || 'Dashboard',
-      icon: Home,
-      href: '/dashboard'
-    }, 
-    {
-      name: t('nav.addTrade') || 'Add Trade',
-      icon: PlusCircle,
-      href: '/add-trade'
-    }, 
-    {
-      name: t('nav.trades') || 'Trades',
-      icon: BookText,
-      href: '/trades'
-    }, 
-    {
-      name: t('nav.journal') || 'Journal',
-      icon: Calendar,
-      href: '/journal'
-    }, 
-    {
-      name: t('nav.notebook') || 'Notebook',
-      icon: BookOpen,
-      href: '/notebook'
-    },
-    {
-      name: t('nav.tradeNotebook') || 'Trade Notebook',
-      icon: FolderKanban,
-      href: '/trade-notebook'
-    },
-    {
-      name: t('nav.reports') || 'Reports',
-      icon: BarChart,
-      href: '/reports'
-    }, 
-    {
-      name: t('nav.insights') || 'Insights',
-      icon: Sparkles,
-      href: '/insights'
-    }, 
-    {
-      name: t('nav.analytics') || 'Analytics',
-      icon: BarChart2,
-      href: '/analytics'
-    }, 
-    {
-      name: t('nav.chart') || 'Chart',
-      icon: LineChart3,
-      href: '/chart'
-    },
-    {
-      name: t('nav.subscriptions') || 'Subscriptions',
-      icon: CreditCard,
-      href: '/subscriptions'
-    }
-  ];
+  const navigation = [{
+    name: t('nav.dashboard'),
+    icon: Home,
+    href: '/dashboard'
+  }, {
+    name: t('nav.addTrade'),
+    icon: PlusCircle,
+    href: '/add-trade'
+  }, {
+    name: t('nav.trades'),
+    icon: BookText,
+    href: '/trades'
+  }, {
+    name: t('nav.journal'),
+    icon: Calendar,
+    href: '/journal'
+  }, {
+    name: t('nav.notebook'),
+    icon: BookText,
+    href: '/notebook'
+  }, {
+    name: t('nav.reports'),
+    icon: BarChart,
+    href: '/reports'
+  }, {
+    name: t('nav.insights'),
+    icon: Sparkles,
+    href: '/insights'
+  }, {
+    name: t('analytics.title') || 'Analytics',
+    icon: BarChart2,
+    href: '/analytics'
+  }, {
+    name: t('chart.title') || 'Chart',
+    icon: LineChart3,
+    href: '/chart'
+  }];
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -109,11 +95,11 @@ const Layout: React.FC<LayoutProps> = ({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <div className={cn(
           "relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30",
           sidebarOpen ? "w-64" : "w-16",
-          "border-r",
+          language === 'ar' ? "border-l" : "border-r",
           "dark:bg-indigo-900/90 dark:border-indigo-800"
         )}>
           <div className="flex flex-col items-center py-4 px-4">
@@ -128,28 +114,41 @@ const Layout: React.FC<LayoutProps> = ({
               </Button>
               
               {sidebarOpen && (
-                <h2 className="text-xl font-bold flex-1 text-center dark:text-white">TradeTracker</h2>
+                <h2 className="text-xl font-bold flex-1 text-center dark:text-white">{t('app.name') || 'TradeTracker'}</h2>
               )}
             </div>
-          </div>
-
-          {/* User Profile Section */}
-          {sidebarOpen && (
-            <div className="px-4 py-3 mb-2 border-b dark:border-indigo-800/50">
-              <div className="flex items-center gap-3">
-                <div className="bg-indigo-100 dark:bg-indigo-800 p-2 rounded-full">
-                  <UserCircle className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
-                </div>
-                <div className="overflow-hidden flex-1">
-                  <p className="font-medium text-sm truncate">{user?.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {user?.isAdmin ? t('nav.admin') || 'Administrator' : t('nav.platform') || 'Basic Plan'}
-                  </p>
-                </div>
-                <AdminButton />
+            
+            <div className="flex items-center gap-2 mt-4 w-full">
+              <div className="flex flex-col flex-1">
+                <span className="text-sm font-medium dark:text-white">{user?.name}</span>
+                <span className="text-xs text-muted-foreground dark:text-gray-300">{user?.email}</span>
               </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={logout}>
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                  {t('auth.logout')}
+                </TooltipContent>
+              </Tooltip>
             </div>
-          )}
+            {!sidebarOpen && (
+              <div className="mt-4 flex justify-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={logout}>
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                    {t('auth.logout')}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
+          </div>
 
           <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
             {navigation.map((item) => {
@@ -169,7 +168,7 @@ const Layout: React.FC<LayoutProps> = ({
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent 
-                    side="right" 
+                    side={language === 'ar' ? 'left' : 'right'} 
                     align="center"
                     hidden={sidebarOpen}
                   >
@@ -181,6 +180,34 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
 
           <div className="absolute bottom-0 left-0 right-0 py-4 px-4 space-y-2">
+            {/* Theme & Language Controls */}
+            <div className={cn(
+              "flex items-center justify-between bg-gray-100 dark:bg-indigo-800/60 px-2 py-2 rounded-lg mb-2",
+              !sidebarOpen && "flex-col gap-2"
+            )}>
+              <div className={cn(
+                "flex items-center",
+                !sidebarOpen && "flex-col gap-2"
+              )}>
+                <ThemeToggle variant={sidebarOpen ? "icon" : "switch"} />
+                {sidebarOpen && <span className="text-xs mx-2 dark:text-gray-300">|</span>}
+                <LanguageToggle variant={sidebarOpen ? "icon" : "switch"} />
+              </div>
+              
+              {sidebarOpen && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setShowFaviconModal(true)}>
+                      <FileImage className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {language === 'ar' ? 'تغيير أيقونة الموقع' : 'Change Favicon'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            
             {/* Settings Button */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -200,36 +227,11 @@ const Layout: React.FC<LayoutProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent 
-                side="right" 
+                side={language === 'ar' ? 'left' : 'right'} 
                 align="center"
                 hidden={sidebarOpen}
               >
                 {t('nav.settings') || 'Settings'}
-              </TooltipContent>
-            </Tooltip>
-            
-            {/* Logout Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={logout}
-                  className={cn(
-                    "w-full flex items-center justify-center text-red-600",
-                    !sidebarOpen && "px-2"
-                  )}
-                >
-                  <LogOut className="h-4 w-4" />
-                  {sidebarOpen && <span className="ml-2">{t('nav.logout') || 'Logout'}</span>}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent 
-                side="right" 
-                align="center"
-                hidden={sidebarOpen}
-              >
-                {t('nav.logout') || 'Logout'}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -246,6 +248,11 @@ const Layout: React.FC<LayoutProps> = ({
           {children}
         </main>
       </div>
+      
+      {/* Favicon Upload Modal */}
+      {showFaviconModal && (
+        <FaviconUpload isOpen={showFaviconModal} onClose={() => setShowFaviconModal(false)} />
+      )}
     </TooltipProvider>
   );
 };

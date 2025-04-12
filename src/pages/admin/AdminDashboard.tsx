@@ -1,303 +1,217 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AdminController } from '@/controllers/AdminController';
-import AdminLayout from '@/components/layouts/AdminLayout';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTrade } from '@/contexts/TradeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { 
+  RefreshCw,
+  Users, 
+  BarChart3, 
+  TrendingUp, 
+  DollarSign, 
+  FileText, 
+  Percent,
+  Briefcase
+} from 'lucide-react';
+import StatCard from '@/components/StatCard';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
-import { 
-  UserCheck, 
-  UserX, 
-  Database, 
-  FileUp, 
-  Settings, 
-  Users,
-  AlertTriangle,
-  Server,
-  FileText,
-  BarChart3
-} from 'lucide-react';
-
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-
-import { Button } from '@/components/ui/button';
-import StatCard from '@/components/StatCard';
+// Import our admin components
+import AdminCharts from '@/components/admin/AdminCharts';
 
 const AdminDashboard: React.FC = () => {
-  const [stats, setStats] = useState<any>({
-    totalUsers: 0,
-    activeUsers: 0,
-    blockedUsers: 0,
-    totalTrades: 0,
-    recentTrades: 0,
-    totalProfitLoss: 0,
-    totalTags: 0,
-    popularTags: [],
-    systemHealth: {
-      databaseStatus: 'online',
-      lastBackup: null,
-      errorCount: 0
-    }
-  });
-  
-  const [loading, setLoading] = useState(true);
+  const { users, getAllUsers } = useAuth();
+  const { trades, getAllTrades } = useTrade();
+  const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const adminController = new AdminController();
+  
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [allTrades, setAllTrades] = useState<any[]>([]);
 
+  // Load initial data
   useEffect(() => {
-    loadStats();
+    handleRefreshData();
   }, []);
 
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      const dashboardStats = await adminController.getDashboardStats();
-      setStats(dashboardStats);
-    } catch (error) {
-      console.error("Error loading admin stats:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard statistics",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+  // Statistics calculations - now derived from loaded data
+  const totalUsers = users ? users.length : 0;
+  const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
+  const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
+  
+  // All trades (from all users) for admin
+  const totalTrades = allTrades.length;
+  
+  // Calculate profit/loss and other trade statistics
+  const allProfitLoss = allTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  
+  const winningTrades = allTrades.filter(trade => trade.profitLoss > 0).length;
+  const losingTrades = allTrades.filter(trade => trade.profitLoss < 0).length;
+  const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
+  
+  // Today's trades
+  const today = new Date().toISOString().split('T')[0];
+  const todayTrades = allTrades.filter(trade => trade.date === today).length;
+  const todayProfit = allTrades
+    .filter(trade => trade.date === today)
+    .reduce((sum, trade) => sum + trade.profitLoss, 0);
+  
+  // Find most traded pair
+  const pairCount: Record<string, number> = {};
+  allTrades.forEach(trade => {
+    pairCount[trade.pair] = (pairCount[trade.pair] || 0) + 1;
+  });
+  
+  let mostTradedPair = '';
+  let highestCount = 0;
+  
+  for (const pair in pairCount) {
+    if (pairCount[pair] > highestCount) {
+      mostTradedPair = pair;
+      highestCount = pairCount[pair];
     }
+  }
+
+  // Demo data
+  const linkedAccounts = 12;
+  const totalNotes = 87;
+
+  const handleRefreshData = () => {
+    // Fetch users data
+    getAllUsers();
+    
+    // Fetch ALL trades across users for admin dashboard
+    const allTradesData = trades || [];
+    setAllTrades(allTradesData);
+    
+    // Update refresh timestamp
+    setLastRefresh(new Date());
+    
+    toast({
+      title: "Data Refreshed",
+      description: "Admin dashboard data has been updated"
+    });
   };
-
-  const handleBackupDatabase = async () => {
-    try {
-      const result = await adminController.backupDatabase();
-      if (result) {
-        toast({
-          title: "Backup Successful",
-          description: "Database backup has been created"
-        });
-      } else {
-        throw new Error("Backup failed");
-      }
-    } catch (error) {
-      console.error("Error backing up database:", error);
-      toast({
-        title: "Backup Failed",
-        description: "Could not create database backup",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleExportReports = async () => {
-    try {
-      // Generate a simple report CSV
-      const headers = "Metric,Value\n";
-      const reportData = [
-        `Total Users,${stats.totalUsers}`,
-        `Active Users,${stats.activeUsers}`,
-        `Blocked Users,${stats.blockedUsers}`,
-        `Total Trades,${stats.totalTrades}`,
-        `Recent Trades,${stats.recentTrades}`,
-        `Total P&L,$${stats.totalProfitLoss.toFixed(2)}`
-      ].join("\n");
-      
-      const csv = headers + reportData;
-      
-      // Create download link
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.setAttribute('hidden', '');
-      a.setAttribute('href', url);
-      a.setAttribute('download', 'admin-report.csv');
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      toast({
-        title: "Export Complete",
-        description: "Admin reports exported to CSV"
-      });
-    } catch (error) {
-      console.error("Error exporting reports:", error);
-      toast({
-        title: "Export Failed",
-        description: "Could not export reports",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleManageUsers = () => {
-    navigate('/admin/users');
-  };
-
-  const handleSystemSettings = () => {
-    navigate('/admin/settings');
-  };
-
-  // Card for Quick Actions
-  const QuickActions = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Quick Actions</CardTitle>
-        <CardDescription>Frequently used administrative tools</CardDescription>
-      </CardHeader>
-      <CardContent className="grid grid-cols-2 gap-4">
-        <Button 
-          variant="outline" 
-          className="flex flex-col items-center justify-center h-24 text-center p-2" 
-          onClick={handleBackupDatabase}
-        >
-          <Database className="h-8 w-8 mb-2 text-blue-600" />
-          <span>Backup Database</span>
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          className="flex flex-col items-center justify-center h-24 text-center p-2"
-          onClick={handleExportReports}
-        >
-          <FileUp className="h-8 w-8 mb-2 text-green-600" />
-          <span>Export Reports</span>
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          className="flex flex-col items-center justify-center h-24 text-center p-2"
-          onClick={handleManageUsers}
-        >
-          <Users className="h-8 w-8 mb-2 text-purple-600" />
-          <span>Manage Users</span>
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          className="flex flex-col items-center justify-center h-24 text-center p-2"
-          onClick={handleSystemSettings}
-        >
-          <Settings className="h-8 w-8 mb-2 text-gray-600" />
-          <span>System Settings</span>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-
-  // System Health Card
-  const SystemHealth = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">System Health</CardTitle>
-        <CardDescription>Current system status and metrics</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Server className="h-5 w-5 text-blue-600" />
-            <span>Database Status</span>
-          </div>
-          <div className={`font-medium ${stats.systemHealth.databaseStatus === 'online' ? 'text-green-600' : 'text-red-600'}`}>
-            {stats.systemHealth.databaseStatus === 'online' ? 'Online' : 'Offline'}
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-blue-600" />
-            <span>Last Backup</span>
-          </div>
-          <div className="font-medium">
-            {stats.systemHealth.lastBackup 
-              ? new Date(stats.systemHealth.lastBackup).toLocaleString() 
-              : 'Never'}
-          </div>
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <span>Error Count (24h)</span>
-          </div>
-          <div className={`font-medium ${stats.systemHealth.errorCount > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-            {stats.systemHealth.errorCount}
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button variant="outline" className="w-full" onClick={handleBackupDatabase}>
-          Create New Backup
-        </Button>
-      </CardFooter>
-    </Card>
-  );
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <header>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+    <div>
+      <header className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+            Admin Dashboard
+          </h1>
           <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-            Overview of system status and operations.
+            Overview of platform performance and activity.
           </p>
-        </header>
+        </div>
+        <div className="mt-4 md:mt-0 flex items-center space-x-2 text-sm text-gray-500">
+          <span className="hidden md:inline">Last refreshed: {lastRefresh.toLocaleTimeString()}</span>
+          <Button 
+            variant="outline" 
+            size={isMobile ? "sm" : "default"} 
+            onClick={handleRefreshData}
+            className="flex items-center"
+          >
+            <RefreshCw className="h-4 w-4 mr-1" />
+            {isMobile ? "Refresh" : "Refresh Data"}
+          </Button>
+        </div>
+      </header>
 
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">Loading dashboard statistics...</p>
-          </div>
-        ) : (
-          <>
-            {/* Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard 
-                title="Total Users"
-                value={stats.totalUsers}
-                icon={<Users className="h-5 w-5" />}
-                color="default"
-                description={`Active: ${stats.activeUsers}`}
-              />
-              
-              <StatCard 
-                title="Total Trades"
-                value={stats.totalTrades}
-                icon={<BarChart3 className="h-5 w-5" />}
-                color="default"
-                description={`Recent: ${stats.recentTrades}`}
-              />
-              
-              <StatCard 
-                title="Total P&L"
-                value={`$${stats.totalProfitLoss.toFixed(2)}`}
-                icon={<FileText className="h-5 w-5" />}
-                color={stats.totalProfitLoss > 0 ? "green" : stats.totalProfitLoss < 0 ? "red" : "default"}
-                trend={stats.totalProfitLoss > 0 ? 'up' : stats.totalProfitLoss < 0 ? 'down' : 'neutral'}
-              />
-              
-              <StatCard 
-                title="Blocked Users"
-                value={stats.blockedUsers}
-                icon={<UserX className="h-5 w-5" />}
-                color="red"
-                description={stats.blockedUsers > 0 ? `${stats.blockedUsers} of ${stats.totalUsers}` : 'None'}
-              />
-            </div>
-
-            {/* Quick Actions & System Health */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <QuickActions />
-              <SystemHealth />
-            </div>
-          </>
-        )}
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+        <StatCard
+          title="Total Users"
+          value={totalUsers}
+          icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
+          color="default"
+          description={`Active: ${activeUsers}`}
+        />
+        
+        <StatCard
+          title="Total Trades"
+          value={totalTrades}
+          icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
+          color="default"
+          description={`Today: ${todayTrades}`}
+        />
+        
+        <StatCard
+          title="Total P&L"
+          value={`$${allProfitLoss.toFixed(2)}`}
+          icon={<DollarSign className="h-4 md:h-5 w-4 md:w-5" />}
+          color={allProfitLoss > 0 ? "green" : allProfitLoss < 0 ? "red" : "default"}
+          description={`Today: $${todayProfit.toFixed(2)}`}
+          trend={allProfitLoss > 0 ? 'up' : allProfitLoss < 0 ? 'down' : 'neutral'}
+        />
+        
+        <StatCard
+          title="Win Rate"
+          value={`${winRate}%`}
+          icon={<Percent className="h-4 md:h-5 w-4 md:w-5" />}
+          color="default"
+          description={`W: ${winningTrades} / L: ${losingTrades}`}
+        />
+        
+        <StatCard
+          title="Trading Accounts"
+          value={linkedAccounts}
+          icon={<Briefcase className="h-4 md:h-5 w-4 md:w-5" />}
+          color="default"
+        />
+        
+        <StatCard
+          title="Total Notes"
+          value={totalNotes}
+          icon={<FileText className="h-4 md:h-5 w-4 md:w-5" />}
+          color="default"
+        />
+        
+        <StatCard
+          title="Most Traded Pair"
+          value={mostTradedPair || 'N/A'}
+          icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
+          color="default"
+          description={highestCount > 0 ? `${highestCount} trades` : 'No trades yet'}
+        />
+        
+        <StatCard
+          title="Blocked Users"
+          value={blockedUsers}
+          icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
+          color="red"
+          description={blockedUsers > 0 ? `${blockedUsers} of ${totalUsers}` : 'None'}
+        />
       </div>
-    </AdminLayout>
+
+      {/* Charts Section */}
+      <AdminCharts className="mb-6" />
+
+      {/* Quick Actions */}
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
+            <Users className="h-6 w-6 mb-2" />
+            <span>Manage Users</span>
+          </Button>
+          <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
+            <TrendingUp className="h-6 w-6 mb-2" />
+            <span>View Trades</span>
+          </Button>
+          <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
+            <BarChart3 className="h-6 w-6 mb-2" />
+            <span>Generate Reports</span>
+          </Button>
+          <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
+            <FileText className="h-6 w-6 mb-2" />
+            <span>Manage Content</span>
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 

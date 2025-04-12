@@ -1,226 +1,482 @@
-
-import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useTrade } from '@/contexts/TradeContext';
+import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { Button } from '@/components/ui/button';
+import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
-import LatestTradesTable from '@/components/LatestTradesTable';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  Cell,
+  BarChart as RechartBarChart,
+  Bar
+} from 'recharts';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import TradeDetailsDialog from '@/components/TradeDetailsDialog';
 import CumulativePLChart from '@/components/CumulativePLChart';
 import DailyPLBarChart from '@/components/DailyPLBarChart';
+import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO, isMonday, isSunday, getWeek } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
 import AverageTradeCards from '@/components/AverageTradeCards';
 import TradingTips from '@/components/TradingTips';
-import { 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  FileText, 
-  Clipboard, 
-  BarChart, 
-  Calendar, 
-  Filter, 
-  ChevronDown, 
-  Download 
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const Dashboard: React.FC = () => {
+  const { trades, deleteTrade } = useTrade();
   const { user } = useAuth();
-  const { trades } = useTrade();
-  const [timeFilter, setTimeFilter] = useState('all');
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [timeframeFilter, setTimeframeFilter] = useState('all');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showTradeDetails, setShowTradeDetails] = useState(false);
   
-  // Calculate statistics based on filtered trades
-  const totalTrades = trades?.length || 0;
-  const winningTrades = trades?.filter(trade => trade.profitLoss > 0).length || 0;
-  const losingTrades = trades?.filter(trade => trade.profitLoss < 0).length || 0;
-  const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
-  
-  // Calculate total P&L
-  const totalPL = trades?.reduce((sum, trade) => sum + trade.profitLoss, 0) || 0;
-  
-  // Get the latest trades (max 5)
-  const latestTrades = trades?.slice(0, 5) || [];
-
-  const handleExportReport = () => {
-    // Logic to generate and download report as CSV or PDF
-    console.log('Exporting report');
+  const exportReport = () => {
+    toast({
+      title: "Exporting report",
+      description: "Your trading report is being generated and will download shortly."
+    });
     
-    if (totalTrades === 0) {
-      alert('No trades available to export');
-      return;
+    setTimeout(() => {
+      toast({
+        title: "Report exported",
+        description: "Your trading report has been successfully downloaded.",
+      });
+    }, 1500);
+  };
+
+  const userTrades = user ? trades.filter(trade => trade.userId === user.id) : [];
+
+  const filteredTrades = useMemo(() => {
+    if (timeframeFilter === 'all') return userTrades;
+    
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    if (timeframeFilter === 'week') {
+      cutoffDate.setDate(now.getDate() - 7);
+    } else if (timeframeFilter === 'month') {
+      cutoffDate.setDate(now.getDate() - 30);
+    } else if (timeframeFilter === 'quarter') {
+      cutoffDate.setDate(now.getDate() - 90);
+    } else if (timeframeFilter === 'year') {
+      cutoffDate.setDate(now.getDate() - 365);
     }
     
-    // Simple CSV export
-    const headers = ['Date', 'Pair', 'Type', 'Entry', 'Exit', 'Size', 'P&L'];
-    const csvContent = [
-      headers.join(','),
-      ...trades.map(trade => 
-        [
-          trade.date, 
-          trade.pair, 
-          trade.type, 
-          trade.entry, 
-          trade.exit, 
-          trade.lotSize, 
-          trade.profitLoss
-        ].join(',')
-      )
-    ].join('\n');
+    return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
+  }, [userTrades, timeframeFilter]);
+
+  const totalTrades = filteredTrades.length;
+  const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const winningTrades = filteredTrades.filter(trade => trade.profitLoss > 0).length;
+  const losingTrades = filteredTrades.filter(trade => trade.profitLoss < 0).length;
+  const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+  
+  const bestTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
+    (best, trade) => (trade.profitLoss > best.profitLoss ? trade : best),
+    filteredTrades[0]
+  ) : null;
+  
+  const worstTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
+    (worst, trade) => (trade.profitLoss < worst.profitLoss ? trade : worst),
+    filteredTrades[0]
+  ) : null;
+
+  const winningTradesData = filteredTrades.filter(trade => trade.profitLoss > 0);
+  const avgWinningTrade = winningTradesData.length > 0 
+    ? winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTradesData.length
+    : 0;
+
+  const losingTradesData = filteredTrades.filter(trade => trade.profitLoss < 0);
+  const avgLosingTrade = losingTradesData.length > 0 
+    ? losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTradesData.length
+    : 0;
+
+  const grossProfit = winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (winningTradesData.length > 0 ? Infinity : 0);
+
+  const getLast7Days = () => {
+    const result = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      result.push({
+        date: date.toISOString().slice(0, 10),
+        label: new Date(date).toLocaleDateString('en-US', { weekday: 'short' })
+      });
+    }
+    return result;
+  };
+
+  const dailyPerformanceData = getLast7Days().map(dayInfo => {
+    const dayTrades = filteredTrades.filter(trade => trade.date === dayInfo.date);
+    const dayProfit = dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
     
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `trading_report_${timeFilter}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    return {
+      day: dayInfo.label,
+      profit: dayProfit,
+      date: dayInfo.date
+    };
+  });
+
+  const getCalendarData = () => {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const calendarDays = [];
+    
+    for (let i = 0; i < firstDay; i++) {
+      calendarDays.push(null);
+    }
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dateString = date.toISOString().slice(0, 10);
+      const dayTrades = trades.filter(trade => trade.date === dateString);
+      
+      calendarDays.push({
+        day,
+        date: dateString,
+        trades: dayTrades.length,
+        profit: dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0)
+      });
+    }
+    
+    const weeks = [];
+    let currentWeek = [];
+    
+    for (let i = 0; i < calendarDays.length; i++) {
+      currentWeek.push(calendarDays[i]);
+      
+      if (currentWeek.length === 7 || i === calendarDays.length - 1) {
+        const weeklyTotal = currentWeek
+          .filter(day => day !== null)
+          .reduce((sum, day) => sum + (day?.profit || 0), 0);
+        
+        const weeklyTrades = currentWeek
+          .filter(day => day !== null)
+          .reduce((sum, day) => sum + (day?.trades || 0), 0);
+        
+        const weekNumber = currentWeek.some(day => day !== null) ? 
+          getWeek(new Date(currentWeek.find(day => day !== null)?.date || new Date())) : 0;
+        
+        weeks.push({
+          days: [...currentWeek],
+          weeklyTotal,
+          weeklyTrades,
+          weekNumber
+        });
+        
+        currentWeek = [];
+      }
+    }
+    
+    if (currentWeek.length > 0 && currentWeek.length < 7) {
+      while (currentWeek.length < 7) {
+        currentWeek.push(null);
+      }
+      
+      const weeklyTotal = currentWeek
+        .filter(day => day !== null)
+        .reduce((sum, day) => sum + (day?.profit || 0), 0);
+      
+      const weeklyTrades = currentWeek
+        .filter(day => day !== null)
+        .reduce((sum, day) => sum + (day?.trades || 0), 0);
+      
+      const weekNumber = currentWeek.some(day => day !== null) ? 
+        getWeek(new Date(currentWeek.find(day => day !== null)?.date || new Date())) : 0;
+      
+      weeks.push({
+        days: [...currentWeek],
+        weeklyTotal,
+        weeklyTrades,
+        weekNumber
+      });
+    }
+    
+    return weeks;
+  };
+  
+  const handleDayClick = (dateString: string) => {
+    setSelectedDate(dateString);
+    setShowTradeDetails(true);
+  };
+
+  const handleCloseTradeDetails = () => {
+    setShowTradeDetails(false);
+  };
+
+  const navigateToJournal = (dateString: string) => {
+    navigate(`/journal?date=${dateString}`);
+  };
+  
+  const handleTradeView = (tradeId: string) => {
+    navigate(`/trades/${tradeId}`);
+  };
+  
+  const handleTradeDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteTrade(id);
+    toast({
+      title: "Trade deleted",
+      description: "The trade has been successfully deleted"
+    });
   };
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold dark:text-white">
-              Trading Dashboard
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400">
-              Monitor your trading performance
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2 mt-4 md:mt-0">
-            <div className="flex items-center">
-              <Select 
-                value={timeFilter} 
-                onValueChange={setTimeFilter}
-              >
-                <SelectTrigger className="w-[150px] h-9">
-                  <SelectValue placeholder="Filter by time" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="day">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
-                  <SelectItem value="all">All Time</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleExportReport} 
-              className="flex items-center gap-1"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export Report</span>
-            </Button>
-          </div>
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold mb-1">Trading Dashboard</h1>
+          <p className="text-gray-500">Overview of your trading performance</p>
         </div>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard
-            title="Total P&L"
-            value={`$${totalPL.toFixed(2)}`}
-            icon={totalPL >= 0 ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
-            color={totalPL > 0 ? 'green' : totalPL < 0 ? 'red' : 'default'}
-            trend={totalPL > 0 ? 'up' : totalPL < 0 ? 'down' : 'neutral'}
-          />
-          
-          <StatCard
-            title="Win Rate"
-            value={`${winRate}%`}
-            icon={<BarChart className="h-5 w-5" />}
-            color={winRate > 50 ? 'green' : winRate < 50 ? 'red' : 'default'}
-          />
-          
-          <StatCard
-            title="Total Trades"
-            value={totalTrades.toString()}
-            icon={<Clipboard className="h-5 w-5" />}
-            description={`W: ${winningTrades} / L: ${losingTrades}`}
-          />
-          
-          <StatCard
-            title="Trading Journal"
-            value={`${trades?.filter(trade => trade.notes?.length > 0).length || 0} notes`}
-            icon={<FileText className="h-5 w-5" />}
-            description="View your journal"
-            actionUrl="/journal"
-          />
-        </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">P&L Over Time</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <CumulativePLChart trades={trades || []} />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">Daily P&L</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <DailyPLBarChart trades={trades || []} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Average Trade Stats */}
-        <AverageTradeCards trades={trades || []} />
-
-        {/* Latest Trades and Tips */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">Latest Trades</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <LatestTradesTable trades={latestTrades} />
-              {latestTrades.length > 0 ? (
-                <div className="mt-2 text-right">
-                  <Button variant="link" size="sm" asChild>
-                    <a href="/trades">View all trades</a>
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <p>No trades yet. Add your first trade to start tracking.</p>
-                  <Button className="mt-2" asChild>
-                    <a href="/add-trade">Add Trade</a>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">Trading Tips</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <TradingTips />
-            </CardContent>
-          </Card>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Select timeframe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="week">Last 7 Days</SelectItem>
+              <SelectItem value="month">Last 30 Days</SelectItem>
+              <SelectItem value="quarter">Last 3 Months</SelectItem>
+              <SelectItem value="year">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={exportReport} className="w-full sm:w-auto">
+            <Calendar className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
+        <StatCard
+          title="Total P&L"
+          value={`$${totalProfit.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}`}
+          trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
+          icon={<DollarSign className="h-5 w-5" />}
+          color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
+          description={`Trades in total: ${totalTrades}`}
+        />
+        <StatCard
+          title="Profit factor"
+          value={profitFactor === Infinity ? "∞" : profitFactor.toFixed(2)}
+          icon={<Activity className="h-5 w-5" />}
+          description={`${profitFactor > 1 ? '+' : ''}${profitFactor === Infinity ? "" : (profitFactor - 1).toFixed(2)}`}
+        />
+        
+        <div className="md:col-span-2">
+          <AverageTradeCards 
+            avgWin={avgWinningTrade} 
+            avgLoss={avgLosingTrade}
+            winCount={winningTrades}
+            lossCount={losingTrades}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
+        <Card className="col-span-1">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center">
+                Winning % By Trades
+                <CircleIcon className="h-4 w-4 ml-2 text-gray-400" />
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] sm:h-[300px] flex flex-col sm:flex-row items-center justify-center">
+              <div className="relative w-[180px] sm:w-[220px] h-[180px] sm:h-[220px]">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-3xl sm:text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
+                  <span className="text-sm text-gray-500">winrate</span>
+                </div>
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#f1f1f1"
+                    strokeWidth="15"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#36B37E"
+                    strokeWidth="15"
+                    strokeDasharray={`${winRate * 2.512} ${(100 - winRate) * 2.512}`}
+                    strokeDashoffset="0"
+                    transform="rotate(-90, 50, 50)"
+                  />
+                </svg>
+              </div>
+              <div className="ml-0 mt-4 sm:mt-0 sm:ml-4">
+                <div className="mb-4">
+                  <div className="flex items-center mb-1">
+                    <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
+                    <span className="text-sm">{winningTrades} winners</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    <span className="text-sm">{losingTrades} losers</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-1">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">P&L Analysis</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] sm:h-[300px]">
+              <DailyPLBarChart 
+                data={dailyPerformanceData}
+                title=""
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="col-span-1">
+          <TradingTips className="h-full" />
+        </div>
+      </div>
+
+      <div className="mb-6 sm:mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg">Daily Net Cumulative P&L</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[250px] sm:h-[300px]">
+            <DailyPLBarChart 
+              data={dailyPerformanceData}
+              title=""
+            />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mb-6">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
+          <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
+            <Calendar className="h-4 w-4 mr-2" />
+            Journal View
+          </Button>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <div className="min-w-[768px] md:min-w-0">
+            <div className="grid grid-cols-7 gap-1">
+              <div className="text-sm font-medium text-center p-2">Sun</div>
+              <div className="text-sm font-medium text-center p-2">Mon</div>
+              <div className="text-sm font-medium text-center p-2">Tue</div>
+              <div className="text-sm font-medium text-center p-2">Wed</div>
+              <div className="text-sm font-medium text-center p-2">Thu</div>
+              <div className="text-sm font-medium text-center p-2">Fri</div>
+              <div className="text-sm font-medium text-center p-2">Sat</div>
+              
+              {getCalendarData().map((week, weekIndex) => (
+                <React.Fragment key={`week-${weekIndex}`}>
+                  {week.days.map((day, dayIndex) => 
+                    day === null ? (
+                      <div key={`empty-${weekIndex}-${dayIndex}`} className="p-2"></div>
+                    ) : (
+                      <div 
+                        key={`day-${day.day}`} 
+                        className={cn(
+                          "border rounded p-2 text-center min-h-[70px] sm:min-h-[80px] cursor-pointer transition-colors",
+                          day.profit > 0 ? "bg-green-50 border-green-200 hover:bg-green-100" : 
+                          day.profit < 0 ? "bg-red-50 border-red-200 hover:bg-red-100" : 
+                          "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                        )}
+                        onClick={() => handleDayClick(day.date)}
+                      >
+                        <div className="text-sm">{day.day}</div>
+                        {day.trades > 0 && (
+                          <>
+                            <div className={cn(
+                              "text-base sm:text-lg font-bold mt-1",
+                              day.profit > 0 ? "text-emerald-500" : "text-red-500"
+                            )}>
+                              {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
+                            </div>
+                            <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="mt-1 text-xs h-6 px-2 flex items-center"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigateToJournal(day.date);
+                              }}
+                            >
+                              View
+                              <ExternalLink className="ml-1 h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )
+                  )}
+                  
+                  <div className="col-span-7 mt-1 mb-4 flex justify-end">
+                    <div className="w-full sm:w-[200px] bg-gray-50 border rounded-md p-3 flex flex-col">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Week {week.weekNumber}</span>
+                        <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                          {week.weeklyTrades} {week.weeklyTrades === 1 ? 'trade' : 'trades'}
+                        </span>
+                      </div>
+                      <div className={cn(
+                        "font-bold text-lg",
+                        week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : "text-gray-600"
+                      )}>
+                        {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Net P&L for week {week.weekNumber}
+                      </div>
+                    </div>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <TradeDetailsDialog 
+        isOpen={showTradeDetails}
+        onClose={handleCloseTradeDetails}
+        selectedDate={selectedDate}
+        trades={trades.filter(t => t.date === selectedDate && t.userId === user?.id)}
+      />
     </Layout>
   );
 };

@@ -17,9 +17,145 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const translations: TranslationsType = {
-  // Login page translations - keep existing translations
-
-  // ... keep existing code (login, forgot password, reset password, register translations)
+  // Login page
+  'login.title': {
+    ar: 'منصة أداء التداول',
+    en: 'Trading Performance Platform',
+  },
+  'login.description': {
+    ar: 'سجل الدخول للوصول إلى لوحة التحكم الخاصة بك',
+    en: 'Sign in to access your dashboard',
+  },
+  'login.email': {
+    ar: 'البريد الإلكتروني',
+    en: 'Email',
+  },
+  'login.password': {
+    ar: 'كلمة المرور',
+    en: 'Password',
+  },
+  'login.forgotPassword': {
+    ar: 'نسيت كلمة المرور؟',
+    en: 'Forgot password?',
+  },
+  'login.loginButton': {
+    ar: 'تسجيل الدخول',
+    en: 'Sign in',
+  },
+  'login.loggingIn': {
+    ar: 'جارٍ تسجيل الدخول...',
+    en: 'Signing in...',
+  },
+  'login.noAccount': {
+    ar: 'ليس لديك حساب؟',
+    en: 'Don\'t have an account?',
+  },
+  'login.register': {
+    ar: 'التسجيل',
+    en: 'Register',
+  },
+  'login.error.credentials': {
+    ar: 'فشل تسجيل الدخول. يرجى التحقق من بيانات الاعتماد الخاصة بك.',
+    en: 'Login failed. Please check your credentials.',
+  },
+  'login.error.emptyFields': {
+    ar: 'الرجاء إدخال البريد الإلكتروني وكلمة المرور',
+    en: 'Please enter email and password',
+  },
+  
+  // Forgot Password
+  'forgotPassword.title': {
+    ar: 'نسيت كلمة المرور',
+    en: 'Forgot Password',
+  },
+  'forgotPassword.description': {
+    ar: 'أدخل عنوان بريدك الإلكتروني وسنرسل لك رمز إعادة التعيين.',
+    en: 'Enter your email address and we will send you a reset code.',
+  },
+  'forgotPassword.button': {
+    ar: 'إرسال رمز إعادة التعيين',
+    en: 'Send Reset Code',
+  },
+  'forgotPassword.sending': {
+    ar: 'جارٍ الإرسال...',
+    en: 'Sending...',
+  },
+  'forgotPassword.cancel': {
+    ar: 'إلغاء',
+    en: 'Cancel',
+  },
+  
+  // Reset Password
+  'resetPassword.title': {
+    ar: 'إعادة تعيين كلمة المرور',
+    en: 'Reset Password',
+  },
+  'resetPassword.description': {
+    ar: 'أدخل الرمز المرسل إلى بريدك الإلكتروني وأنشئ كلمة مرور جديدة.',
+    en: 'Enter the code sent to your email and create a new password.',
+  },
+  'resetPassword.code': {
+    ar: 'رمز إعادة التعيين',
+    en: 'Reset Code',
+  },
+  'resetPassword.newPassword': {
+    ar: 'كلمة المرور الجديدة',
+    en: 'New Password',
+  },
+  'resetPassword.confirmPassword': {
+    ar: 'تأكيد كلمة المرور',
+    en: 'Confirm Password',
+  },
+  'resetPassword.button': {
+    ar: 'إعادة تعيين كلمة المرور',
+    en: 'Reset Password',
+  },
+  'resetPassword.resetting': {
+    ar: 'جارٍ إعادة التعيين...',
+    en: 'Resetting...',
+  },
+  
+  // Register page
+  'register.title': {
+    ar: 'إنشاء حساب',
+    en: 'Create an Account',
+  },
+  'register.description': {
+    ar: 'سجل للبدء في تتبع أداء التداول الخاص بك',
+    en: 'Register to start tracking your trading performance',
+  },
+  'register.fullName': {
+    ar: 'الاسم الكامل',
+    en: 'Full Name',
+  },
+  'register.email': {
+    ar: 'البريد الإلكتروني',
+    en: 'Email',
+  },
+  'register.password': {
+    ar: 'كلمة المرور',
+    en: 'Password',
+  },
+  'register.confirmPassword': {
+    ar: 'تأكيد كلمة المرور',
+    en: 'Confirm Password',
+  },
+  'register.createAccount': {
+    ar: 'إنشاء حساب',
+    en: 'Create Account',
+  },
+  'register.registering': {
+    ar: 'جارٍ التسجيل...',
+    en: 'Registering...',
+  },
+  'register.haveAccount': {
+    ar: 'لديك حساب بالفعل؟',
+    en: 'Already have an account?',
+  },
+  'register.login': {
+    ar: 'تسجيل الدخول',
+    en: 'Log in',
+  },
   
   // Dashboard and navigation
   'nav.dashboard': {
@@ -50,22 +186,6 @@ export const translations: TranslationsType = {
     ar: 'الرؤى والتحليلات',
     en: 'Insights',
   },
-  'nav.analytics': {
-    ar: 'التحليلات',
-    en: 'Analytics',
-  },
-  'nav.chart': {
-    ar: 'الشارت',
-    en: 'Chart',
-  },
-  'nav.subscriptions': {
-    ar: 'الاشتراكات',
-    en: 'Subscriptions',
-  },
-  'nav.settings': {
-    ar: 'الإعدادات',
-    en: 'Settings',
-  },
   'nav.adminPanel': {
     ar: 'لوحة الإدارة',
     en: 'Admin Panel',
@@ -86,7 +206,6 @@ export const translations: TranslationsType = {
     ar: 'مسؤول',
     en: 'Admin',
   },
-  
   // Chart page translations
   'chart.title': {
     ar: 'الشارت',
@@ -99,10 +218,6 @@ export const translations: TranslationsType = {
   'chart.description': {
     ar: 'استخدم مخطط TradingView للتحليل الفني وتتبع الأسواق المالية',
     en: 'Use TradingView chart for technical analysis and tracking financial markets',
-  },
-  'chart.selectSymbolType': {
-    ar: 'اختر نوع الرمز',
-    en: 'Select symbol type',
   },
   'chart.forex': {
     ar: 'العملات',
@@ -119,384 +234,6 @@ export const translations: TranslationsType = {
   'chart.indices': {
     ar: 'المؤشرات',
     en: 'Indices',
-  },
-  'chart.tradeLoaded': {
-    ar: 'تم تحميل الصفقة',
-    en: 'Trade loaded',
-  },
-  'chart.tradeDisplayed': {
-    ar: 'تم عرض الصفقة على الشارت',
-    en: 'Trade displayed on chart',
-  },
-  'chart.useControls': {
-    ar: 'استخدم أدوات التحكم لمشاهدة الصفقة',
-    en: 'Use controls to view the trade',
-  },
-  
-  // Add Trade page translations
-  'addTrade.title': {
-    ar: 'إضافة صفقة جديدة',
-    en: 'Add New Trade',
-  },
-  'addTrade.description': {
-    ar: 'سجل تفاصيل عن صفقتك',
-    en: 'Record details about your trade',
-  },
-  'addTrade.tradeInformation': {
-    ar: 'معلومات الصفقة',
-    en: 'Trade Information',
-  },
-  'addTrade.account': {
-    ar: 'الحساب',
-    en: 'Account',
-  },
-  'addTrade.selectAccount': {
-    ar: 'اختر الحساب',
-    en: 'Select account',
-  },
-  'addTrade.date': {
-    ar: 'التاريخ',
-    en: 'Date',
-  },
-  'addTrade.currencyPair': {
-    ar: 'زوج العملات / الرمز',
-    en: 'Currency Pair / Symbol',
-  },
-  'addTrade.selectOrType': {
-    ar: 'اختر أو اكتب زوج العملات',
-    en: 'Select or type currency pair',
-  },
-  'addTrade.type': {
-    ar: 'النوع',
-    en: 'Type',
-  },
-  'addTrade.buy': {
-    ar: 'شراء',
-    en: 'Buy',
-  },
-  'addTrade.sell': {
-    ar: 'بيع',
-    en: 'Sell',
-  },
-  'addTrade.entryPrice': {
-    ar: 'سعر الدخول',
-    en: 'Entry Price',
-  },
-  'addTrade.exitPrice': {
-    ar: 'سعر الخروج',
-    en: 'Exit Price',
-  },
-  'addTrade.lotSize': {
-    ar: 'حجم العقد',
-    en: 'Lot Size',
-  },
-  'addTrade.stopLoss': {
-    ar: 'وقف الخسارة (اختياري)',
-    en: 'Stop Loss (optional)',
-  },
-  'addTrade.takeProfit': {
-    ar: 'جني الأرباح (اختياري)',
-    en: 'Take Profit (optional)',
-  },
-  'addTrade.riskPercentage': {
-    ar: 'نسبة المخاطرة %',
-    en: 'Risk %',
-  },
-  'addTrade.profitLoss': {
-    ar: 'الربح/الخسارة',
-    en: 'Profit/Loss',
-  },
-  'addTrade.duration': {
-    ar: 'المدة (بالدقائق)',
-    en: 'Duration (minutes)',
-  },
-  'addTrade.notes': {
-    ar: 'الملاحظات',
-    en: 'Notes',
-  },
-  'addTrade.notesPlaceholder': {
-    ar: 'أدخل ملاحظات الصفقة أو الملاحظات أو أسباب الدخول في الصفقة',
-    en: 'Enter trade notes, observations, or reasons for taking the trade',
-  },
-  'addTrade.hashtags': {
-    ar: 'الوسوم',
-    en: 'Hashtags',
-  },
-  'addTrade.hashtagsPlaceholder': {
-    ar: 'أضف وسوم (مثل الإعداد، الاختراق، الخطأ)',
-    en: 'Add hashtags (e.g. setup, breakout, mistake)',
-  },
-  'addTrade.tradeImages': {
-    ar: 'صور الصفقة',
-    en: 'Trade Images',
-  },
-  'addTrade.beforeTradeImage': {
-    ar: 'صورة ما قبل الصفقة',
-    en: 'Before Trade Image',
-  },
-  'addTrade.afterTradeImage': {
-    ar: 'صورة ما بعد الصفقة',
-    en: 'After Trade Image',
-  },
-  'addTrade.additionalImage': {
-    ar: 'صورة إضافية (اختياري)',
-    en: 'Additional Image (Optional)',
-  },
-  'addTrade.cancel': {
-    ar: 'إلغاء',
-    en: 'Cancel',
-  },
-  'addTrade.saveTrade': {
-    ar: 'حفظ الصفقة',
-    en: 'Save Trade',
-  },
-  'addTrade.tradeAdded': {
-    ar: 'تمت إضافة الصفقة',
-    en: 'Trade Added',
-  },
-  'addTrade.tradeAddedSuccess': {
-    ar: 'تمت إضافة صفقتك بنجاح',
-    en: 'Your trade has been added successfully',
-  },
-  'addTrade.accountRequired': {
-    ar: 'الحساب مطلوب',
-    en: 'Account is required',
-  },
-  'addTrade.pairRequired': {
-    ar: 'زوج العملات أو الرمز مطلوب',
-    en: 'Currency pair or symbol is required',
-  },
-  'addTrade.entryRequired': {
-    ar: 'سعر الدخول مطلوب',
-    en: 'Entry price is required',
-  },
-  'addTrade.exitRequired': {
-    ar: 'سعر الخروج مطلوب',
-    en: 'Exit price is required',
-  },
-  'addTrade.lotSizeRequired': {
-    ar: 'حجم العقد مطلوب',
-    en: 'Lot size is required',
-  },
-  'addTrade.searchSymbols': {
-    ar: 'بحث عن الرموز...',
-    en: 'Search symbols...',
-  },
-  'addTrade.noResults': {
-    ar: 'لم يتم العثور على نتائج. اكتب لإضافة رمز مخصص.',
-    en: 'No results found. Type to add a custom symbol.',
-  },
-
-  // Settings page translations
-  'settings.accountSettings': {
-    ar: 'إعدادات الحساب',
-    en: 'Account Settings',
-  },
-  'settings.manageAccount': {
-    ar: 'إدارة إعدادات حسابك وتفضيلاتك',
-    en: 'Manage your account settings and preferences',
-  },
-  'settings.profileInformation': {
-    ar: 'معلومات الملف الشخصي',
-    en: 'Profile Information',
-  },
-  'settings.managePersonalInfo': {
-    ar: 'إدارة معلوماتك الشخصية وإعدادات البريد الإلكتروني',
-    en: 'Manage your personal information and email settings',
-  },
-  'settings.username': {
-    ar: 'اسم المستخدم',
-    en: 'Username',
-  },
-  'settings.emailAddress': {
-    ar: 'البريد الإلكتروني',
-    en: 'Email Address',
-  },
-  'settings.accountType': {
-    ar: 'نوع الحساب',
-    en: 'Account Type',
-  },
-  'settings.administrator': {
-    ar: 'مسؤول',
-    en: 'Administrator',
-  },
-  'settings.standardUser': {
-    ar: 'مستخدم عادي',
-    en: 'Standard User',
-  },
-  'settings.editProfile': {
-    ar: 'تعديل الملف الشخصي',
-    en: 'Edit Profile',
-  },
-  'settings.displaySettings': {
-    ar: 'إعدادات العرض',
-    en: 'Display Settings',
-  },
-  'settings.customizeAppearance': {
-    ar: 'تخصيص مظهر لوحة التحكم الخاصة بك',
-    en: 'Customize the appearance of your dashboard',
-  },
-  'settings.darkMode': {
-    ar: 'الوضع الداكن',
-    en: 'Dark Mode',
-  },
-  'settings.switchTheme': {
-    ar: 'التبديل بين السمة الفاتحة والداكنة',
-    en: 'Switch between light and dark theme',
-  },
-  'settings.language': {
-    ar: 'اللغة',
-    en: 'Language',
-  },
-  'settings.switchLanguage': {
-    ar: 'التبديل بين العربية والإنجليزية',
-    en: 'Switch between Arabic and English',
-  },
-  'settings.notifications': {
-    ar: 'الإشعارات',
-    en: 'Notifications',
-  },
-  'settings.manageNotifications': {
-    ar: 'إدارة كيفية تلقي الإشعارات والتنبيهات',
-    en: 'Manage how you receive notifications and alerts',
-  },
-  'settings.tradeAlerts': {
-    ar: 'تنبيهات الصفقات',
-    en: 'Trade Alerts',
-  },
-  'settings.receiveTradeNotifications': {
-    ar: 'تلقي إشعارات حول صفقاتك',
-    en: 'Receive notifications about your trades',
-  },
-  'settings.systemUpdates': {
-    ar: 'تحديثات النظام',
-    en: 'System Updates',
-  },
-  'settings.importantUpdates': {
-    ar: 'تحديثات وإعلانات مهمة',
-    en: 'Important updates and announcements',
-  },
-  'settings.marketNews': {
-    ar: 'أخبار السوق',
-    en: 'Market News',
-  },
-  'settings.latestNews': {
-    ar: 'أحدث الأخبار عن الأسواق والأصول',
-    en: 'Latest news about markets and assets',
-  },
-  'settings.emailDigest': {
-    ar: 'ملخص البريد الإلكتروني',
-    en: 'Email Digest',
-  },
-  'settings.weeklySummary': {
-    ar: 'ملخص أسبوعي لنشاط التداول الخاص بك',
-    en: 'Weekly summary of your trading activity',
-  },
-  'settings.updated': {
-    ar: 'تم تحديث الإعدادات',
-    en: 'Settings Updated',
-  },
-  'settings.updatedSuccess': {
-    ar: 'تم تحديث إعداداتك بنجاح',
-    en: 'Your settings have been updated successfully',
-  },
-  'settings.updateFailed': {
-    ar: 'فشل التحديث',
-    en: 'Update Failed',
-  },
-  'settings.updateFailedDesc': {
-    ar: 'فشل في تحديث إعداداتك. يرجى المحاولة مرة أخرى.',
-    en: 'Failed to update your settings. Please try again.',
-  },
-  'settings.notificationsUpdated': {
-    ar: 'تم تحديث إعدادات الإشعارات',
-    en: 'Notification Settings Updated',
-  },
-  'settings.notificationsPreferencesSaved': {
-    ar: 'تم حفظ تفضيلات الإشعارات الخاصة بك',
-    en: 'Your notification preferences have been saved',
-  },
-
-  // Subscription page translations
-  'subscription.title': {
-    ar: 'اختر خطة الاشتراك الخاصة بك',
-    en: 'Choose Your Subscription Plan',
-  },
-  'subscription.description': {
-    ar: 'ارتقِ بتجربة التداول الخاصة بك مع خططنا المميزة. اختر الخيار الذي يناسب أسلوب التداول وأهدافك بشكل أفضل.',
-    en: 'Elevate your trading experience with our premium plans. Select the option that best fits your trading style and goals.',
-  },
-  'subscription.basic': {
-    ar: 'أساسي',
-    en: 'Basic',
-  },
-  'subscription.professional': {
-    ar: 'محترف',
-    en: 'Professional',
-  },
-  'subscription.enterprise': {
-    ar: 'مؤسسة',
-    en: 'Enterprise',
-  },
-  'subscription.price.basic': {
-    ar: '$9.99',
-    en: '$9.99',
-  },
-  'subscription.price.professional': {
-    ar: '$19.99',
-    en: '$19.99',
-  },
-  'subscription.price.enterprise': {
-    ar: '$39.99',
-    en: '$39.99',
-  },
-  'subscription.period': {
-    ar: 'شهر',
-    en: 'month',
-  },
-  'subscription.desc.basic': {
-    ar: 'مثالي للمبتدئين',
-    en: 'Perfect for beginners',
-  },
-  'subscription.desc.professional': {
-    ar: 'للمتداولين الجادين',
-    en: 'For serious traders',
-  },
-  'subscription.desc.enterprise': {
-    ar: 'لفرق التداول',
-    en: 'For trading teams',
-  },
-  'subscription.recommended': {
-    ar: 'موصى به',
-    en: 'Recommended',
-  },
-  'subscription.selectPlan': {
-    ar: 'اختر الخطة',
-    en: 'Select Plan',
-  },
-  'subscription.selected': {
-    ar: 'تم الاختيار',
-    en: 'Selected',
-  },
-  'subscription.proceedToPayment': {
-    ar: 'المتابعة إلى الدفع',
-    en: 'Proceed to Payment',
-  },
-  'subscription.freeTrial': {
-    ar: 'تتضمن جميع الخطط فترة تجريبية مجانية لمدة 7 أيام. لا تحتاج إلى بطاقة ائتمان حتى تنتهي الفترة التجريبية.',
-    en: 'All plans include a 7-day free trial. No credit card required until trial ends.',
-  },
-  'subscription.noPlanSelected': {
-    ar: 'لم يتم تحديد خطة',
-    en: 'No plan selected',
-  },
-  'subscription.selectFirst': {
-    ar: 'الرجاء تحديد خطة اشتراك أولاً',
-    en: 'Please select a subscription plan first',
-  },
-  'language.toggle': {
-    ar: 'تبديل اللغة',
-    en: 'Toggle language',
   },
 };
 
