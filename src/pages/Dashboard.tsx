@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrade } from '@/contexts/TradeContext';
 import Layout from '@/components/Layout';
@@ -57,7 +57,7 @@ const Dashboard: React.FC = () => {
     }
     
     // Simple CSV export
-    const headers = ['Date', 'Pair', 'Direction', 'Entry', 'Exit', 'Size', 'P&L'];
+    const headers = ['Date', 'Pair', 'Type', 'Entry', 'Exit', 'Size', 'P&L'];
     const csvContent = [
       headers.join(','),
       ...trades.map(trade => 
@@ -158,6 +158,7 @@ const Dashboard: React.FC = () => {
             value={`${trades?.filter(trade => trade.notes?.length > 0).length || 0} notes`}
             icon={<FileText className="h-5 w-5" />}
             description="View your journal"
+            actionUrl="/journal"
           />
         </div>
 

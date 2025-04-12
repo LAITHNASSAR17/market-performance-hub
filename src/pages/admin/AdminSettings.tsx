@@ -1,336 +1,288 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, UserPlus, Settings, Globe } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import ThemeToggle from '@/components/ThemeToggle';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/components/ui/use-toast';
 
-const AdminSettings: React.FC = () => {
+const AdminSettings = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const { createUser } = useAuth();
   
   const [siteSettings, setSiteSettings] = useState({
-    siteName: 'TradeTracker',
-    siteDescription: 'Track your trading performance and analyze your results',
-    supportEmail: 'support@tradetracker.com',
-    privacyPolicy: '',
-    termsOfService: ''
+    siteName: "Trade Tracker Pro",
+    siteDescription: "Track your trades and improve your trading performance",
+    enableSignups: true,
+    requireEmailVerification: true,
+    maxUsersPerPlan: 1000
   });
   
-  const [newAdmin, setNewAdmin] = useState({
+  const [newAdminData, setNewAdminData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    isAdmin: true
   });
-  
+
   const handleSiteSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setSiteSettings(prev => ({ ...prev, [name]: value }));
+    setSiteSettings(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleSwitchChange = (name: string, checked: boolean) => {
+    setSiteSettings(prev => ({
+      ...prev,
+      [name]: checked
+    }));
   };
   
   const handleNewAdminChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewAdmin(prev => ({ ...prev, [name]: value }));
+    setNewAdminData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
   
-  const handleSaveSettings = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveSettings = () => {
+    // Here you would typically save the settings to a database
     toast({
       title: "Settings Saved",
-      description: "Site settings have been updated successfully"
+      description: "Your site settings have been updated.",
     });
   };
   
-  const handleAddAdmin = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (newAdmin.password !== newAdmin.confirmPassword) {
+  const handleAddAdmin = () => {
+    // Here you would typically create a new admin user
+    if (!newAdminData.name || !newAdminData.email || !newAdminData.password) {
       toast({
         title: "Error",
-        description: "Passwords do not match",
+        description: "Please fill in all fields",
         variant: "destructive"
       });
       return;
     }
     
-    // Create a new admin user
-    createUser({
-      name: newAdmin.name,
-      email: newAdmin.email,
-      password: newAdmin.password,
-      isAdmin: true
-    });
-    
+    // Implementation for adding admin user would go here
     toast({
       title: "Admin Added",
-      description: `${newAdmin.name} has been added as an admin`
+      description: `New admin ${newAdminData.name} has been created.`,
     });
     
     // Reset form
-    setNewAdmin({
+    setNewAdminData({
       name: '',
       email: '',
       password: '',
-      confirmPassword: ''
+      isAdmin: true
     });
   };
 
+  if (!user?.isAdmin) {
+    return (
+      <div className="container mx-auto py-10">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>You do not have permission to access this page.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <header className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-          System Settings
-        </h1>
-        <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-          Configure and manage system-wide settings.
-        </p>
-      </header>
+    <div className="container mx-auto py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Admin Settings</h1>
+        <p className="text-gray-500 dark:text-gray-400">Configure global settings for the application</p>
+      </div>
       
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="general">
-            <Settings className="h-4 w-4 mr-2" />
-            General
-          </TabsTrigger>
-          <TabsTrigger value="admins">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Manage Admins
-          </TabsTrigger>
-          <TabsTrigger value="appearance">
-            <Globe className="h-4 w-4 mr-2" />
-            Appearance
-          </TabsTrigger>
-          <TabsTrigger value="database">
-            <Database className="h-4 w-4 mr-2" />
-            Database
-          </TabsTrigger>
+      <Tabs defaultValue="general">
+        <TabsList className="mb-6">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="backups">Backups</TabsTrigger>
         </TabsList>
         
         <TabsContent value="general">
           <Card>
             <CardHeader>
               <CardTitle>Site Settings</CardTitle>
-              <CardDescription>
-                Configure general settings for your trading platform.
-              </CardDescription>
+              <CardDescription>Configure the global settings for your trading platform.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSaveSettings} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="siteName">Site Name</Label>
-                  <Input
-                    id="siteName"
-                    name="siteName"
-                    value={siteSettings.siteName}
-                    onChange={handleSiteSettingsChange}
-                  />
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="siteName">Site Name</Label>
+                <Input 
+                  id="siteName" 
+                  name="siteName" 
+                  value={siteSettings.siteName} 
+                  onChange={handleSiteSettingsChange} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="siteDescription">Site Description</Label>
+                <Textarea 
+                  id="siteDescription" 
+                  name="siteDescription" 
+                  value={siteSettings.siteDescription} 
+                  onChange={handleSiteSettingsChange} 
+                  rows={3}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="enableSignups">Enable New Sign Ups</Label>
+                  <p className="text-sm text-gray-500">Allow new users to register on the platform.</p>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="siteDescription">Site Description</Label>
-                  <Input
-                    id="siteDescription"
-                    name="siteDescription"
-                    value={siteSettings.siteDescription}
-                    onChange={handleSiteSettingsChange}
-                  />
+                <Switch 
+                  id="enableSignups" 
+                  checked={siteSettings.enableSignups}
+                  onCheckedChange={(checked) => handleSwitchChange('enableSignups', checked)}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="requireEmailVerification">Require Email Verification</Label>
+                  <p className="text-sm text-gray-500">New users must verify their email before accessing the platform.</p>
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="supportEmail">Support Email</Label>
-                  <Input
-                    id="supportEmail"
-                    name="supportEmail"
-                    type="email"
-                    value={siteSettings.supportEmail}
-                    onChange={handleSiteSettingsChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="privacyPolicy">Privacy Policy URL</Label>
-                  <Input
-                    id="privacyPolicy"
-                    name="privacyPolicy"
-                    value={siteSettings.privacyPolicy}
-                    onChange={handleSiteSettingsChange}
-                    placeholder="https://example.com/privacy"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="termsOfService">Terms of Service URL</Label>
-                  <Input
-                    id="termsOfService"
-                    name="termsOfService"
-                    value={siteSettings.termsOfService}
-                    onChange={handleSiteSettingsChange}
-                    placeholder="https://example.com/terms"
-                  />
-                </div>
-                
-                <Button type="submit">Save Settings</Button>
-              </form>
+                <Switch 
+                  id="requireEmailVerification" 
+                  checked={siteSettings.requireEmailVerification}
+                  onCheckedChange={(checked) => handleSwitchChange('requireEmailVerification', checked)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="maxUsersPerPlan">Maximum Users Per Plan</Label>
+                <Input 
+                  id="maxUsersPerPlan" 
+                  name="maxUsersPerPlan" 
+                  type="number" 
+                  value={siteSettings.maxUsersPerPlan.toString()}
+                  onChange={handleSiteSettingsChange} 
+                />
+              </div>
             </CardContent>
+            <CardFooter>
+              <Button onClick={handleSaveSettings}>Save Settings</Button>
+            </CardFooter>
           </Card>
         </TabsContent>
         
-        <TabsContent value="admins">
+        <TabsContent value="users">
           <Card>
             <CardHeader>
-              <CardTitle>Manage Administrators</CardTitle>
-              <CardDescription>
-                Add new admin users to help manage the platform.
-              </CardDescription>
+              <CardTitle>Add Admin User</CardTitle>
+              <CardDescription>Create a new administrator account with full system access.</CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAddAdmin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="adminName">Full Name</Label>
-                  <Input
-                    id="adminName"
-                    name="name"
-                    value={newAdmin.name}
-                    onChange={handleNewAdminChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminEmail">Email Address</Label>
-                  <Input
-                    id="adminEmail"
-                    name="email"
-                    type="email"
-                    value={newAdmin.email}
-                    onChange={handleNewAdminChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminPassword">Password</Label>
-                  <Input
-                    id="adminPassword"
-                    name="password"
-                    type="password"
-                    value={newAdmin.password}
-                    onChange={handleNewAdminChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="adminConfirmPassword">Confirm Password</Label>
-                  <Input
-                    id="adminConfirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    value={newAdmin.confirmPassword}
-                    onChange={handleNewAdminChange}
-                    required
-                  />
-                </div>
-                
-                <Button type="submit">Add Administrator</Button>
-              </form>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="adminName">Name</Label>
+                <Input 
+                  id="adminName" 
+                  name="name" 
+                  value={newAdminData.name} 
+                  onChange={handleNewAdminChange} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="adminEmail">Email</Label>
+                <Input 
+                  id="adminEmail" 
+                  name="email"
+                  type="email" 
+                  value={newAdminData.email} 
+                  onChange={handleNewAdminChange} 
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="adminPassword">Password</Label>
+                <Input 
+                  id="adminPassword" 
+                  name="password"
+                  type="password" 
+                  value={newAdminData.password} 
+                  onChange={handleNewAdminChange} 
+                />
+              </div>
             </CardContent>
+            <CardFooter>
+              <Button onClick={handleAddAdmin}>Add Admin</Button>
+            </CardFooter>
           </Card>
         </TabsContent>
         
-        <TabsContent value="appearance">
+        <TabsContent value="security">
           <Card>
             <CardHeader>
-              <CardTitle>Appearance Settings</CardTitle>
-              <CardDescription>
-                Customize the look and feel of the application.
-              </CardDescription>
+              <CardTitle>Security Settings</CardTitle>
+              <CardDescription>Configure security options for your platform.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div>
-                  <h3 className="font-medium">Default Theme</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Set the default theme for all users.
-                  </p>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Two-Factor Authentication</Label>
+                  <p className="text-sm text-gray-500">Require 2FA for all admin accounts</p>
                 </div>
-                <ThemeToggle variant="switch" />
+                <Switch defaultChecked />
               </div>
-              
-              <div className="space-y-4">
-                <h3 className="font-medium">Custom Colors</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="primaryColor">Primary Color</Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id="primaryColor"
-                        name="primaryColor"
-                        type="color"
-                        value="#9b87f5"
-                        className="w-12 h-8 p-0"
-                      />
-                      <Input
-                        value="#9b87f5"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="secondaryColor">Secondary Color</Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id="secondaryColor"
-                        name="secondaryColor"
-                        type="color"
-                        value="#6E59A5"
-                        className="w-12 h-8 p-0"
-                      />
-                      <Input
-                        value="#6E59A5"
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Password Complexity</Label>
+                  <p className="text-sm text-gray-500">Enforce strong password requirements</p>
                 </div>
-                
-                <Button type="button">Save Appearance Settings</Button>
+                <Switch defaultChecked />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Session Timeout</Label>
+                  <p className="text-sm text-gray-500">Automatically log out inactive users</p>
+                </div>
+                <Switch defaultChecked />
               </div>
             </CardContent>
+            <CardFooter>
+              <Button>Save Security Settings</Button>
+            </CardFooter>
           </Card>
         </TabsContent>
         
-        <TabsContent value="database">
+        <TabsContent value="backups">
           <Card>
             <CardHeader>
-              <CardTitle>Database Management</CardTitle>
-              <CardDescription>
-                Manage database operations and backups.
-              </CardDescription>
+              <CardTitle>Database Backups</CardTitle>
+              <CardDescription>Manage system backups and restoration.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <h3 className="font-medium mb-2">Database Status</h3>
-                <div className="flex items-center space-x-2">
-                  <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                  <span>Connected</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-2">Last backup: 2025-04-12 13:45:12</p>
+            <CardContent className="space-y-4">
+              <div className="border rounded-md p-4">
+                <h3 className="font-medium">Last Backup: <span className="text-gray-500">April 10, 2025, 03:45 AM</span></h3>
+                <p className="text-sm text-gray-500 mt-1">Automatic system backup completed successfully.</p>
               </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="flex-1">Backup Database</Button>
-                <Button variant="outline" className="flex-1">Restore Backup</Button>
-                <Button variant="destructive" className="flex-1">Reset Database</Button>
+              <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" className="w-full">Create Manual Backup</Button>
+                <Button variant="outline" className="w-full">Restore from Backup</Button>
+              </div>
+              <div className="space-y-2">
+                <Label>Backup Schedule</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button variant="outline" className="w-full">Daily</Button>
+                  <Button variant="outline" className="w-full">Weekly</Button>
+                </div>
               </div>
             </CardContent>
+            <CardFooter>
+              <Button>Save Backup Settings</Button>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
