@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -49,6 +48,8 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { hashPassword } from '@/utils/encryption';
 
 // Import our new components
 import UserTable from '@/components/admin/UserTable';
@@ -92,7 +93,7 @@ const sampleHashtags = [
 ];
 
 const AdminDashboard: React.FC = () => {
-  const { user, isAdmin, users, getAllUsers, blockUser, unblockUser, changePassword } = useAuth();
+  const { user, isAdmin, users, getAllUsers, blockUser, unblockUser, changePassword, updateUser } = useAuth();
   const { trades, getAllTrades, deleteTrade } = useTrade();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
@@ -119,10 +120,10 @@ const AdminDashboard: React.FC = () => {
   const totalTrades = allTrades.length;
   
   // Calculate profit/loss and other trade statistics
-  const allProfitLoss = allTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const allProfitLoss = allTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
   
-  const winningTrades = allTrades.filter(trade => trade.profitLoss > 0).length;
-  const losingTrades = allTrades.filter(trade => trade.profitLoss < 0).length;
+  const winningTrades = allTrades.filter(trade => (trade.profitLoss || 0) > 0).length;
+  const losingTrades = allTrades.filter(trade => (trade.profitLoss || 0) < 0).length;
   const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
   
   // Today's trades
@@ -130,7 +131,7 @@ const AdminDashboard: React.FC = () => {
   const todayTrades = allTrades.filter(trade => trade.date === today).length;
   const todayProfit = allTrades
     .filter(trade => trade.date === today)
-    .reduce((sum, trade) => sum + trade.profitLoss, 0);
+    .reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
   
   // Find most traded pair
   const pairCount: Record<string, number> = {};
@@ -187,6 +188,70 @@ const AdminDashboard: React.FC = () => {
       title: "User Unblocked",
       description: `${user.name} has been unblocked`
     });
+  };
+
+  const handleSetAdminRole = async (user: any, isAdmin: boolean) => {
+    try {
+      const updatedUser = {
+        ...user,
+        role: isAdmin ? 'admin' : 'user',
+        isAdmin: isAdmin
+      };
+
+      await updateUser(updatedUser);
+      
+      toast({
+        title: isAdmin ? "User promoted" : "User demoted",
+        description: isAdmin 
+          ? `${user.name} has been granted admin privileges` 
+          : `${user.name} admin privileges have been revoked`
+      });
+      
+      // Refresh users list
+      getAllUsers();
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: "Error updating user role",
+        description: "Failed to update user role. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
+    try {
+      const hashedPassword = hashPassword(userData.password);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          name: userData.name,
+          email: userData.email,
+          password: hashedPassword,
+          role: userData.isAdmin ? 'admin' : 'user',
+          is_blocked: false
+        })
+        .select();
+      
+      if (error) throw new Error(error.message);
+      
+      toast({
+        title: "User Added",
+        description: `${userData.name} has been added successfully`
+      });
+      
+      // Refresh users list
+      getAllUsers();
+    } catch (error) {
+      console.error('Error adding user:', error);
+      toast({
+        title: "Error Adding User",
+        description: "Failed to add new user. Please try again.",
+        variant: "destructive"
+      });
+      throw error; // Rethrow for the component to handle
+    }
   };
 
   const handleAddHashtag = (name: string) => {
@@ -406,6 +471,8 @@ const AdminDashboard: React.FC = () => {
                     onUnblock={handleUnblockUser}
                     onChangePassword={changePassword}
                     onViewUser={handleViewUser}
+                    onSetAdmin={handleSetAdminRole}
+                    onAddUser={handleAddUser}
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
                   />
