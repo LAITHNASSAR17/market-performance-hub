@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { BarChart, BookText, Calendar, Home, LogOut, PlusCircle, Settings, Sparkles, Menu, LineChart as LineChart3, BarChart2, CreditCard, UserCircle } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LogOut, PlusCircle, Settings, Sparkles, Menu, LineChart as LineChart3, BarChart2, CreditCard, UserCircle, BookOpen, FolderKanban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useLanguage } from '@/contexts/LanguageContext';
+import AdminButton from './AdminButton';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -67,9 +68,14 @@ const Layout: React.FC<LayoutProps> = ({
     }, 
     {
       name: t('nav.notebook') || 'Notebook',
-      icon: BookText,
+      icon: BookOpen,
       href: '/notebook'
-    }, 
+    },
+    {
+      name: t('nav.tradeNotebook') || 'Trade Notebook',
+      icon: FolderKanban,
+      href: '/trade-notebook'
+    },
     {
       name: t('nav.reports') || 'Reports',
       icon: BarChart,
@@ -134,12 +140,13 @@ const Layout: React.FC<LayoutProps> = ({
                 <div className="bg-indigo-100 dark:bg-indigo-800 p-2 rounded-full">
                   <UserCircle className="h-6 w-6 text-indigo-600 dark:text-indigo-300" />
                 </div>
-                <div className="overflow-hidden">
+                <div className="overflow-hidden flex-1">
                   <p className="font-medium text-sm truncate">{user?.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {user?.isAdmin ? t('nav.admin') || 'Administrator' : t('nav.platform') || 'Basic Plan'}
                   </p>
                 </div>
+                <AdminButton />
               </div>
             </div>
           )}

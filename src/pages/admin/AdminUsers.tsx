@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import {
@@ -9,18 +10,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from '@/contexts/AuthContext';
-import { PlusCircle, Search, RefreshCcw, Trash2, Edit, ExternalLink, Shield, ShieldOff, CheckCircle, XCircle } from 'lucide-react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -30,25 +26,45 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Search, MoreHorizontal, UserPlus, AlertTriangle, PencilLine, Trash2, Eye, EyeOff, ArchiveX, Filter, Download, Upload, MailPlus, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
+// Types
 interface User {
   id: string;
   name: string;
   email: string;
-  isAdmin: boolean;
-  isActive: boolean;
-  createdAt: string;
-  subscriptionTier: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'inactive' | 'suspended';
+  lastLogin: string;
+  joined: string;
+  subscriptionTier: 'Basic' | 'Pro' | 'Enterprise';
 }
 
-const AdminUsers: React.FC = () => {
+const AdminUsers = () => {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -57,8 +73,8 @@ const AdminUsers: React.FC = () => {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    isAdmin: false,
+    role: 'user',
+    status: 'active',
     subscriptionTier: 'Basic'
   });
 
@@ -71,11 +87,10 @@ const AdminUsers: React.FC = () => {
       setFilteredUsers(users);
       return;
     }
-
-    const lowerCaseQuery = searchQuery.toLowerCase();
+    
     const filtered = users.filter(user => 
-      user.name.toLowerCase().includes(lowerCaseQuery) ||
-      user.email.toLowerCase().includes(lowerCaseQuery)
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
     
     setFilteredUsers(filtered);
@@ -88,71 +103,76 @@ const AdminUsers: React.FC = () => {
       const mockUsers: User[] = [
         {
           id: '1',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          isAdmin: false,
-          isActive: true,
-          createdAt: '2023-05-15T10:30:00',
-          subscriptionTier: 'Basic'
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          isAdmin: false,
-          isActive: true,
-          createdAt: '2023-06-22T14:45:00',
-          subscriptionTier: 'Premium'
-        },
-        {
-          id: '3',
-          name: 'Admin User',
-          email: 'admin@example.com',
-          isAdmin: true,
-          isActive: true,
-          createdAt: '2022-11-05T09:15:00',
+          name: 'John Smith',
+          email: 'john@example.com',
+          role: 'admin',
+          status: 'active',
+          lastLogin: '2025-03-15T10:30:00Z',
+          joined: '2025-01-10T09:00:00Z',
           subscriptionTier: 'Enterprise'
         },
         {
-          id: '4',
-          name: 'Inactive User',
-          email: 'inactive@example.com',
-          isAdmin: false,
-          isActive: false,
-          createdAt: '2023-07-10T16:20:00',
+          id: '2',
+          name: 'Sarah Johnson',
+          email: 'sarah@example.com',
+          role: 'user',
+          status: 'active',
+          lastLogin: '2025-04-10T14:20:00Z',
+          joined: '2025-01-15T11:30:00Z',
+          subscriptionTier: 'Pro'
+        },
+        {
+          id: '3',
+          name: 'Michael Davis',
+          email: 'michael@example.com',
+          role: 'user',
+          status: 'inactive',
+          lastLogin: '2025-02-28T09:45:00Z',
+          joined: '2025-01-20T13:45:00Z',
           subscriptionTier: 'Basic'
+        },
+        {
+          id: '4',
+          name: 'Emily Wilson',
+          email: 'emily@example.com',
+          role: 'user',
+          status: 'suspended',
+          lastLogin: '2025-03-05T16:10:00Z',
+          joined: '2025-01-22T10:15:00Z',
+          subscriptionTier: 'Basic'
+        },
+        {
+          id: '5',
+          name: 'David Taylor',
+          email: 'david@example.com',
+          role: 'user',
+          status: 'active',
+          lastLogin: '2025-04-11T11:25:00Z',
+          joined: '2025-01-25T14:30:00Z',
+          subscriptionTier: 'Pro'
         }
       ];
       
       setUsers(mockUsers);
       setFilteredUsers(mockUsers);
       setIsLoading(false);
-    }, 800);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    }, 1000);
   };
 
   const handleCreateUser = () => {
     if (!formData.name || !formData.email || !formData.password) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Please fill all required fields",
         variant: "destructive"
       });
       return;
     }
     
-    if (formData.password !== formData.confirmPassword) {
+    if (!formData.email.includes('@')) {
       toast({
-        title: "Password Mismatch",
-        description: "Passwords do not match",
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
         variant: "destructive"
       });
       return;
@@ -162,14 +182,15 @@ const AdminUsers: React.FC = () => {
       id: (users.length + 1).toString(),
       name: formData.name,
       email: formData.email,
-      isAdmin: formData.isAdmin,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      subscriptionTier: formData.subscriptionTier
+      role: formData.role as 'admin' | 'user',
+      status: formData.status as 'active' | 'inactive' | 'suspended',
+      lastLogin: 'Never',
+      joined: new Date().toISOString(),
+      subscriptionTier: formData.subscriptionTier as 'Basic' | 'Pro' | 'Enterprise'
     };
     
-    setUsers(prev => [...prev, newUser]);
-    setFilteredUsers(prev => [...prev, newUser]);
+    setUsers([...users, newUser]);
+    setFilteredUsers([...filteredUsers, newUser]);
     
     toast({
       title: "User Created",
@@ -180,10 +201,11 @@ const AdminUsers: React.FC = () => {
       name: '',
       email: '',
       password: '',
-      confirmPassword: '',
-      isAdmin: false,
+      role: 'user',
+      status: 'active',
       subscriptionTier: 'Basic'
     });
+    
     setShowCreateDialog(false);
   };
 
@@ -194,10 +216,11 @@ const AdminUsers: React.FC = () => {
       user.id === currentUser.id 
         ? { 
             ...user, 
-            name: formData.name,
+            name: formData.name, 
             email: formData.email,
-            isAdmin: formData.isAdmin,
-            subscriptionTier: formData.subscriptionTier
+            role: formData.role as 'admin' | 'user',
+            status: formData.status as 'active' | 'inactive' | 'suspended',
+            subscriptionTier: formData.subscriptionTier as 'Basic' | 'Pro' | 'Enterprise'
           } 
         : user
     );
@@ -224,199 +247,197 @@ const AdminUsers: React.FC = () => {
     
     toast({
       title: "User Deleted",
-      description: "The user has been deleted successfully"
+      description: "User has been deleted successfully"
     });
   };
 
-  const handleToggleAdmin = (userId: string) => {
-    const updatedUsers = users.map(user => 
-      user.id === userId 
-        ? { ...user, isAdmin: !user.isAdmin } 
-        : user
-    );
-    
-    setUsers(updatedUsers);
-    setFilteredUsers(updatedUsers);
-    
-    const targetUser = updatedUsers.find(user => user.id === userId);
-    if (targetUser) {
-      toast({
-        title: targetUser.isAdmin ? "Admin Privileges Granted" : "Admin Privileges Removed",
-        description: `${targetUser.name} is ${targetUser.isAdmin ? 'now an admin' : 'no longer an admin'}`
-      });
-    }
-  };
-
-  const handleToggleStatus = (userId: string) => {
-    const updatedUsers = users.map(user => 
-      user.id === userId 
-        ? { ...user, isActive: !user.isActive } 
-        : user
-    );
-    
-    setUsers(updatedUsers);
-    setFilteredUsers(updatedUsers);
-    
-    const targetUser = updatedUsers.find(user => user.id === userId);
-    if (targetUser) {
-      toast({
-        title: targetUser.isActive ? "User Activated" : "User Deactivated",
-        description: `${targetUser.name} has been ${targetUser.isActive ? 'activated' : 'deactivated'}`
-      });
-    }
-  };
-
-  const openEditDialog = (user: User) => {
+  const handleEditClick = (user: User) => {
     setCurrentUser(user);
     setFormData({
       name: user.name,
       email: user.email,
       password: '',
-      confirmPassword: '',
-      isAdmin: user.isAdmin,
+      role: user.role,
+      status: user.status,
       subscriptionTier: user.subscriptionTier
     });
     setShowEditDialog(true);
   };
 
-  const handleChangeSubscription = (userId: string, tier: string) => {
-    const updatedUsers = users.map(user => 
-      user.id === userId 
-        ? { ...user, subscriptionTier: tier } 
-        : user
-    );
-    
-    setUsers(updatedUsers);
-    setFilteredUsers(updatedUsers);
-    
-    const targetUser = updatedUsers.find(user => user.id === userId);
-    if (targetUser) {
-      toast({
-        title: "Subscription Changed",
-        description: `${targetUser.name}'s subscription changed to ${tier}`
-      });
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300';
+      case 'suspended':
+        return 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400';
+      default:
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400';
+    }
+  };
+
+  const getSubscriptionBadgeColor = (tier: string) => {
+    switch (tier) {
+      case 'Basic':
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300';
+      case 'Pro':
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'Enterprise':
+        return 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-400';
+      default:
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300';
     }
   };
 
   return (
     <AdminLayout>
-      <div className="container mx-auto py-10">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">User Management</h1>
-          
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={fetchUsers}>
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-            
-            <Button onClick={() => setShowCreateDialog(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add User
-            </Button>
-          </div>
-        </div>
+      <div className="container mx-auto py-4">
+        <header className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold">User Management</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">View and manage user accounts</p>
+        </header>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Users</CardTitle>
-            <CardDescription>
-              Manage all users and their permissions
-            </CardDescription>
-            <div className="mt-4 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
-              <Input
-                placeholder="Search users..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="flex flex-col md:flex-row gap-4 mb-4 justify-between">
+              <div className="flex items-center relative max-w-md w-full">
+                <Search className="absolute left-3 text-gray-400" size={18} />
+                <Input 
+                  placeholder="Search users by name or email..." 
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <div className="flex flex-col md:flex-row gap-2">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Filter size={16} />
+                  <span>Filter</span>
+                </Button>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Download size={16} />
+                  <span>Export</span>
+                </Button>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <MailPlus size={16} />
+                  <span>Invite</span>
+                </Button>
+                <Button onClick={() => setShowCreateDialog(true)} className="flex items-center gap-2">
+                  <UserPlus size={16} />
+                  <span>Add User</span>
+                </Button>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Subscription</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
+            
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Loading users...</p>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
-                        Loading users...
-                      </TableCell>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Subscription</TableHead>
+                      <TableHead>Last Login</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ) : filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
-                        No users found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.isAdmin ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {user.isAdmin ? 'Admin' : 'User'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {user.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={user.subscriptionTier}
-                            onValueChange={(value) => handleChangeSubscription(user.id, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue placeholder="Select tier" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Basic">Basic</SelectItem>
-                              <SelectItem value="Premium">Premium</SelectItem>
-                              <SelectItem value="Enterprise">Enterprise</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-right space-x-1">
-                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(user)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleToggleAdmin(user.id)}>
-                            {user.isAdmin ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleToggleStatus(user.id)}>
-                            {user.isActive ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)}>
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={user.role === 'admin' ? 'default' : 'outline'}>
+                              {user.role === 'admin' ? 'Admin' : 'User'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusBadgeColor(user.status)} variant="outline">
+                              {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getSubscriptionBadgeColor(user.subscriptionTier)} variant="outline">
+                              {user.subscriptionTier}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {typeof user.lastLogin === 'string' && user.lastLogin !== 'Never' 
+                              ? new Date(user.lastLogin).toLocaleDateString() 
+                              : 'Never'}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(user.joined).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                  onClick={() => handleEditClick(user)}
+                                >
+                                  <PencilLine className="mr-2 h-4 w-4" />
+                                  Edit details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="cursor-pointer"
+                                >
+                                  {user.status === 'active' ? (
+                                    <>
+                                      <EyeOff className="mr-2 h-4 w-4" />
+                                      Deactivate
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      Activate
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem 
+                                  className="cursor-pointer text-red-600 focus:text-red-600"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={8} className="h-24 text-center">
+                          No users found.
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -424,84 +445,94 @@ const AdminUsers: React.FC = () => {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New User</DialogTitle>
+            <DialogTitle>Add New User</DialogTitle>
             <DialogDescription>
-              Add a new user to the system
+              Create a new user account with the following details.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
               <Label htmlFor="name">Name</Label>
               <Input 
                 id="name" 
-                name="name" 
-                placeholder="Full Name" 
+                placeholder="Full name" 
                 value={formData.name}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input 
                 id="email" 
-                name="email" 
                 type="email" 
-                placeholder="email@example.com" 
+                placeholder="Email address" 
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
               <Input 
                 id="password" 
-                name="password" 
                 type="password" 
+                placeholder="Create password" 
                 value={formData.password}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input 
-                id="confirmPassword" 
-                name="confirmPassword" 
-                type="password" 
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="role">Role</Label>
+                <Select 
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({...formData, role: value})}
+                >
+                  <SelectTrigger id="role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="status">Status</Label>
+                <Select 
+                  value={formData.status} 
+                  onValueChange={(value) => setFormData({...formData, status: value})}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="subscriptionTier">Subscription Tier</Label>
+            <div className="grid gap-2">
+              <Label htmlFor="subscription">Subscription Tier</Label>
               <Select 
                 value={formData.subscriptionTier} 
-                onValueChange={(value) => handleSelectChange('subscriptionTier', value)}
+                onValueChange={(value) => setFormData({...formData, subscriptionTier: value})}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select tier" />
+                <SelectTrigger id="subscription">
+                  <SelectValue placeholder="Select subscription tier" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Basic">Basic</SelectItem>
-                  <SelectItem value="Premium">Premium</SelectItem>
+                  <SelectItem value="Pro">Pro</SelectItem>
                   <SelectItem value="Enterprise">Enterprise</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="isAdmin"
-                checked={formData.isAdmin}
-                onChange={(e) => handleSelectChange('isAdmin', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <Label htmlFor="isAdmin">Administrator Account</Label>
             </div>
           </div>
           
@@ -521,60 +552,82 @@ const AdminUsers: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              Update user information
+              Update user account details.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
               <Label htmlFor="edit-name">Name</Label>
               <Input 
                 id="edit-name" 
-                name="name" 
-                placeholder="Full Name" 
+                placeholder="Full name" 
                 value={formData.name}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="grid gap-2">
               <Label htmlFor="edit-email">Email</Label>
               <Input 
                 id="edit-email" 
-                name="email" 
                 type="email" 
-                placeholder="email@example.com" 
+                placeholder="Email address" 
                 value={formData.email}
-                onChange={handleInputChange}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="edit-subscriptionTier">Subscription Tier</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-role">Role</Label>
+                <Select 
+                  value={formData.role} 
+                  onValueChange={(value) => setFormData({...formData, role: value})}
+                >
+                  <SelectTrigger id="edit-role">
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select 
+                  value={formData.status} 
+                  onValueChange={(value) => setFormData({...formData, status: value})}
+                >
+                  <SelectTrigger id="edit-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="edit-subscription">Subscription Tier</Label>
               <Select 
                 value={formData.subscriptionTier} 
-                onValueChange={(value) => handleSelectChange('subscriptionTier', value)}
+                onValueChange={(value) => setFormData({...formData, subscriptionTier: value})}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select tier" />
+                <SelectTrigger id="edit-subscription">
+                  <SelectValue placeholder="Select subscription tier" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Basic">Basic</SelectItem>
-                  <SelectItem value="Premium">Premium</SelectItem>
+                  <SelectItem value="Pro">Pro</SelectItem>
                   <SelectItem value="Enterprise">Enterprise</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="edit-isAdmin"
-                checked={formData.isAdmin}
-                onChange={(e) => handleSelectChange('isAdmin', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              <Label htmlFor="edit-isAdmin">Administrator Account</Label>
             </div>
           </div>
           
