@@ -2,12 +2,18 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon } from 'lucide-react';
+import { Image as ImageIcon, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/components/ui/use-toast';
 import ImageUpload from '@/components/ImageUpload';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
-const FaviconUpload: React.FC = () => {
+interface FaviconUploadProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+const FaviconUpload: React.FC<FaviconUploadProps> = ({ isOpen, onClose }) => {
   const { t } = useLanguage();
   const [favicon, setFavicon] = React.useState<string | null>(null);
 
@@ -38,6 +44,11 @@ const FaviconUpload: React.FC = () => {
         title: t('settings.faviconUpdated') || "Favicon Updated",
         description: t('settings.faviconUpdatedDesc') || "The website favicon has been updated successfully."
       });
+      
+      // Close the dialog if onClose prop exists
+      if (onClose) {
+        onClose();
+      }
     } else {
       toast({
         title: t('settings.noFaviconSelected') || "No Favicon Selected",
@@ -47,6 +58,43 @@ const FaviconUpload: React.FC = () => {
     }
   };
 
+  // Render as a dialog if isOpen prop is provided
+  if (isOpen !== undefined) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              {t('settings.favicon') || "Website Favicon"}
+            </DialogTitle>
+            <DialogDescription>
+              {t('settings.faviconDesc') || "Upload an image to use as the website favicon (the icon shown in browser tabs)."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <ImageUpload 
+              value={favicon} 
+              onChange={handleFaviconChange} 
+              className="max-w-[300px] mx-auto"
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              {t('common.cancel') || "Cancel"}
+            </Button>
+            <Button onClick={handleSave}>
+              {t('settings.saveFavicon') || "Save Favicon"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Render as a card if no isOpen prop is provided (default view)
   return (
     <Card>
       <CardHeader>
