@@ -1,8 +1,9 @@
+
 import { BaseModel } from './BaseModel';
 
 export interface CalendarEvent {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   title: string;
   description: string;
   eventType: 'trade' | 'note' | 'reminder' | 'custom';
@@ -10,7 +11,7 @@ export interface CalendarEvent {
   endDate: Date;
   allDay: boolean;
   color: string;
-  relatedEntityId?: number; // ID of related entity (trade, note, etc.)
+  relatedEntityId?: string; // ID of related entity (trade, note, etc.)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,34 +22,28 @@ export class CalendarModel extends BaseModel {
   }
 
   // Get all calendar events for a user
-  async getUserEvents(userId: number, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
-    let sql = "SELECT * FROM calendar_events WHERE userId = ?";
-    const params: any[] = [userId];
+  async getUserEvents(userId: string, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
+    let query: Record<string, any> = { userId };
     
     if (startDate) {
-      sql += " AND startDate >= ?";
-      params.push(startDate.toISOString());
+      query.startDate = { $gte: startDate };
     }
     
     if (endDate) {
-      sql += " AND endDate <= ?";
-      params.push(endDate.toISOString());
+      query.endDate = { $lte: endDate };
     }
     
-    sql += " ORDER BY startDate ASC";
-    
-    return this.query(sql, params);
+    return this.findAll(query);
   }
 
   // Get event by ID
-  async getEventById(id: number, userId: number): Promise<CalendarEvent | null> {
-    const sql = "SELECT * FROM calendar_events WHERE id = ? AND userId = ?";
-    const results = await this.query(sql, [id, userId]);
-    return results.length > 0 ? results[0] : null;
+  async getEventById(id: string, userId: string): Promise<CalendarEvent | null> {
+    const result = await this.findAll({ _id: id, userId });
+    return result.length > 0 ? result[0] : null;
   }
 
   // Create a new calendar event
-  async createEvent(event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> {
+  async createEvent(event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     // Sanitize input
     const sanitizedEvent = this.sanitizeObject(event);
     
@@ -60,13 +55,11 @@ export class CalendarModel extends BaseModel {
       updatedAt: now
     };
     
-    const result = await this.create(eventWithTimestamps);
-    // Convert string IDs to number if needed
-    return typeof result === 'string' ? parseInt(result, 10) : result;
+    return await this.create(eventWithTimestamps);
   }
 
   // Update a calendar event
-  async updateEvent(id: number, userId: number, eventData: Partial<CalendarEvent>): Promise<boolean> {
+  async updateEvent(id: string, userId: string, eventData: Partial<CalendarEvent>): Promise<boolean> {
     // Sanitize input
     const sanitizedEvent = this.sanitizeObject(eventData);
     
@@ -76,45 +69,43 @@ export class CalendarModel extends BaseModel {
       updatedAt: new Date()
     };
     
-    const sql = "UPDATE calendar_events SET ? WHERE id = ? AND userId = ?";
-    const result = await this.query(sql, [dataWithTimestamp, id, userId]);
-    return result.length > 0 && result[0].affectedRows > 0;
+    const result = await this.query("UPDATE calendar_events SET ? WHERE id = ? AND userId = ?", [dataWithTimestamp, id, userId]);
+    return result.length > 0 && result[0]?.affectedRows > 0;
   }
 
   // Delete a calendar event
-  async deleteEvent(id: number, userId: number): Promise<boolean> {
-    const sql = "DELETE FROM calendar_events WHERE id = ? AND userId = ?";
-    const result = await this.query(sql, [id, userId]);
-    return result.length > 0 && result[0].affectedRows > 0;
+  async deleteEvent(id: string, userId: string): Promise<boolean> {
+    const result = await this.query("DELETE FROM calendar_events WHERE id = ? AND userId = ?", [id, userId]);
+    return result.length > 0 && result[0]?.affectedRows > 0;
   }
 
   // Get events by type
-  async getEventsByType(userId: number, eventType: string): Promise<CalendarEvent[]> {
-    const sql = "SELECT * FROM calendar_events WHERE userId = ? AND eventType = ? ORDER BY startDate ASC";
-    return this.query(sql, [userId, eventType]);
+  async getEventsByType(userId: string, eventType: string): Promise<CalendarEvent[]> {
+    return this.findAll({ userId, eventType });
   }
 
   // Get events for a specific date
-  async getEventsForDate(userId: number, date: Date): Promise<CalendarEvent[]> {
+  async getEventsForDate(userId: string, date: Date): Promise<CalendarEvent[]> {
     // Format date to YYYY-MM-DD for comparison
     const formattedDate = date.toISOString().split('T')[0];
     
-    const sql = `
-      SELECT * FROM calendar_events 
-      WHERE userId = ? 
-      AND (
-        (DATE(startDate) <= ? AND DATE(endDate) >= ?) OR
-        (allDay = 1 AND DATE(startDate) = ?)
-      )
-      ORDER BY startDate ASC
-    `;
-    
-    return this.query(sql, [userId, formattedDate, formattedDate, formattedDate]);
+    return this.findAll({
+      userId,
+      $or: [
+        {
+          startDate: { $lte: formattedDate },
+          endDate: { $gte: formattedDate }
+        },
+        {
+          allDay: true,
+          startDate: formattedDate
+        }
+      ]
+    });
   }
 
   // Get events related to a specific entity (e.g., trade)
-  async getRelatedEvents(userId: number, relatedEntityId: number): Promise<CalendarEvent[]> {
-    const sql = "SELECT * FROM calendar_events WHERE userId = ? AND relatedEntityId = ? ORDER BY startDate ASC";
-    return this.query(sql, [userId, relatedEntityId]);
+  async getRelatedEvents(userId: string, relatedEntityId: string): Promise<CalendarEvent[]> {
+    return this.findAll({ userId, relatedEntityId });
   }
 }

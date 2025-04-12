@@ -1,10 +1,5 @@
 
-export interface MongoDBConfig {
-  connectionString: string;
-  database: string;
-  username: string;
-  password: string;
-}
+import { MongoDBConfig } from '../models/mongodb.model';
 
 export class MongoDB {
   private static instance: MongoDB;

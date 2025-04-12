@@ -1,8 +1,12 @@
 
 import { MongoDB } from '../utils/mongodb';
-import type { MongoDBConfig } from '../utils/mongodb';
 
-export type { MongoDBConfig };
+export type MongoDBConfig = {
+  connectionString: string;
+  database: string;
+  username: string;
+  password: string;
+};
 
 export interface MongoDBCollection {
   name: string;

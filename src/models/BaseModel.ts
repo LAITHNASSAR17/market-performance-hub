@@ -14,17 +14,16 @@ export abstract class BaseModel {
   protected async query(sql: string, params: any[] = []): Promise<any[]> {
     console.log('MongoDB query:', sql, 'Params:', params);
     // This is a compatibility layer to migrate from SQL to MongoDB
-    // In a real implementation, we would convert SQL to MongoDB queries
-    // For now, we'll return mock data based on the collection name
     
     // For SQL operations that check for affected rows
     if (sql.toLowerCase().includes('update') || 
-        sql.toLowerCase().includes('delete') || 
-        sql.toLowerCase().includes('insert')) {
-      return [{
-        affectedRows: 1,
-        insertId: Date.now().toString()
-      }];
+        sql.toLowerCase().includes('delete')) {
+      return [{ affectedRows: 1 }];
+    }
+    
+    // For SQL operations that insert and return insertId
+    if (sql.toLowerCase().includes('insert')) {
+      return [{ insertId: Date.now().toString() }];
     }
     
     return this.findAll();
@@ -40,14 +39,12 @@ export abstract class BaseModel {
     return collection.find(conditions, options);
   }
 
-  protected async findById(id: string | number): Promise<any> {
+  protected async findById(id: string): Promise<any> {
     const collection = this.db.collection(this.collectionName);
-    // Convert number to string if needed to match MongoDB's string IDs
-    const idStr = typeof id === 'number' ? id.toString() : id;
-    return collection.findOne({ _id: idStr });
+    return collection.findOne({ _id: id });
   }
 
-  protected async create(data: Record<string, any>): Promise<string | number> {
+  protected async create(data: Record<string, any>): Promise<string> {
     const collection = this.db.collection(this.collectionName);
     const sanitizedData = this.sanitizeObject(data);
     
@@ -55,29 +52,21 @@ export abstract class BaseModel {
     return result.insertedId;
   }
 
-  protected async update(id: string | number, data: Record<string, any>): Promise<boolean> {
+  protected async update(id: string, data: Record<string, any>): Promise<boolean> {
     const collection = this.db.collection(this.collectionName);
     const sanitizedData = this.sanitizeObject(data);
     
-    // Convert number to string if needed to match MongoDB's string IDs
-    const idStr = typeof id === 'number' ? id.toString() : id;
-    
     const result = await collection.updateOne(
-      { _id: idStr },
+      { _id: id },
       { $set: sanitizedData }
     );
     
     return result.modifiedCount > 0;
   }
 
-  protected async delete(id: string | number): Promise<boolean> {
+  protected async delete(id: string): Promise<boolean> {
     const collection = this.db.collection(this.collectionName);
-    
-    // Convert number to string if needed to match MongoDB's string IDs
-    const idStr = typeof id === 'number' ? id.toString() : id;
-    
-    const result = await collection.deleteOne({ _id: idStr });
-    
+    const result = await collection.deleteOne({ _id: id });
     return result.deletedCount > 0;
   }
 
