@@ -45,6 +45,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           size="icon" 
           onClick={toggleTheme}
           className={className}
+          aria-label={t('theme.toggle') || 'Toggle theme'}
         >
           {theme === 'dark' ? (
             <Sun className="h-5 w-5" />
