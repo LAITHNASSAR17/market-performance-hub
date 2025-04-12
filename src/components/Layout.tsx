@@ -50,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: t('nav.reports'), icon: BarChart, href: '/reports' },
     { name: t('nav.insights'), icon: Sparkles, href: '/insights' },
     { name: t('analytics.title') || 'Analytics', icon: BarChart2, href: '/analytics' },
-    { name: t('chart.title') || 'Chart', icon: LineChart3, href: '/chart' },
+    { name: t('chart.title') || 'Chart', icon: LineChart, href: '/chart' },
   ];
 
   // Add admin link only for admin users
@@ -92,21 +92,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-white hover:bg-trading-blue-dark"
+              className="text-white hover:bg-trading-blue-dark md:hidden"
               onClick={toggleSidebar}
             >
-              <Menu className="h-5 w-5" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto py-4 px-3">
-            <nav className="space-y-1">
+            <nav className="space-y-2">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    "flex items-center px-4 py-3 text-sm font-medium rounded-md",
+                    "flex items-center px-4 py-2.5 text-sm font-medium rounded-md",
                     location.pathname === item.href
                       ? "bg-trading-blue-dark text-white"
                       : "text-white hover:bg-trading-blue-dark"
@@ -128,17 +128,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Badge className="mt-1 bg-purple-500">{t('nav.admin')}</Badge>
               )}
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col space-y-2">
               <Button
                 variant="outline"
-                className="flex-1 justify-start text-white border-white hover:bg-trading-blue-dark"
+                className="w-full justify-start text-white border-white hover:bg-trading-blue-dark"
                 onClick={logout}
               >
                 <LogOut className={`h-4 w-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
                 {t('nav.logout')}
               </Button>
               
-              <LanguageToggle className="text-white hover:bg-trading-blue-dark" />
+              <LanguageToggle className="w-full justify-start text-white hover:bg-trading-blue-dark" />
             </div>
           </div>
         </div>
