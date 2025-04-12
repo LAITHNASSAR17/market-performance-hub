@@ -1,8 +1,7 @@
-
 import { BaseModel } from './BaseModel';
 
 export interface Theme {
-  id: number;
+  id: string;
   name: string;
   type: 'light' | 'dark' | 'custom';
   isDefault: boolean;
@@ -29,7 +28,7 @@ export class ThemeModel extends BaseModel {
   }
 
   // Get theme by ID
-  async getThemeById(id: number): Promise<Theme | null> {
+  async getThemeById(id: string): Promise<Theme | null> {
     return this.findById(id);
   }
 
@@ -48,7 +47,7 @@ export class ThemeModel extends BaseModel {
   }
 
   // Create a new theme
-  async createTheme(theme: Omit<Theme, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> {
+  async createTheme(theme: Omit<Theme, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     // Sanitize input
     const sanitizedTheme = this.sanitizeObject(theme);
     
@@ -65,13 +64,11 @@ export class ThemeModel extends BaseModel {
       await this.clearDefaultThemes();
     }
     
-    const result = await this.create(themeWithTimestamps);
-    // Convert string IDs to number if needed
-    return typeof result === 'string' ? parseInt(result, 10) : result;
+    return await this.create(themeWithTimestamps);
   }
 
   // Update a theme
-  async updateTheme(id: number, themeData: Partial<Theme>): Promise<boolean> {
+  async updateTheme(id: string, themeData: Partial<Theme>): Promise<boolean> {
     // Sanitize input
     const sanitizedTheme = this.sanitizeObject(themeData);
     
@@ -86,11 +83,11 @@ export class ThemeModel extends BaseModel {
       await this.clearDefaultThemes();
     }
     
-    return this.update(id.toString(), dataWithTimestamp);
+    return this.update(id, dataWithTimestamp);
   }
 
   // Delete a theme
-  async deleteTheme(id: number): Promise<boolean> {
+  async deleteTheme(id: string): Promise<boolean> {
     // Check if theme is default
     const theme = await this.getThemeById(id);
     if (theme?.isDefault) {
@@ -101,17 +98,17 @@ export class ThemeModel extends BaseModel {
       throw new Error('Cannot delete a system theme');
     }
     
-    return this.delete(id.toString());
+    return this.delete(id);
   }
 
   // Set a theme as the default theme
-  async setDefaultTheme(id: number): Promise<boolean> {
+  async setDefaultTheme(id: string): Promise<boolean> {
     try {
       // First, clear all default flags
       await this.clearDefaultThemes();
       
       // Then set this theme as default
-      return this.update(id.toString(), { isDefault: true });
+      return this.update(id, { isDefault: true });
     } catch (error) {
       console.error('Error setting default theme:', error);
       return false;

@@ -1,8 +1,9 @@
+
 import { BaseModel } from './BaseModel';
 import * as crypto from 'crypto-js';
 
 export interface User {
-  id: number;
+  id: string;
   username: string;
   email: string;
   password?: string;
@@ -18,8 +19,8 @@ export class UserModel extends BaseModel {
     super('users');
   }
 
-  async findById(id: number): Promise<User | null> {
-    if (!this.validateNumber(id)) {
+  async findById(id: string): Promise<User | null> {
+    if (!this.validateString(id)) {
       throw new Error('Invalid user ID');
     }
 
@@ -46,7 +47,7 @@ export class UserModel extends BaseModel {
     return result[0] || null;
   }
 
-  async create(userData: Omit<User, 'id' | 'createdAt'>): Promise<number> {
+  async create(userData: Omit<User, 'id' | 'createdAt'>): Promise<string> {
     if (!this.validateString(userData.username) || !this.validateEmail(userData.email)) {
       throw new Error('Invalid user data');
     }
@@ -80,13 +81,11 @@ export class UserModel extends BaseModel {
     ]);
 
     // Extract insertId from MongoDB-compatible result
-    return result.length > 0 && result[0].insertId ? 
-      (typeof result[0].insertId === 'string' ? parseInt(result[0].insertId, 10) : result[0].insertId) : 
-      Date.now();
+    return result.length > 0 && result[0].insertId ? result[0].insertId.toString() : Date.now().toString();
   }
 
-  async update(id: number, userData: Partial<User>): Promise<boolean> {
-    if (!this.validateNumber(id)) {
+  async update(id: string, userData: Partial<User>): Promise<boolean> {
+    if (!this.validateString(id)) {
       throw new Error('Invalid user ID');
     }
 
@@ -133,7 +132,7 @@ export class UserModel extends BaseModel {
     return result.length > 0 && result[0].affectedRows > 0;
   }
 
-  async updateLastLogin(id: number): Promise<boolean> {
+  async updateLastLogin(id: string): Promise<boolean> {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const sql = 'UPDATE users SET lastLogin = ? WHERE id = ?';
     const result = await this.query(sql, [now, id]);
@@ -141,19 +140,19 @@ export class UserModel extends BaseModel {
     return result.length > 0 && result[0].affectedRows > 0;
   }
 
-  async delete(id: number): Promise<boolean> {
-    if (!this.validateNumber(id)) {
+  async delete(id: string): Promise<boolean> {
+    if (!this.validateString(id)) {
       throw new Error('Invalid user ID');
     }
 
     return super.delete(id);
   }
 
-  async blockUser(id: number): Promise<boolean> {
+  async blockUser(id: string): Promise<boolean> {
     return this.update(id, { isBlocked: true });
   }
 
-  async unblockUser(id: number): Promise<boolean> {
+  async unblockUser(id: string): Promise<boolean> {
     return this.update(id, { isBlocked: false });
   }
 

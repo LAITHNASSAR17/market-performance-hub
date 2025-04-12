@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { AdminController } from '@/controllers/AdminController';
-import { useMySQL } from '@/contexts/MySQLContext';
+import { useMongoDBContext } from '@/contexts/MongoDBContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -21,10 +20,10 @@ const AdminDatabase: React.FC = () => {
     config, 
     setConfig, 
     connectionStatus, 
-    tables, 
-    fetchTables, 
+    collections, 
+    fetchCollections, 
     executeQuery 
-  } = useMySQL();
+  } = useMongoDBContext();
 
   const [dbStatus, setDbStatus] = useState<{status: string, tables: number, size: string} | null>(null);
   const [loading, setLoading] = useState(false);
@@ -53,7 +52,7 @@ const AdminDatabase: React.FC = () => {
     try {
       await connect();
       if (connectionStatus === 'connected') {
-        await fetchTables();
+        await fetchCollections();
       }
     } catch (error) {
       console.error("Error connecting to database:", error);
@@ -97,7 +96,7 @@ const AdminDatabase: React.FC = () => {
     if (!sqlQuery.trim()) {
       toast({
         title: "Empty Query",
-        description: "Please enter a SQL query",
+        description: "Please enter a MongoDB query",
         variant: "destructive"
       });
       return;
@@ -110,7 +109,7 @@ const AdminDatabase: React.FC = () => {
         toast({
           title: "Query Executed",
           description: result.data ? `Returned ${Array.isArray(result.data) ? result.data.length : 1} results` 
-            : `Affected ${result.affectedRows || 0} rows`
+            : `Affected ${result.modifiedCount || 0} documents`
         });
       } else {
         toast({
@@ -125,11 +124,11 @@ const AdminDatabase: React.FC = () => {
     }
   };
 
-  const handleSelectTable = async (tableName: string) => {
-    setSelectedTable(tableName);
+  const handleSelectTable = async (collectionName: string) => {
+    setSelectedTable(collectionName);
     try {
-      // Fetch table structure to get columns
-      const structure = await adminController.getDatabaseTableStructure(tableName);
+      // Fetch collection structure to get fields
+      const structure = await adminController.getDatabaseTableStructure(collectionName);
       if (structure && Array.isArray(structure)) {
         setTableColumns(structure.map(col => col.Field || col.name));
       } else {
@@ -137,10 +136,10 @@ const AdminDatabase: React.FC = () => {
       }
       
       // Fetch sample data
-      const data = await adminController.getDatabaseTableData(tableName);
+      const data = await adminController.getDatabaseTableData(collectionName);
       setTableData(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(`Error fetching data for table ${tableName}:`, error);
+      console.error(`Error fetching data for collection ${collectionName}:`, error);
       setTableColumns([]);
       setTableData([]);
     }
@@ -153,7 +152,7 @@ const AdminDatabase: React.FC = () => {
           Database Management
         </h1>
         <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-          Connect to MySQL database and perform operations.
+          Connect to MongoDB database and perform operations.
         </p>
       </header>
 
@@ -163,31 +162,31 @@ const AdminDatabase: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Database className="mr-2 h-5 w-5" />
-              Database Connection
+              MongoDB Connection
             </CardTitle>
             <CardDescription>
               {connectionStatus === 'connected' 
-                ? `Connected to ${config.database} on ${config.host}`
-                : 'Configure your database connection'}
+                ? `Connected to ${config.database}`
+                : 'Configure your MongoDB connection'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {connectionStatus !== 'connected' ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Host</label>
+                  <label className="block text-sm font-medium mb-1">Connection String</label>
                   <Input
-                    value={config.host}
-                    onChange={(e) => setConfig({ ...config, host: e.target.value })}
-                    placeholder="localhost"
+                    value={config.connectionString}
+                    onChange={(e) => setConfig({ ...config, connectionString: e.target.value })}
+                    placeholder="mongodb://localhost:27017"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Port</label>
+                  <label className="block text-sm font-medium mb-1">Database</label>
                   <Input
-                    value={config.port}
-                    onChange={(e) => setConfig({ ...config, port: e.target.value })}
-                    placeholder="3306"
+                    value={config.database}
+                    onChange={(e) => setConfig({ ...config, database: e.target.value })}
+                    placeholder="trading_journal"
                   />
                 </div>
                 <div>
@@ -195,7 +194,7 @@ const AdminDatabase: React.FC = () => {
                   <Input
                     value={config.username}
                     onChange={(e) => setConfig({ ...config, username: e.target.value })}
-                    placeholder="root"
+                    placeholder="admin"
                   />
                 </div>
                 <div>
@@ -207,14 +206,6 @@ const AdminDatabase: React.FC = () => {
                     placeholder="********"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Database</label>
-                  <Input
-                    value={config.database}
-                    onChange={(e) => setConfig({ ...config, database: e.target.value })}
-                    placeholder="trading_journal"
-                  />
-                </div>
               </div>
             ) : (
               <div className="space-y-3">
@@ -223,16 +214,12 @@ const AdminDatabase: React.FC = () => {
                   <span className="text-green-600 dark:text-green-400">Connected</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Host:</span>
-                  <span>{config.host}:{config.port}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">Database:</span>
                   <span>{config.database}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Tables:</span>
-                  <span>{tables.length}</span>
+                  <span className="font-medium">Collections:</span>
+                  <span>{collections.length}</span>
                 </div>
               </div>
             )}
@@ -280,11 +267,11 @@ const AdminDatabase: React.FC = () => {
             <TabsList className="mb-6">
               <TabsTrigger value="query" className="flex items-center">
                 <Play className="mr-2 h-4 w-4" />
-                SQL Query
+                MongoDB Query
               </TabsTrigger>
-              <TabsTrigger value="tables" className="flex items-center">
+              <TabsTrigger value="collections" className="flex items-center">
                 <Table className="mr-2 h-4 w-4" />
-                Tables
+                Collections
               </TabsTrigger>
               <TabsTrigger value="export" className="flex items-center">
                 <FileDown className="mr-2 h-4 w-4" />
@@ -299,9 +286,9 @@ const AdminDatabase: React.FC = () => {
             <TabsContent value="query">
               <Card>
                 <CardHeader>
-                  <CardTitle>SQL Query</CardTitle>
+                  <CardTitle>MongoDB Query</CardTitle>
                   <CardDescription>
-                    Execute custom SQL queries on the database
+                    Execute custom MongoDB queries on the database
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -309,7 +296,7 @@ const AdminDatabase: React.FC = () => {
                     <Textarea
                       value={sqlQuery}
                       onChange={(e) => setSqlQuery(e.target.value)}
-                      placeholder="SELECT * FROM users LIMIT 10;"
+                      placeholder='db.users.find({isAdmin: true})'
                       className="font-mono h-32"
                     />
                     
@@ -341,7 +328,7 @@ const AdminDatabase: React.FC = () => {
                             </div>
                           ) : (
                             <div className="p-4 text-green-600">
-                              Query executed successfully. {queryResult.affectedRows && `Affected rows: ${queryResult.affectedRows}`}
+                              Query executed successfully. {queryResult.modifiedCount && `Modified documents: ${queryResult.modifiedCount}`}
                             </div>
                           )
                         ) : (
@@ -359,33 +346,33 @@ const AdminDatabase: React.FC = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="tables">
+            <TabsContent value="collections">
               <Card>
                 <CardHeader>
-                  <CardTitle>Database Tables</CardTitle>
+                  <CardTitle>Database Collections</CardTitle>
                   <CardDescription>
-                    Browse tables in the database
+                    Browse collections in the MongoDB database
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid md:grid-cols-4 gap-6">
                     <div className="border rounded-md overflow-hidden">
                       <div className="p-3 bg-gray-50 dark:bg-gray-800 font-medium">
-                        Tables
+                        Collections
                       </div>
                       <div className="p-2 max-h-96 overflow-y-auto">
                         <ul className="space-y-1">
-                          {tables.map((table) => (
-                            <li key={table.name}>
+                          {collections.map((collection) => (
+                            <li key={collection.name}>
                               <button
-                                onClick={() => handleSelectTable(table.name)}
+                                onClick={() => handleSelectTable(collection.name)}
                                 className={`w-full text-left px-3 py-2 rounded text-sm ${
-                                  selectedTable === table.name 
+                                  selectedTable === collection.name 
                                     ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
                                     : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                                 }`}
                               >
-                                {table.name}
+                                {collection.name}
                               </button>
                             </li>
                           ))}
@@ -397,9 +384,9 @@ const AdminDatabase: React.FC = () => {
                       {selectedTable ? (
                         <div>
                           <div className="p-3 bg-gray-50 dark:bg-gray-800 font-medium flex items-center justify-between">
-                            <span>Table: {selectedTable}</span>
+                            <span>Collection: {selectedTable}</span>
                             <span className="text-sm text-gray-500">
-                              {tableData.length} rows
+                              {tableData.length} documents
                             </span>
                           </div>
                           <div className="overflow-x-auto">
@@ -424,19 +411,19 @@ const AdminDatabase: React.FC = () => {
                               </table>
                             ) : (
                               <div className="p-4 text-center text-gray-500">
-                                {tableData.length === 0 ? 'No data in table' : 'Loading table data...'}
+                                {tableData.length === 0 ? 'No data in collection' : 'Loading collection data...'}
                               </div>
                             )}
                           </div>
                           {tableData.length > 10 && (
                             <div className="p-2 text-center text-sm text-gray-500">
-                              Showing 10 of {tableData.length} rows
+                              Showing 10 of {tableData.length} documents
                             </div>
                           )}
                         </div>
                       ) : (
                         <div className="p-8 text-center text-gray-500">
-                          Select a table to view its data
+                          Select a collection to view its data
                         </div>
                       )}
                     </div>
@@ -450,18 +437,18 @@ const AdminDatabase: React.FC = () => {
                 <CardHeader>
                   <CardTitle>Export Database</CardTitle>
                   <CardDescription>
-                    Export database tables to SQL or CSV files
+                    Export database collections to JSON files
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="border rounded-md p-4">
-                      <h3 className="font-medium mb-2">Select tables to export</h3>
+                      <h3 className="font-medium mb-2">Select collections to export</h3>
                       <div className="grid grid-cols-3 gap-2 mb-4">
-                        {tables.map((table) => (
-                          <label key={table.name} className="flex items-center space-x-2">
+                        {collections.map((collection) => (
+                          <label key={collection.name} className="flex items-center space-x-2">
                             <input type="checkbox" className="rounded" />
-                            <span>{table.name}</span>
+                            <span>{collection.name}</span>
                           </label>
                         ))}
                       </div>
@@ -469,7 +456,7 @@ const AdminDatabase: React.FC = () => {
                         <div>
                           <label className="block text-sm font-medium mb-1">Export format</label>
                           <select className="w-full rounded-md border border-input px-3 py-2">
-                            <option value="sql">SQL</option>
+                            <option value="json">JSON</option>
                             <option value="csv">CSV</option>
                           </select>
                         </div>
@@ -499,14 +486,14 @@ const AdminDatabase: React.FC = () => {
                 <CardHeader>
                   <CardTitle>Import Data</CardTitle>
                   <CardDescription>
-                    Import data from SQL or CSV files
+                    Import data from JSON or CSV files
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="border-2 border-dashed rounded-md p-8 text-center">
                       <FilePlus2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                      <p className="mb-2 text-sm">Drag and drop SQL or CSV files here</p>
+                      <p className="mb-2 text-sm">Drag and drop JSON or CSV files here</p>
                       <p className="text-xs text-gray-500 mb-4">Or click to browse files</p>
                       <Button variant="outline" size="sm">
                         Choose File
