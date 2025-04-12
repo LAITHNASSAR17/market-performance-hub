@@ -22,7 +22,9 @@ import Insights from "./pages/Insights";
 import Analytics from "./pages/Analytics";
 import AdminDashboard from "./pages/AdminDashboard";
 import TradingChart from "./pages/TradingChart";
-import TradeTracking from "./pages/TradeTracking"; // Add import
+import TradeTracking from "./pages/TradeTracking";
+import Payment from "./pages/Payment"; // إضافة صفحة الدفع
+import PaymentSuccess from "./pages/PaymentSuccess"; // إضافة صفحة نجاح الدفع
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,7 +53,9 @@ const App = () => (
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/chart" element={<TradingChart />} />
                   <Route path="/admin" element={<AdminDashboard />} />
-                  <Route path="/tracking/:id" element={<TradeTracking />} /> {/* Add new route */}
+                  <Route path="/tracking/:id" element={<TradeTracking />} />
+                  <Route path="/payment" element={<Payment />} /> {/* إضافة مسار صفحة الدفع */}
+                  <Route path="/payment-success" element={<PaymentSuccess />} /> {/* إضافة مسار صفحة نجاح الدفع */}
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
