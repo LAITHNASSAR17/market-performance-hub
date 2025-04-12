@@ -25,7 +25,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserTableProps {
   users: any[];
@@ -34,7 +33,7 @@ interface UserTableProps {
   onChangePassword: (email: string, password: string) => Promise<void>;
   onViewUser: (userId: string) => void;
   onSetAdmin: (user: any, isAdmin: boolean) => void;
-  onAddUser: (userData: { name: string, email: string, password: string, isAdmin: boolean }) => void;
+  onAddUser: (userData: { name: string, email: string, password: string, isAdmin: boolean }) => Promise<void>;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 }
@@ -55,8 +54,8 @@ const UserTable: React.FC<UserTableProps> = ({
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { t } = useLanguage();
   
   // New user form state
   const [newUserData, setNewUserData] = useState({
@@ -106,15 +105,18 @@ const UserTable: React.FC<UserTableProps> = ({
 
     if (selectedUser) {
       try {
+        setIsSubmitting(true);
         await onChangePassword(selectedUser.email, newPassword);
         handleClosePasswordModal();
       } catch (err) {
         setError('فشل تغيير كلمة المرور. الرجاء المحاولة مرة أخرى.');
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     // Validate form data
     if (!newUserData.name || !newUserData.email || !newUserData.password) {
       setError('جميع الحقول مطلوبة');
@@ -134,14 +136,17 @@ const UserTable: React.FC<UserTableProps> = ({
     }
 
     try {
-      onAddUser(newUserData);
+      setIsSubmitting(true);
+      await onAddUser(newUserData);
       handleCloseAddUserModal();
       toast({
         title: "تمت الإضافة بنجاح",
         description: `تم إضافة المستخدم ${newUserData.name} بنجاح`,
       });
-    } catch (err) {
-      setError('فشل إضافة المستخدم. الرجاء المحاولة مرة أخرى.');
+    } catch (err: any) {
+      setError(`فشل إضافة المستخدم: ${err.message || 'الرجاء المحاولة مرة أخرى.'}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

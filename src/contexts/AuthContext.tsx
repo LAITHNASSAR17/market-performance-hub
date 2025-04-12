@@ -13,6 +13,7 @@ interface User {
   isAdmin?: boolean;
   isBlocked?: boolean;
   role?: string;
+  subscription_tier?: string;
 }
 
 interface AuthContextType {
@@ -27,10 +28,12 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
   updateUser: (updatedUser: User) => Promise<void>;
+  updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
   getAllUsers: () => Promise<User[]>;
   blockUser: (user: User) => Promise<void>;
   unblockUser: (user: User) => Promise<void>;
   changePassword: (email: string, newPassword: string) => Promise<void>;
+  updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,7 +72,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             email: adminEmail,
             password: adminPassword,
             role: 'admin',
-            is_blocked: false
+            is_blocked: false,
+            subscription_tier: 'premium'
           });
           
         if (insertError) {
@@ -116,7 +120,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           email,
           password: hashedPassword,
           role: 'user',
-          is_blocked: false
+          is_blocked: false,
+          subscription_tier: 'free'
         })
         .select()
         .single();
@@ -163,7 +168,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           name: data.name,
           email: data.email,
           role: data.role,
-          isAdmin: data.role === 'admin'
+          isAdmin: data.role === 'admin',
+          subscription_tier: data.subscription_tier || 'free'
         };
       
         // Ensure robust local storage
@@ -244,7 +250,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           name: updatedUser.name,
           email: updatedUser.email,
           role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
-          is_blocked: updatedUser.isBlocked || false
+          is_blocked: updatedUser.isBlocked || false,
+          subscription_tier: updatedUser.subscription_tier || 'free'
         })
         .eq('id', updatedUser.id);
       
@@ -270,6 +277,65 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // New method to update user profile
+  const updateProfile = async (name: string, email: string, currentPassword?: string, newPassword?: string): Promise<void> => {
+    try {
+      if (!user) throw new Error('No user logged in');
+      
+      // Prepare update data
+      const updateData: any = {
+        name,
+        email
+      };
+      
+      // If changing password, verify current password first
+      if (newPassword && currentPassword) {
+        const { data } = await supabase
+          .from('users')
+          .select('password')
+          .eq('id', user.id)
+          .single();
+          
+        if (!data || !comparePassword(currentPassword, data.password)) {
+          throw new Error('Current password is incorrect');
+        }
+        
+        updateData.password = hashPassword(newPassword);
+      }
+      
+      // Update the user
+      const { error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      // Update local user
+      const updatedUser = {
+        ...user,
+        name,
+        email
+      };
+      
+      localStorage.setItem('user', encryptData(JSON.stringify(updatedUser)));
+      setUser(updatedUser);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Update Failed",
+        description: (error as Error).message || "Could not update profile",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const getAllUsers = async (): Promise<User[]> => {
     try {
       const { data, error } = await supabase
@@ -278,15 +344,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw error;
       
-      return data.map(user => ({
+      const formattedUsers = data.map(user => ({
         id: user.id,
         name: user.name,
         email: user.email,
-        password: user.password,
         role: user.role,
         isAdmin: user.role === 'admin',
-        isBlocked: user.is_blocked
+        isBlocked: user.is_blocked,
+        subscription_tier: user.subscription_tier || 'free'
       }));
+      
+      setUsers(formattedUsers);
+      return formattedUsers;
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
@@ -355,6 +424,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // New method to update subscription tier
+  const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ subscription_tier: tier })
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
+      // Update local state if it's the current user
+      if (user && user.id === userId) {
+        const updatedUser = {
+          ...user,
+          subscription_tier: tier
+        };
+        
+        localStorage.setItem('user', encryptData(JSON.stringify(updatedUser)));
+        setUser(updatedUser);
+      }
+      
+      // Refresh users list
+      await getAllUsers();
+      
+      toast({
+        title: "Subscription Updated",
+        description: `Subscription tier updated to ${tier}`
+      });
+    } catch (error) {
+      console.error('Error updating subscription tier:', error);
+      toast({
+        title: "Update Failed",
+        description: (error as Error).message || "Could not update subscription",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const value = {
     user,
     isAdmin,
@@ -367,10 +475,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     forgotPassword,
     resetPassword,
     updateUser,
+    updateProfile,
     getAllUsers,
     blockUser,
     unblockUser,
     changePassword,
+    updateSubscriptionTier,
   };
 
   return (

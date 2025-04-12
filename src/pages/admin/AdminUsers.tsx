@@ -39,20 +39,38 @@ const AdminUsers: React.FC = () => {
     });
   };
 
-  const handleBlockUser = (user: any) => {
-    blockUser({...user, password: '' });
-    toast({
-      title: "تم حظر المستخدم",
-      description: `تم حظر ${user.name} بنجاح`
-    });
+  const handleBlockUser = async (user: any) => {
+    try {
+      await blockUser({...user, password: '' });
+      toast({
+        title: "تم حظر المستخدم",
+        description: `تم حظر ${user.name} بنجاح`
+      });
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: "خطأ في حظر المستخدم",
+        description: "تعذر حظر المستخدم، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleUnblockUser = (user: any) => {
-    unblockUser(user);
-    toast({
-      title: "تم إلغاء الحظر",
-      description: `تم إلغاء حظر ${user.name} بنجاح`
-    });
+  const handleUnblockUser = async (user: any) => {
+    try {
+      await unblockUser(user);
+      toast({
+        title: "تم إلغاء الحظر",
+        description: `تم إلغاء حظر ${user.name} بنجاح`
+      });
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: "خطأ في إلغاء الحظر",
+        description: "تعذر إلغاء حظر المستخدم، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSetAdminRole = async (user: any, isAdmin: boolean) => {
@@ -95,7 +113,8 @@ const AdminUsers: React.FC = () => {
           email: userData.email,
           password: hashedPassword,
           role: userData.isAdmin ? 'admin' : 'user',
-          is_blocked: false
+          is_blocked: false,
+          subscription_tier: 'free'
         })
         .select();
       
@@ -108,6 +127,7 @@ const AdminUsers: React.FC = () => {
       
       // Refresh users list
       fetchUsers();
+      return data;
     } catch (error) {
       console.error('Error adding user:', error);
       toast({

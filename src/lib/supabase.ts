@@ -19,6 +19,7 @@ create table public.users (
   password text not null,
   role text not null default 'user',
   is_blocked boolean not null default false,
+  subscription_tier text default 'free',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   primary key (id)
@@ -54,5 +55,14 @@ create table public.trades (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   primary key (id)
+);
+
+-- Site Settings Table
+create table public.site_settings (
+  site_name text primary key,
+  company_email text not null,
+  support_phone text,
+  copyright_text text,
+  updated_at timestamptz not null default now()
 );
 */
