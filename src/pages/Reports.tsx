@@ -1,10 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { BarChart, Calendar, Download, DollarSign, Percent as PercentIcon, PieChart as PieChartIcon, LineChart as LineChartIcon, Clock, BarChart as BarChartIcon } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  BarChart, 
+  Calendar, 
+  Download, 
+  DollarSign, 
+  Percent as PercentIcon, 
+  PieChart as PieChartIcon, 
+  LineChart as LineChartIcon, 
+  Clock, 
+  BarChart as BarChartIcon, 
+  ArrowDown, 
+  ArrowUp,
+  Calculator
+} from 'lucide-react';
 import {
   PieChart as RechartPieChart,
   Pie,
@@ -31,6 +45,7 @@ const Reports: React.FC = () => {
   const { trades } = useTrade();
   const [timeframeFilter, setTimeframeFilter] = useState('all');
   const [filterType, setFilterType] = useState('pair');
+  const [selectedTab, setSelectedTab] = useState('all');
 
   const filteredTrades = trades.filter(trade => {
     if (timeframeFilter === 'all') return true;
@@ -60,6 +75,90 @@ const Reports: React.FC = () => {
     }
   });
 
+  const metrics = useMemo(() => {
+    const getTradesByType = (tradeList: Trade[]) => {
+      switch (selectedTab) {
+        case 'long':
+          return tradeList.filter(trade => trade.type === 'Buy');
+        case 'short':
+          return tradeList.filter(trade => trade.type === 'Sell');
+        default:
+          return tradeList;
+      }
+    };
+    
+    const selectedTrades = getTradesByType(filteredTrades);
+    
+    const totalTrades = selectedTrades.length;
+    
+    const profitableTrades = selectedTrades.filter(trade => trade.profitLoss > 0);
+    const losingTrades = selectedTrades.filter(trade => trade.profitLoss < 0);
+    const winningTrades = profitableTrades.length;
+    const losingTradesCount = losingTrades.length;
+    
+    const totalProfit = profitableTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+    const totalLoss = losingTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+    
+    const estimatedCommissions = selectedTrades.reduce((sum, trade) => {
+      const tradeValue = trade.entry * trade.lotSize * 100000;
+      return sum + (tradeValue * 0.001);
+    }, 0);
+    
+    const balance = totalProfit + totalLoss - estimatedCommissions;
+    
+    let maxDrawdown = 0;
+    let currentDrawdown = 0;
+    
+    const sortedTrades = [...selectedTrades].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    sortedTrades.forEach(trade => {
+      if (trade.profitLoss < 0) {
+        currentDrawdown += Math.abs(trade.profitLoss);
+        if (currentDrawdown > maxDrawdown) {
+          maxDrawdown = currentDrawdown;
+        }
+      } else {
+        currentDrawdown = 0;
+      }
+    });
+    
+    const profitFactor = Math.abs(totalLoss) > 0 ? totalProfit / Math.abs(totalLoss) : totalProfit > 0 ? Infinity : 0;
+    
+    const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+    
+    const maxWinTrade = profitableTrades.reduce(
+      (max, trade) => trade.profitLoss > max.profitLoss ? trade : max,
+      { profitLoss: 0 }
+    );
+    
+    const maxLossTrade = losingTrades.reduce(
+      (max, trade) => trade.profitLoss < max.profitLoss ? trade : max,
+      { profitLoss: 0 }
+    );
+    
+    const avgWinTrade = winningTrades > 0 ? totalProfit / winningTrades : 0;
+    const avgLossTrade = losingTradesCount > 0 ? totalLoss / losingTradesCount : 0;
+    
+    return {
+      balance,
+      profits: totalProfit,
+      losses: totalLoss,
+      commissions: estimatedCommissions,
+      numTrades: totalTrades,
+      drawdown: maxDrawdown,
+      profitFactor,
+      winRatePercent: winRate,
+      winningTrades,
+      losingTrades: losingTradesCount,
+      maxWinTrade: maxWinTrade.profitLoss,
+      maxLossTrade: maxLossTrade.profitLoss,
+      avgWinTrade,
+      avgLossTrade
+    };
+  }, [filteredTrades, selectedTab]);
+  
   const totalTrades = filteredTrades.length;
   const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
   const winningTrades = filteredTrades.filter(trade => trade.profitLoss > 0).length;
@@ -300,6 +399,21 @@ const Reports: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(value);
+  };
+
+  const formatPercent = (value: number) => {
+    return value.toFixed(1) + '%';
+  };
+
+  const formatDecimal = (value: number) => {
+    return value.toFixed(2);
+  };
+
   return (
     <Layout>
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
@@ -353,6 +467,377 @@ const Reports: React.FC = () => {
           icon={<BarChartIcon className="h-5 w-5" />}
         />
       </div>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Calculator className="h-5 w-5 mr-2" />
+            Professional Performance Breakdown
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-3">
+              <TabsTrigger value="all">All Trades</TabsTrigger>
+              <TabsTrigger value="long">Long Trades</TabsTrigger>
+              <TabsTrigger value="short">Short Trades</TabsTrigger>
+            </TabsList>
+            <TabsContent value="all" className="mt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-primary/10 text-sm">
+                      <th className="text-left p-3 border-b font-medium">Metric</th>
+                      <th className="text-right p-3 border-b font-medium">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Balance</td>
+                      <td className={cn(
+                        "p-3 text-right text-sm",
+                        metrics.balance >= 0 ? "text-green-600" : "text-red-600"
+                      )}>
+                        {formatCurrency(metrics.balance)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Profits</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.profits)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Loss</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.losses)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Commissions</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(-metrics.commissions)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Number of trades</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {metrics.numTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Drawdown</td>
+                      <td className="p-3 text-right text-sm text-amber-600">
+                        {formatCurrency(metrics.drawdown)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Profit factor</td>
+                      <td className={cn(
+                        "p-3 text-right text-sm",
+                        metrics.profitFactor >= 1 ? "text-green-600" : "text-red-600"
+                      )}>
+                        {formatDecimal(metrics.profitFactor)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">% Winning trades</td>
+                      <td className="p-3 text-right text-sm">
+                        {formatPercent(metrics.winRatePercent)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Winning trades</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {metrics.winningTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Losing trades</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {metrics.losingTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Max. win trade</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.maxWinTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Max. loss trade</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.maxLossTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Avg. win trade</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.avgWinTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Avg. loss trade</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.avgLossTrade)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="long" className="mt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-primary/10 text-sm">
+                      <th className="text-left p-3 border-b font-medium">Metric</th>
+                      <th className="text-right p-3 border-b font-medium">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Balance</td>
+                      <td className={cn(
+                        "p-3 text-right text-sm",
+                        metrics.balance >= 0 ? "text-green-600" : "text-red-600"
+                      )}>
+                        {formatCurrency(metrics.balance)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Profits</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.profits)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Loss</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.losses)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Commissions</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(-metrics.commissions)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Number of trades</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {metrics.numTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Drawdown</td>
+                      <td className="p-3 text-right text-sm text-amber-600">
+                        {formatCurrency(metrics.drawdown)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Profit factor</td>
+                      <td className={cn(
+                        "p-3 text-right text-sm",
+                        metrics.profitFactor >= 1 ? "text-green-600" : "text-red-600"
+                      )}>
+                        {formatDecimal(metrics.profitFactor)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">% Winning trades</td>
+                      <td className="p-3 text-right text-sm">
+                        {formatPercent(metrics.winRatePercent)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Winning trades</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {metrics.winningTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Losing trades</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {metrics.losingTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Max. win trade</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.maxWinTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Max. loss trade</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.maxLossTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Avg. win trade</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.avgWinTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Avg. loss trade</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.avgLossTrade)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="short" className="mt-4">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-primary/10 text-sm">
+                      <th className="text-left p-3 border-b font-medium">Metric</th>
+                      <th className="text-right p-3 border-b font-medium">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Balance</td>
+                      <td className={cn(
+                        "p-3 text-right text-sm",
+                        metrics.balance >= 0 ? "text-green-600" : "text-red-600"
+                      )}>
+                        {formatCurrency(metrics.balance)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Profits</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.profits)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Loss</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.losses)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Commissions</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(-metrics.commissions)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Number of trades</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {metrics.numTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Drawdown</td>
+                      <td className="p-3 text-right text-sm text-amber-600">
+                        {formatCurrency(metrics.drawdown)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Profit factor</td>
+                      <td className={cn(
+                        "p-3 text-right text-sm",
+                        metrics.profitFactor >= 1 ? "text-green-600" : "text-red-600"
+                      )}>
+                        {formatDecimal(metrics.profitFactor)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">% Winning trades</td>
+                      <td className="p-3 text-right text-sm">
+                        {formatPercent(metrics.winRatePercent)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Winning trades</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {metrics.winningTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Losing trades</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {metrics.losingTrades}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Max. win trade</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.maxWinTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Max. loss trade</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.maxLossTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Avg. win trade</td>
+                      <td className="p-3 text-right text-sm text-green-600">
+                        {formatCurrency(metrics.avgWinTrade)}
+                      </td>
+                    </tr>
+                    
+                    <tr className="hover:bg-muted/30">
+                      <td className="p-3 text-sm font-medium">Avg. loss trade</td>
+                      <td className="p-3 text-right text-sm text-red-600">
+                        {formatCurrency(metrics.avgLossTrade)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       <Card className="mb-8">
         <CardHeader className="pb-2">

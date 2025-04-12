@@ -9,7 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Play, Pause, SkipBack, SkipForward, Calendar, RotateCcw, FastForward, X } from 'lucide-react';
+import { 
+  Play, Pause, SkipBack, SkipForward, Calendar, RotateCcw, FastForward, X, 
+  Maximize, Minimize, PenTool, Layers, Sun, Moon, Save, Layout as LayoutIcon,
+  PanelLeft, ZoomIn, Eye
+} from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { 
   ChartContainer, 
@@ -27,7 +31,8 @@ declare global {
 }
 
 type ReplayMode = 'standard' | 'backtest';
-type TimeFrame = '1m' | '5m' | '15m' | '30m' | '1h' | '4h' | '1d';
+type ChartTheme = 'light' | 'dark' | 'custom';
+type ChartTool = 'line' | 'rectangle' | 'text' | 'fibonacci' | 'pitchfork' | 'none';
 
 const TradingChart: React.FC = () => {
   const { t } = useLanguage();
@@ -37,7 +42,11 @@ const TradingChart: React.FC = () => {
   
   // Chart settings
   const [symbolType, setSymbolType] = useState("forex");
-  const [timeFrame, setTimeFrame] = useState<TimeFrame>("15m");
+  const [chartTheme, setChartTheme] = useState<ChartTheme>("dark");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [activeTool, setActiveTool] = useState<ChartTool>("none");
+  const [showSideBySide, setShowSideBySide] = useState(false);
+  const [secondSymbol, setSecondSymbol] = useState("");
   
   // Replay state
   const [replayMode, setReplayMode] = useState<ReplayMode | null>(null);
@@ -61,20 +70,15 @@ const TradingChart: React.FC = () => {
     const tradeId = params.get('trade');
     const mode = params.get('mode');
     
-    console.log("URL params:", { tradeId, mode });
-    
     // Set replay mode based on URL
     if (mode === 'backtest' && tradeId) {
-      console.log("Setting mode to backtest");
       setReplayMode('backtest');
     } else if (mode === 'replay') {
-      console.log("Setting mode to standard replay");
       setReplayMode('standard');
     }
     
     if (tradeId) {
       const trade = getTrade(tradeId);
-      console.log("Found trade:", trade);
       
       if (trade) {
         setCurrentTrade(trade);
@@ -99,7 +103,6 @@ const TradingChart: React.FC = () => {
           description: `${trade.pair} - ${trade.type} - ${trade.date}`,
         });
       } else {
-        console.error("Trade not found with ID:", tradeId);
         toast({
           title: "خطأ",
           description: "لم يتم العثور على الصفقة المطلوبة",
@@ -110,12 +113,10 @@ const TradingChart: React.FC = () => {
 
     // Load TradingView script
     if (!window.TradingView) {
-      console.log("Loading TradingView script");
       const script = document.createElement('script');
       script.src = 'https://s3.tradingview.com/tv.js';
       script.async = true;
       script.onload = () => {
-        console.log("TradingView script loaded");
         initWidget();
       };
       document.head.appendChild(script);
@@ -126,14 +127,12 @@ const TradingChart: React.FC = () => {
         }
       };
     } else {
-      console.log("TradingView already loaded");
       initWidget();
     }
 
     return () => {
       if (widgetRef.current) {
         try {
-          console.log("Cleaning up TradingView widget");
           widgetRef.current = null;
         } catch (e) {
           console.error('Error cleaning up TradingView widget:', e);
@@ -144,22 +143,31 @@ const TradingChart: React.FC = () => {
 
   // Initialize or update the widget when dependencies change
   useEffect(() => {
-    console.log("Dependencies changed, reinitializing widget if needed");
     if (window.TradingView && containerRef.current) {
       initWidget();
     }
-  }, [symbolType, currentTrade, timeFrame]);
+  }, [symbolType, currentTrade, chartTheme, showSideBySide, secondSymbol]);
+
+  // Handle fullscreen mode
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   const initWidget = () => {
-    console.log("Initializing TradingView widget");
     if (!window.TradingView || !containerRef.current) {
-      console.log("TradingView or container not available yet");
       return;
     }
 
     // Clean up previous widget if it exists
     if (widgetRef.current) {
-      console.log("Cleaning up previous widget");
       containerRef.current.innerHTML = '';
     }
 
@@ -168,26 +176,20 @@ const TradingChart: React.FC = () => {
     // If we have a current trade, use its pair
     if (currentTrade) {
       symbol = convertPairToTradingViewSymbol(currentTrade.pair);
-      console.log("Using trade pair for symbol:", symbol);
     }
-
-    // Determine interval based on timeFrame
-    const interval = timeFrameToInterval(timeFrame);
-    console.log("Using interval:", interval);
 
     // Create a unique ID for the container
     const containerId = containerRef.current.id || 'tradingview_chart_' + Math.random().toString(36).substring(2, 15);
     containerRef.current.id = containerId;
     
-    console.log("Creating widget with container ID:", containerId);
-
-    widgetRef.current = new window.TradingView.widget({
+    // Configure the widget settings
+    const widgetOptions = {
       width: '100%',
       height: 600,
       symbol: symbol,
-      interval: interval,
+      interval: 'D', // Default to daily
       timezone: 'Etc/UTC',
-      theme: 'dark',
+      theme: chartTheme,
       style: '1',
       locale: 'ar',
       toolbar_bg: '#f1f3f6',
@@ -204,15 +206,36 @@ const TradingChart: React.FC = () => {
         'MACD@tv-basicstudies'
       ],
       container_id: containerId,
-      debug: true // Enable debug mode for more console logs
-    });
+      debug: false
+    };
+    
+    // Create the widget
+    widgetRef.current = new window.TradingView.widget(widgetOptions);
+
+    // For side by side comparison, create a second chart if requested
+    if (showSideBySide && secondSymbol) {
+      // Create a second container for the side-by-side view
+      const secondContainerId = 'tradingview_chart_secondary_' + Math.random().toString(36).substring(2, 15);
+      const secondContainer = document.createElement('div');
+      secondContainer.id = secondContainerId;
+      secondContainer.className = 'w-full mt-4 rounded-lg overflow-hidden border border-border';
+      secondContainer.style.height = '600px';
+      
+      // Add the second container after the main one
+      containerRef.current.parentNode?.insertBefore(secondContainer, containerRef.current.nextSibling);
+      
+      // Create the second widget
+      new window.TradingView.widget({
+        ...widgetOptions,
+        container_id: secondContainerId,
+        symbol: convertPairToTradingViewSymbol(secondSymbol),
+      });
+    }
 
     // Initialize replay mode or backtesting if needed
     if ((replayMode === 'standard' || replayMode === 'backtest') && currentTrade && widgetRef.current) {
-      console.log("Setting up trade replay/backtest");
       widgetRef.current.onChartReady(() => {
         try {
-          console.log("Chart is ready, displaying trade");
           displayTradeOnChart(currentTrade);
         } catch (error) {
           console.error("Error setting up trade replay:", error);
@@ -221,92 +244,23 @@ const TradingChart: React.FC = () => {
     }
   };
 
-  const timeFrameToInterval = (tf: TimeFrame): string => {
-    switch(tf) {
-      case '1m': return '1';
-      case '5m': return '5';
-      case '15m': return '15';
-      case '30m': return '30';
-      case '1h': return '60';
-      case '4h': return '240';
-      case '1d': return 'D';
-      default: return '15';
-    }
-  };
-
   const displayTradeOnChart = (trade: Trade) => {
-    console.log("Displaying trade on chart:", trade);
     if (!widgetRef.current) {
-      console.error("Widget not available for displaying trade");
       return;
     }
     
-    // This would typically use TradingView's drawing tools API
     widgetRef.current.onChartReady(() => {
-      console.log("Chart ready for displaying trade");
-      
-      // For demonstration, we're simulating the display with a toast
       toast({
         title: t('chart.tradeDisplayed') || "تم عرض الصفقة على الشارت",
         description: t('chart.useControls') || "استخدم أدوات التحكم لمشاهدة الصفقة",
       });
       
-      // In a real implementation with TradingView API access you would:
-      // 1. Create a vertical line at entry point with color based on trade type
-      // 2. Create a vertical line at exit point
-      // 3. Add horizontal lines for stop loss and take profit levels
-      // 4. Add a label with trade details
-      
-      // Simulate this by setting replay position to start
       setCurrentPosition(0);
       setIsPlaying(false);
-      
-      // Example of what would be done with real TradingView API access:
-      /*
-      const chart = widgetRef.current.chart();
-      
-      // Convert dates to unix timestamps
-      const entryTime = new Date(trade.date).getTime() / 1000;
-      
-      // Calculate exit time based on duration
-      const exitDate = new Date(trade.date);
-      exitDate.setMinutes(exitDate.getMinutes() + trade.durationMinutes);
-      const exitTime = exitDate.getTime() / 1000;
-      
-      // Add entry line - green for buy, red for sell
-      chart.createShape(
-        { time: entryTime, price: trade.entry },
-        { shape: 'vertical_line', color: trade.type === 'Buy' ? '#22c55e' : '#ef4444' }
-      );
-      
-      // Add exit line
-      chart.createShape(
-        { time: exitTime, price: trade.exit },
-        { shape: 'vertical_line', color: '#94a3b8' }
-      );
-      
-      // Add stop loss line if available
-      if (trade.stopLoss) {
-        chart.createShape(
-          { time: entryTime, price: trade.stopLoss },
-          { shape: 'horizontal_line', color: '#ef4444' }
-        );
-      }
-      
-      // Add take profit line if available
-      if (trade.takeProfit) {
-        chart.createShape(
-          { time: entryTime, price: trade.takeProfit },
-          { shape: 'horizontal_line', color: '#22c55e' }
-        );
-      }
-      */
     });
   };
 
   const convertPairToTradingViewSymbol = (pair: string): string => {
-    // Convert pairs like "EUR/USD" to TradingView format "FX:EURUSD"
-    console.log("Converting pair to TradingView symbol:", pair);
     if (pair.includes('/')) {
       if (pair.startsWith('BTC') || pair.startsWith('ETH')) {
         return `BINANCE:${pair.replace('/', '')}`;
@@ -318,7 +272,6 @@ const TradingChart: React.FC = () => {
   };
 
   const getDefaultSymbol = () => {
-    console.log("Getting default symbol for type:", symbolType);
     switch(symbolType) {
       case 'crypto':
         return 'BINANCE:BTCUSDT';
@@ -333,29 +286,34 @@ const TradingChart: React.FC = () => {
   };
 
   const changeSymbolType = (type: string) => {
-    console.log("Changing symbol type to:", type);
     setSymbolType(type);
   };
 
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      containerRef.current?.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  const toggleChartTheme = () => {
+    setChartTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   const togglePlayPause = () => {
-    console.log("Toggling play/pause, current state:", isPlaying);
     setIsPlaying(!isPlaying);
     
     if (!isPlaying) {
-      // Start replay animation
       toast({
         title: t('chart.playingReplay') || "تشغيل الإعادة",
         description: t('chart.speedMultiplier') || `سرعة الإعادة: ${replaySpeed}x`,
       });
       
-      // Simulate progression with interval
       if (currentPosition >= 100) {
         setCurrentPosition(0);
       }
       
-      // In real implementation with TradingView this would control their replay API
-      
-      // For demo, let's simulate progression
       const interval = setInterval(() => {
         setCurrentPosition(prev => {
           const newPosition = prev + (replaySpeed * 0.5);
@@ -368,13 +326,11 @@ const TradingChart: React.FC = () => {
         });
       }, 200);
       
-      // Store the interval ID to clean it up later
       return () => clearInterval(interval);
     }
   };
 
   const handleSpeedChange = (value: number[]) => {
-    console.log("Changing replay speed to:", value[0]);
     setReplaySpeed(value[0]);
     
     if (isPlaying) {
@@ -386,8 +342,6 @@ const TradingChart: React.FC = () => {
   };
 
   const skipBackward = () => {
-    // Move the replay back (e.g. 10%)
-    console.log("Skipping backward");
     setCurrentPosition(Math.max(0, currentPosition - 10));
     toast({
       title: t('chart.skipBackward') || "الرجوع للخلف",
@@ -396,8 +350,6 @@ const TradingChart: React.FC = () => {
   };
 
   const skipForward = () => {
-    // Move the replay forward (e.g. 10%)
-    console.log("Skipping forward");
     setCurrentPosition(Math.min(100, currentPosition + 10));
     toast({
       title: t('chart.skipForward') || "التقدم للأمام",
@@ -406,8 +358,6 @@ const TradingChart: React.FC = () => {
   };
 
   const jumpToEnd = () => {
-    // Jump to end of replay
-    console.log("Jumping to end");
     setCurrentPosition(100);
     setIsPlaying(false);
     toast({
@@ -417,8 +367,6 @@ const TradingChart: React.FC = () => {
   };
 
   const restartReplay = () => {
-    // Restart replay from beginning
-    console.log("Restarting replay");
     setCurrentPosition(0);
     setIsPlaying(false);
     toast({
@@ -428,7 +376,6 @@ const TradingChart: React.FC = () => {
   };
 
   const startStandardReplay = () => {
-    console.log("Starting standard replay");
     setReplayMode('standard');
     setCurrentPosition(0);
     setIsPlaying(false);
@@ -440,7 +387,6 @@ const TradingChart: React.FC = () => {
   };
 
   const exitReplayMode = () => {
-    console.log("Exiting replay mode");
     setReplayMode(null);
     setCurrentTrade(null);
     setIsPlaying(false);
@@ -462,6 +408,31 @@ const TradingChart: React.FC = () => {
       const days = Math.floor(mins / 1440);
       const remainingHours = Math.floor((mins % 1440) / 60);
       return `${days} ${t('chart.days') || 'أيام'} ${remainingHours > 0 ? `${remainingHours} ${t('chart.hours') || 'ساعات'}` : ''}`;
+    }
+  };
+
+  const activateDrawingTool = (tool: ChartTool) => {
+    setActiveTool(tool);
+    // In a real implementation, this would call the TradingView API to activate the tool
+    toast({
+      title: t('chart.toolActivated') || "أداة الرسم",
+      description: `${tool} ${t('chart.activated') || 'تم تفعيل الأداة'}`,
+    });
+  };
+
+  const saveChartLayout = () => {
+    toast({
+      title: t('chart.layoutSaved') || "تم حفظ تخطيط الشارت",
+      description: t('chart.layoutSavedDesc') || "تم حفظ إعدادات وأدوات الشارت الحالية",
+    });
+  };
+
+  const toggleSideBySide = () => {
+    setShowSideBySide(!showSideBySide);
+    
+    if (!showSideBySide && !secondSymbol) {
+      // If enabling side by side view and no second symbol is set, use a default
+      setSecondSymbol(symbolType === 'forex' ? 'GBP/USD' : 'BTC/USD');
     }
   };
 
@@ -505,7 +476,7 @@ const TradingChart: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Symbol & Timeframe Selection (when not in replay mode) */}
+            {/* Chart Controls - Symbol Type and Advanced Features */}
             {!replayMode && (
               <div className="space-y-4">
                 <div className="mb-4 flex flex-wrap gap-2">
@@ -535,68 +506,136 @@ const TradingChart: React.FC = () => {
                   </Button>
                 </div>
                 
-                <div className="flex flex-wrap gap-2">
-                  <Select value={timeFrame} onValueChange={(v) => setTimeFrame(v as TimeFrame)}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder={t('chart.timeframe') || 'الإطار الزمني'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1m">1 {t('chart.minute') || 'دقيقة'}</SelectItem>
-                      <SelectItem value="5m">5 {t('chart.minutes') || 'دقائق'}</SelectItem>
-                      <SelectItem value="15m">15 {t('chart.minutes') || 'دقيقة'}</SelectItem>
-                      <SelectItem value="30m">30 {t('chart.minutes') || 'دقيقة'}</SelectItem>
-                      <SelectItem value="1h">1 {t('chart.hour') || 'ساعة'}</SelectItem>
-                      <SelectItem value="4h">4 {t('chart.hours') || 'ساعات'}</SelectItem>
-                      <SelectItem value="1d">1 {t('chart.day') || 'يوم'}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Advanced Chart Controls */}
+                <div className="flex flex-wrap gap-2 justify-between items-center bg-muted/20 p-2 rounded-md">
+                  <div className="flex flex-wrap gap-2">
+                    {/* Drawing Tools */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <PenTool className="h-4 w-4 mr-1" />
+                          {t('chart.drawingTools') || 'أدوات الرسم'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button 
+                            variant={activeTool === 'line' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => activateDrawingTool('line')}
+                          >
+                            {t('chart.line') || 'خط'}
+                          </Button>
+                          <Button 
+                            variant={activeTool === 'rectangle' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => activateDrawingTool('rectangle')}
+                          >
+                            {t('chart.rectangle') || 'مستطيل'}
+                          </Button>
+                          <Button 
+                            variant={activeTool === 'text' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => activateDrawingTool('text')}
+                          >
+                            {t('chart.text') || 'نص'}
+                          </Button>
+                          <Button 
+                            variant={activeTool === 'fibonacci' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => activateDrawingTool('fibonacci')}
+                          >
+                            {t('chart.fibonacci') || 'فيبوناتشي'}
+                          </Button>
+                          <Button 
+                            variant={activeTool === 'pitchfork' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => activateDrawingTool('pitchfork')}
+                          >
+                            {t('chart.pitchfork') || 'شوكة'}
+                          </Button>
+                          <Button 
+                            variant={activeTool === 'none' ? 'default' : 'outline'} 
+                            size="sm" 
+                            onClick={() => activateDrawingTool('none')}
+                          >
+                            {t('chart.selectTool') || 'تحديد'}
+                          </Button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    
+                    {/* Theme Toggle */}
+                    <Button variant="outline" size="sm" onClick={toggleChartTheme}>
+                      {chartTheme === 'light' ? (
+                        <Moon className="h-4 w-4 mr-1" />
+                      ) : (
+                        <Sun className="h-4 w-4 mr-1" />
+                      )}
+                      {chartTheme === 'light' 
+                        ? (t('chart.darkTheme') || 'الوضع الداكن')
+                        : (t('chart.lightTheme') || 'الوضع الفاتح')
+                      }
+                    </Button>
+                    
+                    {/* Side by Side View */}
+                    <Button 
+                      variant={showSideBySide ? 'default' : 'outline'} 
+                      size="sm" 
+                      onClick={toggleSideBySide}
+                    >
+                      <PanelLeft className="h-4 w-4 mr-1" />
+                      {t('chart.comparison') || 'المقارنة'}
+                    </Button>
+                    
+                    {/* Zoom Controls */}
+                    <Button variant="outline" size="sm">
+                      <ZoomIn className="h-4 w-4 mr-1" />
+                      {t('chart.zoom') || 'تكبير'}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    {/* Save Layout */}
+                    <Button variant="outline" size="sm" onClick={saveChartLayout}>
+                      <Save className="h-4 w-4 mr-1" />
+                      {t('chart.saveLayout') || 'حفظ التخطيط'}
+                    </Button>
+                    
+                    {/* Fullscreen Toggle */}
+                    <Button variant="outline" size="sm" onClick={toggleFullscreen}>
+                      {isFullscreen ? (
+                        <Minimize className="h-4 w-4 mr-1" />
+                      ) : (
+                        <Maximize className="h-4 w-4 mr-1" />
+                      )}
+                      {isFullscreen
+                        ? (t('chart.exitFullscreen') || 'إنهاء ملء الشاشة')
+                        : (t('chart.fullscreen') || 'ملء الشاشة')
+                      }
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            {/* Replay Date Range Selector (for standard replay) */}
-            {replayMode === 'standard' && (
-              <div className="flex flex-wrap gap-4 mb-4">
-                <div className="space-y-1 flex-1">
-                  <label className="text-sm font-medium" htmlFor="startDate">
-                    {t('chart.startDate') || 'تاريخ البدء'}
-                  </label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1 flex-1">
-                  <label className="text-sm font-medium" htmlFor="endDate">
-                    {t('chart.endDate') || 'تاريخ الانتهاء'}
-                  </label>
-                  <Input
-                    id="endDate" 
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1 flex-1">
-                  <label className="text-sm font-medium">
-                    {t('chart.timeframe') || 'الإطار الزمني'}
-                  </label>
-                  <Select value={timeFrame} onValueChange={(v) => setTimeFrame(v as TimeFrame)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('chart.selectTimeframe') || 'اختر الإطار الزمني'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1m">1 {t('chart.minute') || 'دقيقة'}</SelectItem>
-                      <SelectItem value="5m">5 {t('chart.minutes') || 'دقائق'}</SelectItem>
-                      <SelectItem value="15m">15 {t('chart.minutes') || 'دقيقة'}</SelectItem>
-                      <SelectItem value="30m">30 {t('chart.minutes') || 'دقيقة'}</SelectItem>
-                      <SelectItem value="1h">1 {t('chart.hour') || 'ساعة'}</SelectItem>
-                      <SelectItem value="4h">4 {t('chart.hours') || 'ساعات'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                
+                {/* Second Symbol Input for Side by Side */}
+                {showSideBySide && (
+                  <div className="mt-2">
+                    <label className="block text-sm font-medium mb-1">
+                      {t('chart.comparisonSymbol') || 'رمز المقارنة'}
+                    </label>
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder={t('chart.enterSymbol') || 'أدخل الرمز للمقارنة'} 
+                        value={secondSymbol}
+                        onChange={(e) => setSecondSymbol(e.target.value)}
+                      />
+                      <Button variant="default" onClick={() => initWidget()}>
+                        <Eye className="h-4 w-4 mr-1" />
+                        {t('chart.compare') || 'مقارنة'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             

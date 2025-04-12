@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
@@ -24,6 +25,7 @@ export type Trade = {
   afterImageUrl: string | null;  // Added after image
   hashtags: string[];
   createdAt: string;
+  commission?: number; // Optional commission field
 };
 
 type TradeContextType = {
@@ -36,13 +38,69 @@ type TradeContextType = {
   loading: boolean;
   accounts: string[];
   pairs: string[];
+  symbols: Symbol[];
+  addSymbol: (symbol: Symbol) => void;
   allHashtags: string[];
   addHashtag: (hashtag: string) => void;
 };
 
-// Sample accounts and pairs data
+// Symbol type for the open and dynamic symbol list
+export type Symbol = {
+  symbol: string;
+  name: string;
+  type: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other';
+};
+
+// Sample accounts
 const sampleAccounts = ['Main Trading', 'Demo Account', 'Savings Account'];
-const samplePairs = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'NZD/USD', 'EUR/GBP', 'BTC/USD', 'ETH/USD'];
+
+// Advanced symbols list with categories
+const defaultSymbols: Symbol[] = [
+  // Forex
+  { symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
+  { symbol: 'GBP/USD', name: 'British Pound / US Dollar', type: 'forex' },
+  { symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen', type: 'forex' },
+  { symbol: 'AUD/USD', name: 'Australian Dollar / US Dollar', type: 'forex' },
+  { symbol: 'USD/CAD', name: 'US Dollar / Canadian Dollar', type: 'forex' },
+  { symbol: 'NZD/USD', name: 'New Zealand Dollar / US Dollar', type: 'forex' },
+  { symbol: 'EUR/GBP', name: 'Euro / British Pound', type: 'forex' },
+  { symbol: 'USD/CHF', name: 'US Dollar / Swiss Franc', type: 'forex' },
+  
+  // Cryptocurrencies
+  { symbol: 'BTC/USD', name: 'Bitcoin / US Dollar', type: 'crypto' },
+  { symbol: 'ETH/USD', name: 'Ethereum / US Dollar', type: 'crypto' },
+  { symbol: 'XRP/USD', name: 'Ripple / US Dollar', type: 'crypto' },
+  { symbol: 'LTC/USD', name: 'Litecoin / US Dollar', type: 'crypto' },
+  { symbol: 'ADA/USD', name: 'Cardano / US Dollar', type: 'crypto' },
+  
+  // US Stocks
+  { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock' },
+  { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'stock' },
+  { symbol: 'AMZN', name: 'Amazon.com Inc.', type: 'stock' },
+  { symbol: 'GOOGL', name: 'Alphabet Inc.', type: 'stock' },
+  { symbol: 'META', name: 'Meta Platforms Inc.', type: 'stock' },
+  { symbol: 'TSLA', name: 'Tesla Inc.', type: 'stock' },
+  
+  // Saudi Stocks
+  { symbol: '2222.SR', name: 'Saudi Aramco', type: 'stock' },
+  { symbol: '1120.SR', name: 'Al Rajhi Bank', type: 'stock' },
+  { symbol: '2010.SR', name: 'Saudi Basic Industries Corp', type: 'stock' },
+  
+  // Indices
+  { symbol: 'SPX', name: 'S&P 500', type: 'index' },
+  { symbol: 'NDX', name: 'Nasdaq 100', type: 'index' },
+  { symbol: 'TASI', name: 'Tadawul All Share Index', type: 'index' },
+  
+  // Commodities
+  { symbol: 'XAUUSD', name: 'Gold', type: 'commodity' },
+  { symbol: 'XAGUSD', name: 'Silver', type: 'commodity' },
+  { symbol: 'CL', name: 'Crude Oil', type: 'commodity' }
+];
+
+// Convert symbols to pairs for backward compatibility
+const symbolsToPairs = (symbols: Symbol[]): string[] => {
+  return symbols.map(symbol => symbol.symbol);
+};
 
 // Sample data for demonstration purposes
 const sampleTrades: Trade[] = [
@@ -67,7 +125,8 @@ const sampleTrades: Trade[] = [
     beforeImageUrl: null,
     afterImageUrl: null,
     hashtags: ['momentum', 'news'],
-    createdAt: '2025-04-10T15:30:00Z'
+    createdAt: '2025-04-10T15:30:00Z',
+    commission: 15
   },
   {
     id: '2',
@@ -90,7 +149,8 @@ const sampleTrades: Trade[] = [
     beforeImageUrl: null,
     afterImageUrl: null,
     hashtags: ['breakout', 'technical'],
-    createdAt: '2025-04-09T12:15:00Z'
+    createdAt: '2025-04-09T12:15:00Z',
+    commission: 10
   },
   {
     id: '3',
@@ -113,7 +173,8 @@ const sampleTrades: Trade[] = [
     beforeImageUrl: null,
     afterImageUrl: null,
     hashtags: ['mistake', 'fakeout'],
-    createdAt: '2025-04-08T09:45:00Z'
+    createdAt: '2025-04-08T09:45:00Z',
+    commission: 15
   },
   {
     id: '4',
@@ -136,7 +197,8 @@ const sampleTrades: Trade[] = [
     beforeImageUrl: null,
     afterImageUrl: null,
     hashtags: ['retracement', 'setup'],
-    createdAt: '2025-04-07T14:20:00Z'
+    createdAt: '2025-04-07T14:20:00Z',
+    commission: 12
   },
   {
     id: '5',
@@ -159,7 +221,8 @@ const sampleTrades: Trade[] = [
     beforeImageUrl: null,
     afterImageUrl: null,
     hashtags: ['mistake', 'patience'],
-    createdAt: '2025-04-06T10:30:00Z'
+    createdAt: '2025-04-06T10:30:00Z',
+    commission: 10
   }
 ];
 
@@ -168,6 +231,7 @@ const TradeContext = createContext<TradeContextType | undefined>(undefined);
 export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
+  const [symbols, setSymbols] = useState<Symbol[]>(defaultSymbols);
   const [allHashtags, setAllHashtags] = useState<string[]>([
     'setup', 'momentum', 'breakout', 'retracement', 'technical', 'fundamental', 
     'news', 'mistake', 'perfecttrade', 'patience', 'fakeout'
@@ -177,8 +241,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     if (user) {
-      // Load trades from localStorage
+      // Load trades and symbols from localStorage
       const allTrades = loadTradesFromStorage();
+      const storedSymbols = loadSymbolsFromStorage();
+      
+      if (storedSymbols.length > 0) {
+        setSymbols(storedSymbols);
+      }
       
       // Filter trades for current user
       const userTrades = allTrades.filter(trade => trade.userId === user.id);
@@ -217,6 +286,15 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const saveTradestoStorage = (trades: Trade[]) => {
     localStorage.setItem('trades', JSON.stringify(trades));
+  };
+  
+  const loadSymbolsFromStorage = (): Symbol[] => {
+    const storedSymbols = localStorage.getItem('symbols');
+    return storedSymbols ? JSON.parse(storedSymbols) : defaultSymbols;
+  };
+  
+  const saveSymbolsToStorage = (symbols: Symbol[]) => {
+    localStorage.setItem('symbols', JSON.stringify(symbols));
   };
 
   const addTrade = (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
@@ -310,6 +388,20 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setAllHashtags([...allHashtags, hashtag]);
     }
   };
+  
+  const addSymbol = (symbol: Symbol) => {
+    // Check if symbol already exists
+    if (!symbols.some(s => s.symbol === symbol.symbol)) {
+      const updatedSymbols = [...symbols, symbol];
+      setSymbols(updatedSymbols);
+      saveSymbolsToStorage(updatedSymbols);
+      
+      toast({
+        title: "Symbol Added",
+        description: `${symbol.name} has been added to your symbols list`,
+      });
+    }
+  };
 
   return (
     <TradeContext.Provider value={{ 
@@ -321,7 +413,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       getAllTrades,
       loading,
       accounts: sampleAccounts,
-      pairs: samplePairs,
+      pairs: symbolsToPairs(symbols),
+      symbols,
+      addSymbol,
       allHashtags,
       addHashtag
     }}>

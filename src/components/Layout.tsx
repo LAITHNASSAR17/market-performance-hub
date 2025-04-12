@@ -147,18 +147,13 @@ const Layout: React.FC<LayoutProps> = ({
                   <Button
                     variant="ghost"
                     onClick={toggleLanguage}
-                    className="flex items-center"
-                    size={sidebarOpen ? "default" : "icon"}
+                    size="icon"
+                    className="flex items-center justify-center"
                   >
                     <Globe className="h-5 w-5" />
-                    {sidebarOpen && (
-                      <span className="ml-2">
-                        {language === 'ar' ? 'English' : 'العربية'}
-                      </span>
-                    )}
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center" hidden={sidebarOpen}>
+                <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center">
                   {language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
                 </TooltipContent>
               </Tooltip>
