@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ShieldAlert, 
@@ -25,6 +25,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { user, isAdmin, logout } = useAuth();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const location = useLocation();
   
   // Redirect non-admin users to dashboard
   if (!isAdmin) {
@@ -53,6 +54,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/admin/settings" },
   ];
 
+  // Check if the current path matches the item
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Admin Sidebar */}
@@ -75,7 +81,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               <a 
                 key={index} 
                 href={item.path}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 ${
+                  isActive(item.path) ? 'bg-gray-100 dark:bg-gray-700 font-medium' : ''
+                }`}
               >
                 {item.icon}
                 <span>{item.label}</span>
@@ -119,7 +127,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
         
         {/* Page Content */}
-        <div className="p-4">
+        <div className="p-0">
           {children}
         </div>
       </div>

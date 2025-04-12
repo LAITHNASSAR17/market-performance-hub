@@ -102,11 +102,14 @@ const AdminDashboard: React.FC = () => {
   const [hashtags, setHashtags] = useState(sampleHashtags);
   const [allTrades, setAllTrades] = useState<any[]>([]);
 
+  // Redirect non-admin users
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   // Load initial data
   useEffect(() => {
-    if (isAdmin) {
-      handleRefreshData();
-    }
+    handleRefreshData();
   }, [isAdmin]);
 
   // Statistics calculations - now derived from loaded data
@@ -150,10 +153,6 @@ const AdminDashboard: React.FC = () => {
   // Demo data
   const linkedAccounts = 12;
   const totalNotes = 87;
-
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" />;
-  }
 
   const handleRefreshData = () => {
     // Fetch users data
@@ -265,227 +264,225 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="container mx-auto py-4 md:py-6 px-4 md:px-6">
-        <div className="flex flex-col space-y-6">
-          <header className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
-                <ShieldAlert className="mr-2 h-6 md:h-8 w-6 md:w-8 text-purple-600" />
-                Admin Dashboard
-              </h1>
-              <p className="mt-1 text-sm md:text-base text-gray-500">
-                Manage users, trades, and system settings.
-              </p>
-            </div>
-            <div className="mt-4 md:mt-0 flex items-center space-x-2 text-sm text-gray-500">
-              <span className="hidden md:inline">Last refreshed: {lastRefresh.toLocaleTimeString()}</span>
-              <Button 
-                variant="outline" 
-                size={isMobile ? "sm" : "default"} 
-                onClick={handleRefreshData}
-                className="flex items-center"
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                {isMobile ? "Refresh" : "Refresh Data"}
-              </Button>
-            </div>
-          </header>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            <StatCard
-              title="Total Users"
-              value={totalUsers}
-              icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-              description={`Active: ${activeUsers}`}
-            />
-            
-            <StatCard
-              title="Total Trades"
-              value={totalTrades}
-              icon={<Activity className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-              description={`Today: ${todayTrades}`}
-            />
-            
-            <StatCard
-              title="Total P&L"
-              value={`$${allProfitLoss.toFixed(2)}`}
-              icon={<DollarSign className="h-4 md:h-5 w-4 md:w-5" />}
-              color={allProfitLoss > 0 ? "green" : allProfitLoss < 0 ? "red" : "default"}
-              description={`Today: $${todayProfit.toFixed(2)}`}
-              trend={allProfitLoss > 0 ? 'up' : allProfitLoss < 0 ? 'down' : 'neutral'}
-            />
-            
-            <StatCard
-              title="Win Rate"
-              value={`${winRate}%`}
-              icon={<Percent className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-              description={`W: ${winningTrades} / L: ${losingTrades}`}
-            />
-            
-            <StatCard
-              title="Trading Accounts"
-              value={linkedAccounts}
-              icon={<Briefcase className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-            />
-            
-            <StatCard
-              title="Total Notes"
-              value={totalNotes}
-              icon={<FileText className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-            />
-            
-            <StatCard
-              title="Most Traded Pair"
-              value={mostTradedPair || 'N/A'}
-              icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-              description={highestCount > 0 ? `${highestCount} trades` : 'No trades yet'}
-            />
-            
-            <StatCard
-              title="Blocked Users"
-              value={blockedUsers}
-              icon={<UserX className="h-4 md:h-5 w-4 md:w-5" />}
-              color="red"
-              description={blockedUsers > 0 ? `${blockedUsers} of ${totalUsers}` : 'None'}
-            />
+    <div className="container mx-auto py-4 md:py-6 px-4 md:px-6">
+      <div className="flex flex-col space-y-6">
+        <header className="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+              <ShieldAlert className="mr-2 h-6 md:h-8 w-6 md:w-8 text-purple-600" />
+              Admin Dashboard
+            </h1>
+            <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
+              Manage users, trades, and system settings.
+            </p>
           </div>
+          <div className="mt-4 md:mt-0 flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+            <span className="hidden md:inline">Last refreshed: {lastRefresh.toLocaleTimeString()}</span>
+            <Button 
+              variant="outline" 
+              size={isMobile ? "sm" : "default"} 
+              onClick={handleRefreshData}
+              className="flex items-center"
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              {isMobile ? "Refresh" : "Refresh Data"}
+            </Button>
+          </div>
+        </header>
 
-          {/* Charts Section */}
-          <AdminCharts className="mt-4" />
-
-          {/* Main Content */}
-          <Tabs defaultValue="users" className="w-full mt-6">
-            <TabsList className="mb-6 bg-white p-1 rounded-md overflow-x-auto flex whitespace-nowrap">
-              <TabsTrigger value="users" className="flex items-center">
-                <User className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">User Management</span>
-                <span className="sm:hidden">Users</span>
-              </TabsTrigger>
-              <TabsTrigger value="trades" className="flex items-center">
-                <Activity className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Trade Management</span>
-                <span className="sm:hidden">Trades</span>
-              </TabsTrigger>
-              <TabsTrigger value="hashtags" className="flex items-center">
-                <Hash className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Hashtag Management</span>
-                <span className="sm:hidden">Tags</span>
-              </TabsTrigger>
-              <TabsTrigger value="notes" className="flex items-center">
-                <FileText className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Notes Management</span>
-                <span className="sm:hidden">Notes</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">System Settings</span>
-                <span className="sm:hidden">Settings</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="users" className="mt-0">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>User Management</CardTitle>
-                  <CardDescription>View and manage user accounts.</CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <UserTable 
-                    users={users}
-                    onBlock={handleBlockUser}
-                    onUnblock={handleUnblockUser}
-                    onChangePassword={changePassword}
-                    onViewUser={handleViewUser}
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="trades" className="mt-0">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>Trade Management</CardTitle>
-                  <CardDescription>View and manage all trades across the platform.</CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <TradeTable 
-                    trades={allTrades}
-                    onViewTrade={handleViewTrade}
-                    onEditTrade={handleEditTrade}
-                    onDeleteTrade={handleDeleteTrade}
-                    onRefresh={handleRefreshData}
-                    onExport={handleExportTrades}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="hashtags" className="mt-0">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>Hashtag Management</CardTitle>
-                  <CardDescription>Manage hashtags used across the platform.</CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <HashtagsTable 
-                    hashtags={hashtags}
-                    onAddHashtag={handleAddHashtag}
-                    onEditHashtag={handleEditHashtag}
-                    onDeleteHashtag={handleDeleteHashtag}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="notes" className="mt-0">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>Notes Management</CardTitle>
-                  <CardDescription>View and manage all user notes.</CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="flex flex-col sm:flex-row mb-4 gap-2">
-                    <div className="relative flex-grow">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <Input
-                        className="pl-10 pr-4"
-                        placeholder="Search notes..."
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="overflow-x-auto">
-                    <div className="p-8 text-center text-gray-500">
-                      <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Notes Module Coming Soon</h3>
-                      <p>The notes management functionality is under development and will be available in a future update.</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="settings" className="mt-0">
-              <SystemSettings />
-            </TabsContent>
-          </Tabs>
+        {/* Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <StatCard
+            title="Total Users"
+            value={totalUsers}
+            icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
+            color="default"
+            description={`Active: ${activeUsers}`}
+          />
+          
+          <StatCard
+            title="Total Trades"
+            value={totalTrades}
+            icon={<Activity className="h-4 md:h-5 w-4 md:w-5" />}
+            color="default"
+            description={`Today: ${todayTrades}`}
+          />
+          
+          <StatCard
+            title="Total P&L"
+            value={`$${allProfitLoss.toFixed(2)}`}
+            icon={<DollarSign className="h-4 md:h-5 w-4 md:w-5" />}
+            color={allProfitLoss > 0 ? "green" : allProfitLoss < 0 ? "red" : "default"}
+            description={`Today: $${todayProfit.toFixed(2)}`}
+            trend={allProfitLoss > 0 ? 'up' : allProfitLoss < 0 ? 'down' : 'neutral'}
+          />
+          
+          <StatCard
+            title="Win Rate"
+            value={`${winRate}%`}
+            icon={<Percent className="h-4 md:h-5 w-4 md:w-5" />}
+            color="default"
+            description={`W: ${winningTrades} / L: ${losingTrades}`}
+          />
+          
+          <StatCard
+            title="Trading Accounts"
+            value={linkedAccounts}
+            icon={<Briefcase className="h-4 md:h-5 w-4 md:w-5" />}
+            color="default"
+          />
+          
+          <StatCard
+            title="Total Notes"
+            value={totalNotes}
+            icon={<FileText className="h-4 md:h-5 w-4 md:w-5" />}
+            color="default"
+          />
+          
+          <StatCard
+            title="Most Traded Pair"
+            value={mostTradedPair || 'N/A'}
+            icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
+            color="default"
+            description={highestCount > 0 ? `${highestCount} trades` : 'No trades yet'}
+          />
+          
+          <StatCard
+            title="Blocked Users"
+            value={blockedUsers}
+            icon={<UserX className="h-4 md:h-5 w-4 md:w-5" />}
+            color="red"
+            description={blockedUsers > 0 ? `${blockedUsers} of ${totalUsers}` : 'None'}
+          />
         </div>
+
+        {/* Charts Section */}
+        <AdminCharts className="mt-4" />
+
+        {/* Main Content */}
+        <Tabs defaultValue="users" className="w-full mt-6">
+          <TabsList className="mb-6 bg-white p-1 rounded-md overflow-x-auto flex whitespace-nowrap">
+            <TabsTrigger value="users" className="flex items-center">
+              <User className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">User Management</span>
+              <span className="sm:hidden">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="trades" className="flex items-center">
+              <Activity className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Trade Management</span>
+              <span className="sm:hidden">Trades</span>
+            </TabsTrigger>
+            <TabsTrigger value="hashtags" className="flex items-center">
+              <Hash className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Hashtag Management</span>
+              <span className="sm:hidden">Tags</span>
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="flex items-center">
+              <FileText className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Notes Management</span>
+              <span className="sm:hidden">Notes</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center">
+              <Settings className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">System Settings</span>
+              <span className="sm:hidden">Settings</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="users" className="mt-0">
+            <Card className="bg-white shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>View and manage user accounts.</CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <UserTable 
+                  users={users}
+                  onBlock={handleBlockUser}
+                  onUnblock={handleUnblockUser}
+                  onChangePassword={changePassword}
+                  onViewUser={handleViewUser}
+                  searchTerm={searchTerm}
+                  setSearchTerm={setSearchTerm}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="trades" className="mt-0">
+            <Card className="bg-white shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle>Trade Management</CardTitle>
+                <CardDescription>View and manage all trades across the platform.</CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <TradeTable 
+                  trades={allTrades}
+                  onViewTrade={handleViewTrade}
+                  onEditTrade={handleEditTrade}
+                  onDeleteTrade={handleDeleteTrade}
+                  onRefresh={handleRefreshData}
+                  onExport={handleExportTrades}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="hashtags" className="mt-0">
+            <Card className="bg-white shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle>Hashtag Management</CardTitle>
+                <CardDescription>Manage hashtags used across the platform.</CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <HashtagsTable 
+                  hashtags={hashtags}
+                  onAddHashtag={handleAddHashtag}
+                  onEditHashtag={handleEditHashtag}
+                  onDeleteHashtag={handleDeleteHashtag}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notes" className="mt-0">
+            <Card className="bg-white shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle>Notes Management</CardTitle>
+                <CardDescription>View and manage all user notes.</CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <div className="flex flex-col sm:flex-row mb-4 gap-2">
+                  <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Input
+                      className="pl-10 pr-4"
+                      placeholder="Search notes..."
+                    />
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <div className="p-8 text-center text-gray-500">
+                    <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Notes Module Coming Soon</h3>
+                    <p>The notes management functionality is under development and will be available in a future update.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-0">
+            <SystemSettings />
+          </TabsContent>
+        </Tabs>
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 

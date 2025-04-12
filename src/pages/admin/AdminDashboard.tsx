@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -82,7 +81,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <AdminLayout>
+    <div>
       <header className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white flex items-center">
@@ -271,13 +270,11 @@ const AdminDashboard: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm">
         <h3 className="text-lg font-medium mb-4 dark:text-white">Recent Activity</h3>
         <div className="space-y-4">
-          {/* Show loading state if data is loading */}
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
             </div>
           ) : (
-            // Mock data for recent activity - would be replaced with real data
             <>
               <div className="border-l-4 border-green-500 pl-4 py-1">
                 <p className="text-sm font-medium dark:text-white">New user registered</p>
@@ -299,7 +296,7 @@ const AdminDashboard: React.FC = () => {
           )}
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 };
 
