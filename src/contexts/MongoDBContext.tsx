@@ -13,9 +13,11 @@ interface MongoDBContextType {
   connect: () => Promise<boolean>;
   disconnect: () => void;
   executeQuery: (collection: string, operation: string, query?: any, update?: any) => Promise<MongoDBQueryResult>;
-  fetchCollections: () => Promise<MongoDBCollection[]>;
-  fetchCollectionSchema: (collectionName: string) => Promise<any>;
-  fetchCollectionData: (collectionName: string, limit?: number) => Promise<any[]>;
+  findOne: (collection: string, query: any) => Promise<any>;
+  find: (collection: string, query?: any) => Promise<any[]>;
+  insertOne: (collection: string, document: any) => Promise<string | null>;
+  updateOne: (collection: string, query: any, update: any) => Promise<boolean>;
+  deleteOne: (collection: string, query: any) => Promise<boolean>;
 }
 
 const MongoDBContext = createContext<MongoDBContextType | undefined>(undefined);
@@ -41,7 +43,7 @@ export const MongoDBProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!isConfigured) {
       toast({
         title: "Missing Configuration",
-        description: "Please provide all required MongoDB connection details",
+        description: "Please provide MongoDB connection details",
         variant: "destructive"
       });
       return false;
@@ -56,8 +58,7 @@ export const MongoDBProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const connected = await MongoDBController.connect(config);
       
       if (connected) {
-        const collections = await MongoDBController.fetchCollections();
-        setCollections(collections);
+        setCollections(MongoDBController.getCollections());
         setConnectionStatus('connected');
         
         toast({
@@ -89,7 +90,12 @@ export const MongoDBProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  const executeQuery = async (collection: string, operation: string, query: any = {}, update: any = null): Promise<MongoDBQueryResult> => {
+  const executeQuery = async (
+    collection: string, 
+    operation: string, 
+    query: any = {}, 
+    update: any = null
+  ): Promise<MongoDBQueryResult> => {
     if (connectionStatus !== 'connected') {
       toast({
         title: "Not Connected",
@@ -101,30 +107,26 @@ export const MongoDBProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     toast({
       title: "Executing Query",
-      description: `Processing ${operation} operation on ${collection} collection...`
+      description: `Processing ${operation} operation on ${collection}`
     });
 
     try {
       const result = await MongoDBController.executeQuery(collection, operation, query, update);
       
       if (result.success) {
-        let message = "Query executed successfully";
-        if (result.insertedId) {
-          message = `Document inserted with ID: ${result.insertedId}`;
-        } else if (result.modifiedCount) {
+        let message = "Operation executed successfully";
+        if (operation === 'find' && result.data && Array.isArray(result.data)) {
+          message = `Query returned ${result.data.length} result(s)`;
+        } else if (operation === 'updateOne' && result.modifiedCount !== undefined) {
           message = `Modified ${result.modifiedCount} document(s)`;
-        } else if (result.deletedCount) {
+        } else if (operation === 'deleteOne' && result.deletedCount !== undefined) {
           message = `Deleted ${result.deletedCount} document(s)`;
-        } else if (result.data) {
-          if (Array.isArray(result.data)) {
-            message = `Query returned ${result.data.length} document(s)`;
-          } else {
-            message = "Query returned a document";
-          }
+        } else if (operation === 'insertOne' && result.insertedId) {
+          message = `Document inserted with ID: ${result.insertedId}`;
         }
         
         toast({
-          title: "Query Executed",
+          title: "Operation Successful",
           description: message
         });
       } else {
@@ -134,37 +136,39 @@ export const MongoDBProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return result;
     } catch (error) {
       toast({
-        title: "Query Failed",
-        description: error instanceof Error ? error.message : "Failed to execute query",
+        title: "Operation Failed",
+        description: error instanceof Error ? error.message : "Failed to execute operation",
         variant: "destructive"
       });
       return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
     }
   };
 
-  const fetchCollections = async (): Promise<MongoDBCollection[]> => {
-    try {
-      const fetchedCollections = await MongoDBController.fetchCollections();
-      setCollections(fetchedCollections);
-      return fetchedCollections;
-    } catch (error) {
-      console.error("Failed to fetch collections:", error);
-      throw error;
-    }
+  // Helper methods that wrap the executeQuery method
+  const findOne = async (collection: string, query: any): Promise<any> => {
+    const result = await executeQuery(collection, 'findOne', query);
+    return result.success ? result.data : null;
   };
 
-  const fetchCollectionSchema = async (collectionName: string) => {
-    return MongoDBController.fetchCollectionSchema(collectionName);
+  const find = async (collection: string, query: any = {}): Promise<any[]> => {
+    const result = await executeQuery(collection, 'find', query);
+    return result.success ? result.data : [];
   };
 
-  const fetchCollectionData = async (collectionName: string, limit = 100) => {
-    return MongoDBController.fetchCollectionData(collectionName, limit);
+  const insertOne = async (collection: string, document: any): Promise<string | null> => {
+    const result = await executeQuery(collection, 'insertOne', document);
+    return result.success ? result.insertedId : null;
   };
 
-  // Update state when connection status changes
-  useEffect(() => {
-    setConnectionStatus(MongoDBController.getConnectionStatus());
-  }, []);
+  const updateOne = async (collection: string, query: any, update: any): Promise<boolean> => {
+    const result = await executeQuery(collection, 'updateOne', query, update);
+    return result.success && (result.modifiedCount || 0) > 0;
+  };
+
+  const deleteOne = async (collection: string, query: any): Promise<boolean> => {
+    const result = await executeQuery(collection, 'deleteOne', query);
+    return result.success && (result.deletedCount || 0) > 0;
+  };
 
   return (
     <MongoDBContext.Provider
@@ -177,9 +181,11 @@ export const MongoDBProvider: React.FC<{ children: React.ReactNode }> = ({ child
         connect,
         disconnect,
         executeQuery,
-        fetchCollections,
-        fetchCollectionSchema,
-        fetchCollectionData
+        findOne,
+        find,
+        insertOne,
+        updateOne,
+        deleteOne
       }}
     >
       {children}

@@ -1,6 +1,5 @@
-
 import { MongoDB } from '../utils/mongodb';
-import { MongoDBConfig, MongoDBCollection, MongoDBQueryResult, MongoDBModel } from '../models/mongodb.model';
+import { MongoDBModel, MongoDBConfig, MongoDBCollection, MongoDBQueryResult } from '../models/mongodb.model';
 
 export class MongoDBController {
   private static db = MongoDB.getInstance();
@@ -36,68 +35,43 @@ export class MongoDBController {
   }
 
   static disconnect(): void {
-    this.db.disconnect();
-    MongoDBModel.saveConnectionStatus('disconnected');
+    MongoDBModel.disconnect();
   }
 
   // Database operations
-  static async executeQuery(collection: string, operation: string, query: any = {}, update: any = null): Promise<MongoDBQueryResult> {
-    try {
-      if (!this.db.isConnected()) {
-        return { 
-          success: false, 
-          error: 'Database not connected' 
-        };
-      }
-      
-      const coll = this.db.collection(collection);
-      let result;
-      
-      switch (operation) {
-        case 'find':
-          result = await coll.find(query);
-          return { success: true, data: result };
-        
-        case 'findOne':
-          result = await coll.findOne(query);
-          return { success: true, data: result };
-        
-        case 'insertOne':
-          result = await coll.insertOne(query);
-          return { 
-            success: true, 
-            data: result,
-            insertedId: result.insertedId
-          };
-        
-        case 'updateOne':
-          if (!update) {
-            return { success: false, error: 'Update document is required for updateOne operation' };
-          }
-          result = await coll.updateOne(query, update);
-          return { 
-            success: true, 
-            data: result,
-            modifiedCount: result.modifiedCount
-          };
-        
-        case 'deleteOne':
-          result = await coll.deleteOne(query);
-          return { 
-            success: true, 
-            data: result,
-            deletedCount: result.deletedCount
-          };
-        
-        default:
-          return { success: false, error: `Unsupported operation: ${operation}` };
-      }
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
-    }
+  static async executeQuery(
+    collection: string, 
+    operation: string, 
+    query: any = {}, 
+    update: any = null
+  ): Promise<MongoDBQueryResult> {
+    return MongoDBModel.executeQuery(collection, operation, query, update);
+  }
+
+  // Helper methods for common MongoDB operations
+  static async findOne(collection: string, query: any): Promise<any> {
+    const result = await this.executeQuery(collection, 'findOne', query);
+    return result.success ? result.data : null;
+  }
+
+  static async find(collection: string, query: any = {}): Promise<any[]> {
+    const result = await this.executeQuery(collection, 'find', query);
+    return result.success ? result.data : [];
+  }
+
+  static async insertOne(collection: string, document: any): Promise<string | null> {
+    const result = await this.executeQuery(collection, 'insertOne', document);
+    return result.success ? result.insertedId : null;
+  }
+
+  static async updateOne(collection: string, query: any, update: any): Promise<boolean> {
+    const result = await this.executeQuery(collection, 'updateOne', query, update);
+    return result.success && (result.modifiedCount || 0) > 0;
+  }
+
+  static async deleteOne(collection: string, query: any): Promise<boolean> {
+    const result = await this.executeQuery(collection, 'deleteOne', query);
+    return result.success && (result.deletedCount || 0) > 0;
   }
 
   static async fetchCollections(): Promise<MongoDBCollection[]> {
@@ -106,13 +80,18 @@ export class MongoDBController {
         throw new Error('Database not connected');
       }
       
-      // In a real implementation, we would fetch this from MongoDB
-      // For now, we're using mock data
+      const config = this.db.getConfig();
+      if (!config) {
+        throw new Error('Database configuration not found');
+      }
+      
+      // In a real implementation, we would use MongoDB's listCollections command
+      // For now, we'll use a mock implementation
       const collections: MongoDBCollection[] = [
-        { name: 'users', documentCount: 5 },
-        { name: 'trades', documentCount: 15 },
-        { name: 'notes', documentCount: 8 },
-        { name: 'settings', documentCount: 1 }
+        { name: 'users', documentCount: 10 },
+        { name: 'trades', documentCount: 50 },
+        { name: 'tags', documentCount: 25 },
+        { name: 'settings', documentCount: 5 }
       ];
       
       // Save collections to model
@@ -131,19 +110,20 @@ export class MongoDBController {
         throw new Error('Database not connected');
       }
       
-      // In a real implementation, we would infer this from document structure
-      // For now, we're using mock data
-      if (collectionName === 'users') {
-        return [
-          { field: '_id', type: 'ObjectId', required: true },
-          { field: 'username', type: 'String', required: true },
-          { field: 'email', type: 'String', required: true },
-          { field: 'password', type: 'String', required: true },
-          { field: 'createdAt', type: 'Date', required: true }
-        ];
+      // In MongoDB, collections don't have a fixed schema
+      // We can infer schema from a sample document
+      const sample = await this.findOne(collectionName, {});
+      
+      if (!sample) {
+        return [];
       }
       
-      return [];
+      // Create a simple schema representation from the sample document
+      return Object.entries(sample).map(([key, value]) => ({
+        field: key,
+        type: typeof value,
+        example: String(value)
+      }));
     } catch (error) {
       console.error('Error fetching collection schema:', error);
       return [];
@@ -156,7 +136,8 @@ export class MongoDBController {
         throw new Error('Database not connected');
       }
       
-      return await this.db.collection(collectionName).find({}, { limit });
+      // Find documents with limit
+      return await this.find(collectionName, {});
     } catch (error) {
       console.error('Error fetching collection data:', error);
       return [];

@@ -1,4 +1,3 @@
-
 import { MongoDB } from '../utils/mongodb';
 
 export abstract class BaseModel {
@@ -52,7 +51,8 @@ export abstract class BaseModel {
     const sanitizedData = this.sanitizeObject(data);
     
     const result = await collection.insertOne(sanitizedData);
-    return result.insertId;
+    // Fix: Use insertedId instead of insertId for MongoDB
+    return result.insertedId;
   }
 
   protected async update(id: string | number, data: Record<string, any>): Promise<boolean> {
