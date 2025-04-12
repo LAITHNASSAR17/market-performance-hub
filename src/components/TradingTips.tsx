@@ -1,41 +1,44 @@
 
 import React from 'react';
-import { Lightbulb } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-
-// Array of trading tips
-const tips = [
-  "Always use stop losses to manage risk and protect your capital.",
-  "Keep a trading journal to track your progress and learn from mistakes.",
-  "Define your risk tolerance before entering a trade.",
-  "Focus on risk management over chasing high returns.",
-  "Don't overtrade – quality over quantity matters in trading.",
-  "Develop a consistent trading strategy and stick to it.",
-  "Avoid emotional trading decisions during market volatility.",
-  "Review your trades regularly to identify patterns and improve.",
-  "Stay informed about market news that could impact your trades.",
-  "Always have a clear exit strategy before entering a position.",
-  "Trade with the trend rather than against it.",
-  "Focus on a few markets rather than trying to trade everything.",
-  "Remember that preserving capital is more important than making profits.",
-  "Take breaks to avoid mental fatigue and maintain focus.",
-  "Use multiple timeframes to confirm your trading decisions."
-];
+import { TrendingUp, AlertTriangle, Zap, BarChart2 } from 'lucide-react';
 
 const TradingTips: React.FC = () => {
-  // Randomly select 3 tips to display
-  const randomTips = React.useMemo(() => {
-    const shuffled = [...tips].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, 3);
-  }, []);
+  const tips = [
+    {
+      icon: <TrendingUp className="h-4 w-4 text-blue-500" />,
+      title: 'Follow the Trend',
+      description: 'In trending markets, position yourself in the direction of the trend.'
+    },
+    {
+      icon: <AlertTriangle className="h-4 w-4 text-amber-500" />,
+      title: 'Risk Management',
+      description: 'Never risk more than 1-2% of your capital on a single trade.'
+    },
+    {
+      icon: <Zap className="h-4 w-4 text-purple-500" />,
+      title: 'Emotional Control',
+      description: 'Keep emotions in check. Stick to your trading plan.'
+    },
+    {
+      icon: <BarChart2 className="h-4 w-4 text-green-500" />,
+      title: 'Track Your Trades',
+      description: 'Keep a detailed record of all trades to identify patterns.'
+    }
+  ];
 
   return (
     <div className="space-y-3">
-      {randomTips.map((tip, index) => (
-        <Card key={index} className="bg-gray-50 dark:bg-gray-800/50 border-l-4 border-amber-500">
-          <CardContent className="p-3 flex">
-            <Lightbulb className="h-5 w-5 text-amber-500 mr-3 flex-shrink-0 mt-0.5" />
-            <p className="text-sm">{tip}</p>
+      {tips.map((tip, index) => (
+        <Card key={index} className="bg-card hover:shadow transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">{tip.icon}</div>
+              <div>
+                <h4 className="font-medium text-sm">{tip.title}</h4>
+                <p className="text-xs text-muted-foreground">{tip.description}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       ))}
