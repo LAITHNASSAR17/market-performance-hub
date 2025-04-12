@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import {
   Table,
   TableBody,
@@ -63,12 +62,10 @@ const AdminUsers: React.FC = () => {
     subscriptionTier: 'Basic'
   });
 
-  // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  // Filter users when search query changes
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredUsers(users);
@@ -87,7 +84,6 @@ const AdminUsers: React.FC = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     
-    // Simulate API call to fetch users
     setTimeout(() => {
       const mockUsers: User[] = [
         {
@@ -144,7 +140,6 @@ const AdminUsers: React.FC = () => {
   };
 
   const handleCreateUser = () => {
-    // Validate input
     if (!formData.name || !formData.email || !formData.password) {
       toast({
         title: "Validation Error",
@@ -163,7 +158,6 @@ const AdminUsers: React.FC = () => {
       return;
     }
     
-    // Create a new user
     const newUser: User = {
       id: (users.length + 1).toString(),
       name: formData.name,
@@ -182,7 +176,6 @@ const AdminUsers: React.FC = () => {
       description: `${newUser.name} has been added successfully`
     });
     
-    // Reset form and close dialog
     setFormData({
       name: '',
       email: '',
@@ -197,7 +190,6 @@ const AdminUsers: React.FC = () => {
   const handleEditUser = () => {
     if (!currentUser) return;
     
-    // Update the user
     const updatedUsers = users.map(user => 
       user.id === currentUser.id 
         ? { 
@@ -218,12 +210,10 @@ const AdminUsers: React.FC = () => {
       description: `${formData.name} has been updated successfully`
     });
     
-    // Reset and close dialog
     setShowEditDialog(false);
   };
 
   const handleDeleteUser = (userId: string) => {
-    // Confirm before deleting
     if (!window.confirm("Are you sure you want to delete this user?")) {
       return;
     }
@@ -431,7 +421,6 @@ const AdminUsers: React.FC = () => {
         </Card>
       </div>
       
-      {/* Create User Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -527,7 +516,6 @@ const AdminUsers: React.FC = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Edit User Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
