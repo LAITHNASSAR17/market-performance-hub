@@ -10,9 +10,8 @@ import { Toaster } from './components/ui/toaster';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
-import Profile from './pages/Profile';
-import Admin from './pages/Admin';
 import NotFound from './pages/NotFound';
+import AdminDashboard from './pages/AdminDashboard'; // Using the existing AdminDashboard
 
 const App: React.FC = () => {
   return (
@@ -25,8 +24,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

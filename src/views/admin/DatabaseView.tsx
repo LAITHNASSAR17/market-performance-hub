@@ -1,371 +1,245 @@
 
-import React, { useState } from 'react';
-import { useMySQL } from '@/contexts/MySQLContext';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Loader2, DatabaseIcon, TableIcon, PlayIcon } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useMongoDB } from '@/contexts/MongoDBContext';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { RefreshCw, Database, Search, FileText, Info } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 const DatabaseView: React.FC = () => {
-  const {
-    config,
-    setConfig,
-    connect,
-    disconnect,
-    connectionStatus,
-    tables,
-    executeQuery,
-    fetchTableData,
-    fetchTableStructure,
-  } = useMySQL();
+  const { 
+    connectionStatus, 
+    collections, 
+    find,
+    isConfigured 
+  } = useMongoDB();
+  
+  const { toast } = useToast();
+  const [selectedCollection, setSelectedCollection] = useState('');
+  const [documentCount, setDocumentCount] = useState(0);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [schema, setSchema] = useState<any[]>([]);
 
-  const [selectedTable, setSelectedTable] = useState<string>("");
-  const [sqlQuery, setSqlQuery] = useState<string>("");
-  const [queryResults, setQueryResults] = useState<any[] | null>(null);
-  const [tableStructure, setTableStructure] = useState<any[] | null>(null);
-  const [tableData, setTableData] = useState<any[] | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const handleConnect = async () => {
-    setLoading(true);
-    try {
-      await connect();
-    } finally {
-      setLoading(false);
+  // Load data when a collection is selected
+  useEffect(() => {
+    if (selectedCollection && connectionStatus === 'connected') {
+      loadCollectionData();
+    } else {
+      setDocuments([]);
+      setSchema([]);
+      setDocumentCount(0);
     }
-  };
+  }, [selectedCollection]);
 
-  const handleDisconnect = () => {
-    disconnect();
-    setSelectedTable("");
-    setTableStructure(null);
-    setTableData(null);
-    setQueryResults(null);
-  };
+  // Filter documents when search term changes
+  useEffect(() => {
+    if (selectedCollection && documents.length > 0 && searchTerm) {
+      filterDocuments();
+    }
+  }, [searchTerm]);
 
-  const handleTableSelect = async (tableName: string) => {
-    if (!tableName) return;
+  const loadCollectionData = async () => {
+    if (!selectedCollection || connectionStatus !== 'connected') return;
     
-    setLoading(true);
-    setSelectedTable(tableName);
-    
+    setIsLoading(true);
     try {
-      const structure = await fetchTableStructure(tableName);
-      setTableStructure(structure);
+      // Fetch documents with a limit
+      const result = await find(selectedCollection, {});
       
-      const data = await fetchTableData(tableName);
-      setTableData(data);
-    } catch (error) {
-      console.error("Error fetching table details:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleExecuteQuery = async () => {
-    if (!sqlQuery.trim()) return;
-    
-    setLoading(true);
-    try {
-      const result = await executeQuery(sqlQuery);
-      if (result.success && result.data) {
-        setQueryResults(Array.isArray(result.data) ? result.data : [result.data]);
-      } else {
-        setQueryResults([{ message: "Query executed successfully", ...result }]);
+      setDocuments(result);
+      setDocumentCount(result.length);
+      
+      // Generate schema from the first document
+      if (result.length > 0) {
+        const firstDoc = result[0];
+        const schemaFields = Object.entries(firstDoc).map(([key, value]) => ({
+          name: key,
+          type: typeof value,
+          example: String(value)
+        }));
+        setSchema(schemaFields);
       }
+      
+      toast({
+        title: "Collection Loaded",
+        description: `Loaded ${result.length} documents from ${selectedCollection}`
+      });
     } catch (error) {
-      console.error("Error executing query:", error);
-      setQueryResults([{ error: error instanceof Error ? error.message : "Unknown error" }]);
+      console.error("Error loading collection data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load collection data",
+        variant: "destructive"
+      });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="space-y-6">
+  const filterDocuments = async () => {
+    if (!selectedCollection || !searchTerm.trim()) {
+      loadCollectionData();
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      // Very simple filtering logic - in a real app, you would want to implement
+      // proper MongoDB querying here based on the search term
+      const allDocs = await find(selectedCollection, {});
+      
+      // Filter documents based on search term (case-insensitive)
+      const searchTermLower = searchTerm.toLowerCase();
+      const filtered = allDocs.filter(doc => {
+        return Object.values(doc).some(val => {
+          if (val === null || val === undefined) return false;
+          return String(val).toLowerCase().includes(searchTermLower);
+        });
+      });
+      
+      setDocuments(filtered);
+      setDocumentCount(filtered.length);
+      
+      toast({
+        title: "Search Results",
+        description: `Found ${filtered.length} matching documents`
+      });
+    } catch (error) {
+      console.error("Error filtering documents:", error);
+      toast({
+        title: "Search Error",
+        description: "Failed to filter documents",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isConfigured || connectionStatus !== 'connected') {
+    return (
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <DatabaseIcon className="mr-2" size={20} />
-            MySQL Connection
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Host</label>
-              <Input
-                value={config.host}
-                onChange={(e) => setConfig({ ...config, host: e.target.value })}
-                placeholder="localhost"
-                disabled={connectionStatus === 'connected'}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Port</label>
-              <Input
-                value={config.port}
-                onChange={(e) => setConfig({ ...config, port: e.target.value })}
-                placeholder="3306"
-                disabled={connectionStatus === 'connected'}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Username</label>
-              <Input
-                value={config.username}
-                onChange={(e) => setConfig({ ...config, username: e.target.value })}
-                placeholder="root"
-                disabled={connectionStatus === 'connected'}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Password</label>
-              <Input
-                type="password"
-                value={config.password}
-                onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                placeholder="••••••••"
-                disabled={connectionStatus === 'connected'}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Database Name</label>
-              <Input
-                value={config.database}
-                onChange={(e) => setConfig({ ...config, database: e.target.value })}
-                placeholder="mydatabase"
-                disabled={connectionStatus === 'connected'}
-              />
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <div>
-              Status: 
-              <Badge variant={
-                connectionStatus === 'connected' ? "success" : 
-                connectionStatus === 'error' ? "destructive" : "secondary"
-              } className="ml-2">
-                {connectionStatus === 'connected' ? 'Connected' : 
-                 connectionStatus === 'error' ? 'Error' : 'Disconnected'}
-              </Badge>
-            </div>
-            {connectionStatus === 'connected' ? (
-              <Button variant="destructive" onClick={handleDisconnect}>
-                Disconnect
-              </Button>
-            ) : (
-              <Button onClick={handleConnect} disabled={loading}>
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Connecting...
-                  </>
-                ) : (
-                  "Connect"
-                )}
-              </Button>
-            )}
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center p-8 text-center">
+            <Database className="h-12 w-12 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium">Not Connected</h3>
+            <p className="text-sm text-gray-500 max-w-md mt-2">
+              Please connect to a MongoDB database in the Connection tab before exploring collections.
+            </p>
           </div>
         </CardContent>
       </Card>
+    );
+  }
 
-      {connectionStatus === 'connected' && (
-        <Tabs defaultValue="tables">
-          <TabsList className="mb-4">
-            <TabsTrigger value="tables">Tables</TabsTrigger>
-            <TabsTrigger value="query">SQL Query</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="tables">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <Card className="md:col-span-1">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center">
-                    <TableIcon className="mr-2" size={18} />
-                    Tables
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-1">
-                    {tables.map((table) => (
-                      <Button
-                        key={table.name}
-                        variant={selectedTable === table.name ? "default" : "ghost"}
-                        className="w-full justify-start"
-                        onClick={() => handleTableSelect(table.name)}
-                      >
-                        {table.name}
-                        <Badge variant="outline" className="ml-auto">
-                          {table.rowCount}
-                        </Badge>
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="md:col-span-3">
-                <CardHeader>
-                  <CardTitle className="text-lg">
-                    {selectedTable ? `Table: ${selectedTable}` : "Select a table"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {loading ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                    </div>
-                  ) : selectedTable ? (
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-sm font-semibold mb-2">Structure</h3>
-                        <div className="rounded border overflow-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Column</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Nullable</TableHead>
-                                <TableHead>Key</TableHead>
-                                <TableHead>Default</TableHead>
-                                <TableHead>Extra</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {tableStructure?.map((col, i) => (
-                                <TableRow key={i}>
-                                  <TableCell className="font-medium">{col.name}</TableCell>
-                                  <TableCell>{col.type}</TableCell>
-                                  <TableCell>{col.nullable ? 'YES' : 'NO'}</TableCell>
-                                  <TableCell>{col.key}</TableCell>
-                                  <TableCell>{col.default || 'NULL'}</TableCell>
-                                  <TableCell>{col.extra}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div>
-                        <h3 className="text-sm font-semibold mb-2">Data</h3>
-                        {tableData && tableData.length > 0 ? (
-                          <div className="rounded border overflow-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  {Object.keys(tableData[0]).map((key) => (
-                                    <TableHead key={key}>{key}</TableHead>
-                                  ))}
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {tableData.map((row, i) => (
-                                  <TableRow key={i}>
-                                    {Object.values(row).map((value: any, j) => (
-                                      <TableCell key={j}>
-                                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                                      </TableCell>
-                                    ))}
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        ) : (
-                          <p className="text-muted-foreground text-center py-4">No data available</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-center py-8">
-                      Select a table from the list to view its structure and data
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="py-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Collections</CardTitle>
+            {isLoading && <RefreshCw className="animate-spin h-4 w-4 text-gray-500" />}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <Select 
+              value={selectedCollection} 
+              onValueChange={setSelectedCollection}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Select Collection" />
+              </SelectTrigger>
+              <SelectContent>
+                {collections.map((collection) => (
+                  <SelectItem key={collection.name} value={collection.name}>
+                    {collection.name} ({collection.documentCount || '?'})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Input
+                className="pl-10"
+                placeholder="Search documents..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                disabled={!selectedCollection}
+              />
             </div>
-          </TabsContent>
+            
+            <Button
+              size="sm"
+              onClick={loadCollectionData}
+              disabled={!selectedCollection || isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
           
-          <TabsContent value="query">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <PlayIcon className="mr-2" size={18} />
-                  SQL Query Executor
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Textarea
-                    value={sqlQuery}
-                    onChange={(e) => setSqlQuery(e.target.value)}
-                    placeholder="Enter your SQL query here... (e.g., SELECT * FROM users LIMIT 10)"
-                    className="font-mono h-32"
-                  />
-                  
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={handleExecuteQuery} 
-                      disabled={loading || !sqlQuery.trim()}
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Executing...
-                        </>
-                      ) : (
-                        "Execute Query"
-                      )}
-                    </Button>
-                  </div>
-                  
-                  {queryResults && (
-                    <div className="mt-6">
-                      <h3 className="text-sm font-semibold mb-2">Results</h3>
-                      
-                      {queryResults.length > 0 ? (
-                        <div className="rounded border overflow-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                {Object.keys(queryResults[0]).map((key) => (
-                                  <TableHead key={key}>{key}</TableHead>
-                                ))}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {queryResults.map((row, i) => (
-                                <TableRow key={i}>
-                                  {Object.values(row).map((value: any, j) => (
-                                    <TableCell key={j}>
-                                      {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                                    </TableCell>
-                                  ))}
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground text-center py-4">
-                          Query executed successfully but returned no results
-                        </p>
-                      )}
-                    </div>
-                  )}
+          {!selectedCollection ? (
+            <div className="text-center py-8 text-gray-500">
+              <FileText className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+              <p>Select a collection to view documents</p>
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Info className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+              <p>No documents found in collection</p>
+            </div>
+          ) : (
+            <>
+              <div className="text-sm text-gray-500 mb-2">
+                Showing {documents.length} document(s) from {selectedCollection}
+              </div>
+              
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    {schema.map((field) => (
+                      <TableHead key={field.name}>
+                        {field.name}
+                        <span className="text-xs text-gray-400 block">
+                          ({field.type})
+                        </span>
+                      </TableHead>
+                    ))}
+                  </TableHeader>
+                  <TableBody>
+                    {documents.slice(0, 10).map((doc, index) => (
+                      <TableRow key={index}>
+                        {schema.map((field) => (
+                          <TableCell key={field.name}>
+                            {doc[field.name] !== undefined ? 
+                              typeof doc[field.name] === 'object' ? 
+                                JSON.stringify(doc[field.name]) : 
+                                String(doc[field.name]) 
+                              : ''}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {documents.length > 10 && (
+                <div className="text-center text-sm text-gray-500 mt-2">
+                  Showing 10 of {documents.length} documents. 
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
