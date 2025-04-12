@@ -122,14 +122,14 @@ export class ThemeModel extends BaseModel {
   }
 
   // Get user theme preference
-  async getUserThemePreference(userId: number): Promise<number | null> {
+  async getUserThemePreference(userId: string): Promise<string | null> {
     const sql = "SELECT themeId FROM user_theme_preferences WHERE userId = ? LIMIT 1";
     const results = await this.query(sql, [userId]);
     return results.length > 0 ? results[0].themeId : null;
   }
 
   // Set user theme preference
-  async setUserThemePreference(userId: number, themeId: number): Promise<boolean> {
+  async setUserThemePreference(userId: string, themeId: string): Promise<boolean> {
     try {
       // Check if preference already exists
       const existingPref = await this.getUserThemePreference(userId);

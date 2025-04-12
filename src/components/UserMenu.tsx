@@ -19,6 +19,7 @@ interface AuthUser {
   name?: string;
   email?: string;
   image?: string;
+  profileImage?: string; // Add this as a fallback
   isAdmin?: boolean;
 }
 
@@ -44,7 +45,7 @@ const UserMenu = () => {
       <DropdownMenuTrigger asChild>
         <button className="flex items-center space-x-1 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.image} alt={user?.name || 'User'} />
+            <AvatarImage src={user?.profileImage || user?.image} alt={user?.name || 'User'} />
             <AvatarFallback>{user?.name ? getInitials(user.name) : 'U'}</AvatarFallback>
           </Avatar>
         </button>

@@ -1,4 +1,3 @@
-
 import { ThemeModel, Theme } from '../models/ThemeModel';
 
 export class ThemeController {
@@ -97,16 +96,9 @@ export class ThemeController {
   }
 
   // Get user theme preference
-  async getUserThemePreference(userId: string): Promise<Theme | null> {
+  async getUserThemePreference(userId: string): Promise<string | null> {
     try {
-      const themeId = await this.model.getUserThemePreference(userId);
-      
-      if (themeId) {
-        return this.model.getThemeById(themeId);
-      }
-      
-      // If no preference, return default theme
-      return this.model.getDefaultTheme();
+      return await this.model.getUserThemePreference(userId);
     } catch (error) {
       console.error('Error getting user theme preference:', error);
       return null;

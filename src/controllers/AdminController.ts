@@ -32,10 +32,10 @@ export class AdminController {
   private reportController: ReportController;
   private settingsController: SettingsController;
   private calendarController: CalendarController;
-  private chartController: any; // Using any temporarily until ChartController is fully implemented
-  private themeController: any; // Using any temporarily until ThemeController is fully implemented
-  private translationController: any; // Using any temporarily until TranslationController is fully implemented
-  private analyticsController: any; // Using any temporarily until AnalyticsController is fully implemented
+  private chartController: any;
+  private themeController: any;
+  private translationController: any;
+  private analyticsController: any;
 
   constructor() {
     this.userController = new UserController();
@@ -143,9 +143,8 @@ export class AdminController {
   }
 
   async getAllTrades() {
-    // Use the model's method that returns all trades
     try {
-      return await this.tradeController.getUserTrades("0", 9999); // Using "0" as a string and a large limit as a workaround
+      return await this.tradeController.getUserTrades("0", 9999);
     } catch (error) {
       console.error('Error getting all trades:', error);
       return [];
@@ -162,8 +161,7 @@ export class AdminController {
 
   async getAllTags() {
     try {
-      // Pass an empty object as a placeholder since we're not filtering by user
-      return await this.tagController.getSystemTags(); // Gets system tags which don't belong to any user
+      return await this.tagController.getSystemTags();
     } catch (error) {
       console.error('Error getting all tags:', error);
       return [];
@@ -183,12 +181,10 @@ export class AdminController {
   }
 
   async getSystemSettings() {
-    // Use "system" as a string ID for system settings
     return this.settingsController.getUserSettings("system");
   }
   
   async updateSystemSetting(key: string, value: string) {
-    // Use "system" as a string ID for system settings
     return this.settingsController.updateSetting("system", key, value, "system");
   }
 
@@ -263,6 +259,48 @@ export class AdminController {
     } catch (error) {
       console.error(`Error getting data for table ${tableName}:`, error);
       return [];
+    }
+  }
+
+  async getUserThemePreference(userId: string): Promise<string | null> {
+    try {
+      const user = await this.userController.getUser(userId);
+      return await this.themeController.getUserThemePreference(userId);
+    } catch (error) {
+      console.error('Error getting user theme preference:', error);
+      return null;
+    }
+  }
+  
+  async setUserThemePreference(userId: string, themeId: string): Promise<boolean> {
+    try {
+      return await this.themeController.setUserThemePreference(userId, themeId);
+    } catch (error) {
+      console.error('Error setting user theme preference:', error);
+      return false;
+    }
+  }
+  
+  async applyTheme(userId: string): Promise<Record<string, string> | null> {
+    try {
+      const themeId = await this.getUserThemePreference(userId);
+      
+      if (themeId) {
+        const theme = await this.themeController.getThemeById(themeId);
+        if (theme) {
+          return await this.themeController.applyTheme(theme);
+        }
+      }
+      
+      const defaultTheme = await this.themeController.getDefaultTheme();
+      if (defaultTheme) {
+        return await this.themeController.applyTheme(defaultTheme);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error applying theme:', error);
+      return null;
     }
   }
 }
