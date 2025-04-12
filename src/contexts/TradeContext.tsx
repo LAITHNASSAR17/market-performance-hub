@@ -26,6 +26,7 @@ export type Trade = {
   hashtags: string[];
   createdAt: string;
   commission?: number; // Optional commission field
+  instrumentType?: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other'; // Added instrument type
 };
 
 type TradeContextType = {
@@ -42,6 +43,7 @@ type TradeContextType = {
   addSymbol: (symbol: Symbol) => void;
   allHashtags: string[];
   addHashtag: (hashtag: string) => void;
+  calculateProfitLoss: (entry: number, exit: number, lotSize: number, type: 'Buy' | 'Sell', instrumentType: string) => number;
 };
 
 // Symbol type for the open and dynamic symbol list
@@ -239,6 +241,110 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Calculate profit/loss based on instrument type
+  const calculateProfitLoss = (
+    entry: number, 
+    exit: number, 
+    lotSize: number, 
+    type: 'Buy' | 'Sell',
+    instrumentType: string = 'forex'
+  ): number => {
+    // Set multipliers based on instrument type
+    let pipValue = 0;
+    let pipMultiplier = 1;
+    let contractSize = 100000; // Default for forex
+
+    // Determine instrument type from the input or check for specific patterns
+    let detectedType = instrumentType.toLowerCase();
+    
+    if (!detectedType) {
+      // Auto-detect instrument type if not provided
+      if (/\//.test(instrumentType)) {
+        detectedType = 'forex';
+      } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
+        detectedType = 'crypto';
+      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
+        detectedType = 'stock';
+      } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
+        detectedType = 'index';
+      } else if (/^(xau|xag|cl|ng)/i.test(instrumentType)) {
+        detectedType = 'commodity';
+      } else {
+        detectedType = 'stock'; // Default to stock
+      }
+    }
+    
+    // Configure calculation parameters based on instrument type
+    switch (detectedType) {
+      case 'forex':
+        contractSize = 100000; // Standard lot size
+        
+        // Set pip multiplier based on currency pair
+        if (instrumentType.includes('JPY')) {
+          pipMultiplier = 0.01;
+        } else {
+          pipMultiplier = 0.0001;
+        }
+        
+        // Calculate pip value
+        pipValue = pipMultiplier * contractSize;
+        break;
+        
+      case 'crypto':
+        // For crypto, we typically calculate based on direct price difference
+        contractSize = 1;
+        pipMultiplier = 1;
+        pipValue = 1;
+        break;
+        
+      case 'stock':
+        // For stocks, calculate based on share price difference
+        contractSize = lotSize;
+        pipMultiplier = 1;
+        pipValue = 1;
+        break;
+        
+      case 'index':
+        // For indices, multiplier depends on the specific index
+        contractSize = lotSize;
+        pipMultiplier = 1;
+        pipValue = 1;
+        break;
+        
+      case 'commodity':
+        // For commodities, contract specifics vary
+        if (instrumentType.toUpperCase().includes('XAU')) {
+          // Gold is typically $100 per $1 movement per oz
+          contractSize = 100;
+        } else if (instrumentType.toUpperCase().includes('XAG')) {
+          // Silver is typically $50 per $1 movement per oz
+          contractSize = 50;
+        } else {
+          // Default for other commodities
+          contractSize = 1000;
+        }
+        pipMultiplier = 1;
+        pipValue = 1;
+        break;
+        
+      default:
+        // Default calculation for any other instrument
+        contractSize = lotSize;
+        pipMultiplier = 1;
+        pipValue = 1;
+    }
+    
+    // Calculate price difference based on trade type
+    const priceDiff = type === 'Buy' 
+      ? exit - entry 
+      : entry - exit;
+    
+    // Calculate total profit/loss
+    const profitLoss = priceDiff * lotSize * contractSize;
+    
+    return Math.round(profitLoss * 100) / 100; // Round to 2 decimal places
+  };
+
   useEffect(() => {
     if (user) {
       // Load trades and symbols from localStorage
@@ -417,7 +523,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       symbols,
       addSymbol,
       allHashtags,
-      addHashtag
+      addHashtag,
+      calculateProfitLoss
     }}>
       {children}
     </TradeContext.Provider>

@@ -3,7 +3,7 @@ import React from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChartLine, ChartBarIcon, Target, BookMarked, LineChart, Lightbulb } from 'lucide-react';
+import { ChartLine, Target, BookMarked, LineChart, Lightbulb } from 'lucide-react';
 
 // Import custom hooks
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
@@ -19,7 +19,7 @@ import ChartTab from '@/components/analytics/ChartTab';
 import TradingTips from '@/components/TradingTips';
 
 const Analytics: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   // Use our custom hooks to manage state
   const stats = useAnalyticsStats();
@@ -33,43 +33,43 @@ const Analytics: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title') || 'Analytics'}</h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 dark:text-gray-300">
               {t('analytics.subtitle') || 'Track the metrics that matter for your trading journey'}
             </p>
           </div>
         </div>
         
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid grid-cols-5 md:w-[500px] mb-4">
-            <TabsTrigger value="overview">
+          <TabsList className="flex flex-wrap md:w-fit w-full mb-6 gap-1">
+            <TabsTrigger value="overview" className="flex-1 md:flex-none">
               <ChartLine className="h-4 w-4 mr-2" />
-              {t('analytics.overview') || 'Overview'}
+              {t('overview') || 'Overview'}
             </TabsTrigger>
-            <TabsTrigger value="tags">
+            <TabsTrigger value="tags" className="flex-1 md:flex-none">
               <Target className="h-4 w-4 mr-2" />
-              {t('analytics.tags') || 'Tags'}
+              {t('tags') || 'Tags'}
             </TabsTrigger>
-            <TabsTrigger value="playbook">
+            <TabsTrigger value="playbook" className="flex-1 md:flex-none">
               <BookMarked className="h-4 w-4 mr-2" />
-              {t('analytics.playbook') || 'Playbook'}
+              {t('playbook') || 'Playbook'}
             </TabsTrigger>
-            <TabsTrigger value="chart">
+            <TabsTrigger value="chart" className="flex-1 md:flex-none">
               <LineChart className="h-4 w-4 mr-2" />
-              {t('analytics.chart') || 'Chart'}
+              {t('chart') || 'Chart'}
             </TabsTrigger>
-            <TabsTrigger value="tips">
+            <TabsTrigger value="tips" className="flex-1 md:flex-none">
               <Lightbulb className="h-4 w-4 mr-2" />
-              {t('analytics.tips') || 'Tips'}
+              {t('tips') || 'Tips'}
             </TabsTrigger>
           </TabsList>
           
           {/* Overview Tab */}
-          <TabsContent value="overview">
+          <TabsContent value="overview" className="mt-0">
             <OverviewTab stats={stats} />
           </TabsContent>
           
           {/* Tags Tab */}
-          <TabsContent value="tags">
+          <TabsContent value="tags" className="mt-0">
             <TagsTab 
               mistakes={mistakes}
               setMistakes={setMistakes}
@@ -81,7 +81,7 @@ const Analytics: React.FC = () => {
           </TabsContent>
           
           {/* Playbook Tab */}
-          <TabsContent value="playbook">
+          <TabsContent value="playbook" className="mt-0">
             <PlaybookTab 
               playbooks={playbooks} 
               onAddPlaybook={addPlaybook}
@@ -91,12 +91,12 @@ const Analytics: React.FC = () => {
           </TabsContent>
           
           {/* Chart Tab */}
-          <TabsContent value="chart">
+          <TabsContent value="chart" className="mt-0">
             <ChartTab plData={plData} />
           </TabsContent>
           
           {/* Tips Tab */}
-          <TabsContent value="tips">
+          <TabsContent value="tips" className="mt-0">
             <TradingTips />
           </TabsContent>
         </Tabs>

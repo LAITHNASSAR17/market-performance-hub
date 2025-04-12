@@ -28,13 +28,13 @@ const LanguageToggle: React.FC<LanguageToggleProps> = ({
   if (variant === 'switch') {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <span className="text-xs">EN</span>
+        <span className="text-xs dark:text-gray-300">EN</span>
         <Switch 
           checked={language === 'ar'} 
           onCheckedChange={toggleLanguage} 
           aria-label={t('language.toggle') || 'Toggle language'}
         />
-        <span className="text-xs">العربية</span>
+        <span className="text-xs dark:text-gray-300">العربية</span>
       </div>
     );
   }
@@ -48,7 +48,7 @@ const LanguageToggle: React.FC<LanguageToggleProps> = ({
           className={`${className} flex items-center gap-2`}
         >
           <Globe className="h-5 w-5" />
-          <span className="hidden sm:inline">
+          <span className="hidden sm:inline dark:text-white">
             {language === 'ar' ? 'English' : 'العربية'}
           </span>
           <span className="sr-only">{t('language.toggle') || 'Toggle language'}</span>

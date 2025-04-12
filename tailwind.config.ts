@@ -80,7 +80,20 @@ export default {
 					darkBackground: "#1e293b",
 					darkCard: "#334155",
 					darkHover: "#475569"
-				}
+				},
+				// Adding our enhanced color palette
+                purple: {
+                    50: "#F1F0FB",
+                    100: "#D6BCFA",
+                    200: "#B794F4",
+                    300: "#9B87F5",
+                    400: "#8E69DC",
+                    500: "#7E69AB",
+                    600: "#6E59A5",
+                    700: "#553C9A",
+                    800: "#44337A",
+                    900: "#322659"
+                }
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
