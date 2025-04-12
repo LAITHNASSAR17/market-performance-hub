@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +35,9 @@ const Login: React.FC = () => {
       localStorage.clear();
       window.location.href = window.location.pathname;
     }
+    
+    // Added: Force show credentials for admin
+    setShowCredentials(true);
   }, []);
 
   useEffect(() => {
@@ -113,9 +117,9 @@ const Login: React.FC = () => {
 
   const fillDemoCredentials = () => {
     setEmail('lnmr2001@gmail.com');
-    setPassword('password123');
+    setPassword('admin123'); // Updated to use admin123
     toast({
-      title: "Demo Credentials Filled",
+      title: "Admin Credentials Filled",
       description: "You can now click login to access the admin dashboard",
     });
   };
@@ -149,14 +153,14 @@ const Login: React.FC = () => {
                 <Info className="h-4 w-4 text-blue-500" />
                 <AlertDescription className="text-blue-700">
                   <p>Admin account: <strong>lnmr2001@gmail.com</strong></p>
-                  <p>Password: <strong>password123</strong></p>
+                  <p>Password: <strong>admin123</strong></p>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="mt-2 text-xs bg-blue-100 border-blue-300"
                     onClick={fillDemoCredentials}
                   >
-                    Use Demo Credentials
+                    Use Admin Credentials
                   </Button>
                 </AlertDescription>
               </Alert>

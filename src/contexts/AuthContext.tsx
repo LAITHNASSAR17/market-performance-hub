@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const storedUsers = localStorage.getItem('users');
     if (!storedUsers || JSON.parse(storedUsers).length === 0) {
       const adminEmail = 'lnmr2001@gmail.com';
-      const adminPassword = 'password123';
+      const adminPassword = 'admin123';
       const hashedPassword = hashPassword(adminPassword);
       const encryptedName = encryptData('Admin User');
       const encryptedEmail = encryptData(adminEmail);
@@ -75,6 +75,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       localStorage.setItem('users', JSON.stringify([adminUser]));
       console.log('Test admin user created:', adminEmail);
+    } else {
+      try {
+        const existingUsers = JSON.parse(storedUsers);
+        const adminIndex = existingUsers.findIndex((u: any) => u.isAdmin === true);
+        
+        if (adminIndex !== -1) {
+          const adminPassword = 'admin123';
+          existingUsers[adminIndex].password = hashPassword(adminPassword);
+          localStorage.setItem('users', JSON.stringify(existingUsers));
+          console.log('Admin password reset to admin123');
+        }
+      } catch (error) {
+        console.error('Error updating admin password:', error);
+      }
     }
   }, []);
 
