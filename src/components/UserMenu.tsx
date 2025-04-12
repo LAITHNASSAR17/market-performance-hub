@@ -16,9 +16,9 @@ import { LogOut, User, Settings } from 'lucide-react';
 // Define a User interface that matches what's coming from the AuthContext
 interface AuthUser {
   id: string;
-  name?: string; // Changed from username to name
+  name?: string;
   email?: string;
-  image?: string; // Changed from profileImage to image
+  image?: string;
   isAdmin?: boolean;
 }
 
