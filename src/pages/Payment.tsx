@@ -15,16 +15,20 @@ const Payment = () => {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [dbStatus, setDbStatus] = useState('');
+  const [dbConnecting, setDbConnecting] = useState(true);
 
   useEffect(() => {
     // Check MongoDB connection on component mount
     const checkDBConnection = async () => {
       try {
+        setDbConnecting(true);
         const isConnected = await initializeMongoDB();
         setDbStatus(isConnected ? 'Connected to MongoDB' : 'Failed to connect to MongoDB');
       } catch (error) {
         console.error('MongoDB connection error:', error);
         setDbStatus('Failed to connect to MongoDB');
+      } finally {
+        setDbConnecting(false);
       }
     };
     
@@ -69,7 +73,11 @@ const Payment = () => {
   return (
     <Layout>
       <div className="container mx-auto my-8 max-w-lg">
-        {dbStatus && (
+        {dbConnecting ? (
+          <div className="p-2 mb-4 text-sm rounded bg-blue-100 text-blue-800">
+            جاري الاتصال بقاعدة البيانات...
+          </div>
+        ) : dbStatus && (
           <div className={`p-2 mb-4 text-sm rounded ${dbStatus.includes('Failed') ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
             {dbStatus}
           </div>

@@ -5,24 +5,29 @@ import mongoose from 'mongoose';
 const MONGODB_URI = 'mongodb+srv://username:password@cluster0.mongodb.net/tradetracker?retryWrites=true&w=majority';
 
 // MongoDB connection state
-let cached = global as any;
-cached.mongoose = cached.mongoose || { conn: null, promise: null };
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+// Using a local variable instead of global
+const mongooseCache: MongooseCache = { conn: null, promise: null };
 
 export async function connectToDatabase() {
-  if (cached.mongoose.conn) {
-    return cached.mongoose.conn;
+  if (mongooseCache.conn) {
+    return mongooseCache.conn;
   }
 
-  if (!cached.mongoose.promise) {
+  if (!mongooseCache.promise) {
     const opts = {
       bufferCommands: false,
     };
 
-    cached.mongoose.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    mongooseCache.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       console.log('Connected to MongoDB');
       return mongoose;
     });
   }
-  cached.mongoose.conn = await cached.mongoose.promise;
-  return cached.mongoose.conn;
+  mongooseCache.conn = await mongooseCache.promise;
+  return mongooseCache.conn;
 }
