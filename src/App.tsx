@@ -1,4 +1,5 @@
 
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,8 +20,7 @@ import Dashboard from "./pages/Dashboard";
 import AddTrade from "./pages/AddTrade";
 import Trades from "./pages/Trades";
 import Journal from "./pages/Journal";
-import Notebook from "./pages/Notebook";
-import TradeNotebook from "./pages/TradeNotebook"; // New import
+import TradeNotebook from "./pages/TradeNotebook";
 import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
 import Analytics from "./pages/Analytics";
@@ -66,7 +66,6 @@ const App = () => (
                         <Route path="/add-trade" element={<AddTrade />} />
                         <Route path="/trades" element={<Trades />} />
                         <Route path="/journal" element={<Journal />} />
-                        <Route path="/notebook" element={<Notebook />} />
                         <Route path="/trade-notebook" element={<TradeNotebook />} />
                         <Route path="/reports" element={<Reports />} />
                         <Route path="/insights" element={<Insights />} />
