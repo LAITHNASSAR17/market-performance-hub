@@ -1,10 +1,10 @@
+
 import { BaseModel } from './BaseModel';
 import * as crypto from 'crypto-js';
 
 export interface User {
   id: number;
   username: string;
-  name: string;
   email: string;
   password?: string;
   isAdmin?: boolean;

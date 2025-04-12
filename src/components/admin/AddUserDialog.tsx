@@ -63,12 +63,10 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     
     try {
       const userData: Partial<User> = {
-        username: name,
         name,
         email,
         password,
         isAdmin: userType === 'admin',
-        isBlocked: false,
       };
       
       const success = await onAddUser(userData);

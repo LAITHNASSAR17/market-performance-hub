@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import TradeTable from '@/components/admin/TradeTable';
+import AdminLayout from '@/components/layouts/AdminLayout';
 import { AdminController } from '@/controllers/AdminController';
 
 const AdminTrades: React.FC = () => {
@@ -99,7 +101,7 @@ const AdminTrades: React.FC = () => {
   };
 
   return (
-    <>
+    <AdminLayout>
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
           Trade Management
@@ -126,7 +128,7 @@ const AdminTrades: React.FC = () => {
           />
         )}
       </div>
-    </>
+    </AdminLayout>
   );
 };
 

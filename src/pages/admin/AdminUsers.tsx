@@ -7,22 +7,17 @@ import { User } from '@/models/UserModel';
 import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
 import AddUserDialog from '@/components/admin/AddUserDialog';
-import { useAuth } from '@/contexts/AuthContext';
-
-interface DisplayUser extends Omit<User, 'id'> {
-  id: string | number;
-}
 
 const AdminUsers: React.FC = () => {
-  const [users, setUsers] = useState<DisplayUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const { toast } = useToast();
-  const { getAllUsers } = useAuth();
   
   const adminController = new AdminController();
 
+  // Load users on component mount
   useEffect(() => {
     loadUsers();
   }, []);
@@ -30,23 +25,8 @@ const AdminUsers: React.FC = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const allUsers = getAllUsers();
-      
-      // Transform users to ensure they have all required properties
-      const completeUsers = allUsers.map(user => {
-        // Create a display user with all required fields, providing defaults where needed
-        const displayUser: DisplayUser = {
-          id: user.id,
-          username: user.name || '', // Use name as fallback if username doesn't exist
-          name: user.name || '',
-          email: user.email || '',
-          isBlocked: user.isBlocked || false,
-          createdAt: new Date() // Default to current date if createdAt doesn't exist
-        };
-        return displayUser;
-      });
-      
-      setUsers(completeUsers);
+      const allUsers = await adminController.getAllUsers();
+      setUsers(allUsers);
     } catch (error) {
       console.error("Error loading users:", error);
       toast({
@@ -61,11 +41,13 @@ const AdminUsers: React.FC = () => {
 
   const handleAddUser = async (userData: Partial<User>) => {
     try {
+      // Add user implementation
+      // This would call the AdminController's createUser method
       toast({
         title: "User Created",
-        description: `User ${userData.username || userData.name} has been created successfully`
+        description: `User ${userData.name} has been created successfully`
       });
-      loadUsers();
+      loadUsers(); // Refresh user list
       return true;
     } catch (error) {
       console.error("Error creating user:", error);
@@ -83,17 +65,19 @@ const AdminUsers: React.FC = () => {
       title: "View User",
       description: `Viewing user ${userId}`
     });
+    // Navigate to user detail page or open modal
   };
 
   const handleBlockUser = async (user: any) => {
     try {
+      // Convert string to number if needed
       const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       await adminController.blockUser(userId);
       toast({
         title: "User Blocked",
         description: `${user.name} has been blocked`
       });
-      loadUsers();
+      loadUsers(); // Refresh user list
     } catch (error) {
       console.error("Error blocking user:", error);
       toast({
@@ -106,13 +90,14 @@ const AdminUsers: React.FC = () => {
 
   const handleUnblockUser = async (user: any) => {
     try {
+      // Convert string to number if needed
       const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
       await adminController.unblockUser(userId);
       toast({
         title: "User Unblocked",
         description: `${user.name} has been unblocked`
       });
-      loadUsers();
+      loadUsers(); // Refresh user list
     } catch (error) {
       console.error("Error unblocking user:", error);
       toast({
@@ -127,6 +112,7 @@ const AdminUsers: React.FC = () => {
     try {
       const user = users.find(u => u.email === email);
       if (user) {
+        // Convert string to number if needed
         const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
         await adminController.resetUserPassword(userId, password);
         toast({
@@ -143,7 +129,7 @@ const AdminUsers: React.FC = () => {
         description: "Failed to change password",
         variant: "destructive"
       });
-      throw error;
+      throw error; // Re-throw to notify calling component
     }
   };
 
