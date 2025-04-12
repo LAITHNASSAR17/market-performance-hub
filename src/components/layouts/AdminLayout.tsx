@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate, useLocation, Link } from 'react-router-dom';
+import { Navigate, useLocation, Link, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   LayoutDashboard, 
@@ -13,21 +13,22 @@ import {
   Layers,
   Sun,
   Moon,
-  Shield
+  Shield,
+  Database,
+  Download,
+  UserPlus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
+import { AdminController } from '@/controllers/AdminController';
 
-interface AdminLayoutProps {
-  children: React.ReactNode;
-}
-
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+const AdminLayout: React.FC = () => {
   const { user, isAdmin, logout } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const adminController = new AdminController();
   
   // Redirect non-admin users to dashboard
   if (!isAdmin) {
@@ -55,11 +56,64 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: <FileText className="w-5 h-5" />, label: "Notes", path: "/admin/notes" },
     { icon: <Layers className="w-5 h-5" />, label: "Pages", path: "/admin/pages" },
     { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/admin/settings" },
+    { icon: <Database className="w-5 h-5" />, label: "Database", path: "/admin/database" },
   ];
 
   // Check if the current path matches the item
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  // Handle Quick Actions
+  const handleBackupDatabase = async () => {
+    try {
+      const result = await adminController.backupDatabase();
+      if (result) {
+        toast({
+          title: "Backup Successful",
+          description: "Database has been backed up successfully"
+        });
+      } else {
+        throw new Error("Failed to backup database");
+      }
+    } catch (error) {
+      toast({
+        title: "Backup Failed",
+        description: "There was an error backing up the database",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleExportReports = () => {
+    try {
+      // Placeholder for export reports functionality
+      toast({
+        title: "Export Started",
+        description: "Reports export started"
+      });
+      
+      // Simulate download after a delay
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.href = '/dummy-report.xlsx'; // This would be a real file in production
+        link.download = `reports-${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: "Export Complete",
+          description: "Reports have been exported successfully"
+        });
+      }, 1500);
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "There was an error exporting reports",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -93,6 +147,51 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               </Link>
             ))}
           </nav>
+          
+          {/* Quick Actions Section */}
+          <div className="p-4 border-t dark:border-gray-700">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Quick Actions</h3>
+            <div className="space-y-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start text-sm"
+                onClick={handleBackupDatabase}
+              >
+                <Database className="mr-2 h-4 w-4" />
+                Backup Database
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full justify-start text-sm"
+                onClick={handleExportReports}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export Reports
+              </Button>
+              <Link to="/admin/users">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start text-sm"
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Manage Users
+                </Button>
+              </Link>
+              <Link to="/admin/settings">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start text-sm"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  System Settings
+                </Button>
+              </Link>
+            </div>
+          </div>
           
           <div className="p-4 border-t dark:border-gray-700">
             <button 
@@ -135,8 +234,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
         
         {/* Page Content */}
-        <div className="p-0">
-          {children}
+        <div className="p-6">
+          <Outlet />
         </div>
       </div>
     </div>
