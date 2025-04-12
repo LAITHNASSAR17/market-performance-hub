@@ -4,23 +4,26 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LineChart, Edit, Trash2 } from 'lucide-react';
+import { LineChart, Edit, Trash2, Eye } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Trade } from '@/contexts/TradeContext';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
+import { cn } from '@/lib/utils';
 
 interface TradeCardProps {
   trade: Trade;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onView: (id: string) => void; // New prop
 }
 
 const TradeCard: React.FC<TradeCardProps> = ({ 
   trade, 
   onEdit, 
-  onDelete 
+  onDelete,
+  onView 
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -55,7 +58,7 @@ const TradeCard: React.FC<TradeCardProps> = ({
           <div className="space-y-0.5">
             <CardTitle className="text-base font-semibold">{trade.pair} - {trade.type}</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              {t('trade.account') || 'الحساب'}: {trade.account}
+              {t('trade.account') || 'Account'}: {trade.account}
             </CardDescription>
           </div>
         </div>
@@ -63,26 +66,26 @@ const TradeCard: React.FC<TradeCardProps> = ({
       <CardContent className="py-2 grid gap-4">
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <span className="text-muted-foreground">{t('trade.entry') || 'نقطة الدخول'}:</span> {trade.entry}
+            <span className="text-muted-foreground">{t('trade.entry') || 'Entry'}:</span> {trade.entry}
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.exit') || 'نقطة الخروج'}:</span> {trade.exit}
+            <span className="text-muted-foreground">{t('trade.exit') || 'Exit'}:</span> {trade.exit}
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.lotSize') || 'حجم اللوت'}:</span> {trade.lotSize}
+            <span className="text-muted-foreground">{t('trade.lotSize') || 'Lot Size'}:</span> {trade.lotSize}
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.duration') || 'المدة'}:</span> {trade.durationMinutes} min
+            <span className="text-muted-foreground">{t('trade.duration') || 'Duration'}:</span> {trade.durationMinutes} min
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.profitLoss') || 'الربح/الخسارة'}:</span> ${trade.profitLoss.toFixed(2)}
+            <span className="text-muted-foreground">{t('trade.profitLoss') || 'P/L'}:</span> ${trade.profitLoss.toFixed(2)}
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.date') || 'التاريخ'}:</span> {trade.date}
+            <span className="text-muted-foreground">{t('trade.date') || 'Date'}:</span> {trade.date}
           </div>
         </div>
         <div>
-          <span className="text-muted-foreground">{t('trade.notes') || 'ملاحظات'}:</span> {trade.notes.substring(0, 80)}...
+          <span className="text-muted-foreground">{t('trade.notes') || 'Notes'}:</span> {trade.notes.substring(0, 80)}...
         </div>
         <div>
           {trade.hashtags.map((tag) => (
@@ -96,20 +99,25 @@ const TradeCard: React.FC<TradeCardProps> = ({
         </span>
         
         <div className="flex space-x-2 rtl:space-x-reverse">
+          <Button size="sm" variant="default" className="mr-2" onClick={() => onView(trade.id)}>
+            <Eye className="h-4 w-4 mr-1" />
+            {t('trade.view') || 'View'}
+          </Button>
+
           <Button size="sm" variant="outline" asChild className="mr-2">
             <Link to={`/chart?trade=${trade.id}`}>
               <LineChart className="h-4 w-4 mr-1" />
-              {t('trade.viewOnChart') || 'عرض في الشارت'}
+              {t('trade.viewOnChart') || 'Chart'}
             </Link>
           </Button>
 
           <Button size="sm" variant="ghost" onClick={() => onEdit(trade.id)}>
             <Edit className="h-4 w-4 mr-1" />
-            {t('trade.edit') || 'تعديل'}
+            {t('trade.edit') || 'Edit'}
           </Button>
           <Button size="sm" variant="ghost" onClick={handleDelete}>
             <Trash2 className="h-4 w-4 mr-1" />
-            {t('trade.delete') || 'حذف'}
+            {t('trade.delete') || 'Delete'}
           </Button>
         </div>
       </CardFooter>

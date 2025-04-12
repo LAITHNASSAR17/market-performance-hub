@@ -7,8 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, Search, Grid, List, Eye, Edit, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import HashtagBadge from '@/components/HashtagBadge';
 
 const Trades: React.FC = () => {
   const { trades, deleteTrade, pairs } = useTrade();
@@ -16,6 +21,7 @@ const Trades: React.FC = () => {
   const [pairFilter, setPairFilter] = useState('all');
   const [tradeTypeFilter, setTradeTypeFilter] = useState('all');
   const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const navigate = useNavigate();
 
   const filteredTrades = trades.filter(trade => {
@@ -53,6 +59,10 @@ const Trades: React.FC = () => {
     setSearchTerm('');
     setPairFilter('all');
     setTradeTypeFilter('all');
+  };
+
+  const handleViewTrade = (id: string) => {
+    navigate(`/tracking/${id}`);
   };
 
   return (
@@ -110,17 +120,115 @@ const Trades: React.FC = () => {
         </div>
       </div>
 
-      {sortedTrades.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedTrades.map(trade => (
-            <TradeCard
-              key={trade.id}
-              trade={trade}
-              onEdit={handleEditTrade}
-              onDelete={handleDeleteTrade}
-            />
-          ))}
+      <div className="mb-6 flex justify-end">
+        <div className="border border-input rounded-md overflow-hidden inline-flex">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={cn(
+              "rounded-none",
+              viewMode === 'grid' && "bg-accent"
+            )}
+            onClick={() => setViewMode('grid')}
+          >
+            <Grid className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={cn(
+              "rounded-none",
+              viewMode === 'list' && "bg-accent"
+            )}
+            onClick={() => setViewMode('list')}
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
+      </div>
+
+      {sortedTrades.length > 0 ? (
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedTrades.map(trade => (
+              <TradeCard
+                key={trade.id}
+                trade={trade}
+                onEdit={handleEditTrade}
+                onDelete={handleDeleteTrade}
+                onView={handleViewTrade}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-md border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b">
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Date</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Pair</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Type</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Entry</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Exit</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Lot Size</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">P&L</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Tags</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-500">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedTrades.map((trade) => (
+                    <tr key={trade.id} className="border-b hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3">{format(new Date(trade.date), 'MMM d, yyyy')}</td>
+                      <td className="px-4 py-3 font-medium">{trade.pair}</td>
+                      <td className="px-4 py-3">
+                        <Badge 
+                          variant={trade.type === 'Buy' ? "success" : "destructive"} 
+                          className="font-medium"
+                        >
+                          {trade.type}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">{trade.entry}</td>
+                      <td className="px-4 py-3">{trade.exit}</td>
+                      <td className="px-4 py-3">{trade.lotSize}</td>
+                      <td className={cn(
+                        "px-4 py-3 font-medium",
+                        trade.profitLoss > 0 ? "text-profit" : "text-loss"
+                      )}>
+                        {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-1">
+                          {trade.hashtags.slice(0, 2).map((tag) => (
+                            <HashtagBadge key={tag} tag={tag} size="sm" />
+                          ))}
+                          {trade.hashtags.length > 2 && (
+                            <Badge variant="outline" className="text-xs">+{trade.hashtags.length - 2}</Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewTrade(trade.id)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditTrade(trade.id)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteTrade(trade.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
       ) : (
         <div className="text-center py-16 bg-gray-50 rounded-lg">
           <h3 className="text-lg font-medium text-gray-600 mb-2">No trades found</h3>

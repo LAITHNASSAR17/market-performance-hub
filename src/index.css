@@ -2,274 +2,95 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
+    --foreground: 222.2 47.4% 11.2%;
+ 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+ 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 100% 50%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+ 
+    --ring: 215 20.2% 65.1%;
+ 
+    --radius: 0.5rem;
+    
+    /* Custom colors */
+    --profit: 142 72% 29%; /* Green for profits */
+    --loss: 0 84% 60%;     /* Red for losses */
+  }
+ 
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+ 
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+ 
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+ 
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+ 
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 1.2%;
+ 
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --ring: 216 34% 17%;
+ 
+    --radius: 0.5rem;
+    
+    /* Custom colors in dark mode */
+    --profit: 142 72% 40%; /* Brighter green for dark mode */
+    --loss: 0 84% 70%;     /* Brighter red for dark mode */
   }
 }
-
+ 
 @layer base {
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
-
-  /* Ensure content fits on small screens */
-  .container {
-    @apply px-4 sm:px-6 md:px-8;
-    width: 100%;
-    max-width: 100%;
+  .text-profit {
+    color: hsl(var(--profit));
   }
-
-  /* Improved font sizing for better mobile readability */
-  h1 {
-    @apply text-xl sm:text-2xl md:text-3xl font-bold;
+  .text-loss {
+    color: hsl(var(--loss));
   }
-
-  h2 {
-    @apply text-lg sm:text-xl md:text-2xl font-semibold;
-  }
-
-  h3 {
-    @apply text-base sm:text-lg md:text-xl font-medium;
-  }
-
-  p {
-    @apply text-sm sm:text-base;
-  }
-
-  /* Responsive table support */
-  .table-responsive {
-    @apply overflow-x-auto -mx-4 sm:mx-0;
-  }
-
-  /* Make form elements more touch-friendly on mobile */
-  input, select, button, .btn {
-    @apply min-h-[2.5rem] sm:min-h-[2.25rem];
-  }
-
-  /* Cards that stack well on mobile */
-  .responsive-card-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
-  }
-}
-
-/* RTL Support */
-[dir="rtl"] .mr-2 {
-  margin-right: 0;
-  margin-left: 0.5rem;
-}
-
-[dir="rtl"] .mr-3 {
-  margin-right: 0;
-  margin-left: 0.75rem;
-}
-
-[dir="rtl"] .ml-2 {
-  margin-left: 0;
-  margin-right: 0.5rem;
-}
-
-[dir="rtl"] .ml-3 {
-  margin-left: 0;
-  margin-right: 0.75rem;
-}
-
-/* Right-aligned on RTL */
-[dir="rtl"] .right-0 {
-  right: auto;
-  left: 0;
-}
-
-[dir="rtl"] .left-0 {
-  left: auto;
-  right: 0;
-}
-
-[dir="rtl"] .ml-auto {
-  margin-left: 0;
-  margin-right: auto;
-}
-
-[dir="rtl"] .mr-auto {
-  margin-right: 0;
-  margin-left: auto;
-}
-
-/* Fix flex direction for RTL */
-[dir="rtl"] .flex-row {
-  flex-direction: row-reverse;
-}
-
-/* Fix text alignment for RTL */
-[dir="rtl"] .text-left {
-  text-align: right;
-}
-
-[dir="rtl"] .text-right {
-  text-align: left;
-}
-
-/* Enhanced mobile responsiveness */
-@media (max-width: 640px) {
-  /* More touch-friendly buttons on mobile */
-  .btn, button {
-    @apply py-3 px-4;
-  }
-  
-  /* Full-width container on small screens */
-  .container {
-    @apply px-3;
-    max-width: 100%;
-  }
-  
-  /* Stack items vertically on small screens */
-  .sm-stack {
-    @apply flex flex-col;
-  }
-  
-  /* Collapsible items on mobile */
-  .sm-collapsible {
-    @apply hidden;
-  }
-  
-  /* Larger touch targets */
-  .touch-target {
-    @apply min-h-[44px] min-w-[44px];
-  }
-  
-  /* Adjust spacing for smaller screens */
-  .responsive-spacing {
-    @apply p-3 space-y-3;
-  }
-
-  /* Simplify tables on mobile */
-  .table-responsive table {
-    @apply block w-full;
-  }
-  
-  .table-responsive thead {
-    @apply hidden;
-  }
-  
-  .table-responsive tbody, .table-responsive tr {
-    @apply block w-full;
-  }
-  
-  .table-responsive td {
-    @apply block text-right py-2 px-3 border-b;
-  }
-  
-  .table-responsive td:before {
-    content: attr(data-label);
-    @apply float-left font-semibold text-left;
-  }
-}
-
-/* Responsive font sizes */
-@media (max-width: 768px) {
-  html {
-    font-size: 15px;
-  }
-  .text-xs {
-    font-size: 0.65rem;
-  }
-}
-
-/* Better card layout on mobile */
-@media (max-width: 640px) {
-  .card {
-    @apply border-x-0 rounded-none;
-  }
-}
-
-/* Responsive charts */
-.chart-container {
-  @apply w-full h-40 sm:h-60 md:h-80;
 }

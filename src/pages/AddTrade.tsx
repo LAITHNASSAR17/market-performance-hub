@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import ImageUpload from '@/components/ImageUpload';
+import { Separator } from '@/components/ui/separator';
 
 const AddTrade: React.FC = () => {
   const { addTrade, accounts, pairs, allHashtags } = useTrade();
@@ -22,18 +23,20 @@ const AddTrade: React.FC = () => {
     account: '',
     date: new Date().toISOString().slice(0, 10),
     pair: '',
-    type: 'Buy' as 'Buy' | 'Sell',  // Explicitly type as 'Buy' | 'Sell'
+    type: 'Buy' as 'Buy' | 'Sell',
     entry: '',
     exit: '',
     lotSize: '',
     stopLoss: '',
     takeProfit: '',
     riskPercentage: '',
-    returnPercentage: '', // Add returnPercentage property
+    returnPercentage: '',
     profitLoss: '',
     durationMinutes: '',
     notes: '',
     imageUrl: null as string | null,
+    beforeImageUrl: null as string | null,  // Added for before image
+    afterImageUrl: null as string | null,   // Added for after image
     hashtags: [] as string[]
   });
 
@@ -375,9 +378,37 @@ const AddTrade: React.FC = () => {
               />
             </div>
 
-            {/* Image Upload */}
+            <Separator className="my-6" />
+            
+            <h3 className="text-lg font-medium">Trade Images</h3>
+            
+            {/* Before/After Trade Images */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Before Image */}
+              <div>
+                <Label htmlFor="beforeImage">Before Trade Image</Label>
+                <p className="text-sm text-gray-500 mb-2">Upload an image of the chart before your entry</p>
+                <ImageUpload
+                  value={formData.beforeImageUrl}
+                  onChange={(imageUrl) => setFormData({ ...formData, beforeImageUrl: imageUrl })}
+                />
+              </div>
+
+              {/* After Image */}
+              <div>
+                <Label htmlFor="afterImage">After Trade Image</Label>
+                <p className="text-sm text-gray-500 mb-2">Upload an image of the chart after your exit</p>
+                <ImageUpload
+                  value={formData.afterImageUrl}
+                  onChange={(imageUrl) => setFormData({ ...formData, afterImageUrl: imageUrl })}
+                />
+              </div>
+            </div>
+            
+            {/* Original chart image */}
             <div>
-              <Label htmlFor="image">Trade Chart Image</Label>
+              <Label htmlFor="image">Additional Chart Image (Optional)</Label>
+              <p className="text-sm text-gray-500 mb-2">Upload any other relevant chart image</p>
               <ImageUpload
                 value={formData.imageUrl}
                 onChange={(imageUrl) => setFormData({ ...formData, imageUrl })}

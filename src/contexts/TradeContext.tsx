@@ -21,6 +21,8 @@ export type Trade = {
   durationMinutes: number;
   notes: string;
   imageUrl: string | null;
+  beforeImageUrl: string | null; // Added before image
+  afterImageUrl: string | null;  // Added after image
   hashtags: string[];
   createdAt: string;
 };
@@ -63,6 +65,8 @@ const sampleTrades: Trade[] = [
     durationMinutes: 240,
     notes: 'Strong momentum after NFP data',
     imageUrl: null,
+    beforeImageUrl: null,
+    afterImageUrl: null,
     hashtags: ['momentum', 'news'],
     createdAt: '2025-04-10T15:30:00Z'
   },
@@ -84,6 +88,8 @@ const sampleTrades: Trade[] = [
     durationMinutes: 120,
     notes: 'Technical breakout from resistance level',
     imageUrl: null,
+    beforeImageUrl: null,
+    afterImageUrl: null,
     hashtags: ['breakout', 'technical'],
     createdAt: '2025-04-09T12:15:00Z'
   },

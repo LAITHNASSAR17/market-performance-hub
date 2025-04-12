@@ -19,9 +19,10 @@ import Journal from "./pages/Journal";
 import Notebook from "./pages/Notebook";
 import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
-import Analytics from "./pages/Analytics"; // Add the new Analytics page
+import Analytics from "./pages/Analytics";
 import AdminDashboard from "./pages/AdminDashboard";
 import TradingChart from "./pages/TradingChart";
+import TradeTracking from "./pages/TradeTracking"; // Add import
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,9 +48,10 @@ const App = () => (
                   <Route path="/notebook" element={<Notebook />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/insights" element={<Insights />} />
-                  <Route path="/analytics" element={<Analytics />} /> {/* Add the route for Analytics */}
+                  <Route path="/analytics" element={<Analytics />} />
                   <Route path="/chart" element={<TradingChart />} />
                   <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/tracking/:id" element={<TradeTracking />} /> {/* Add new route */}
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

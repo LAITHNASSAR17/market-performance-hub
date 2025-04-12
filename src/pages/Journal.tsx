@@ -58,7 +58,7 @@ const Journal: React.FC = () => {
 
   // Navigate to individual trade view
   const handleViewTrade = (tradeId: string) => {
-    navigate(`/trades/${tradeId}`);
+    navigate(`/tracking/${tradeId}`);
   };
 
   return (
