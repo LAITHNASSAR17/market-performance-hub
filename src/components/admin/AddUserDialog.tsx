@@ -27,12 +27,17 @@ interface AddUserDialogProps {
   onAddUser: (userData: Partial<User>) => Promise<boolean>;
 }
 
+// Extended interface to handle additional properties needed in the form
+interface UserFormData extends Partial<User> {
+  username?: string;
+}
+
 const AddUserDialog: React.FC<AddUserDialogProps> = ({
   open,
   onOpenChange,
   onAddUser
 }) => {
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('user');
@@ -43,7 +48,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     e.preventDefault();
     
     // Basic validation
-    if (!name.trim() || !email.trim() || !password || !userType) {
+    if (!username.trim() || !email.trim() || !password || !userType) {
       setError('جميع الحقول مطلوبة');
       return;
     }
@@ -62,8 +67,8 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     setError('');
     
     try {
-      const userData: Partial<User> = {
-        name,
+      const userData: UserFormData = {
+        username,
         email,
         password,
         isAdmin: userType === 'admin',
@@ -73,7 +78,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       
       if (success) {
         // Reset form
-        setName('');
+        setUsername('');
         setEmail('');
         setPassword('');
         setUserType('user');
@@ -105,13 +110,13 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
 
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
+              <Label htmlFor="username" className="text-right">
                 الاسم
               </Label>
               <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="col-span-3"
                 placeholder="أدخل اسم المستخدم"
               />

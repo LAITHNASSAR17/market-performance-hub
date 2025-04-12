@@ -1,543 +1,283 @@
 
 import React, { useState, useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import AdminLayout from '@/components/layouts/AdminLayout';
-import { AdminController } from '@/controllers/AdminController';
-import { useMySQL } from '@/contexts/MySQLContext';
+import { Database, Table, RefreshCw, Download, Search, Server, List, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, Save, RefreshCw, Table, FileDown, FilePlus2, Play } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { AdminController } from '@/controllers/AdminController';
+import { useToast } from '@/hooks/use-toast';
 
-const AdminDatabase: React.FC = () => {
+const AdminDatabase = () => {
   const { toast } = useToast();
-  const adminController = new AdminController();
-  const { 
-    connect, 
-    disconnect, 
-    isConfigured, 
-    config, 
-    setConfig, 
-    connectionStatus, 
-    tables, 
-    fetchTables, 
-    executeQuery 
-  } = useMySQL();
-
-  const [dbStatus, setDbStatus] = useState<{status: string, tables: number, size: string} | null>(null);
+  const [activeTab, setActiveTab] = useState('status');
   const [loading, setLoading] = useState(false);
-  const [backupLoading, setBackupLoading] = useState(false);
-  const [sqlQuery, setSqlQuery] = useState('');
-  const [queryResult, setQueryResult] = useState<any>(null);
-  const [selectedTable, setSelectedTable] = useState<string>('');
+  const [dbStatus, setDbStatus] = useState<{status: string, tables: number, size: string}>({
+    status: 'Unknown',
+    tables: 0,
+    size: '0 MB'
+  });
+  const [logs, setLogs] = useState<any[]>([]);
+  const [tables, setTables] = useState<string[]>(['users', 'trades', 'tags', 'notes', 'settings']);
+  const [currentTable, setCurrentTable] = useState<string>('');
+  const [tableStructure, setTableStructure] = useState<any[]>([]);
   const [tableData, setTableData] = useState<any[]>([]);
-  const [tableColumns, setTableColumns] = useState<string[]>([]);
+  
+  const adminController = new AdminController();
 
   useEffect(() => {
-    loadDbStatus();
+    loadDatabaseStatus();
+    loadSystemLogs();
   }, []);
 
-  const loadDbStatus = async () => {
+  const loadDatabaseStatus = async () => {
+    setLoading(true);
     try {
       const status = await adminController.getDatabaseStatus();
       setDbStatus(status);
     } catch (error) {
       console.error("Error loading database status:", error);
-    }
-  };
-
-  const handleConnect = async () => {
-    setLoading(true);
-    try {
-      await connect();
-      if (connectionStatus === 'connected') {
-        await fetchTables();
-      }
-    } catch (error) {
-      console.error("Error connecting to database:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load database status",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDisconnect = () => {
-    disconnect();
-    setSelectedTable('');
-    setTableData([]);
-    setTableColumns([]);
+  const loadSystemLogs = async () => {
+    try {
+      const systemLogs = await adminController.getSystemLogs(100);
+      setLogs(systemLogs);
+    } catch (error) {
+      console.error("Error loading system logs:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load system logs",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleBackupDatabase = async () => {
-    setBackupLoading(true);
+  const handleTableSelect = async (tableName: string) => {
+    setCurrentTable(tableName);
     try {
-      const result = await adminController.backupDatabase();
-      if (result) {
+      const structure = await adminController.getDatabaseTableStructure(tableName);
+      setTableStructure(structure);
+      
+      const data = await adminController.getDatabaseTableData(tableName);
+      setTableData(data);
+    } catch (error) {
+      console.error(`Error loading table ${tableName}:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to load table ${tableName}`,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleBackup = async () => {
+    setLoading(true);
+    try {
+      const result = await adminController.createSystemBackup();
+      if (result.success) {
         toast({
           title: "Backup Successful",
-          description: "Database has been backed up successfully"
+          description: `Backup created: ${result.filename}`
         });
       } else {
-        throw new Error("Backup failed");
+        throw new Error("Failed to create backup");
       }
     } catch (error) {
-      console.error("Error backing up database:", error);
+      console.error("Error creating backup:", error);
       toast({
         title: "Backup Failed",
-        description: "Failed to backup database",
+        description: "Failed to create system backup",
         variant: "destructive"
       });
     } finally {
-      setBackupLoading(false);
-    }
-  };
-
-  const handleExecuteQuery = async () => {
-    if (!sqlQuery.trim()) {
-      toast({
-        title: "Empty Query",
-        description: "Please enter a SQL query",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const result = await executeQuery(sqlQuery);
-      setQueryResult(result);
-      if (result.success) {
-        toast({
-          title: "Query Executed",
-          description: result.data ? `Returned ${Array.isArray(result.data) ? result.data.length : 1} results` 
-            : `Affected ${result.affectedRows || 0} rows`
-        });
-      } else {
-        toast({
-          title: "Query Failed",
-          description: result.error || "Unknown error",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error("Error executing query:", error);
-      setQueryResult({ success: false, error: error instanceof Error ? error.message : "Unknown error" });
-    }
-  };
-
-  const handleSelectTable = async (tableName: string) => {
-    setSelectedTable(tableName);
-    try {
-      // Fetch table structure to get columns
-      const structure = await adminController.getDatabaseTableStructure(tableName);
-      if (structure && Array.isArray(structure)) {
-        setTableColumns(structure.map(col => col.Field || col.name));
-      } else {
-        setTableColumns([]);
-      }
-      
-      // Fetch sample data
-      const data = await adminController.getDatabaseTableData(tableName);
-      setTableData(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(`Error fetching data for table ${tableName}:`, error);
-      setTableColumns([]);
-      setTableData([]);
+      setLoading(false);
     }
   };
 
   return (
-    <AdminLayout>
+    <div className="container mx-auto py-6">
       <header className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
           Database Management
         </h1>
-        <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-          Connect to MySQL database and perform operations.
+        <p className="text-gray-500 dark:text-gray-400">
+          Monitor and manage the application database.
         </p>
       </header>
-
-      <div className="grid gap-6">
-        {/* Connection Status Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Database className="mr-2 h-5 w-5" />
-              Database Connection
-            </CardTitle>
-            <CardDescription>
-              {connectionStatus === 'connected' 
-                ? `Connected to ${config.database} on ${config.host}`
-                : 'Configure your database connection'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {connectionStatus !== 'connected' ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Host</label>
-                  <Input
-                    value={config.host}
-                    onChange={(e) => setConfig({ ...config, host: e.target.value })}
-                    placeholder="localhost"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Port</label>
-                  <Input
-                    value={config.port}
-                    onChange={(e) => setConfig({ ...config, port: e.target.value })}
-                    placeholder="3306"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Username</label>
-                  <Input
-                    value={config.username}
-                    onChange={(e) => setConfig({ ...config, username: e.target.value })}
-                    placeholder="root"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Password</label>
-                  <Input
-                    type="password"
-                    value={config.password}
-                    onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                    placeholder="********"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Database</label>
-                  <Input
-                    value={config.database}
-                    onChange={(e) => setConfig({ ...config, database: e.target.value })}
-                    placeholder="trading_journal"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Status:</span>
-                  <span className="text-green-600 dark:text-green-400">Connected</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Host:</span>
-                  <span>{config.host}:{config.port}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Database:</span>
-                  <span>{config.database}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Tables:</span>
-                  <span>{tables.length}</span>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            {connectionStatus === 'connected' ? (
-              <>
-                <Button variant="outline" onClick={handleDisconnect}>
-                  Disconnect
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleBackupDatabase} 
-                  disabled={backupLoading}
-                  className="flex items-center"
-                >
-                  {backupLoading ? (
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Backup Database
-                </Button>
-              </>
-            ) : (
-              <Button 
-                onClick={handleConnect} 
-                disabled={loading || !isConfigured}
-                className="flex items-center"
-              >
-                {loading ? (
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Database className="mr-2 h-4 w-4" />
-                )}
-                Connect
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-
-        {/* Database Tools */}
-        {connectionStatus === 'connected' && (
-          <Tabs defaultValue="query" className="w-full">
-            <TabsList className="mb-6">
-              <TabsTrigger value="query" className="flex items-center">
-                <Play className="mr-2 h-4 w-4" />
-                SQL Query
-              </TabsTrigger>
-              <TabsTrigger value="tables" className="flex items-center">
-                <Table className="mr-2 h-4 w-4" />
-                Tables
-              </TabsTrigger>
-              <TabsTrigger value="export" className="flex items-center">
-                <FileDown className="mr-2 h-4 w-4" />
-                Export
-              </TabsTrigger>
-              <TabsTrigger value="import" className="flex items-center">
-                <FilePlus2 className="mr-2 h-4 w-4" />
-                Import
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="query">
-              <Card>
-                <CardHeader>
-                  <CardTitle>SQL Query</CardTitle>
-                  <CardDescription>
-                    Execute custom SQL queries on the database
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <Textarea
-                      value={sqlQuery}
-                      onChange={(e) => setSqlQuery(e.target.value)}
-                      placeholder="SELECT * FROM users LIMIT 10;"
-                      className="font-mono h-32"
-                    />
-                    
-                    {queryResult && (
-                      <div className="border rounded-md overflow-hidden">
-                        {queryResult.success ? (
-                          queryResult.data && Array.isArray(queryResult.data) ? (
-                            <div className="overflow-x-auto">
-                              <table className="w-full text-sm">
-                                <thead className="bg-gray-100 dark:bg-gray-800">
-                                  <tr>
-                                    {queryResult.data.length > 0 && 
-                                      Object.keys(queryResult.data[0]).map((col, i) => (
-                                        <th key={i} className="px-4 py-2 text-left font-medium">{col}</th>
-                                      ))
-                                    }
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {queryResult.data.map((row, i) => (
-                                    <tr key={i} className="border-t">
-                                      {Object.values(row).map((cell, j) => (
-                                        <td key={j} className="px-4 py-2">{String(cell)}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <div className="p-4 text-green-600">
-                              Query executed successfully. {queryResult.affectedRows && `Affected rows: ${queryResult.affectedRows}`}
-                            </div>
-                          )
-                        ) : (
-                          <div className="p-4 text-red-600">
-                            {queryResult.error || 'Error executing query'}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button onClick={handleExecuteQuery}>Execute Query</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="tables">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Database Tables</CardTitle>
-                  <CardDescription>
-                    Browse tables in the database
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-4 gap-6">
-                    <div className="border rounded-md overflow-hidden">
-                      <div className="p-3 bg-gray-50 dark:bg-gray-800 font-medium">
-                        Tables
-                      </div>
-                      <div className="p-2 max-h-96 overflow-y-auto">
-                        <ul className="space-y-1">
-                          {tables.map((table) => (
-                            <li key={table.name}>
-                              <button
-                                onClick={() => handleSelectTable(table.name)}
-                                className={`w-full text-left px-3 py-2 rounded text-sm ${
-                                  selectedTable === table.name 
-                                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
-                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                                }`}
-                              >
-                                {table.name}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                    
-                    <div className="md:col-span-3 border rounded-md overflow-hidden">
-                      {selectedTable ? (
-                        <div>
-                          <div className="p-3 bg-gray-50 dark:bg-gray-800 font-medium flex items-center justify-between">
-                            <span>Table: {selectedTable}</span>
-                            <span className="text-sm text-gray-500">
-                              {tableData.length} rows
-                            </span>
-                          </div>
-                          <div className="overflow-x-auto">
-                            {tableColumns.length > 0 && tableData.length > 0 ? (
-                              <table className="w-full text-sm">
-                                <thead className="bg-gray-50 dark:bg-gray-800">
-                                  <tr>
-                                    {tableColumns.map((col, i) => (
-                                      <th key={i} className="px-4 py-2 text-left font-medium">{col}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {tableData.slice(0, 10).map((row, i) => (
-                                    <tr key={i} className="border-t">
-                                      {tableColumns.map((col, j) => (
-                                        <td key={j} className="px-4 py-2">{String(row[col] !== undefined ? row[col] : '')}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            ) : (
-                              <div className="p-4 text-center text-gray-500">
-                                {tableData.length === 0 ? 'No data in table' : 'Loading table data...'}
-                              </div>
-                            )}
-                          </div>
-                          {tableData.length > 10 && (
-                            <div className="p-2 text-center text-sm text-gray-500">
-                              Showing 10 of {tableData.length} rows
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="p-8 text-center text-gray-500">
-                          Select a table to view its data
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="export">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Export Database</CardTitle>
-                  <CardDescription>
-                    Export database tables to SQL or CSV files
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="border rounded-md p-4">
-                      <h3 className="font-medium mb-2">Select tables to export</h3>
-                      <div className="grid grid-cols-3 gap-2 mb-4">
-                        {tables.map((table) => (
-                          <label key={table.name} className="flex items-center space-x-2">
-                            <input type="checkbox" className="rounded" />
-                            <span>{table.name}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <div className="flex space-x-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Export format</label>
-                          <select className="w-full rounded-md border border-input px-3 py-2">
-                            <option value="sql">SQL</option>
-                            <option value="csv">CSV</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-1">Options</label>
-                          <select className="w-full rounded-md border border-input px-3 py-2">
-                            <option value="data">Data only</option>
-                            <option value="structure">Structure only</option>
-                            <option value="both">Both structure and data</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button>
-                    <FileDown className="mr-2 h-4 w-4" />
-                    Export Database
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="import">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Import Data</CardTitle>
-                  <CardDescription>
-                    Import data from SQL or CSV files
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="border-2 border-dashed rounded-md p-8 text-center">
-                      <FilePlus2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                      <p className="mb-2 text-sm">Drag and drop SQL or CSV files here</p>
-                      <p className="text-xs text-gray-500 mb-4">Or click to browse files</p>
-                      <Button variant="outline" size="sm">
-                        Choose File
-                      </Button>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Import options</label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <select className="rounded-md border border-input px-3 py-2">
-                          <option value="add">Add to existing data</option>
-                          <option value="replace">Replace existing data</option>
-                        </select>
-                        <select className="rounded-md border border-input px-3 py-2">
-                          <option value="ignore">Ignore errors</option>
-                          <option value="stop">Stop on error</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end">
-                  <Button disabled>
-                    Import Data
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        )}
+      
+      <div className="flex flex-wrap gap-4 mb-6">
+        <Button 
+          variant="outline" 
+          onClick={loadDatabaseStatus}
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh Status
+        </Button>
+        
+        <Button 
+          onClick={handleBackup}
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Backup Database
+        </Button>
       </div>
-    </AdminLayout>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="status" className="flex items-center gap-2">
+            <Server className="h-4 w-4" />
+            Status
+          </TabsTrigger>
+          <TabsTrigger value="structure" className="flex items-center gap-2">
+            <Table className="h-4 w-4" />
+            Tables
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            Logs
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="status" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Database Status</CardTitle>
+              <CardDescription>Current status of the application database</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
+                  <div className="mt-1 flex items-center">
+                    <span className={`inline-block h-3 w-3 rounded-full mr-2 ${
+                      dbStatus.status === 'Connected' ? 'bg-green-500' : 'bg-red-500'
+                    }`}></span>
+                    <span className="text-lg font-semibold">{dbStatus.status}</span>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Tables</h3>
+                  <p className="mt-1 text-lg font-semibold">{dbStatus.tables}</p>
+                </div>
+                
+                <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Size</h3>
+                  <p className="mt-1 text-lg font-semibold">{dbStatus.size}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="structure" className="space-y-4">
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="md:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tables</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <nav className="space-y-1">
+                    {tables.map(table => (
+                      <Button
+                        key={table}
+                        variant={currentTable === table ? "default" : "ghost"}
+                        className="w-full justify-start text-left"
+                        onClick={() => handleTableSelect(table)}
+                      >
+                        <Database className="h-4 w-4 mr-2" />
+                        {table}
+                      </Button>
+                    ))}
+                  </nav>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="md:col-span-3">
+              {currentTable ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Table: {currentTable}</CardTitle>
+                    <CardDescription>Structure and data</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Table content would go here */}
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Table preview is simulated in this demo.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Database className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500">Select a table to view its structure and data</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="logs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>System Logs</CardTitle>
+              <CardDescription>Recent system and database events</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {logs.length > 0 ? (
+                  logs.map((log, index) => (
+                    <div 
+                      key={index}
+                      className="p-3 bg-gray-50 dark:bg-gray-800 rounded-md flex items-start gap-3"
+                    >
+                      {log.level === 'WARNING' ? (
+                        <AlertTriangle className="h-5 w-5 text-amber-500 mt-1 flex-shrink-0" />
+                      ) : (
+                        <Database className="h-5 w-5 text-blue-500 mt-1 flex-shrink-0" />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant={log.level === 'WARNING' ? "outline" : "default"}>
+                            {log.level}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {new Date(log.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm">{log.message}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No logs available</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

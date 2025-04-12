@@ -8,8 +8,14 @@ import { Button } from '@/components/ui/button';
 import { UserPlus } from 'lucide-react';
 import AddUserDialog from '@/components/admin/AddUserDialog';
 
+// Interface to handle display data with potentially missing fields
+interface DisplayUser extends Partial<User> {
+  username?: string;
+  name?: string;
+}
+
 const AdminUsers: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<DisplayUser[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
@@ -26,7 +32,13 @@ const AdminUsers: React.FC = () => {
     setLoading(true);
     try {
       const allUsers = await adminController.getAllUsers();
-      setUsers(allUsers);
+      // Map users to ensure they have all required properties
+      const displayUsers = allUsers.map(user => ({
+        ...user,
+        // Ensure username exists (use name as fallback if needed)
+        username: user.username || user.name || '',
+      }));
+      setUsers(displayUsers);
     } catch (error) {
       console.error("Error loading users:", error);
       toast({
@@ -45,7 +57,7 @@ const AdminUsers: React.FC = () => {
       // This would call the AdminController's createUser method
       toast({
         title: "User Created",
-        description: `User ${userData.name} has been created successfully`
+        description: `User ${userData.username || ''} has been created successfully`
       });
       loadUsers(); // Refresh user list
       return true;

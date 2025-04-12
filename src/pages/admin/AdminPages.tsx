@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   File, 
@@ -13,7 +12,6 @@ import {
   MoreHorizontal,
   RefreshCw
 } from 'lucide-react';
-import AdminLayout from '@/components/layouts/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -250,147 +248,145 @@ const AdminPages = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="container mx-auto py-6">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Page Management
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Create, edit, and manage the pages of your website.
-          </p>
-        </header>
-        
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <Input
-              className="pl-10"
-              placeholder="Search pages..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button onClick={handleCreatePage} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            <span>Create Page</span>
-          </Button>
+    <div className="container mx-auto py-6">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Page Management
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400">
+          Create, edit, and manage the pages of your website.
+        </p>
+      </header>
+      
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Input
+            className="pl-10"
+            placeholder="Search pages..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
+        <Button onClick={handleCreatePage} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          <span>Create Page</span>
+        </Button>
+      </div>
+      
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle>Website Pages</CardTitle>
+          <CardDescription>
+            All pages in your website. {pages.length} total pages.
+          </CardDescription>
+        </CardHeader>
         
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>Website Pages</CardTitle>
-            <CardDescription>
-              All pages in your website. {pages.length} total pages.
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Title</th>
-                    <th className="px-4 py-3 text-left">Path</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-left">Last Modified</th>
-                    <th className="px-4 py-3 text-left">Template</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredPages.length > 0 ? (
-                    filteredPages.map((page) => (
-                      <tr key={page.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                        <td className="px-4 py-3 flex items-center gap-2">
-                          <File className="h-4 w-4 text-gray-400" />
-                          <span className="font-medium">{page.title}</span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{page.path}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            page.status === 'published' 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                          }`}>
-                            {page.status.charAt(0).toUpperCase() + page.status.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{page.lastModified}</td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
-                          {page.template || 'Default'}
-                        </td>
-                        <td className="px-4 py-3 text-right space-x-1">
-                          {isMobile ? (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Actions</span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handlePreviewPage(page.path)}>
-                                  <Eye className="mr-2 h-4 w-4" /> Preview
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEditPage(page)}>
-                                  <Edit className="mr-2 h-4 w-4" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeletePage(page)}
-                                  className="text-red-600 dark:text-red-400"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          ) : (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handlePreviewPage(page.path)}
-                                title="Preview"
-                              >
-                                <Eye className="h-4 w-4" />
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-800">
+                <tr>
+                  <th className="px-4 py-3 text-left">Title</th>
+                  <th className="px-4 py-3 text-left">Path</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-left">Last Modified</th>
+                  <th className="px-4 py-3 text-left">Template</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredPages.length > 0 ? (
+                  filteredPages.map((page) => (
+                    <tr key={page.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-4 py-3 flex items-center gap-2">
+                        <File className="h-4 w-4 text-gray-400" />
+                        <span className="font-medium">{page.title}</span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{page.path}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          page.status === 'published' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>
+                          {page.status.charAt(0).toUpperCase() + page.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{page.lastModified}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {page.template || 'Default'}
+                      </td>
+                      <td className="px-4 py-3 text-right space-x-1">
+                        {isMobile ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleEditPage(page)}
-                                title="Edit"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handlePreviewPage(page.path)}>
+                                <Eye className="mr-2 h-4 w-4" /> Preview
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditPage(page)}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
                                 onClick={() => handleDeletePage(page)}
-                                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                title="Delete"
+                                className="text-red-600 dark:text-red-400"
                               >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
-                        {searchTerm ? 'No pages found matching your search' : 'No pages found'}
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handlePreviewPage(page.path)}
+                              title="Preview"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleEditPage(page)}
+                              title="Edit"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleDeletePage(page)}
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                      {searchTerm ? 'No pages found matching your search' : 'No pages found'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Edit/Create Page Dialog */}
       <Dialog open={isEditing || isCreating} onOpenChange={(open) => {
@@ -546,7 +542,7 @@ const AdminPages = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AdminLayout>
+    </div>
   );
 };
 
