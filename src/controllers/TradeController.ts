@@ -8,7 +8,7 @@ export class TradeController {
     this.model = new TradeModel();
   }
 
-  async getTrade(id: number): Promise<Trade | null> {
+  async getTrade(id: string): Promise<Trade | null> {
     try {
       return await this.model.findById(id);
     } catch (error) {
@@ -17,7 +17,7 @@ export class TradeController {
     }
   }
 
-  async getUserTrades(userId: number, limit?: number, offset?: number): Promise<Trade[]> {
+  async getUserTrades(userId: string, limit?: number, offset?: number): Promise<Trade[]> {
     try {
       return await this.model.findByUserId(userId, limit, offset);
     } catch (error) {
@@ -26,7 +26,7 @@ export class TradeController {
     }
   }
 
-  async createTrade(tradeData: Omit<Trade, 'id' | 'createdAt'>): Promise<number | null> {
+  async createTrade(tradeData: Omit<Trade, 'id' | 'createdAt'>): Promise<string | null> {
     try {
       // Business logic can be added here
       return await this.model.create(tradeData);
@@ -36,7 +36,7 @@ export class TradeController {
     }
   }
 
-  async updateTrade(id: number, tradeData: Partial<Trade>): Promise<boolean> {
+  async updateTrade(id: string, tradeData: Partial<Trade>): Promise<boolean> {
     try {
       // Business logic - check if trade exists first
       const existingTrade = await this.model.findById(id);
@@ -56,7 +56,7 @@ export class TradeController {
     }
   }
 
-  async deleteTrade(id: number): Promise<boolean> {
+  async deleteTrade(id: string): Promise<boolean> {
     try {
       // Business logic - check if trade exists first
       const existingTrade = await this.model.findById(id);
@@ -71,7 +71,7 @@ export class TradeController {
     }
   }
 
-  async getTradesByAccount(userId: number, account: string): Promise<Trade[]> {
+  async getTradesByAccount(userId: string, account: string): Promise<Trade[]> {
     try {
       return await this.model.getTradesByAccount(userId, account);
     } catch (error) {
@@ -80,7 +80,7 @@ export class TradeController {
     }
   }
 
-  async getTradesByPair(userId: number, pair: string): Promise<Trade[]> {
+  async getTradesByPair(userId: string, pair: string): Promise<Trade[]> {
     try {
       return await this.model.getTradesByPair(userId, pair);
     } catch (error) {
@@ -89,7 +89,7 @@ export class TradeController {
     }
   }
 
-  async getTradesByDateRange(userId: number, startDate: string, endDate: string): Promise<Trade[]> {
+  async getTradesByDateRange(userId: string, startDate: string, endDate: string): Promise<Trade[]> {
     try {
       return await this.model.getTradesByDateRange(userId, startDate, endDate);
     } catch (error) {
@@ -98,7 +98,7 @@ export class TradeController {
     }
   }
 
-  async getUserTradingPairs(userId: number): Promise<string[]> {
+  async getUserTradingPairs(userId: string): Promise<string[]> {
     try {
       return await this.model.getUserTradingPairs(userId);
     } catch (error) {
@@ -107,7 +107,7 @@ export class TradeController {
     }
   }
 
-  async getUserAccounts(userId: number): Promise<string[]> {
+  async getUserAccounts(userId: string): Promise<string[]> {
     try {
       return await this.model.getUserAccounts(userId);
     } catch (error) {
@@ -120,7 +120,7 @@ export class TradeController {
     try {
       // Instead of using the protected findAll method, use a query that selects all trades
       // We'll implement it with getUserTrades with no filters
-      return await this.model.findByUserId(0, 9999); // Using a large limit to get all trades
+      return await this.model.findByUserId("0", 9999); // Using a large limit to get all trades
     } catch (error) {
       console.error('Error getting all trades:', error);
       return [];
@@ -128,7 +128,7 @@ export class TradeController {
   }
 
   // Calculate trade performance metrics for a user
-  async calculateUserPerformance(userId: number, startDate?: string, endDate?: string): Promise<{
+  async calculateUserPerformance(userId: string, startDate?: string, endDate?: string): Promise<{
     totalTrades: number;
     winningTrades: number;
     losingTrades: number;

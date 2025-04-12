@@ -8,7 +8,7 @@ export class UserController {
     this.model = new UserModel();
   }
 
-  async getUser(id: number): Promise<User | null> {
+  async getUser(id: string): Promise<User | null> {
     try {
       return await this.model.findById(id);
     } catch (error) {
@@ -26,7 +26,7 @@ export class UserController {
     }
   }
 
-  async createUser(userData: Omit<User, 'id' | 'createdAt'>): Promise<number | null> {
+  async createUser(userData: Omit<User, 'id' | 'createdAt'>): Promise<string | null> {
     try {
       // Additional business logic can be added here
       // For example, checking if email already exists
@@ -42,7 +42,7 @@ export class UserController {
     }
   }
 
-  async updateUser(id: number, userData: Partial<User>): Promise<boolean> {
+  async updateUser(id: string, userData: Partial<User>): Promise<boolean> {
     try {
       // Business logic - check if user exists first
       const existingUser = await this.model.findById(id);
@@ -57,7 +57,7 @@ export class UserController {
     }
   }
 
-  async deleteUser(id: number): Promise<boolean> {
+  async deleteUser(id: string): Promise<boolean> {
     try {
       // Business logic - check if user exists first
       const existingUser = await this.model.findById(id);
@@ -72,7 +72,7 @@ export class UserController {
     }
   }
 
-  async blockUser(id: number): Promise<boolean> {
+  async blockUser(id: string): Promise<boolean> {
     try {
       return await this.model.blockUser(id);
     } catch (error) {
@@ -81,7 +81,7 @@ export class UserController {
     }
   }
 
-  async unblockUser(id: number): Promise<boolean> {
+  async unblockUser(id: string): Promise<boolean> {
     try {
       return await this.model.unblockUser(id);
     } catch (error) {

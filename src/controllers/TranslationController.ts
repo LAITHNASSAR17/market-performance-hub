@@ -1,4 +1,3 @@
-
 import { TranslationModel, Translation } from '../models/TranslationModel';
 
 export class TranslationController {
@@ -49,7 +48,7 @@ export class TranslationController {
   }
 
   // Create or update a translation
-  async setTranslation(translation: Omit<Translation, 'id' | 'createdAt' | 'updatedAt'>): Promise<number | null> {
+  async setTranslation(translation: Omit<Translation, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> {
     try {
       // Validate translation data
       this.validateTranslationData(translation);
@@ -62,7 +61,7 @@ export class TranslationController {
   }
 
   // Delete a translation
-  async deleteTranslation(id: number): Promise<boolean> {
+  async deleteTranslation(id: string): Promise<boolean> {
     try {
       return await this.model.deleteTranslation(id);
     } catch (error) {
