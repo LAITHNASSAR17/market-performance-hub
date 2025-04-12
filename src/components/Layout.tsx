@@ -17,6 +17,7 @@ import {
   X,
   UserCog,
   ShieldAlert,
+  LineChart as LineChart3,
   BarChart2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,7 +50,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: t('nav.reports'), icon: BarChart, href: '/reports' },
     { name: t('nav.insights'), icon: Sparkles, href: '/insights' },
     { name: t('analytics.title') || 'Analytics', icon: BarChart2, href: '/analytics' },
-    { name: t('chart.title') || 'Chart', icon: LineChart, href: '/chart' },
+    { name: t('chart.title') || 'Chart', icon: LineChart3, href: '/chart' },
   ];
 
   // Add admin link only for admin users
@@ -78,37 +79,37 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 transform bg-gradient-to-b from-purple-700 to-purple-900 text-white shadow-lg transition-transform duration-300 ease-in-out md:relative",
+          "fixed inset-y-0 transform bg-trading-blue text-white shadow-lg transition-transform duration-300 ease-in-out md:relative",
           language === 'ar' 
             ? (sidebarOpen ? "translate-x-0 right-0" : "translate-x-full right-0") 
             : (sidebarOpen ? "translate-x-0 left-0" : "-translate-x-full left-0"),
-          "w-72 md:translate-x-0"
+          "w-64 md:translate-x-0"
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between h-16 px-5 border-b border-purple-600">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-trading-blue-dark">
             <h1 className="text-xl font-bold text-white">{t('nav.platform')}</h1>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-white hover:bg-purple-600 md:hidden"
+              className="text-white hover:bg-trading-blue-dark"
               onClick={toggleSidebar}
             >
-              <X className="h-5 w-5" />
+              <Menu className="h-5 w-5" />
             </Button>
           </div>
 
-          <div className="flex-1 overflow-y-auto py-6 px-4">
-            <nav className="space-y-3">
+          <div className="flex-1 overflow-y-auto py-4 px-3">
+            <nav className="space-y-1">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    "flex items-center px-5 py-3 text-sm font-medium rounded-lg transition-colors",
+                    "flex items-center px-4 py-3 text-sm font-medium rounded-md",
                     location.pathname === item.href
-                      ? "bg-purple-800 text-white"
-                      : "text-purple-100 hover:bg-purple-800 hover:text-white"
+                      ? "bg-trading-blue-dark text-white"
+                      : "text-white hover:bg-trading-blue-dark"
                   )}
                   onClick={() => isMobile && setSidebarOpen(false)}
                 >
@@ -119,25 +120,25 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </nav>
           </div>
 
-          <div className="p-5 border-t border-purple-600">
+          <div className="p-4 border-t border-trading-blue-dark">
             <div className="mb-4">
-              <p className="text-sm font-medium text-purple-200">{t('nav.loggedInAs')}</p>
-              <p className="text-sm text-white truncate">{user?.name}</p>
+              <p className="text-sm font-medium text-white">{t('nav.loggedInAs')}</p>
+              <p className="text-sm text-gray-300 truncate">{user?.name}</p>
               {isAdmin && (
                 <Badge className="mt-1 bg-purple-500">{t('nav.admin')}</Badge>
               )}
             </div>
-            <div className="flex flex-col space-y-2">
+            <div className="flex justify-between items-center">
               <Button
                 variant="outline"
-                className="w-full justify-start text-white border-purple-400 hover:bg-purple-600 bg-red-500 hover:bg-red-600"
+                className="flex-1 justify-start text-white border-white hover:bg-trading-blue-dark"
                 onClick={logout}
               >
                 <LogOut className={`h-4 w-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
                 {t('nav.logout')}
               </Button>
               
-              <LanguageToggle className="w-full justify-start text-white hover:bg-purple-600" />
+              <LanguageToggle className="text-white hover:bg-trading-blue-dark" />
             </div>
           </div>
         </div>

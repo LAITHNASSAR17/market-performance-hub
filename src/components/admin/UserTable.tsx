@@ -1,34 +1,36 @@
 
 import React, { useState } from 'react';
-import { Search, UserCheck, UserX, User as UserIcon, Eye, X, ShieldCheck } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Search, Lock, UserCheck, UserX, Eye, Send } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
   TableCaption,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import UserPerformance from './UserPerformance';
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserTableProps {
   users: any[];
   onBlock: (user: any) => void;
   onUnblock: (user: any) => void;
-  onChangePassword: (email: string, newPassword: string) => Promise<void>;
+  onChangePassword: (email: string, password: string) => Promise<void>;
   onViewUser: (userId: string) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -43,50 +45,55 @@ const UserTable: React.FC<UserTableProps> = ({
   searchTerm,
   setSearchTerm
 }) => {
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  const [showPerformance, setShowPerformance] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
-  const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const { toast } = useToast();
+  const { t } = useLanguage();
 
-  const filteredUsers = users.filter(user => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      user.name.toLowerCase().includes(searchLower) ||
-      user.email.toLowerCase().includes(searchLower) ||
-      (user.id && user.id.toLowerCase().includes(searchLower))
-    );
-  });
+  const handleOpenPasswordModal = (user: any) => {
+    setSelectedUser(user);
+    setShowPasswordModal(true);
+  };
 
-  const handlePasswordReset = async () => {
-    if (resetPasswordUserId) {
-      const user = users.find(u => u.id === resetPasswordUserId);
-      if (user && user.email) {
-        await onChangePassword(user.email, newPassword);
-        setNewPassword('');
-        setResetPasswordUserId(null);
+  const handleClosePasswordModal = () => {
+    setShowPasswordModal(false);
+    setNewPassword('');
+    setError('');
+    setSelectedUser(null);
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword) {
+      setError('Please enter a new password.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (selectedUser) {
+      try {
+        await onChangePassword(selectedUser.email, newPassword);
+        handleClosePasswordModal();
+      } catch (err) {
+        setError('Failed to change password. Please try again.');
       }
     }
   };
 
-  const openResetPasswordDialog = (userId: string) => {
-    setResetPasswordUserId(userId);
-    setNewPassword('');
-  };
-
-  const closeResetPasswordDialog = () => {
-    setResetPasswordUserId(null);
-    setNewPassword('');
-  };
-
-  const viewUserPerformance = (user: any) => {
-    setSelectedUser(user);
-    setShowPerformance(true);
-  };
+  const filteredUsers = users.filter(user => 
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row mb-4 gap-2">
-        <div className="relative flex-grow">
+      <div className="flex mb-4">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <Input
             className="pl-10 pr-4"
@@ -95,157 +102,151 @@ const UserTable: React.FC<UserTableProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        {searchTerm && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setSearchTerm('')}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
       </div>
       
       <div className="overflow-x-auto">
         <Table>
-          <TableCaption>List of all registered users on the platform</TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">Name</TableHead>
+              <TableHead className="w-[50px]">ID</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead className="text-center">Role</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-right w-[180px]">Actions</TableHead>
+              <TableHead>Subscription</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell className="text-center">
-                    {user.isAdmin ? (
-                      <Badge className="bg-purple-500">
-                        <ShieldCheck className="mr-1 h-3 w-3" />
-                        Admin
+                <TableRow key={user.id} className="hover:bg-slate-50">
+                  <TableCell className="font-medium">{user.id.substring(0, 5)}</TableCell>
+                  <TableCell>{user.name}</TableCell>
+                  <TableCell className="max-w-[150px] truncate">{user.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      {user.isAdmin ? 'Admin' : 'Basic'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {user.isBlocked ? (
+                      <Badge variant="destructive">
+                        Blocked
                       </Badge>
                     ) : (
-                      <Badge variant="outline">User</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {user.isBlocked ? (
-                      <Badge variant="destructive">Blocked</Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
+                      <Badge className="bg-green-500">
                         Active
                       </Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-2">
                       <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => viewUserPerformance(user)}
+                        variant="outline" 
+                        size="sm" 
+                        className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
+                        title="View User"
+                        onClick={() => onViewUser(user.id)}
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleOpenPasswordModal(user)}
+                        className="text-amber-600 border-amber-600 hover:bg-amber-50 h-8 w-8 p-0"
+                        title="Change Password"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="text-indigo-600 border-indigo-600 hover:bg-indigo-50 h-8 w-8 p-0"
+                        title="Send Message"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
                       {user.isBlocked ? (
                         <Button 
-                          variant="ghost" 
-                          size="icon"
+                          variant="outline" 
+                          size="sm" 
                           onClick={() => onUnblock(user)}
-                          className="text-green-600"
+                          className="text-green-600 border-green-600 hover:bg-green-50 h-8 w-8 p-0"
+                          title="Unblock User"
                         >
                           <UserCheck className="h-4 w-4" />
                         </Button>
                       ) : (
                         <Button 
-                          variant="ghost" 
-                          size="icon"
+                          variant="outline" 
+                          size="sm" 
                           onClick={() => onBlock(user)}
-                          className="text-red-600"
-                          disabled={user.isAdmin}
+                          className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                          title="Block User"
                         >
                           <UserX className="h-4 w-4" />
                         </Button>
                       )}
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openResetPasswordDialog(user.id)}
-                          >
-                            Reset Password
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Reset Password</DialogTitle>
-                            <DialogDescription>
-                              Enter a new password for {user.name}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div className="space-y-2">
-                              <label htmlFor="newPassword" className="text-sm font-medium">
-                                New Password
-                              </label>
-                              <Input
-                                id="newPassword"
-                                type="text"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                placeholder="Enter new password"
-                              />
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button variant="outline" onClick={closeResetPasswordDialog}>
-                              Cancel
-                            </Button>
-                            <Button onClick={handlePasswordReset}>
-                              Reset Password
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
                     </div>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-4">
-                  No users found
+                <TableCell colSpan={6} className="h-24 text-center">
+                  {searchTerm 
+                    ? "No users match your search."
+                    : "No users found."}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={6} className="text-right">
+                Showing: {filteredUsers.length} / {users.length}
+              </TableCell>
+            </TableRow>
+          </TableFooter>
         </Table>
       </div>
 
-      {/* User Performance Dialog */}
-      <Dialog open={showPerformance} onOpenChange={setShowPerformance}>
-        <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto">
+      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>User Performance</DialogTitle>
+            <DialogTitle>Change Password</DialogTitle>
             <DialogDescription>
-              Detailed trading performance for this user
+              Enter a new password for {selectedUser?.email}.
             </DialogDescription>
           </DialogHeader>
-          
-          {selectedUser && (
-            <UserPerformance userId={selectedUser.id} userName={selectedUser.name} />
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md">
+              {error}
+            </div>
           )}
-          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="newPassword" className="text-right">
+                New Password
+              </Label>
+              <Input
+                id="newPassword"
+                type="password"
+                placeholder="Enter new password"
+                className="col-span-3"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+          </div>
           <DialogFooter>
-            <Button onClick={() => setShowPerformance(false)}>
-              Close
+            <Button variant="outline" onClick={handleClosePasswordModal}>
+              Cancel
+            </Button>
+            <Button onClick={handleChangePassword} className="bg-purple-600 hover:bg-purple-700">
+              <Lock className="mr-2 h-4 w-4" />
+              Change Password
             </Button>
           </DialogFooter>
         </DialogContent>

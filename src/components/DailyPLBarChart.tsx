@@ -9,8 +9,9 @@ import {
   Tooltip, 
   ResponsiveContainer,
   ReferenceLine,
-  Cell
+  Cell  // Add this import
 } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface DailyPLBarChartProps {
   data: Array<{
@@ -31,61 +32,37 @@ const DailyPLBarChart: React.FC<DailyPLBarChartProps> = ({
     return profit >= 0 ? "#36B37E" : "#FF5630";
   };
   
-  const formatYAxis = (value: number) => {
-    if (Math.abs(value) >= 1000) {
-      return `$${(value / 1000).toFixed(1)}k`;
-    }
-    return `$${value}`;
-  };
-  
   return (
     <ResponsiveContainer width="100%" height="100%" className={className}>
       <BarChart
         data={data}
         margin={{
           top: 20,
-          right: 20,
+          right: 30,
           left: 20,
           bottom: 10,
         }}
-        barGap={2}
       >
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-        <XAxis 
-          dataKey="day" 
-          tick={{ fontSize: 12 }}
-          axisLine={false}
-          tickLine={false}
-        />
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="day" />
         <YAxis 
-          tickFormatter={formatYAxis}
-          axisLine={false}
-          tickLine={false}
-          tick={{ fontSize: 12 }}
+          tickFormatter={(value) => `$${Math.abs(value) >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`} 
         />
         <Tooltip
           formatter={(value: number) => [`$${value.toFixed(2)}`, 'P&L']}
           labelFormatter={(label) => `Day: ${label}`}
-          cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
-          contentStyle={{ 
-            backgroundColor: 'white', 
-            border: '1px solid #f0f0f0',
-            borderRadius: '8px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-          }}
+          cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
         />
-        <ReferenceLine y={0} stroke="#ddd" />
+        <ReferenceLine y={0} stroke="#666" />
         <Bar 
           dataKey="profit" 
+          fill="#36B37E" 
           radius={[4, 4, 0, 0]}
+          fillOpacity={0.8}
           isAnimationActive={true}
         >
           {data.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`} 
-              fill={getBarFill(entry.profit)} 
-              fillOpacity={0.85} 
-            />
+            <Cell key={`cell-${index}`} fill={getBarFill(entry.profit)} />
           ))}
         </Bar>
       </BarChart>
