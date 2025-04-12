@@ -3,7 +3,7 @@ import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
 import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, 
-  ChevronRight, ChevronLeft, Info, Plus, Filter, FileImport, Settings } from 'lucide-react';
+  ChevronRight, ChevronLeft, Info, Plus, Filter, FileUp, Settings, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -690,7 +690,7 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-between items-center">
                 <CardTitle className="text-base font-semibold">Daily Net Cumulative P&L</CardTitle>
                 <Button variant="outline" size="sm" className="flex items-center gap-2 text-sm shadow-sm">
-                  <FileImport className="h-4 w-4" />
+                  <FileUp className="h-4 w-4" />
                   <span>Import trades</span>
                 </Button>
               </div>
