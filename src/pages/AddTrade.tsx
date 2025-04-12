@@ -8,14 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
 import CurrencyPairInput from '@/components/CurrencyPairInput';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
 
 const AddTrade: React.FC = () => {
   const { addTrade, accounts, pairs, symbols, addSymbol, allHashtags } = useTrade();
@@ -47,6 +45,7 @@ const AddTrade: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
 
+  // Calculate profit/loss and return percentage automatically when entry, exit, and lotSize are provided
   useEffect(() => {
     if (isCalculating) return;
 
@@ -65,6 +64,7 @@ const AddTrade: React.FC = () => {
         const pipsPerLot = 10; // Simplified calculation, adjust based on actual pip value
         const calculatedPL = pipsValue * pipsPerLot * lotSizeValue;
         
+        // Calculate return % (simplified)
         const returnPercentage = ((calculatedPL / 1000) * 100).toFixed(2);
         
         setIsCalculating(true);
@@ -82,6 +82,7 @@ const AddTrade: React.FC = () => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
+    // Clear error when field is edited
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
@@ -90,6 +91,7 @@ const AddTrade: React.FC = () => {
   const handleSelectChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
     
+    // Clear error when field is edited
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
@@ -98,11 +100,14 @@ const AddTrade: React.FC = () => {
   const handlePairChange = (value: string) => {
     setFormData({ ...formData, pair: value });
     
+    // Clear error when field is edited
     if (errors.pair) {
       setErrors({ ...errors, pair: '' });
     }
     
+    // Add to pairs list if it's a new pair
     if (value && !pairs.includes(value)) {
+      // Add new symbol to the list
       const symbolType = determineSymbolType(value);
       const newSymbol = {
         symbol: value,
@@ -113,7 +118,8 @@ const AddTrade: React.FC = () => {
       addSymbol(newSymbol);
     }
   };
-
+  
+  // Helper function to determine symbol type based on naming pattern
   const determineSymbolType = (symbol: string): 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other' => {
     if (symbol.includes('/')) {
       if (symbol.includes('BTC') || symbol.includes('ETH') || symbol.includes('USDT')) {
@@ -134,6 +140,7 @@ const AddTrade: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate form
     const newErrors: Record<string, string> = {};
     if (!formData.account) newErrors.account = t('addTrade.accountRequired') || 'Account is required';
     if (!formData.pair) newErrors.pair = t('addTrade.pairRequired') || 'Currency pair or symbol is required';
@@ -146,6 +153,7 @@ const AddTrade: React.FC = () => {
       return;
     }
     
+    // Convert string values to numbers
     const tradeData = {
       ...formData,
       entry: parseFloat(formData.entry),
@@ -180,7 +188,9 @@ const AddTrade: React.FC = () => {
             <CardTitle>{t('addTrade.tradeInformation') || "Trade Information"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Basic Trade Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Account */}
               <div>
                 <Label htmlFor="account">{t('addTrade.account') || "Account"}</Label>
                 <Select
@@ -203,6 +213,7 @@ const AddTrade: React.FC = () => {
                 {errors.account && <p className="text-red-500 text-sm mt-1">{errors.account}</p>}
               </div>
 
+              {/* Date */}
               <div>
                 <Label htmlFor="date">{t('addTrade.date') || "Date"}</Label>
                 <Input
@@ -215,30 +226,21 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
+            {/* Trade Pair and Type */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Pair */}
               <div>
-                <Label htmlFor="pair">
-                  {t('addTrade.currencyPair') || "Currency Pair / Symbol"}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 ml-2 text-gray-400 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-sm">Enter any trading symbol (e.g., EURUSD, AAPL, ES)</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </Label>
+                <Label htmlFor="pair">{t('addTrade.currencyPair') || "Currency Pair / Symbol"}</Label>
                 <CurrencyPairInput
                   value={formData.pair}
                   onChange={handlePairChange}
-                  placeholder={t('addTrade.enterSymbol') || "Enter trading symbol (e.g., EURUSD, AAPL)"}
+                  options={pairs}
+                  placeholder={t('addTrade.selectOrType') || "Select or type currency pair"}
                   error={errors.pair}
-                  tooltipText="Type any symbol you trade (forex, stocks, futures, etc.)"
                 />
               </div>
 
+              {/* Type */}
               <div>
                 <Label htmlFor="type">{t('addTrade.type') || "Type"}</Label>
                 <Select
@@ -256,7 +258,9 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
+            {/* Entry, Exit, Lot Size */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Entry */}
               <div>
                 <Label htmlFor="entry">{t('addTrade.entry') || "Entry Price"}</Label>
                 <Input
@@ -272,6 +276,7 @@ const AddTrade: React.FC = () => {
                 {errors.entry && <p className="text-red-500 text-sm mt-1">{errors.entry}</p>}
               </div>
 
+              {/* Exit */}
               <div>
                 <Label htmlFor="exit">{t('addTrade.exit') || "Exit Price"}</Label>
                 <Input
@@ -287,6 +292,7 @@ const AddTrade: React.FC = () => {
                 {errors.exit && <p className="text-red-500 text-sm mt-1">{errors.exit}</p>}
               </div>
 
+              {/* Lot Size */}
               <div>
                 <Label htmlFor="lotSize">{t('addTrade.lotSize') || "Lot Size"}</Label>
                 <Input
@@ -303,7 +309,9 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
+            {/* Stop Loss, Take Profit */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Stop Loss */}
               <div>
                 <Label htmlFor="stopLoss">{t('addTrade.stopLoss') || "Stop Loss (optional)"}</Label>
                 <Input
@@ -317,6 +325,7 @@ const AddTrade: React.FC = () => {
                 />
               </div>
 
+              {/* Take Profit */}
               <div>
                 <Label htmlFor="takeProfit">{t('addTrade.takeProfit') || "Take Profit (optional)"}</Label>
                 <Input
@@ -331,7 +340,9 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
+            {/* Risk %, Profit/Loss, Duration */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Risk % */}
               <div>
                 <Label htmlFor="riskPercentage">{t('addTrade.riskPercentage') || "Risk %"}</Label>
                 <Input
@@ -345,6 +356,7 @@ const AddTrade: React.FC = () => {
                 />
               </div>
 
+              {/* Profit/Loss */}
               <div>
                 <Label htmlFor="profitLoss">{t('addTrade.profitLoss') || "Profit/Loss"}</Label>
                 <Input
@@ -358,6 +370,7 @@ const AddTrade: React.FC = () => {
                 />
               </div>
 
+              {/* Duration */}
               <div>
                 <Label htmlFor="durationMinutes">{t('addTrade.duration') || "Duration (minutes)"}</Label>
                 <Input
@@ -371,6 +384,7 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
+            {/* Notes */}
             <div>
               <Label htmlFor="notes">{t('addTrade.notes') || "Notes"}</Label>
               <Textarea
@@ -383,6 +397,7 @@ const AddTrade: React.FC = () => {
               />
             </div>
 
+            {/* Hashtags */}
             <div>
               <Label htmlFor="hashtags">{t('addTrade.hashtags') || "Hashtags"}</Label>
               <HashtagInput
@@ -398,7 +413,9 @@ const AddTrade: React.FC = () => {
             
             <h3 className="text-lg font-medium">{t('addTrade.tradeImages') || "Trade Images"}</h3>
             
+            {/* Before/After Trade Images */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Before Image */}
               <div>
                 <Label htmlFor="beforeImage">{t('addTrade.beforeImage') || "Before Trade Image"}</Label>
                 <p className="text-sm text-gray-500 mb-2">{t('addTrade.uploadBeforeImage') || "Upload an image of the chart before your entry"}</p>
@@ -408,6 +425,7 @@ const AddTrade: React.FC = () => {
                 />
               </div>
 
+              {/* After Image */}
               <div>
                 <Label htmlFor="afterImage">{t('addTrade.afterImage') || "After Trade Image"}</Label>
                 <p className="text-sm text-gray-500 mb-2">{t('addTrade.uploadAfterImage') || "Upload an image of the chart after your exit"}</p>
@@ -418,6 +436,7 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
             
+            {/* Original chart image */}
             <div>
               <Label htmlFor="image">{t('addTrade.originalImage') || "Additional Chart Image (Optional)"}</Label>
               <p className="text-sm text-gray-500 mb-2">{t('addTrade.uploadOriginalImage') || "Upload any other relevant chart image"}</p>

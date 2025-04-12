@@ -1,134 +1,72 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { useMySQL } from '@/contexts/MySQLContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { TradeNote, NoteTemplate, useTradeNotebook } from '@/contexts/TradeNotebookContext';
 import { useTrade } from '@/contexts/TradeContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { 
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from '@/components/ui/dialog';
-import { 
-  Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue 
-} from '@/components/ui/select';
-import { 
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle 
-} from '@/components/ui/alert-dialog';
-import { 
-  Collapsible, CollapsibleContent, CollapsibleTrigger 
-} from '@/components/ui/collapsible';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Checkbox } from '@/components/ui/checkbox';
-import HashtagInput from '@/components/HashtagInput';
-import { useToast } from '@/components/ui/use-toast';
-import { 
-  Folder, File, Plus, Edit, Trash2, Tag, ChevronDown, MoreVertical, 
-  Search, Star, Clock, Bookmark, ThumbsUp, Palette, FileText, 
-  ArrowLeft, Check, Info, FolderPlus, Hash, BookOpen, PenLine, 
-  FileText as FileTextIcon, RotateCcw, ChevronRight, History,
-  Star as StarIcon, CircleCheck, Eye, Copy, RefreshCcw, PlusSquare
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+  Plus, 
+  Search, 
+  FolderPlus, 
+  Edit2, 
+  Trash2, 
+  BookOpen, 
+  Tag, 
+  FolderKanban,
+  ChevronDown, 
+  Star, 
+  ThumbsUp, 
+  Users, 
+  FileText,
+  LayoutGrid,
+  Calendar,
+  MoreVertical,
+  FileBox,
+  ArrowLeft,
+  CheckSquare,
+  Save,
+  Heart
 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import HashtagInput from '@/components/HashtagInput';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-interface Note {
-  id: string;
-  userId: string;
-  title: string;
-  content: string;
-  folderId: string;
-  tags: string[];
-  tradeId?: string;
-  createdAt: string;
-  updatedAt: string;
-  tradingData?: {
-    netPL: number;
-    contractsTraded: number;
-    volume: number;
-    commissions: number;
-    netROI: number;
-    grossPL: number;
-  };
-}
-
-interface Folder {
-  id: string;
-  name: string;
-  icon?: string;
-  color?: string;
-}
-
-interface Template {
-  id: string;
-  title: string;
-  content: string;
-  type: 'favorite' | 'recommended' | 'custom';
-  emoji?: string;
-}
-
-interface Tag {
-  id: string;
-  name: string;
-  count: number;
-}
-
-const Notebook = () => {
-  const { user } = useAuth();
+const TradeNotebook: React.FC = () => {
+  const { notes, folders, templates, addNote, updateNote, deleteNote, addFolder, noteTags } = useTradeNotebook();
   const { trades } = useTrade();
+  const { t } = useLanguage();
   const { toast } = useToast();
-  const mysql = useMySQL();
-  
-  const [folders, setFolders] = useState<Folder[]>([
-    { id: 'all', name: 'All notes' },
-    { id: 'trade-notes', name: 'Trade Notes', color: '#9c59ff' },
-    { id: 'daily-journal', name: 'Daily Journal', color: '#5974ff' },
-    { id: 'sessions-recap', name: 'Sessions Recap', color: '#5974ff' },
-    { id: 'quarterly-goals', name: 'Quarterly Goals 📊', color: '#f5cb42' },
-    { id: 'trading-plan', name: 'Trading Plan 📝', color: '#e45fff' },
-    { id: '2023-goals', name: '2023 Goals + Plan 📌', color: '#4269ff' },
-    { id: 'plan-of-action', name: 'Plan of Action📝', color: '#2dc653' },
-    { id: 'templates', name: 'Templates', color: '#c5d3e8' },
-    { id: 'recently-deleted', name: 'Recently Deleted', color: '#ff6b6b' }
-  ]);
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
-  
-  const [selectedFolderId, setSelectedFolderId] = useState<string>('all');
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
-  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [isFoldersOpen, setIsFoldersOpen] = useState(true);
-  const [isTagsOpen, setIsTagsOpen] = useState(true);
-  const [templateType, setTemplateType] = useState<'favorite' | 'recommended' | 'custom'>('favorite');
-  
+  const [currentFolderId, setCurrentFolderId] = useState('all');
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isAddFolderDialogOpen, setIsAddFolderDialogOpen] = useState(false);
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+  const [isAddFolderDialogOpen, setIsAddFolderDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isTradeDetailsDialogOpen, setIsTradeDetailsDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<NoteTemplate | null>(null);
+  const [templateType, setTemplateType] = useState<'favorite' | 'recommended' | 'custom'>('recommended');
   
-  const [newNote, setNewNote] = useState<{
-    title: string;
-    content: string;
-    folderId: string;
-    tags: string[];
-    tradeId?: string;
-  }>({
+  const [formData, setFormData] = useState({
     title: '',
     content: '',
-    folderId: selectedFolderId !== 'all' ? selectedFolderId : 'trade-notes',
-    tags: []
+    tradeId: '',
+    folderId: 'trade-notes',
+    tags: [] as string[]
   });
-  
-  const [newFolder, setNewFolder] = useState<{
-    name: string;
-    color: string;
-  }>({
+
+  const [folderFormData, setFolderFormData] = useState({
     name: '',
     color: '#9c59ff'
   });
@@ -140,10 +78,9 @@ const Notebook = () => {
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
       note.content.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesFolder = selectedFolderId === 'all' || note.folderId === selectedFolderId;
-    const matchesTag = !selectedTagId || note.tags.includes(selectedTagId);
+    const matchesFolder = currentFolderId === 'all' || note.folderId === currentFolderId;
     
-    return matchesSearch && matchesFolder && matchesTag;
+    return matchesSearch && matchesFolder;
   });
 
   const sortedNotes = [...filteredNotes].sort((a, b) => 
@@ -162,355 +99,96 @@ const Notebook = () => {
     }
   }, [sortedNotes, selectedNoteId]);
 
-  useEffect(() => {
-    loadSampleData();
-    
-    if (mysql.connectionStatus === 'connected') {
-      fetchDataFromMySQL();
-    }
-  }, [mysql.connectionStatus]);
-
-  const loadSampleData = () => {
-    // Load sample data
-  };
-
-  const fetchDataFromMySQL = async () => {
-    try {
-      const foldersResult = await mysql.getFolders(user?.id);
-      if (foldersResult.length > 0) {
-        setFolders([
-          { id: 'all', name: 'All notes' },
-          ...foldersResult.map((folder: any) => ({
-            id: folder.id.toString(),
-            name: folder.name,
-            color: folder.color
-          })),
-          { id: 'recently-deleted', name: 'Recently Deleted', color: '#ff6b6b' }
-        ]);
-      }
-      
-      const notesResult = await mysql.getNotes(undefined, user?.id);
-      if (notesResult.length > 0) {
-        setNotes(notesResult.map((note: any) => ({
-          id: note.id.toString(),
-          userId: note.userId?.toString() || user?.id || '1',
-          title: note.title,
-          content: note.content,
-          folderId: note.folderId.toString(),
-          tags: note.tags || [],
-          tradeId: note.tradeId ? note.tradeId.toString() : undefined,
-          createdAt: note.createdAt,
-          updatedAt: note.updatedAt
-        })));
-      }
-      
-      const tagsResult = await mysql.getTags(user?.id);
-      if (tagsResult.length > 0) {
-        setTags(tagsResult.map((tag: any) => ({
-          id: tag.id.toString(),
-          name: tag.name,
-          count: tag.noteCount || 0
-        })));
-      }
-      
-      const templatesResult = await mysql.getTemplates(user?.id);
-      if (templatesResult.length > 0) {
-        setTemplates(templatesResult.map((template: any) => ({
-          id: template.id.toString(),
-          title: template.title,
-          content: template.content,
-          type: template.type as 'favorite' | 'recommended' | 'custom',
-          emoji: template.emoji
-        })));
-      }
-    } catch (error) {
-      console.error("Error fetching data from MySQL:", error);
-      toast({
-        title: "Data Loading Error",
-        description: "Could not load data from the database. Using sample data instead.",
-        variant: "destructive"
-      });
-    }
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      content: '',
+      tradeId: '',
+      folderId: 'trade-notes',
+      tags: []
+    });
   };
 
   const handleAddNote = () => {
-    if (!newNote.title.trim()) {
+    if (!formData.title.trim()) {
       toast({
-        title: "Title Required",
+        variant: "destructive",
+        title: "Title is required",
         description: "Please enter a title for your note",
-        variant: "destructive"
       });
       return;
     }
 
-    const now = new Date().toISOString();
-    const newNoteWithId: Note = {
-      ...newNote,
-      id: Date.now().toString(),
-      userId: user?.id || '1',
-      createdAt: now,
-      updatedAt: now
-    };
+    addNote({
+      title: formData.title,
+      content: formData.content,
+      tradeId: formData.tradeId || undefined,
+      folderId: formData.folderId,
+      tags: formData.tags
+    });
 
-    setNotes([...notes, newNoteWithId]);
-    setSelectedNoteId(newNoteWithId.id);
+    resetForm();
     setIsAddDialogOpen(false);
-    
-    setNewNote({
-      title: '',
-      content: '',
-      folderId: selectedFolderId !== 'all' ? selectedFolderId : 'trade-notes',
-      tags: []
-    });
-    
-    if (mysql.connectionStatus === 'connected') {
-      mysql.createNote({
-        title: newNote.title,
-        content: newNote.content,
-        folderId: parseInt(newNote.folderId, 10),
-        userId: user?.id,
-        tradeId: newNote.tradeId ? parseInt(newNote.tradeId, 10) : undefined,
-        tags: newNote.tags
-      }).catch(error => {
-        console.error("Error creating note in MySQL:", error);
-        toast({
-          title: "Save Error",
-          description: "Failed to save note to database",
-          variant: "destructive"
-        });
-      });
-    }
-
-    toast({
-      title: "Note Added",
-      description: "Your note has been created"
-    });
   };
 
   const handleAddFolder = () => {
-    if (!newFolder.name.trim()) {
+    if (!folderFormData.name.trim()) {
       toast({
-        title: "Name Required",
-        description: "Please enter a name for your folder",
-        variant: "destructive"
+        variant: "destructive",
+        title: "Folder name is required",
+        description: "Please enter a name for the folder",
       });
       return;
     }
 
-    const newFolderWithId: Folder = {
-      ...newFolder,
-      id: Date.now().toString()
-    };
+    addFolder({
+      name: folderFormData.name,
+      color: folderFormData.color
+    });
 
-    setFolders([...folders.filter(f => f.id !== 'recently-deleted'), newFolderWithId, folders.find(f => f.id === 'recently-deleted')!]);
-    setSelectedFolderId(newFolderWithId.id);
-    setIsAddFolderDialogOpen(false);
-    
-    setNewFolder({
+    setFolderFormData({
       name: '',
       color: '#9c59ff'
     });
     
-    if (mysql.connectionStatus === 'connected') {
-      mysql.createFolder(newFolder.name, newFolder.color, user?.id).catch(error => {
-        console.error("Error creating folder in MySQL:", error);
-        toast({
-          title: "Save Error",
-          description: "Failed to save folder to database",
-          variant: "destructive"
-        });
-      });
-    }
-
-    toast({
-      title: "Folder Added",
-      description: "Your folder has been created"
-    });
+    setIsAddFolderDialogOpen(false);
   };
-  
+
+  const handleContentChange = (content: string) => {
+    if (selectedNote) {
+      updateNote(selectedNote.id, { content });
+    }
+  };
+
   const handleDeleteNote = () => {
     if (!selectedNoteId) return;
     
-    setNotes(notes.filter(note => note.id !== selectedNoteId));
-    
-    if (sortedNotes.length > 1) {
-      const index = sortedNotes.findIndex(note => note.id === selectedNoteId);
-      const nextNote = sortedNotes[index + 1] || sortedNotes[index - 1];
-      setSelectedNoteId(nextNote ? nextNote.id : null);
-    } else {
-      setSelectedNoteId(null);
-    }
-    
+    deleteNote(selectedNoteId);
+    setSelectedNoteId(null);
     setIsDeleteDialogOpen(false);
-    
-    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
-      // Convert string ID to number and ensure it's valid
-      const noteId = parseInt(selectedNoteId, 10);
-      if (!isNaN(noteId)) {
-        mysql.deleteNote(noteId).catch(error => {
-          console.error("Error deleting note from MySQL:", error);
-          toast({
-            title: "Delete Error",
-            description: "Failed to delete note from database",
-            variant: "destructive"
-          });
-        });
-      }
-    }
+  };
 
-    toast({
-      title: "Note Deleted",
-      description: "Your note has been deleted"
-    });
-  };
-  
-  const handleContentChange = (content: string) => {
-    if (!selectedNoteId) return;
+  const handleUseTemplate = () => {
+    if (!selectedTemplate) return;
     
-    const updatedNotes = notes.map(note => 
-      note.id === selectedNoteId 
-        ? { ...note, content, updatedAt: new Date().toISOString() } 
-        : note
-    );
-    
-    setNotes(updatedNotes);
-    
-    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
-      // Convert string ID to number and ensure it's valid
-      const noteId = parseInt(selectedNoteId, 10);
-      if (!isNaN(noteId)) {
-        mysql.updateNote(noteId, { content }).catch(error => {
-          console.error("Error updating note in MySQL:", error);
-          toast({
-            title: "Save Error",
-            description: "Failed to save note to database",
-            variant: "destructive"
-          });
-        });
-      }
-    }
-  };
-  
-  const handleTitleChange = (title: string) => {
-    if (!selectedNoteId) return;
-    
-    const updatedNotes = notes.map(note => 
-      note.id === selectedNoteId 
-        ? { ...note, title, updatedAt: new Date().toISOString() } 
-        : note
-    );
-    
-    setNotes(updatedNotes);
-    
-    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
-      // Convert string ID to number and ensure it's valid
-      const noteId = parseInt(selectedNoteId, 10);
-      if (!isNaN(noteId)) {
-        mysql.updateNote(noteId, { title }).catch(error => {
-          console.error("Error updating note in MySQL:", error);
-          toast({
-            title: "Save Error",
-            description: "Failed to save note to database",
-            variant: "destructive"
-          });
-        });
-      }
-    }
-  };
-  
-  const handleTagsChange = (tags: string[]) => {
-    if (!selectedNoteId) return;
-    
-    const updatedNotes = notes.map(note => 
-      note.id === selectedNoteId 
-        ? { ...note, tags, updatedAt: new Date().toISOString() } 
-        : note
-    );
-    
-    setNotes(updatedNotes);
-    
-    const tagMap = new Map<string, number>();
-    
-    tags.forEach(tagName => {
-      if (!tags.some(t => t === tagName)) {
-        setTags(prevTags => [...prevTags, { 
-          id: Date.now().toString(), 
-          name: tagName, 
-          count: 1 
-        }]);
-      } else {
-        const existingTag = tags.find(t => t === tagName);
-        if (existingTag) {
-          tagMap.set(existingTag, (tagMap.get(existingTag) || 0) + 1);
-        }
-      }
-    });
-    
-    if (mysql.connectionStatus === 'connected' && selectedNoteId) {
-      // Convert string ID to number and ensure it's valid
-      const noteId = parseInt(selectedNoteId, 10);
-      if (!isNaN(noteId)) {
-        mysql.updateNote(noteId, { tags }).catch(error => {
-          console.error("Error updating note tags in MySQL:", error);
-          toast({
-            title: "Save Error",
-            description: "Failed to save tags to database",
-            variant: "destructive"
-          });
-        });
-      }
-    }
-  };
-  
-  const handleUseTemplate = (template: Template) => {
-    setNewNote({
-      ...newNote,
-      content: template.content
+    setFormData({
+      ...formData,
+      title: selectedTemplate.title,
+      content: selectedTemplate.content
     });
     
     setIsTemplateDialogOpen(false);
     setIsAddDialogOpen(true);
   };
-  
-  const handleAddFavorite = (template: Template) => {
-    if (template.type === 'favorite') return;
-    
-    const updatedTemplates = templates.map(t => 
-      t.id === template.id ? { ...t, type: 'favorite' as const } : t
-    );
-    
-    setTemplates(updatedTemplates);
-    
-    if (mysql.connectionStatus === 'connected' && template.id) {
-      // Convert string ID to number and ensure it's valid
-      const templateId = parseInt(template.id, 10);
-      if (!isNaN(templateId)) {
-        mysql.updateTemplate(templateId, { type: 'favorite' }).catch(error => {
-          console.error("Error updating template in MySQL:", error);
-          toast({
-            title: "Save Error",
-            description: "Failed to save template to database",
-            variant: "destructive"
-          });
-        });
-      }
-    }
-    
-    toast({
-      title: "Added to Favorites",
-      description: `"${template.title}" has been added to your favorites`
-    });
-  };
-  
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      minimumFractionDigits: 2
     }).format(amount);
   };
-  
+
   const getFolderById = (id: string) => {
     return folders.find(folder => folder.id === id);
   };
@@ -521,153 +199,77 @@ const Notebook = () => {
         <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
             <h2 className="font-semibold text-lg flex items-center">
-              <BookOpen className="h-5 w-5 mr-2 text-purple-500" />
-              Notebook
+              <FolderKanban className="mr-2 h-5 w-5 text-indigo-500" />
+              {t('notebook.tradeNotebook') || 'Trade Notebook'}
             </h2>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={() => setIsAddFolderDialogOpen(true)}>
-                    <FolderPlus className="h-5 w-5 text-gray-500" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Add new folder</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => setIsAddFolderDialogOpen(true)}
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
           </div>
           
           <ScrollArea className="flex-1">
-            <div className="px-3 py-2">
-              <Collapsible
-                open={isFoldersOpen}
-                onOpenChange={setIsFoldersOpen}
-                className="space-y-2"
-              >
-                <div className="flex items-center justify-between py-1">
-                  <CollapsibleTrigger asChild>
-                    <div className="flex items-center gap-1 text-sm text-gray-500 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">
-                      <ChevronRight className={cn("h-4 w-4 transition-transform", isFoldersOpen ? "rotate-90" : "")} />
-                      <span className="font-medium">Folders</span>
-                    </div>
-                  </CollapsibleTrigger>
-                </div>
-                
-                <CollapsibleContent className="space-y-1">
-                  {folders.filter(folder => folder.id !== 'recently-deleted').map((folder) => (
-                    <div
-                      key={folder.id}
-                      className={cn(
-                        "flex items-center justify-between py-1 px-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer group",
-                        selectedFolderId === folder.id ? "bg-gray-100 dark:bg-gray-700" : ""
-                      )}
-                      onClick={() => {
-                        setSelectedFolderId(folder.id);
-                        setSelectedTagId(null);
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        {folder.id === 'all' ? (
-                          <FileText className="h-4 w-4 text-blue-500" />
-                        ) : (
-                          <div 
-                            className="h-4 w-1 rounded-sm"
-                            style={{ backgroundColor: folder.color || '#9c59ff' }}
-                          />
-                        )}
-                        <span className="text-sm truncate">
-                          {folder.name}
-                        </span>
-                      </div>
-                      
-                      {folder.id !== 'all' && (
-                        <div className="opacity-0 group-hover:opacity-100">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6">
-                                  <MoreVertical className="h-3 w-3" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Folder options</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  
-                  <div
+            <div className="py-2">
+              <div className="px-3 py-2">
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Folders</h3>
+              </div>
+              <div className="space-y-1 px-1">
+                {folders.map(folder => (
+                  <button
+                    key={folder.id}
                     className={cn(
-                      "flex items-center justify-between py-1 px-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer group mt-2",
-                      selectedFolderId === 'recently-deleted' ? "bg-gray-100 dark:bg-gray-700" : ""
+                      "flex w-full items-center rounded-md px-3 py-2 text-sm",
+                      currentFolderId === folder.id 
+                        ? "bg-indigo-100 dark:bg-indigo-900 font-medium" 
+                        : "hover:bg-gray-100 dark:hover:bg-gray-700"
                     )}
-                    onClick={() => {
-                      setSelectedFolderId('recently-deleted');
-                      setSelectedTagId(null);
-                    }}
+                    onClick={() => setCurrentFolderId(folder.id)}
                   >
-                    <div className="flex items-center gap-2">
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                      <span className="text-sm truncate">
-                        Recently Deleted
-                      </span>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+                    <div 
+                      className={cn(
+                        "mr-2 h-4 w-1 rounded-full",
+                        folder.color ? `bg-[${folder.color}]` : "bg-gray-300"
+                      )}
+                    />
+                    <span className="flex-1 truncate">{folder.name}</span>
+                    <span className="text-gray-400 dark:text-gray-500">
+                      {notes.filter(note => note.folderId === folder.id).length}
+                    </span>
+                  </button>
+                ))}
+              </div>
               
-              <Collapsible
-                open={isTagsOpen}
-                onOpenChange={setIsTagsOpen}
-                className="space-y-2 mt-4"
-              >
-                <div className="flex items-center justify-between py-1">
-                  <CollapsibleTrigger asChild>
-                    <div className="flex items-center gap-1 text-sm text-gray-500 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">
-                      <ChevronRight className={cn("h-4 w-4 transition-transform", isTagsOpen ? "rotate-90" : "")} />
-                      <span className="font-medium">Tags</span>
-                    </div>
-                  </CollapsibleTrigger>
-                </div>
-                
-                <CollapsibleContent className="space-y-1">
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <div
-                        key={tag.id}
-                        className={cn(
-                          "flex items-center gap-1 py-1 px-2 rounded-full text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer",
-                          selectedTagId === tag.id ? "bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300" : ""
-                        )}
-                        onClick={() => {
-                          setSelectedTagId(selectedTagId === tag.id ? null : tag.id);
-                          if (selectedTagId !== tag.id) {
-                            setSelectedFolderId('all');
-                          }
-                        }}
-                      >
-                        <Hash className="h-3 w-3" />
-                        <span>{tag.name}</span>
-                        {tag.count > 0 && (
-                          <span className="ml-1 bg-gray-200 dark:bg-gray-600 px-1 rounded-full">
-                            {tag.count}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                    
-                    {tags.length === 0 && (
-                      <p className="text-xs text-gray-500 italic px-1">
-                        No tags yet. Add tags to your notes.
-                      </p>
-                    )}
+              <div className="px-3 py-2 mt-4">
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Tags</h3>
+              </div>
+              <div className="flex flex-wrap gap-1 px-3">
+                {noteTags.slice(0, 6).map(tag => (
+                  <div 
+                    key={tag}
+                    className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-0.5 text-xs"
+                  >
+                    <span>#{tag}</span>
+                    <span className="ml-1 text-gray-500 dark:text-gray-400">
+                      {notes.filter(note => note.tags.includes(tag)).length}
+                    </span>
                   </div>
-                </CollapsibleContent>
-              </Collapsible>
+                ))}
+              </div>
+              
+              <div className="mt-6 px-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full flex items-center gap-2"
+                  onClick={() => setIsTemplateDialogOpen(true)}
+                >
+                  <FileBox className="h-4 w-4" />
+                  <span>Templates</span>
+                </Button>
+              </div>
             </div>
           </ScrollArea>
         </div>
@@ -675,119 +277,82 @@ const Notebook = () => {
         <div className="w-72 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium text-sm">
-                {selectedFolderId === 'all' 
-                  ? 'All notes' 
-                  : getFolderById(selectedFolderId)?.name || 'Notes'}
-              </h3>
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => {
-                          setIsAddDialogOpen(true);
-                          setNewNote({
-                            ...newNote,
-                            folderId: selectedFolderId !== 'all' ? selectedFolderId : 'trade-notes'
-                          });
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Add new note</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>More options</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <h2 className="font-semibold">{getFolderById(currentFolderId)?.name || 'All Notes'}</h2>
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => {
+                  resetForm();
+                  setIsAddDialogOpen(true);
+                }}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" />
+                <span>New note</span>
+              </Button>
             </div>
             
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Search notes..."
-                className="pl-9"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
               />
             </div>
           </div>
           
           <ScrollArea className="flex-1">
-            <div className="p-2">
+            <div className="px-2 py-2 space-y-2">
               {sortedNotes.length > 0 ? (
-                sortedNotes.map((note) => {
-                  const linkedTrade = note.tradeId 
-                    ? trades.find(t => t.id === note.tradeId)
-                    : undefined;
-                  
-                  const hasPL = note.tradingData?.netPL !== undefined || 
-                                (linkedTrade && linkedTrade.profitLoss !== undefined);
-                  
-                  const pl = note.tradingData?.netPL !== undefined 
-                    ? note.tradingData.netPL
-                    : (linkedTrade && linkedTrade.profitLoss !== undefined)
-                    ? parseFloat(linkedTrade.profitLoss.toString())
-                    : 0;
+                sortedNotes.map(note => {
+                  const hasTradingData = note.tradingData && note.tradingData.netPL !== undefined;
+                  const isProfitable = hasTradingData && note.tradingData.netPL > 0;
+                  const isBreakEven = hasTradingData && note.tradingData.netPL === 0;
+                  const isLoss = hasTradingData && note.tradingData.netPL < 0;
                   
                   return (
                     <div
                       key={note.id}
                       className={cn(
-                        "p-3 mb-2 rounded-md cursor-pointer border border-transparent",
-                        selectedNoteId === note.id
-                          ? "bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800"
-                          : "hover:bg-white dark:hover:bg-gray-800"
+                        "p-3 rounded-md cursor-pointer",
+                        selectedNoteId === note.id 
+                          ? "bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-800 shadow-sm" 
+                          : "hover:bg-white dark:hover:bg-gray-800 border border-transparent"
                       )}
                       onClick={() => setSelectedNoteId(note.id)}
                     >
-                      <h4 className="font-medium text-sm mb-1 truncate">{note.title}</h4>
+                      <h3 className="font-medium text-sm mb-1">{note.title}</h3>
                       
-                      {hasPL && (
+                      {hasTradingData && (
                         <div className={cn(
                           "text-xs font-medium mb-1",
-                          pl > 0 ? "text-green-600" : pl < 0 ? "text-red-600" : "text-gray-600"
+                          isProfitable ? "text-green-600 dark:text-green-500" : 
+                          isLoss ? "text-red-600 dark:text-red-500" : 
+                          "text-gray-600 dark:text-gray-400"
                         )}>
-                          NET P&L: {pl > 0 ? '+' : ''}{formatCurrency(pl)}
+                          NET P&L: {formatCurrency(note.tradingData.netPL)}
                         </div>
                       )}
                       
-                      <div className="text-xs text-gray-500 mb-1">
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                         {new Date(note.updatedAt).toLocaleDateString()}
                       </div>
                       
                       {note.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {note.tags.slice(0, 2).map((tag) => (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {note.tags.slice(0, 2).map(tag => (
                             <span 
                               key={tag}
-                              className="flex items-center gap-0.5 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-xs"
+                              className="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-300"
                             >
-                              <Hash className="h-2.5 w-2.5" />
-                              {tag}
+                              #{tag}
                             </span>
                           ))}
                           {note.tags.length > 2 && (
-                            <span className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-xs">
-                              +{note.tags.length - 2}
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              +{note.tags.length - 2} more
                             </span>
                           )}
                         </div>
@@ -796,34 +361,24 @@ const Notebook = () => {
                   );
                 })
               ) : (
-                <div className="flex flex-col items-center justify-center h-40 p-4">
-                  <FileTextIcon className="h-10 w-10 text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500 text-center">
-                    {searchTerm
-                      ? "No notes found matching your search"
-                      : selectedTagId
-                      ? "No notes with this tag"
-                      : selectedFolderId === 'recently-deleted'
-                      ? "No deleted notes"
-                      : "No notes in this folder yet"}
+                <div className="text-center py-10">
+                  <BookOpen className="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">No notes found</h3>
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    {searchTerm ? "Try a different search" : "Create your first note"}
                   </p>
-                  {!searchTerm && !selectedTagId && selectedFolderId !== 'recently-deleted' && (
+                  <div className="mt-6">
                     <Button
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2"
                       onClick={() => {
+                        resetForm();
                         setIsAddDialogOpen(true);
-                        setNewNote({
-                          ...newNote,
-                          folderId: selectedFolderId !== 'all' ? selectedFolderId : 'trade-notes'
-                        });
                       }}
+                      className="flex items-center gap-2"
                     >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add your first note
+                      <Plus className="h-4 w-4" />
+                      Create new note
                     </Button>
-                  )}
+                  </div>
                 </div>
               )}
             </div>
@@ -833,339 +388,394 @@ const Notebook = () => {
         <div className="flex-1 bg-white dark:bg-gray-800 flex flex-col">
           {selectedNote ? (
             <>
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 className="font-semibold text-lg">{selectedNote.title}</h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col md:flex-row gap-4">
                   <div className="flex-1">
-                    <input
-                      type="text"
-                      value={selectedNote.title}
-                      onChange={(e) => handleTitleChange(e.target.value)}
-                      className="w-full bg-transparent border-none font-bold text-xl focus:outline-none focus:ring-1 focus:ring-purple-500 rounded px-1 py-0.5"
-                    />
-                    <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                      <span>Created: {new Date(selectedNote.createdAt).toLocaleString()}</span>
-                      <span className="mx-1">•</span>
-                      <span>Last updated: {new Date(selectedNote.updatedAt).toLocaleString()}</span>
+                    <div className="text-lg font-semibold text-green-600 dark:text-green-500">
+                      {selectedNote.tradingData && (
+                        <div>Net P&L {formatCurrency(selectedNote.tradingData.netPL)}</div>
+                      )}
                     </div>
+                    
+                    {selectedNote.tradingData && (
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-2">
+                        <div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Contracts Traded</div>
+                          <div className="font-medium">{selectedNote.tradingData.contractsTraded}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Volume</div>
+                          <div className="font-medium">{selectedNote.tradingData.volume}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Commissions</div>
+                          <div className="font-medium">{formatCurrency(selectedNote.tradingData.commissions)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Net ROI</div>
+                          <div className="font-medium">{selectedNote.tradingData.netROI}%</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Gross P&L</div>
+                          <div className="font-medium">{formatCurrency(selectedNote.tradingData.grossPL)}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsDeleteDialogOpen(true)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Delete this note</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>More options</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                  <div>
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      View Trade Details
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Created: {new Date(selectedNote.createdAt).toLocaleString()}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Last updated: {new Date(selectedNote.updatedAt).toLocaleString()}
                   </div>
                 </div>
                 
                 <div className="mt-2">
-                  <HashtagInput
-                    value={selectedNote.tags}
-                    onChange={handleTagsChange}
-                    suggestions={tags.map(tag => tag.name)}
-                    className="mt-1"
-                  />
+                  <div className="flex flex-wrap gap-1">
+                    {selectedNote.tags.map(tag => (
+                      <span 
+                        key={tag}
+                        className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 text-xs text-blue-600 dark:text-blue-300"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                    <Button variant="ghost" size="sm" className="h-5 px-2 text-xs text-gray-500">
+                      <Plus className="h-3 w-3 mr-1" />
+                      Add tag
+                    </Button>
+                  </div>
                 </div>
               </div>
               
-              <div className="flex-1 p-4 overflow-auto">
-                <Textarea
-                  value={selectedNote.content}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  className="w-full h-full border-none focus-visible:ring-0 resize-none bg-transparent"
-                  placeholder="Write your note content here..."
-                />
-              </div>
+              <ScrollArea className="flex-1 p-6">
+                <div className="max-w-4xl mx-auto">
+                  <Textarea
+                    value={selectedNote.content}
+                    onChange={(e) => handleContentChange(e.target.value)}
+                    className="min-h-[300px] font-mono"
+                  />
+                </div>
+              </ScrollArea>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full">
-              <FileTextIcon className="h-16 w-16 text-gray-300 mb-4" />
-              <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-2">
-                No note selected
-              </h3>
-              <p className="text-sm text-gray-500 text-center max-w-md mb-4">
-                Select a note from the sidebar or create a new one to start writing.
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <FileText className="h-16 w-16 text-gray-300 dark:text-gray-600" />
+              <h3 className="mt-4 text-lg font-medium text-gray-700 dark:text-gray-300">No note selected</h3>
+              <p className="mt-2 text-gray-500 dark:text-gray-400">
+                Select a note from the list or create a new one
               </p>
               <Button
                 onClick={() => {
+                  resetForm();
                   setIsAddDialogOpen(true);
-                  setNewNote({
-                    ...newNote,
-                    folderId: selectedFolderId !== 'all' ? selectedFolderId : 'trade-notes'
-                  });
                 }}
+                className="mt-6 flex items-center gap-2"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New Note
+                <Plus className="h-4 w-4" />
+                Create new note
               </Button>
             </div>
           )}
         </div>
       </div>
-      
+
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Create New Note</DialogTitle>
             <DialogDescription>
-              Add a new note to your notebook. You can choose a folder and add tags.
+              Record your trading thoughts, strategies, or observations
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
+          <div className="space-y-4">
+            <div>
               <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
-                value={newNote.title}
-                onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
-                placeholder="Enter note title"
+                placeholder="Note title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               />
             </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="folder">Folder</Label>
-              <Select
-                value={newNote.folderId}
-                onValueChange={(value) => setNewNote({ ...newNote, folderId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a folder" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {folders.filter(folder => folder.id !== 'all' && folder.id !== 'recently-deleted').map((folder) => (
+            <div>
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                placeholder="Write your note here..."
+                rows={10}
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                className="font-mono"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="tradeId">Link to Trade (Optional)</Label>
+                <Select
+                  value={formData.tradeId}
+                  onValueChange={(value) => setFormData({ ...formData, tradeId: value })}
+                >
+                  <SelectTrigger id="tradeId">
+                    <SelectValue placeholder="Select a trade (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {trades.map(trade => (
+                      <SelectItem key={trade.id} value={trade.id}>
+                        {trade.pair} - {new Date(trade.date).toLocaleDateString()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="folderId">Save to Folder</Label>
+                <Select
+                  value={formData.folderId}
+                  onValueChange={(value) => setFormData({ ...formData, folderId: value })}
+                >
+                  <SelectTrigger id="folderId">
+                    <SelectValue placeholder="Select a folder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {folders.filter(folder => folder.id !== 'all').map(folder => (
                       <SelectItem key={folder.id} value={folder.id}>
                         {folder.name}
                       </SelectItem>
                     ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="tags">Tags</Label>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-7"
-                  onClick={() => setIsTemplateDialogOpen(true)}
-                >
-                  <StarIcon className="h-3.5 w-3.5 text-amber-500 mr-1" />
-                  Use Template
-                </Button>
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+            <div>
+              <Label htmlFor="tags">Tags</Label>
               <HashtagInput
                 id="tags"
-                value={newNote.tags}
-                onChange={(tags) => setNewNote({ ...newNote, tags })}
-                suggestions={tags.map(tag => tag.name)}
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                value={newNote.content}
-                onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
-                placeholder="Write your note content here..."
-                className="min-h-[200px]"
+                value={formData.tags}
+                onChange={(tags) => setFormData({ ...formData, tags })}
+                suggestions={noteTags}
               />
             </div>
           </div>
-          
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddNote}>
-              Create Note
-            </Button>
+            <Button onClick={handleAddNote}>Save Note</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={isAddFolderDialogOpen} onOpenChange={setIsAddFolderDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Create New Folder</DialogTitle>
             <DialogDescription>
-              Add a new folder to organize your notes.
+              Organize your notes by creating custom folders
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
+          <div className="space-y-4">
+            <div>
               <Label htmlFor="folder-name">Folder Name</Label>
               <Input
                 id="folder-name"
-                value={newFolder.name}
-                onChange={(e) => setNewFolder({ ...newFolder, name: e.target.value })}
                 placeholder="Enter folder name"
+                value={folderFormData.name}
+                onChange={(e) => setFolderFormData({ ...folderFormData, name: e.target.value })}
               />
             </div>
-            
-            <div className="grid gap-2">
-              <Label>Folder Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {['#9c59ff', '#5974ff', '#4269ff', '#f5cb42', '#e45fff', '#2dc653', '#ff6b6b', '#ff9800', '#00bcd4'].map((color) => (
-                  <div
+            <div>
+              <Label htmlFor="folder-color">Folder Color</Label>
+              <div className="flex gap-2 mt-2">
+                {['#9c59ff', '#5974ff', '#f5cb42', '#e45fff', '#2dc653', '#ff5959', '#59b6ff'].map(color => (
+                  <button
                     key={color}
+                    type="button"
                     className={cn(
-                      "w-8 h-8 rounded-full cursor-pointer border-2",
-                      newFolder.color === color ? "border-gray-900 dark:border-white" : "border-transparent"
+                      "w-8 h-8 rounded-full",
+                      folderFormData.color === color ? "ring-2 ring-offset-2 ring-black dark:ring-white" : ""
                     )}
                     style={{ backgroundColor: color }}
-                    onClick={() => setNewFolder({ ...newFolder, color })}
+                    onClick={() => setFolderFormData({ ...folderFormData, color })}
                   />
                 ))}
               </div>
             </div>
           </div>
-          
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddFolderDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddFolder}>
-              Create Folder
-            </Button>
+            <Button onClick={handleAddFolder}>Create Folder</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
-        <DialogContent className="sm:max-w-[700px]">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Choose a Template</DialogTitle>
-            <DialogDescription>
-              Select a template to use for your note.
-            </DialogDescription>
+            <DialogTitle className="text-center text-xl">Select a notebook template</DialogTitle>
           </DialogHeader>
           
-          <div className="flex items-center space-x-4 py-2">
-            <Button
-              variant={templateType === 'favorite' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTemplateType('favorite')}
-            >
-              <StarIcon className="h-4 w-4 mr-2 text-amber-500" />
-              Favorites
-            </Button>
-            <Button
-              variant={templateType === 'recommended' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTemplateType('recommended')}
-            >
-              <ThumbsUp className="h-4 w-4 mr-2" />
-              Recommended
-            </Button>
-            <Button
-              variant={templateType === 'custom' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setTemplateType('custom')}
-            >
-              <PenLine className="h-4 w-4 mr-2" />
-              My Templates
-            </Button>
-          </div>
-          
-          <ScrollArea className="h-[400px] border rounded-md">
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredTemplates.length > 0 ? (
-                filteredTemplates.map((template) => (
-                  <div
-                    key={template.id}
-                    className="border rounded-md p-4 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer transition-colors"
-                    onClick={() => handleUseTemplate(template)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-sm">
-                        {template.emoji && <span className="mr-2">{template.emoji}</span>}
-                        {template.title}
-                      </h4>
-                      <div className="flex items-center">
-                        {template.type !== 'favorite' && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-7 w-7"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAddFavorite(template);
-                                  }}
-                                >
-                                  <Star className="h-3.5 w-3.5 text-gray-400 hover:text-amber-500" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Add to favorites</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+          <div className="grid grid-cols-6 gap-6">
+            <div className="col-span-2 border-r pr-4">
+              <div className="flex items-center mb-4">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                <span className="text-sm text-gray-500">Close & back to notes</span>
+              </div>
+              
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search templates"
+                  className="pl-9"
+                />
+              </div>
+              
+              <Button variant="outline" className="w-full mb-6">Create new template</Button>
+              
+              <Tabs defaultValue="recommended" onValueChange={(value) => setTemplateType(value as any)}>
+                <TabsContent value="favorite" className="mt-0">
+                  <div className="space-y-1 mt-4">
+                    {templates.filter(t => t.type === 'favorite').map(template => (
+                      <button
+                        key={template.id}
+                        className={cn(
+                          "w-full flex items-center gap-2 text-left py-2 px-3 rounded-md text-sm",
+                          selectedTemplate?.id === template.id ? "bg-indigo-100 dark:bg-indigo-900/50" : "hover:bg-gray-100 dark:hover:bg-gray-700"
                         )}
+                        onClick={() => setSelectedTemplate(template)}
+                      >
+                        <span>{template.title}</span>
+                        {template.emoji && <span>{template.emoji}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </TabsContent>
+                <TabsContent value="recommended" className="mt-0">
+                  <div className="space-y-1 mt-4">
+                    {templates.filter(t => t.type === 'recommended').map(template => (
+                      <button
+                        key={template.id}
+                        className={cn(
+                          "w-full flex items-center gap-2 text-left py-2 px-3 rounded-md text-sm",
+                          selectedTemplate?.id === template.id ? "bg-indigo-100 dark:bg-indigo-900/50" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                        )}
+                        onClick={() => setSelectedTemplate(template)}
+                      >
+                        <span>{template.title}</span>
+                        {template.emoji && <span>{template.emoji}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </TabsContent>
+                <TabsContent value="custom" className="mt-0">
+                  <div className="space-y-1 mt-4">
+                    {templates.filter(t => t.type === 'custom').map(template => (
+                      <button
+                        key={template.id}
+                        className={cn(
+                          "w-full flex items-center gap-2 text-left py-2 px-3 rounded-md text-sm",
+                          selectedTemplate?.id === template.id ? "bg-indigo-100 dark:bg-indigo-900/50" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                        )}
+                        onClick={() => setSelectedTemplate(template)}
+                      >
+                        <span>{template.title}</span>
+                        {template.emoji && <span>{template.emoji}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsList className="grid w-full grid-cols-3 mt-6">
+                  <TabsTrigger value="favorite" className="flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    <span>Favourites</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="recommended" className="flex items-center gap-2">
+                    <ThumbsUp className="h-4 w-4" />
+                    <span>Recommended</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="custom" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>My templates</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+            
+            <div className="col-span-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">
+                  {selectedTemplate?.title || "Select a template"}
+                </h3>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex items-center gap-1">
+                    <Star className="h-4 w-4" />
+                    <span>Add to favourites</span>
+                  </Button>
+                  <Button className="flex items-center gap-1" onClick={handleUseTemplate} disabled={!selectedTemplate}>
+                    <span>Use template</span>
+                  </Button>
+                </div>
+              </div>
+              
+              <Card className="border rounded-md">
+                <CardContent className="p-6">
+                  {selectedTemplate ? (
+                    <div className="prose dark:prose-invert max-w-none">
+                      <pre className="text-sm whitespace-pre-wrap font-mono">
+                        {selectedTemplate.content}
+                      </pre>
+                    </div>
+                  ) : (
+                    <div className="h-96 flex items-center justify-center">
+                      <div className="text-center">
+                        <FileText className="h-16 w-16 text-gray-300 mx-auto" />
+                        <h3 className="mt-2 text-lg font-medium">Select a template</h3>
+                        <p className="text-sm text-gray-500">
+                          Choose a template from the left sidebar to preview
+                        </p>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 line-clamp-3 whitespace-pre-line">
-                      {template.content.substring(0, 150)}
-                      {template.content.length > 150 && '...'}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-2 flex flex-col items-center justify-center py-8">
-                  <FileTextIcon className="h-10 w-10 text-gray-300 mb-2" />
-                  <p className="text-sm text-gray-500 text-center">
-                    {templateType === 'favorite' 
-                      ? "No favorite templates yet. Mark templates as favorites to see them here."
-                      : templateType === 'recommended'
-                      ? "No recommended templates available."
-                      : "You haven't created any custom templates yet."}
-                  </p>
-                </div>
-              )}
+                  )}
+                </CardContent>
+              </Card>
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
-      
+
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the selected note.
+              This action cannot be undone. This will permanently delete this note.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1180,4 +790,4 @@ const Notebook = () => {
   );
 };
 
-export default Notebook;
+export default TradeNotebook;
