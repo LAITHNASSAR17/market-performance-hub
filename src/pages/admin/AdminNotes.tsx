@@ -126,7 +126,7 @@ const AdminNotes: React.FC = () => {
               <SelectValue placeholder="Filter by user" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Users</SelectItem>
+              <SelectItem value="all">All Users</SelectItem>
               {users.map(user => (
                 <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
               ))}
@@ -138,7 +138,7 @@ const AdminNotes: React.FC = () => {
               <SelectValue placeholder="Filter by tag" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Tags</SelectItem>
+              <SelectItem value="all">All Tags</SelectItem>
               {noteTags.map(tag => (
                 <SelectItem key={tag} value={tag}>#{tag}</SelectItem>
               ))}
@@ -150,7 +150,7 @@ const AdminNotes: React.FC = () => {
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="all">All Types</SelectItem>
               <SelectItem value="psychology">Psychology</SelectItem>
               <SelectItem value="strategy">Strategy</SelectItem>
             </SelectContent>
