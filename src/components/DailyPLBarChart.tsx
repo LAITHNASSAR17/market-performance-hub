@@ -61,7 +61,7 @@ const DailyPLBarChart: React.FC<DailyPLBarChartProps> = ({
           isAnimationActive={true}
         >
           {data.map((entry, index) => (
-            <Bar key={`bar-${index}`} fill={getBarFill(entry.profit)} />
+            <Cell key={`bar-${index}`} fill={getBarFill(entry.profit)} />
           ))}
         </Bar>
       </BarChart>

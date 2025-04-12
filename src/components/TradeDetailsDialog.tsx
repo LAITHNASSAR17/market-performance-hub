@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { 
@@ -11,7 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTrade, Trade } from '@/contexts/TradeContext';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, ReferenceLine } from 'recharts';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, ExternalLink, Eye, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -45,7 +44,6 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
   const winRate = dayTrades.length > 0 ? (winners / dayTrades.length) * 100 : 0;
   const volume = dayTrades.reduce((sum, trade) => sum + trade.lotSize, 0);
   
-  // Calculate additional metrics
   const grossProfit = dayTrades
     .filter(trade => trade.profitLoss > 0)
     .reduce((sum, trade) => sum + trade.profitLoss, 0);
@@ -54,20 +52,17 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
     .filter(trade => trade.profitLoss < 0)
     .reduce((sum, trade) => sum + trade.profitLoss, 0));
   
-  // Calculate profit factor correctly
   const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (winners > 0 ? "∞" : "0.00");
   
   const netROI = dayTrades.length > 0 
     ? (totalProfit / volume) * 100 
     : 0;
   
-  const adjustedCost = Math.abs(grossLoss) * 0.05; // Just a sample calculation
+  const adjustedCost = Math.abs(grossLoss) * 0.05;
   
-  // Generate intraday P&L chart data with better simulation
   const chartData = [];
   let runningTotal = 0;
 
-  // Sort trades by time (if available) or just use index for simulation
   dayTrades.forEach((trade, index) => {
     const hour = 9 + Math.floor(index / 2);
     const minute = (index % 2) * 30;
@@ -85,7 +80,6 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
   const formattedDate = selectedDate ? format(new Date(selectedDate), 'EEE, MMM d, yyyy') : '';
   
   const handleViewDetails = () => {
-    // Navigate to journal page with the selected date
     navigate(`/journal?date=${selectedDate}`);
     onClose();
   };
@@ -100,8 +94,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
     deleteTrade(id);
   };
 
-  // Get relevant playbooks for this day
-  const relevantPlaybooks = playbooks.slice(0, 2); // Just take the first two for demo purposes
+  const relevantPlaybooks = playbooks.slice(0, 2);
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
@@ -177,7 +170,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                       radius={[4, 4, 0, 0]}
                     >
                       {chartData.map((entry, index) => (
-                        <Bar 
+                        <Cell 
                           key={`bar-${index}`} 
                           fill={entry.tradeValue >= 0 ? "#36B37E" : "#FF5630"} 
                         />
