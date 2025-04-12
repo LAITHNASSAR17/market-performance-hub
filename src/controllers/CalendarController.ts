@@ -8,7 +8,6 @@ export class CalendarController {
     this.model = new CalendarModel();
   }
 
-  // Get all calendar events for a user
   async getUserEvents(userId: number, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
     try {
       return await this.model.getUserEvents(userId, startDate, endDate);
@@ -18,7 +17,6 @@ export class CalendarController {
     }
   }
 
-  // Get event by ID
   async getEventById(id: number, userId: number): Promise<CalendarEvent | null> {
     try {
       return await this.model.getEventById(id, userId);
@@ -28,31 +26,51 @@ export class CalendarController {
     }
   }
 
-  // Create a new calendar event
-  async createEvent(event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<number | null> {
+  async createEvent(eventData: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<number | null> {
     try {
       // Validate event data
-      this.validateEventData(event);
+      this.validateEventData(eventData);
       
-      return await this.model.createEvent(event);
+      // Ensure end date is after start date
+      if (eventData.endDate && new Date(eventData.endDate) < new Date(eventData.startDate)) {
+        throw new Error('End date must be after start date');
+      }
+      
+      return await this.model.createEvent(eventData);
     } catch (error) {
       console.error('Error creating event:', error);
       return null;
     }
   }
 
-  // Update a calendar event
   async updateEvent(id: number, userId: number, eventData: Partial<CalendarEvent>): Promise<boolean> {
     try {
-      // Check if the event exists and belongs to the user
+      // Check if event exists first
       const existingEvent = await this.model.getEventById(id, userId);
       if (!existingEvent) {
-        throw new Error('Event not found or does not belong to this user');
+        throw new Error('Event not found');
       }
       
-      // Validate event data
+      // Partial validation of the updated fields
       if (Object.keys(eventData).length > 0) {
-        this.validateEventData(eventData as any);
+        this.validatePartialEventData(eventData);
+      }
+      
+      // Ensure end date is after start date if both are provided
+      if (eventData.startDate && eventData.endDate) {
+        if (new Date(eventData.endDate) < new Date(eventData.startDate)) {
+          throw new Error('End date must be after start date');
+        }
+      } else if (eventData.startDate && existingEvent.endDate) {
+        // If only start date is updated, check against existing end date
+        if (new Date(eventData.startDate) > new Date(existingEvent.endDate)) {
+          throw new Error('Start date must be before existing end date');
+        }
+      } else if (eventData.endDate && existingEvent.startDate) {
+        // If only end date is updated, check against existing start date
+        if (new Date(eventData.endDate) < new Date(existingEvent.startDate)) {
+          throw new Error('End date must be after existing start date');
+        }
       }
       
       return await this.model.updateEvent(id, userId, eventData);
@@ -62,13 +80,12 @@ export class CalendarController {
     }
   }
 
-  // Delete a calendar event
   async deleteEvent(id: number, userId: number): Promise<boolean> {
     try {
-      // Check if the event exists and belongs to the user
+      // Check if event exists first
       const existingEvent = await this.model.getEventById(id, userId);
       if (!existingEvent) {
-        throw new Error('Event not found or does not belong to this user');
+        throw new Error('Event not found');
       }
       
       return await this.model.deleteEvent(id, userId);
@@ -78,7 +95,6 @@ export class CalendarController {
     }
   }
 
-  // Get events by type
   async getEventsByType(userId: number, eventType: string): Promise<CalendarEvent[]> {
     try {
       return await this.model.getEventsByType(userId, eventType);
@@ -88,13 +104,8 @@ export class CalendarController {
     }
   }
 
-  // Get events for a specific date
   async getEventsForDate(userId: number, date: Date): Promise<CalendarEvent[]> {
     try {
-      if (!(date instanceof Date) || isNaN(date.getTime())) {
-        throw new Error('Invalid date');
-      }
-      
       return await this.model.getEventsForDate(userId, date);
     } catch (error) {
       console.error('Error getting events for date:', error);
@@ -102,7 +113,6 @@ export class CalendarController {
     }
   }
 
-  // Get events related to a specific entity (e.g., trade)
   async getRelatedEvents(userId: number, relatedEntityId: number): Promise<CalendarEvent[]> {
     try {
       return await this.model.getRelatedEvents(userId, relatedEntityId);
@@ -113,45 +123,37 @@ export class CalendarController {
   }
 
   // Helper function to validate event data
-  private validateEventData(event: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): void {
-    if (!event.userId || typeof event.userId !== 'number') {
-      throw new Error('Invalid or missing userId');
+  private validateEventData(eventData: Partial<CalendarEvent>): void {
+    if (!eventData.userId) {
+      throw new Error('User ID is required');
     }
     
-    if (!event.title || typeof event.title !== 'string') {
-      throw new Error('Invalid or missing title');
+    if (!eventData.title || eventData.title.trim() === '') {
+      throw new Error('Event title is required');
     }
     
-    if (event.eventType && 
-        !['trade', 'note', 'reminder', 'custom'].includes(event.eventType)) {
+    if (!eventData.startDate) {
+      throw new Error('Start date is required');
+    }
+    
+    if (eventData.eventType && !['trade', 'note', 'reminder', 'custom'].includes(eventData.eventType)) {
       throw new Error('Invalid event type');
     }
     
-    // Validate dates
-    if (event.startDate) {
-      const startDate = new Date(event.startDate);
-      if (isNaN(startDate.getTime())) {
-        throw new Error('Invalid start date');
-      }
-      
-      if (event.endDate) {
-        const endDate = new Date(event.endDate);
-        if (isNaN(endDate.getTime())) {
-          throw new Error('Invalid end date');
-        }
-        
-        if (startDate > endDate) {
-          throw new Error('Start date must be before end date');
-        }
-      }
+    // If event is not all day, end date is required
+    if (eventData.allDay === false && !eventData.endDate) {
+      throw new Error('End date is required for non-all-day events');
+    }
+  }
+
+  // Helper function to validate partial event data for updates
+  private validatePartialEventData(eventData: Partial<CalendarEvent>): void {
+    if (eventData.title !== undefined && eventData.title.trim() === '') {
+      throw new Error('Event title cannot be empty');
     }
     
-    if ('allDay' in event && typeof event.allDay !== 'boolean') {
-      throw new Error('All day flag must be a boolean');
-    }
-    
-    if (event.color && typeof event.color !== 'string') {
-      throw new Error('Color must be a string');
+    if (eventData.eventType && !['trade', 'note', 'reminder', 'custom'].includes(eventData.eventType)) {
+      throw new Error('Invalid event type');
     }
   }
 }

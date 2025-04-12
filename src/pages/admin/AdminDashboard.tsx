@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTrade } from '@/contexts/TradeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { 
@@ -12,91 +11,77 @@ import {
   DollarSign, 
   FileText, 
   Percent,
-  Briefcase
+  Briefcase,
+  Database,
+  Server
 } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 // Import our admin components
 import AdminCharts from '@/components/admin/AdminCharts';
+import { AdminController } from '@/controllers/AdminController';
 
 const AdminDashboard: React.FC = () => {
-  const { users, getAllUsers } = useAuth();
-  const { trades, getAllTrades } = useTrade();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const { toast } = useToast();
   
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [allTrades, setAllTrades] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [stats, setStats] = useState<any>({
+    totalUsers: 0,
+    activeUsers: 0,
+    blockedUsers: 0,
+    totalTrades: 0,
+    recentTrades: 0,
+    totalProfitLoss: 0,
+    totalTags: 0,
+    popularTags: [],
+    systemHealth: {
+      databaseStatus: 'offline',
+      lastBackup: null,
+      errorCount: 0
+    }
+  });
+  
+  const adminController = new AdminController();
 
   // Load initial data
   useEffect(() => {
     handleRefreshData();
   }, []);
 
-  // Statistics calculations - now derived from loaded data
-  const totalUsers = users ? users.length : 0;
-  const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
-  const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
-  
-  // All trades (from all users) for admin
-  const totalTrades = allTrades.length;
-  
-  // Calculate profit/loss and other trade statistics
-  const allProfitLoss = allTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  
-  const winningTrades = allTrades.filter(trade => trade.profitLoss > 0).length;
-  const losingTrades = allTrades.filter(trade => trade.profitLoss < 0).length;
-  const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
-  
-  // Today's trades
-  const today = new Date().toISOString().split('T')[0];
-  const todayTrades = allTrades.filter(trade => trade.date === today).length;
-  const todayProfit = allTrades
-    .filter(trade => trade.date === today)
-    .reduce((sum, trade) => sum + trade.profitLoss, 0);
-  
-  // Find most traded pair
-  const pairCount: Record<string, number> = {};
-  allTrades.forEach(trade => {
-    pairCount[trade.pair] = (pairCount[trade.pair] || 0) + 1;
-  });
-  
-  let mostTradedPair = '';
-  let highestCount = 0;
-  
-  for (const pair in pairCount) {
-    if (pairCount[pair] > highestCount) {
-      mostTradedPair = pair;
-      highestCount = pairCount[pair];
+  const handleRefreshData = async () => {
+    setLoading(true);
+    try {
+      const dashboardStats = await adminController.getDashboardStats();
+      setStats(dashboardStats);
+      
+      // Update refresh timestamp
+      setLastRefresh(new Date());
+      
+      toast({
+        title: "Data Refreshed",
+        description: "Admin dashboard data has been updated"
+      });
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh dashboard data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  }
-
-  // Demo data
-  const linkedAccounts = 12;
-  const totalNotes = 87;
-
-  const handleRefreshData = () => {
-    // Fetch users data
-    getAllUsers();
-    
-    // Fetch ALL trades across users for admin dashboard
-    const allTradesData = trades || [];
-    setAllTrades(allTradesData);
-    
-    // Update refresh timestamp
-    setLastRefresh(new Date());
-    
-    toast({
-      title: "Data Refreshed",
-      description: "Admin dashboard data has been updated"
-    });
   };
 
   return (
-    <div>
+    <AdminLayout>
       <header className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
@@ -106,15 +91,16 @@ const AdminDashboard: React.FC = () => {
             Overview of platform performance and activity.
           </p>
         </div>
-        <div className="mt-4 md:mt-0 flex items-center space-x-2 text-sm text-gray-500">
+        <div className="mt-4 md:mt-0 flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
           <span className="hidden md:inline">Last refreshed: {lastRefresh.toLocaleTimeString()}</span>
           <Button 
             variant="outline" 
             size={isMobile ? "sm" : "default"} 
             onClick={handleRefreshData}
+            disabled={loading}
             className="flex items-center"
           >
-            <RefreshCw className="h-4 w-4 mr-1" />
+            <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
             {isMobile ? "Refresh" : "Refresh Data"}
           </Button>
         </div>
@@ -124,65 +110,63 @@ const AdminDashboard: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
         <StatCard
           title="Total Users"
-          value={totalUsers}
+          value={stats.totalUsers}
           icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
           color="default"
-          description={`Active: ${activeUsers}`}
+          description={`Active: ${stats.activeUsers}`}
         />
         
         <StatCard
           title="Total Trades"
-          value={totalTrades}
+          value={stats.totalTrades}
           icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
           color="default"
-          description={`Today: ${todayTrades}`}
+          description={`Recent: ${stats.recentTrades}`}
         />
         
         <StatCard
           title="Total P&L"
-          value={`$${allProfitLoss.toFixed(2)}`}
+          value={`$${stats.totalProfitLoss.toFixed(2)}`}
           icon={<DollarSign className="h-4 md:h-5 w-4 md:w-5" />}
-          color={allProfitLoss > 0 ? "green" : allProfitLoss < 0 ? "red" : "default"}
-          description={`Today: $${todayProfit.toFixed(2)}`}
-          trend={allProfitLoss > 0 ? 'up' : allProfitLoss < 0 ? 'down' : 'neutral'}
+          color={stats.totalProfitLoss > 0 ? "green" : stats.totalProfitLoss < 0 ? "red" : "default"}
+          trend={stats.totalProfitLoss > 0 ? 'up' : stats.totalProfitLoss < 0 ? 'down' : 'neutral'}
         />
         
         <StatCard
           title="Win Rate"
-          value={`${winRate}%`}
+          value={stats.totalTrades > 0 ? `${Math.round((stats.totalTrades - (stats.lossTrades || 0)) / stats.totalTrades * 100)}%` : '0%'}
           icon={<Percent className="h-4 md:h-5 w-4 md:w-5" />}
           color="default"
-          description={`W: ${winningTrades} / L: ${losingTrades}`}
         />
         
         <StatCard
           title="Trading Accounts"
-          value={linkedAccounts}
+          value={stats.tradingAccounts || 0}
           icon={<Briefcase className="h-4 md:h-5 w-4 md:w-5" />}
           color="default"
         />
         
         <StatCard
-          title="Total Notes"
-          value={totalNotes}
+          title="Total Tags"
+          value={stats.totalTags}
           icon={<FileText className="h-4 md:h-5 w-4 md:w-5" />}
           color="default"
         />
         
         <StatCard
-          title="Most Traded Pair"
-          value={mostTradedPair || 'N/A'}
-          icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
-          color="default"
-          description={highestCount > 0 ? `${highestCount} trades` : 'No trades yet'}
+          title="Database"
+          value={stats.systemHealth?.databaseStatus || 'Offline'}
+          icon={<Database className="h-4 md:h-5 w-4 md:w-5" />}
+          color={stats.systemHealth?.databaseStatus === 'online' ? "green" : "red"}
+          description={stats.systemHealth?.lastBackup ? `Last backup: ${new Date(stats.systemHealth.lastBackup).toLocaleDateString()}` : 'No backup'}
         />
         
         <StatCard
           title="Blocked Users"
-          value={blockedUsers}
+          value={stats.blockedUsers}
           icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
-          color="red"
-          description={blockedUsers > 0 ? `${blockedUsers} of ${totalUsers}` : 'None'}
+          color={stats.blockedUsers > 0 ? "red" : "green"}
+          description={stats.blockedUsers > 0 ? `${stats.blockedUsers} of ${stats.totalUsers}` : 'None'}
         />
       </div>
 
@@ -191,7 +175,7 @@ const AdminDashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
             <Users className="h-6 w-6 mb-2" />
@@ -205,13 +189,13 @@ const AdminDashboard: React.FC = () => {
             <BarChart3 className="h-6 w-6 mb-2" />
             <span>Generate Reports</span>
           </Button>
-          <Button variant="outline" className="h-auto py-4 flex flex-col items-center">
-            <FileText className="h-6 w-6 mb-2" />
-            <span>Manage Content</span>
+          <Button variant="outline" className="h-auto py-4 flex flex-col items-center" onClick={() => adminController.backupDatabase()}>
+            <Server className="h-6 w-6 mb-2" />
+            <span>Backup Database</span>
           </Button>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
