@@ -1,39 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
-import { initializeMongoDB } from '@/lib/mongodbInit';
+
+// الملاحظة: يجب تغيير هذا إلى مفتاح Stripe الخاص بك
+const stripePromise = loadStripe('pk_test_TYooMQauvdEDq54NiTphI7jx');
 
 const Payment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
-  const [dbStatus, setDbStatus] = useState('');
-  const [dbConnecting, setDbConnecting] = useState(true);
-
-  useEffect(() => {
-    // Check MongoDB connection on component mount
-    const checkDBConnection = async () => {
-      try {
-        setDbConnecting(true);
-        const isConnected = await initializeMongoDB();
-        setDbStatus(isConnected ? 'Connected to MongoDB' : 'Failed to connect to MongoDB');
-      } catch (error) {
-        console.error('MongoDB connection error:', error);
-        setDbStatus('Failed to connect to MongoDB');
-      } finally {
-        setDbConnecting(false);
-      }
-    };
-    
-    checkDBConnection();
-  }, []);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,14 +34,18 @@ const Payment = () => {
     setLoading(true);
     
     try {
-      // Simulate payment process
+      // في بيئة الإنتاج، هنا ستقوم بالاتصال بخادمك لإنشاء جلسة Stripe
+      // وسيقوم الخادم بإنشاء دفعة وإرجاع clientSecret
+      
+      // مثال تجريبي للتوضيح:
       setTimeout(() => {
         toast({
           title: "تمت عملية الدفع بنجاح",
           description: `تم دفع ${amount} بنجاح`,
         });
         setLoading(false);
-        navigate('/payment-success');
+        // بعد الدفع الناجح، يمكن توجيه المستخدم إلى صفحة التأكيد
+        navigate('/dashboard');
       }, 2000);
     } catch (error) {
       console.error('Payment error:', error);
@@ -73,15 +61,6 @@ const Payment = () => {
   return (
     <Layout>
       <div className="container mx-auto my-8 max-w-lg">
-        {dbConnecting ? (
-          <div className="p-2 mb-4 text-sm rounded bg-blue-100 text-blue-800">
-            جاري الاتصال بقاعدة البيانات...
-          </div>
-        ) : dbStatus && (
-          <div className={`p-2 mb-4 text-sm rounded ${dbStatus.includes('Failed') ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-            {dbStatus}
-          </div>
-        )}
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="text-2xl text-right">بوابة الدفع</CardTitle>
@@ -103,9 +82,10 @@ const Payment = () => {
                 />
               </div>
               
+              {/* في النسخة الكاملة، ستضيف هنا حقول بطاقة Stripe */}
               <div className="p-4 bg-gray-50 rounded-md">
                 <p className="text-center text-gray-500 text-sm">
-                  هذه واجهة تجريبية. في الإصدار الكامل، ستتم معالجة المدفوعات وتخزينها في قاعدة بيانات MongoDB.
+                  هذه واجهة تجريبية. لتكامل Stripe الكامل، تحتاج إلى إعداد خادم خلفي (backend) لمعالجة المدفوعات بشكل آمن.
                 </p>
               </div>
             </form>
