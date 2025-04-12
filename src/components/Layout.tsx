@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, ShieldAlert, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, FileImage } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, FileImage } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -28,8 +28,7 @@ const Layout: React.FC<LayoutProps> = ({
   const {
     isAuthenticated,
     logout,
-    user,
-    isAdmin
+    user
   } = useAuth();
   const {
     t,
@@ -89,14 +88,6 @@ const Layout: React.FC<LayoutProps> = ({
     icon: LineChart3,
     href: '/chart'
   }];
-
-  if (isAdmin) {
-    navigation.push({
-      name: t('nav.adminPanel') || 'لوحة الأدمن',
-      icon: ShieldAlert,
-      href: '/admin'
-    });
-  }
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

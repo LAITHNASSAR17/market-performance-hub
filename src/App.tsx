@@ -21,18 +21,20 @@ import Notebook from "./pages/Notebook";
 import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
 import Analytics from "./pages/Analytics";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminTrades from "./pages/admin/AdminTrades";
-import AdminHashtags from "./pages/admin/AdminHashtags";
-import AdminNotes from "./pages/admin/AdminNotes";
-import AdminSettings from "./pages/admin/AdminSettings";
 import TradingChart from "./pages/TradingChart";
 import TradeTracking from "./pages/TradeTracking";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+
+// Admin Components
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminTrades from "./pages/admin/AdminTrades";
+import AdminHashtags from "./pages/admin/AdminHashtags";
+import AdminNotes from "./pages/admin/AdminNotes";
+import AdminSettings from "./pages/admin/AdminSettings";
 import AdminLayout from "./components/layouts/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -49,6 +51,7 @@ const App = () => (
                   <Toaster />
                   <Sonner />
                   <Routes>
+                    {/* User Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/" element={<Index />} />
@@ -66,7 +69,7 @@ const App = () => (
                     <Route path="/payment-success" element={<PaymentSuccess />} />
                     <Route path="/settings" element={<Settings />} />
                     
-                    {/* Admin Routes - Wrapped with AdminLayout */}
+                    {/* Admin Routes - Completely Separate */}
                     <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
                     <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
                     <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
