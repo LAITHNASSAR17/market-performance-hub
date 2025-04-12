@@ -88,29 +88,7 @@ const Layout: React.FC<LayoutProps> = ({
       </div>
 
       {/* Sidebar */}
-      <div className={cn("fixed inset-y-0 transform bg-trading-blue text-white shadow-lg transition-transform duration-300 ease-in-out md:relative", language === 'ar' ? sidebarOpen ? "translate-x-0 right-0" : "translate-x-full right-0" : sidebarOpen ? "translate-x-0 left-0" : "-translate-x-full left-0", "w-64 md:translate-x-0")}>
-        <div className="flex h-full flex-col">
-          
-
-          
-
-          <div className="p-4 border-t border-trading-blue-dark">
-            <div className="mb-4">
-              
-              <p className="text-sm text-gray-300 truncate">{user?.name}</p>
-              {isAdmin && <Badge className="mt-1 bg-purple-500">{t('nav.admin')}</Badge>}
-            </div>
-            <div className="flex justify-between items-center">
-              <Button variant="outline" className="flex-1 justify-start text-white border-white hover:bg-trading-blue-dark" onClick={logout}>
-                <LogOut className={`h-4 w-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-                {t('nav.logout')}
-              </Button>
-              
-              <LanguageToggle className="text-white hover:bg-trading-blue-dark" />
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       {/* Overlay for mobile */}
       {sidebarOpen && isMobile && <div className="fixed inset-0 bg-black bg-opacity-50 z-30" onClick={() => setSidebarOpen(false)} />}
