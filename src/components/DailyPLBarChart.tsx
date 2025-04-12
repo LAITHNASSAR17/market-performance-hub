@@ -8,7 +8,8 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  Cell  // Add this import
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
