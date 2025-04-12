@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,17 +13,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarSeparator
-} from '@/components/ui/sidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -99,7 +87,6 @@ const Layout: React.FC<LayoutProps> = ({
     href: '/chart'
   }];
 
-  // Add admin link only for admin users
   if (isAdmin) {
     navigation.push({
       name: t('nav.adminPanel'),
@@ -119,13 +106,11 @@ const Layout: React.FC<LayoutProps> = ({
   return (
     <TooltipProvider delayDuration={300}>
       <div className="flex h-screen bg-gray-50" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        {/* Sidebar */}
         <div className={cn(
           "relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30",
           sidebarOpen ? "w-64" : "w-16",
           language === 'ar' ? "border-l" : "border-r"
         )}>
-          {/* Sidebar Header */}
           <div className="flex flex-col items-center py-4 px-4">
             <div className="flex items-center justify-between w-full">
               <Button
@@ -141,7 +126,6 @@ const Layout: React.FC<LayoutProps> = ({
                 <h2 className="text-xl font-bold flex-1 text-center">{t('app.name') || 'TradeTracker'}</h2>
               )}
               
-              {/* Language toggle - only show text when sidebar is open */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -151,6 +135,9 @@ const Layout: React.FC<LayoutProps> = ({
                     className="flex items-center justify-center"
                   >
                     <Globe className="h-5 w-5" />
+                    {sidebarOpen && (
+                      <span className="ml-2 hidden">{language === 'ar' ? 'English' : 'العربية'}</span>
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center">
@@ -159,24 +146,22 @@ const Layout: React.FC<LayoutProps> = ({
               </Tooltip>
             </div>
             
-            {sidebarOpen && (
-              <div className="flex items-center gap-2 mt-4 w-full">
-                <div className="flex flex-col flex-1">
-                  <span className="text-sm font-medium">{user?.name}</span>
-                  <span className="text-xs text-muted-foreground">{user?.email}</span>
-                </div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={logout}>
-                      <LogOut className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
-                    {t('auth.logout')}
-                  </TooltipContent>
-                </Tooltip>
+            <div className="flex items-center gap-2 mt-4 w-full">
+              <div className="flex flex-col flex-1">
+                <span className="text-sm font-medium">{user?.name}</span>
+                <span className="text-xs text-muted-foreground">{user?.email}</span>
               </div>
-            )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={logout}>
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                  {t('auth.logout')}
+                </TooltipContent>
+              </Tooltip>
+            </div>
             {!sidebarOpen && (
               <div className="mt-4 flex justify-center">
                 <Tooltip>
@@ -222,7 +207,6 @@ const Layout: React.FC<LayoutProps> = ({
             })}
           </div>
 
-          {/* Footer */}
           <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -252,7 +236,6 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </div>
 
-        {/* Overlay for mobile */}
         {sidebarOpen && isMobile && (
           <div 
             className="fixed inset-0 bg-black bg-opacity-50 z-20" 
@@ -260,7 +243,6 @@ const Layout: React.FC<LayoutProps> = ({
           />
         )}
 
-        {/* Main content */}
         <main className="flex-1 overflow-y-auto bg-trading-background p-4 md:p-6">
           {children}
         </main>
