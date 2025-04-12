@@ -8,9 +8,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-// Fix the imports to use default imports instead of named imports
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageToggle from '@/components/LanguageToggle';
+
+// Add interface for user with subscription
+interface UserWithSubscription {
+  id: string;
+  name: string;
+  email: string;
+  subscription?: {
+    status?: string;
+    plan?: string;
+  };
+  [key: string]: any;
+}
 
 const Settings = () => {
   const { user, updateUser, logout } = useAuth();
@@ -81,6 +92,9 @@ const Settings = () => {
       });
     }
   };
+
+  // Safely cast user to UserWithSubscription
+  const userWithSub = user as UserWithSubscription;
 
   return (
     <Layout>
@@ -155,13 +169,13 @@ const Settings = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {user && user.subscription?.status === 'active' ? (
+                  {userWithSub && userWithSub.subscription?.status === 'active' ? (
                     <div>
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="font-medium">Current Plan</p>
                           <p className="text-sm text-gray-500">
-                            {user.subscription?.plan || 'Pro Plan'}
+                            {userWithSub.subscription?.plan || 'Pro Plan'}
                           </p>
                         </div>
                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
