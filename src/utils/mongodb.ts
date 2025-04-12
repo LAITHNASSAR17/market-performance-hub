@@ -1,4 +1,11 @@
 
+export interface MongoDBConfig {
+  connectionString: string;
+  database: string;
+  username: string;
+  password: string;
+}
+
 export class MongoDB {
   private static instance: MongoDB;
   private connection: any = null;
@@ -23,8 +30,8 @@ export class MongoDB {
       this.connection = {
         connected: true,
         collection: (collectionName: string) => ({
-          find: async (query: any = {}) => {
-            console.log('MongoDB Query:', query, 'Collection:', collectionName);
+          find: async (query: any = {}, options: any = {}) => {
+            console.log('MongoDB Query:', query, 'Collection:', collectionName, 'Options:', options);
             
             // Return mock data for testing
             if (collectionName === 'users') {
