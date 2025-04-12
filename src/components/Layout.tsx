@@ -17,7 +17,6 @@ import {
   X,
   UserCog,
   ShieldAlert,
-  LineChart as LineChart3,
   BarChart2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
