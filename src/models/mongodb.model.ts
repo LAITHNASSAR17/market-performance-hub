@@ -77,5 +77,74 @@ export const MongoDBModel = {
       MongoDBModel.saveConnectionStatus('error');
       return false;
     }
+  },
+
+  disconnect: (): void => {
+    MongoDBModel.private.db.disconnect();
+    MongoDBModel.saveConnectionStatus('disconnected');
+  },
+
+  executeQuery: async (
+    collection: string, 
+    operation: string, 
+    query: any = {}, 
+    update: any = null
+  ): Promise<MongoDBQueryResult> => {
+    try {
+      if (!MongoDBModel.private.db.isConnected()) {
+        return { 
+          success: false, 
+          error: 'Database not connected' 
+        };
+      }
+      
+      const coll = MongoDBModel.private.db.collection(collection);
+      let result;
+      
+      switch (operation) {
+        case 'find':
+          result = await coll.find(query);
+          return { success: true, data: result };
+        
+        case 'findOne':
+          result = await coll.findOne(query);
+          return { success: true, data: result };
+        
+        case 'insertOne':
+          result = await coll.insertOne(query);
+          return { 
+            success: true, 
+            data: result,
+            insertedId: result.insertedId
+          };
+        
+        case 'updateOne':
+          if (!update) {
+            return { success: false, error: 'Update document is required for updateOne operation' };
+          }
+          result = await coll.updateOne(query, update);
+          return { 
+            success: true, 
+            data: result,
+            modifiedCount: result.modifiedCount
+          };
+        
+        case 'deleteOne':
+          result = await coll.deleteOne(query);
+          return { 
+            success: true, 
+            data: result,
+            deletedCount: result.deletedCount
+          };
+        
+        default:
+          return { success: false, error: `Unsupported operation: ${operation}` };
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
   }
 };

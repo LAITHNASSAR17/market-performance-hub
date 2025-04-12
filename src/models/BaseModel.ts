@@ -52,7 +52,7 @@ export abstract class BaseModel {
     const sanitizedData = this.sanitizeObject(data);
     
     const result = await collection.insertOne(sanitizedData);
-    return result.insertedId;
+    return result.insertId;
   }
 
   protected async update(id: string | number, data: Record<string, any>): Promise<boolean> {
