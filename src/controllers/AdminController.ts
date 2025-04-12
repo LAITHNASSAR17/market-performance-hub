@@ -1,4 +1,3 @@
-
 import { UserController } from './UserController';
 import { TradeController } from './TradeController';
 import { TagController } from './TagController';
@@ -195,7 +194,8 @@ export class AdminController {
   }
   
   async setDefaultTheme(themeId: string) {
-    return this.themeController.setDefaultTheme(themeId);
+    // Convert string themeId to number since ThemeController expects a number
+    return this.themeController.setDefaultTheme(Number(themeId));
   }
 
   async getAllTranslations() {
@@ -276,7 +276,8 @@ export class AdminController {
   
   async setUserThemePreference(userId: string, themeId: string): Promise<boolean> {
     try {
-      return await this.themeController.setUserThemePreference(userId, themeId);
+      // Convert string themeId to number since ThemeController expects a number
+      return await this.themeController.setUserThemePreference(userId, Number(themeId));
     } catch (error) {
       console.error('Error setting user theme preference:', error);
       return false;
