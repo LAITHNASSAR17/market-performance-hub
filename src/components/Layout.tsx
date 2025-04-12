@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ const Layout: React.FC<LayoutProps> = ({
     user,
     isAdmin
   } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
@@ -44,52 +46,52 @@ const Layout: React.FC<LayoutProps> = ({
 
   const navigation = [
     {
-      name: 'Dashboard',
+      name: t('nav.dashboard') || 'Dashboard',
       icon: Home,
       href: '/dashboard'
     }, 
     {
-      name: 'Add Trade',
+      name: t('nav.addTrade') || 'Add Trade',
       icon: PlusCircle,
       href: '/add-trade'
     }, 
     {
-      name: 'Trades',
+      name: t('nav.trades') || 'Trades',
       icon: BookText,
       href: '/trades'
     }, 
     {
-      name: 'Journal',
+      name: t('nav.journal') || 'Journal',
       icon: Calendar,
       href: '/journal'
     }, 
     {
-      name: 'Notebook',
+      name: t('nav.notebook') || 'Notebook',
       icon: BookText,
       href: '/notebook'
     }, 
     {
-      name: 'Reports',
+      name: t('nav.reports') || 'Reports',
       icon: BarChart,
       href: '/reports'
     }, 
     {
-      name: 'Insights',
+      name: t('nav.insights') || 'Insights',
       icon: Sparkles,
       href: '/insights'
     }, 
     {
-      name: 'Analytics',
+      name: t('nav.analytics') || 'Analytics',
       icon: BarChart2,
       href: '/analytics'
     }, 
     {
-      name: 'Chart',
+      name: t('nav.chart') || 'Chart',
       icon: LineChart3,
       href: '/chart'
     },
     {
-      name: 'Subscriptions',
+      name: t('nav.subscriptions') || 'Subscriptions',
       icon: CreditCard,
       href: '/subscriptions'
     }
@@ -135,7 +137,7 @@ const Layout: React.FC<LayoutProps> = ({
                 <div className="overflow-hidden">
                   <p className="font-medium text-sm truncate">{user?.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {user?.isAdmin ? 'Administrator' : 'Basic Plan'}
+                    {user?.isAdmin ? t('nav.admin') || 'Administrator' : t('nav.platform') || 'Basic Plan'}
                   </p>
                 </div>
               </div>
@@ -186,7 +188,7 @@ const Layout: React.FC<LayoutProps> = ({
                 >
                   <Link to="/settings">
                     <Settings className="h-4 w-4" />
-                    {sidebarOpen && <span className="ml-2">Settings</span>}
+                    {sidebarOpen && <span className="ml-2">{t('nav.settings') || 'Settings'}</span>}
                   </Link>
                 </Button>
               </TooltipTrigger>
@@ -195,7 +197,7 @@ const Layout: React.FC<LayoutProps> = ({
                 align="center"
                 hidden={sidebarOpen}
               >
-                Settings
+                {t('nav.settings') || 'Settings'}
               </TooltipContent>
             </Tooltip>
             
@@ -212,7 +214,7 @@ const Layout: React.FC<LayoutProps> = ({
                   )}
                 >
                   <LogOut className="h-4 w-4" />
-                  {sidebarOpen && <span className="ml-2">Logout</span>}
+                  {sidebarOpen && <span className="ml-2">{t('nav.logout') || 'Logout'}</span>}
                 </Button>
               </TooltipTrigger>
               <TooltipContent 
@@ -220,7 +222,7 @@ const Layout: React.FC<LayoutProps> = ({
                 align="center"
                 hidden={sidebarOpen}
               >
-                Logout
+                {t('nav.logout') || 'Logout'}
               </TooltipContent>
             </Tooltip>
           </div>

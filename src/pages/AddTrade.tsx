@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -13,18 +12,19 @@ import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
-import { PlusCircle } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import CurrencyPairInput from '@/components/CurrencyPairInput';
 
 const AddTrade: React.FC = () => {
   const { addTrade, accounts, pairs, symbols, addSymbol, allHashtags } = useTrade();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     account: '',
     date: new Date().toISOString().slice(0, 10),
     pair: '',
-    customPair: '',
     type: 'Buy' as 'Buy' | 'Sell',
     entry: '',
     exit: '',
@@ -44,7 +44,6 @@ const AddTrade: React.FC = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
-  const [showCustomPairInput, setShowCustomPairInput] = useState(false);
 
   // Calculate profit/loss and return percentage automatically when entry, exit, and lotSize are provided
   useEffect(() => {
@@ -90,12 +89,6 @@ const AddTrade: React.FC = () => {
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    // Handle special case for pair select
-    if (name === 'pair' && value === 'custom') {
-      setShowCustomPairInput(true);
-      return;
-    }
-    
     setFormData({ ...formData, [name]: value });
     
     // Clear error when field is edited
@@ -104,30 +97,26 @@ const AddTrade: React.FC = () => {
     }
   };
 
-  const handleAddCustomPair = () => {
-    if (!formData.customPair.trim()) {
-      setErrors({ ...errors, customPair: 'Please enter a valid symbol' });
-      return;
+  const handlePairChange = (value: string) => {
+    setFormData({ ...formData, pair: value });
+    
+    // Clear error when field is edited
+    if (errors.pair) {
+      setErrors({ ...errors, pair: '' });
     }
     
-    // Add new symbol to the list
-    const symbolType = determineSymbolType(formData.customPair);
-    const newSymbol = {
-      symbol: formData.customPair,
-      name: formData.customPair,
-      type: symbolType
-    };
-    
-    addSymbol(newSymbol);
-    
-    // Update form data with new pair
-    setFormData({ ...formData, pair: formData.customPair, customPair: '' });
-    setShowCustomPairInput(false);
-    
-    toast({
-      title: "Symbol Added",
-      description: `${formData.customPair} has been added to your symbols list`,
-    });
+    // Add to pairs list if it's a new pair
+    if (value && !pairs.includes(value)) {
+      // Add new symbol to the list
+      const symbolType = determineSymbolType(value);
+      const newSymbol = {
+        symbol: value,
+        name: value,
+        type: symbolType
+      };
+      
+      addSymbol(newSymbol);
+    }
   };
   
   // Helper function to determine symbol type based on naming pattern
@@ -151,16 +140,13 @@ const AddTrade: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Get the final pair value (either selected or custom)
-    const finalPair = showCustomPairInput && formData.customPair ? formData.customPair : formData.pair;
-    
     // Validate form
     const newErrors: Record<string, string> = {};
-    if (!formData.account) newErrors.account = 'Account is required';
-    if (!finalPair) newErrors.pair = 'Currency pair or symbol is required';
-    if (!formData.entry) newErrors.entry = 'Entry price is required';
-    if (!formData.exit) newErrors.exit = 'Exit price is required';
-    if (!formData.lotSize) newErrors.lotSize = 'Lot size is required';
+    if (!formData.account) newErrors.account = t('addTrade.accountRequired') || 'Account is required';
+    if (!formData.pair) newErrors.pair = t('addTrade.pairRequired') || 'Currency pair or symbol is required';
+    if (!formData.entry) newErrors.entry = t('addTrade.entryRequired') || 'Entry price is required';
+    if (!formData.exit) newErrors.exit = t('addTrade.exitRequired') || 'Exit price is required';
+    if (!formData.lotSize) newErrors.lotSize = t('addTrade.lotSizeRequired') || 'Lot size is required';
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -170,7 +156,6 @@ const AddTrade: React.FC = () => {
     // Convert string values to numbers
     const tradeData = {
       ...formData,
-      pair: finalPair,
       entry: parseFloat(formData.entry),
       exit: parseFloat(formData.exit),
       lotSize: parseFloat(formData.lotSize),
@@ -182,13 +167,10 @@ const AddTrade: React.FC = () => {
       durationMinutes: formData.durationMinutes ? parseInt(formData.durationMinutes) : 0,
     };
     
-    // Remove the customPair property as it's not needed in the final trade data
-    delete (tradeData as any).customPair;
-    
     addTrade(tradeData);
     toast({
-      title: "Trade Added",
-      description: "Your trade has been added successfully",
+      title: t('addTrade.tradeAdded') || "Trade Added",
+      description: t('addTrade.tradeAddedSuccess') || "Your trade has been added successfully",
     });
     navigate('/trades');
   };
@@ -196,27 +178,27 @@ const AddTrade: React.FC = () => {
   return (
     <Layout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">Add New Trade</h1>
-        <p className="text-gray-500">Record details about your trade</p>
+        <h1 className="text-2xl font-bold mb-1">{t('addTrade.title') || "Add New Trade"}</h1>
+        <p className="text-gray-500">{t('addTrade.description') || "Record details about your trade"}</p>
       </div>
 
       <Card>
         <form onSubmit={handleSubmit}>
           <CardHeader>
-            <CardTitle>Trade Information</CardTitle>
+            <CardTitle>{t('addTrade.tradeInformation') || "Trade Information"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Basic Trade Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Account */}
               <div>
-                <Label htmlFor="account">Account</Label>
+                <Label htmlFor="account">{t('addTrade.account') || "Account"}</Label>
                 <Select
                   value={formData.account}
                   onValueChange={(value) => handleSelectChange('account', value)}
                 >
                   <SelectTrigger className={errors.account ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select account" />
+                    <SelectValue placeholder={t('addTrade.selectAccount') || "Select account"} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -233,7 +215,7 @@ const AddTrade: React.FC = () => {
 
               {/* Date */}
               <div>
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">{t('addTrade.date') || "Date"}</Label>
                 <Input
                   id="date"
                   name="date"
@@ -248,65 +230,19 @@ const AddTrade: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Pair */}
               <div>
-                <Label htmlFor="pair">Currency Pair / Symbol</Label>
-                {!showCustomPairInput ? (
-                  <div className="flex gap-2">
-                    <Select
-                      value={formData.pair}
-                      onValueChange={(value) => handleSelectChange('pair', value)}
-                    >
-                      <SelectTrigger className={errors.pair ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select or add custom pair" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {pairs.map((pair) => (
-                            <SelectItem key={pair} value={pair}>
-                              {pair}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value="custom" className="text-blue-600 font-medium">
-                            + Add Custom Symbol
-                          </SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Input
-                      id="customPair"
-                      name="customPair"
-                      placeholder="Enter custom symbol (e.g. EUR/USD, AAPL)"
-                      value={formData.customPair}
-                      onChange={handleInputChange}
-                      className={errors.customPair ? 'border-red-500' : ''}
-                    />
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
-                      size="icon"
-                      onClick={handleAddCustomPair}
-                    >
-                      <PlusCircle className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowCustomPairInput(false)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-                {errors.pair && <p className="text-red-500 text-sm mt-1">{errors.pair}</p>}
-                {errors.customPair && <p className="text-red-500 text-sm mt-1">{errors.customPair}</p>}
+                <Label htmlFor="pair">{t('addTrade.currencyPair') || "Currency Pair / Symbol"}</Label>
+                <CurrencyPairInput
+                  value={formData.pair}
+                  onChange={handlePairChange}
+                  options={pairs}
+                  placeholder={t('addTrade.selectOrType') || "Select or type currency pair"}
+                  error={errors.pair}
+                />
               </div>
 
               {/* Type */}
               <div>
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="type">{t('addTrade.type') || "Type"}</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value) => handleSelectChange('type', value)}
@@ -315,8 +251,8 @@ const AddTrade: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Buy">Buy</SelectItem>
-                    <SelectItem value="Sell">Sell</SelectItem>
+                    <SelectItem value="Buy">{t('addTrade.buy') || "Buy"}</SelectItem>
+                    <SelectItem value="Sell">{t('addTrade.sell') || "Sell"}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -326,7 +262,7 @@ const AddTrade: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Entry */}
               <div>
-                <Label htmlFor="entry">Entry Price</Label>
+                <Label htmlFor="entry">{t('addTrade.entry') || "Entry Price"}</Label>
                 <Input
                   id="entry"
                   name="entry"
@@ -342,7 +278,7 @@ const AddTrade: React.FC = () => {
 
               {/* Exit */}
               <div>
-                <Label htmlFor="exit">Exit Price</Label>
+                <Label htmlFor="exit">{t('addTrade.exit') || "Exit Price"}</Label>
                 <Input
                   id="exit"
                   name="exit"
@@ -358,7 +294,7 @@ const AddTrade: React.FC = () => {
 
               {/* Lot Size */}
               <div>
-                <Label htmlFor="lotSize">Lot Size</Label>
+                <Label htmlFor="lotSize">{t('addTrade.lotSize') || "Lot Size"}</Label>
                 <Input
                   id="lotSize"
                   name="lotSize"
@@ -377,7 +313,7 @@ const AddTrade: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Stop Loss */}
               <div>
-                <Label htmlFor="stopLoss">Stop Loss (optional)</Label>
+                <Label htmlFor="stopLoss">{t('addTrade.stopLoss') || "Stop Loss (optional)"}</Label>
                 <Input
                   id="stopLoss"
                   name="stopLoss"
@@ -391,7 +327,7 @@ const AddTrade: React.FC = () => {
 
               {/* Take Profit */}
               <div>
-                <Label htmlFor="takeProfit">Take Profit (optional)</Label>
+                <Label htmlFor="takeProfit">{t('addTrade.takeProfit') || "Take Profit (optional)"}</Label>
                 <Input
                   id="takeProfit"
                   name="takeProfit"
@@ -408,7 +344,7 @@ const AddTrade: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Risk % */}
               <div>
-                <Label htmlFor="riskPercentage">Risk %</Label>
+                <Label htmlFor="riskPercentage">{t('addTrade.riskPercentage') || "Risk %"}</Label>
                 <Input
                   id="riskPercentage"
                   name="riskPercentage"
@@ -422,7 +358,7 @@ const AddTrade: React.FC = () => {
 
               {/* Profit/Loss */}
               <div>
-                <Label htmlFor="profitLoss">Profit/Loss</Label>
+                <Label htmlFor="profitLoss">{t('addTrade.profitLoss') || "Profit/Loss"}</Label>
                 <Input
                   id="profitLoss"
                   name="profitLoss"
@@ -436,7 +372,7 @@ const AddTrade: React.FC = () => {
 
               {/* Duration */}
               <div>
-                <Label htmlFor="durationMinutes">Duration (minutes)</Label>
+                <Label htmlFor="durationMinutes">{t('addTrade.duration') || "Duration (minutes)"}</Label>
                 <Input
                   id="durationMinutes"
                   name="durationMinutes"
@@ -450,11 +386,11 @@ const AddTrade: React.FC = () => {
 
             {/* Notes */}
             <div>
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">{t('addTrade.notes') || "Notes"}</Label>
               <Textarea
                 id="notes"
                 name="notes"
-                placeholder="Enter trade notes, observations, or reasons for taking the trade"
+                placeholder={t('addTrade.notesPlaceholder') || "Enter trade notes, observations, or reasons for taking the trade"}
                 rows={3}
                 value={formData.notes}
                 onChange={handleInputChange}
@@ -463,26 +399,26 @@ const AddTrade: React.FC = () => {
 
             {/* Hashtags */}
             <div>
-              <Label htmlFor="hashtags">Hashtags</Label>
+              <Label htmlFor="hashtags">{t('addTrade.hashtags') || "Hashtags"}</Label>
               <HashtagInput
                 id="hashtags"
                 value={formData.hashtags}
                 onChange={(hashtags) => setFormData({ ...formData, hashtags })}
                 suggestions={allHashtags}
-                placeholder="Add hashtags (e.g. setup, breakout, mistake)"
+                placeholder={t('addTrade.hashtagsPlaceholder') || "Add hashtags (e.g. setup, breakout, mistake)"}
               />
             </div>
 
             <Separator className="my-6" />
             
-            <h3 className="text-lg font-medium">Trade Images</h3>
+            <h3 className="text-lg font-medium">{t('addTrade.tradeImages') || "Trade Images"}</h3>
             
             {/* Before/After Trade Images */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Before Image */}
               <div>
-                <Label htmlFor="beforeImage">Before Trade Image</Label>
-                <p className="text-sm text-gray-500 mb-2">Upload an image of the chart before your entry</p>
+                <Label htmlFor="beforeImage">{t('addTrade.beforeImage') || "Before Trade Image"}</Label>
+                <p className="text-sm text-gray-500 mb-2">{t('addTrade.uploadBeforeImage') || "Upload an image of the chart before your entry"}</p>
                 <ImageUpload
                   value={formData.beforeImageUrl}
                   onChange={(imageUrl) => setFormData({ ...formData, beforeImageUrl: imageUrl })}
@@ -491,8 +427,8 @@ const AddTrade: React.FC = () => {
 
               {/* After Image */}
               <div>
-                <Label htmlFor="afterImage">After Trade Image</Label>
-                <p className="text-sm text-gray-500 mb-2">Upload an image of the chart after your exit</p>
+                <Label htmlFor="afterImage">{t('addTrade.afterImage') || "After Trade Image"}</Label>
+                <p className="text-sm text-gray-500 mb-2">{t('addTrade.uploadAfterImage') || "Upload an image of the chart after your exit"}</p>
                 <ImageUpload
                   value={formData.afterImageUrl}
                   onChange={(imageUrl) => setFormData({ ...formData, afterImageUrl: imageUrl })}
@@ -502,8 +438,8 @@ const AddTrade: React.FC = () => {
             
             {/* Original chart image */}
             <div>
-              <Label htmlFor="image">Additional Chart Image (Optional)</Label>
-              <p className="text-sm text-gray-500 mb-2">Upload any other relevant chart image</p>
+              <Label htmlFor="image">{t('addTrade.originalImage') || "Additional Chart Image (Optional)"}</Label>
+              <p className="text-sm text-gray-500 mb-2">{t('addTrade.uploadOriginalImage') || "Upload any other relevant chart image"}</p>
               <ImageUpload
                 value={formData.imageUrl}
                 onChange={(imageUrl) => setFormData({ ...formData, imageUrl })}
@@ -512,9 +448,9 @@ const AddTrade: React.FC = () => {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button type="button" variant="outline" onClick={() => navigate('/trades')}>
-              Cancel
+              {t('addTrade.cancel') || "Cancel"}
             </Button>
-            <Button type="submit">Save Trade</Button>
+            <Button type="submit">{t('addTrade.saveTrade') || "Save Trade"}</Button>
           </CardFooter>
         </form>
       </Card>

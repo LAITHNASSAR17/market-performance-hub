@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Check, CreditCard, Shield, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Subscriptions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const handleSelectPlan = (planId: string) => {
@@ -21,8 +23,8 @@ const Subscriptions = () => {
   const handlePayment = () => {
     if (!selectedPlan) {
       toast({
-        title: "No plan selected",
-        description: "Please select a subscription plan first",
+        title: t('subscription.noPlanSelected') || "No plan selected",
+        description: t('subscription.selectFirst') || "Please select a subscription plan first",
         variant: "destructive",
       });
       return;
@@ -34,10 +36,10 @@ const Subscriptions = () => {
   const plans = [
     {
       id: 'basic',
-      name: 'Basic',
-      price: '$9.99',
-      period: 'month',
-      description: 'Perfect for beginners',
+      name: t('subscription.basic') || 'Basic',
+      price: t('subscription.price.basic') || '$9.99',
+      period: t('subscription.period') || 'month',
+      description: t('subscription.desc.basic') || 'Perfect for beginners',
       features: [
         '10 trades per day',
         'Basic analytics',
@@ -48,10 +50,10 @@ const Subscriptions = () => {
     },
     {
       id: 'pro',
-      name: 'Professional',
-      price: '$19.99',
-      period: 'month',
-      description: 'For serious traders',
+      name: t('subscription.professional') || 'Professional',
+      price: t('subscription.price.professional') || '$19.99',
+      period: t('subscription.period') || 'month',
+      description: t('subscription.desc.professional') || 'For serious traders',
       features: [
         'Unlimited trades',
         'Advanced analytics',
@@ -64,10 +66,10 @@ const Subscriptions = () => {
     },
     {
       id: 'enterprise',
-      name: 'Enterprise',
-      price: '$39.99',
-      period: 'month',
-      description: 'For trading teams',
+      name: t('subscription.enterprise') || 'Enterprise',
+      price: t('subscription.price.enterprise') || '$39.99',
+      period: t('subscription.period') || 'month',
+      description: t('subscription.desc.enterprise') || 'For trading teams',
       features: [
         'Everything in Professional',
         'Multiple user accounts',
@@ -84,9 +86,9 @@ const Subscriptions = () => {
     <Layout>
       <div className="container mx-auto py-10">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold mb-4">Choose Your Subscription Plan</h1>
+          <h1 className="text-3xl font-bold mb-4">{t('subscription.title') || "Choose Your Subscription Plan"}</h1>
           <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-            Elevate your trading experience with our premium plans. Select the option that best fits your trading style and goals.
+            {t('subscription.description') || "Elevate your trading experience with our premium plans. Select the option that best fits your trading style and goals."}
           </p>
         </div>
 
@@ -102,7 +104,7 @@ const Subscriptions = () => {
               >
                 {isRecommended && (
                   <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-3 py-1 text-xs font-medium">
-                    Recommended
+                    {t('subscription.recommended') || "Recommended"}
                   </div>
                 )}
                 <CardHeader className={`bg-gradient-to-r ${
@@ -140,7 +142,7 @@ const Subscriptions = () => {
                     className="w-full"
                     onClick={() => handleSelectPlan(plan.id)}
                   >
-                    {isSelected ? 'Selected' : 'Select Plan'}
+                    {isSelected ? (t('subscription.selected') || 'Selected') : (t('subscription.selectPlan') || 'Select Plan')}
                   </Button>
                 </CardFooter>
               </Card>
@@ -156,11 +158,11 @@ const Subscriptions = () => {
             className="px-8"
           >
             <CreditCard className="mr-2 h-5 w-5" />
-            Proceed to Payment
+            {t('subscription.proceedToPayment') || "Proceed to Payment"}
           </Button>
           
           <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            All plans include a 7-day free trial. No credit card required until trial ends.
+            {t('subscription.freeTrial') || "All plans include a 7-day free trial. No credit card required until trial ends."}
           </p>
         </div>
       </div>

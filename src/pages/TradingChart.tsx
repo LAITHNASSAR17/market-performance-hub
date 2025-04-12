@@ -15,7 +15,7 @@ declare global {
 }
 
 const TradingChart: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<any>(null);
   const navigate = useNavigate();
@@ -122,7 +122,7 @@ const TradingChart: React.FC = () => {
     if (window.TradingView && containerRef.current) {
       initWidget();
     }
-  }, [symbolType, currentTrade, containerHeight]);
+  }, [symbolType, currentTrade, containerHeight, language]);
 
   const initWidget = () => {
     if (!window.TradingView || !containerRef.current) {
@@ -154,7 +154,7 @@ const TradingChart: React.FC = () => {
       timezone: 'Etc/UTC',
       theme: 'dark',
       style: '1',
-      locale: 'ar',
+      locale: language === 'ar' ? 'ar' : 'en',
       toolbar_bg: '#f1f3f6',
       enable_publishing: false,
       withdateranges: true,
