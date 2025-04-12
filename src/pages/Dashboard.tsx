@@ -439,23 +439,22 @@ const Dashboard: React.FC = () => {
                   )
                 )}
                 
-                {/* Weekly summary - separate card on the right */}
-                <div className="col-span-7 mt-1 mb-4 flex justify-end">
-                  <div className="w-[200px] bg-gray-50 border rounded-md p-3 flex flex-col">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">Week {week.weekNumber}</span>
-                      <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                <div className="col-span-7 mt-1 mb-3 flex justify-end">
+                  <div className="w-[160px] bg-gray-50 border rounded-md p-2 flex flex-col">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Week {week.weekNumber}</span>
+                      <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded-full">
                         {week.weeklyTrades} {week.weeklyTrades === 1 ? 'trade' : 'trades'}
                       </span>
                     </div>
                     <div className={cn(
-                      "font-bold text-lg",
+                      "font-bold text-base",
                       week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : "text-gray-600"
                     )}>
                       {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Net P&L for week {week.weekNumber}
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      Net P&L
                     </div>
                   </div>
                 </div>
