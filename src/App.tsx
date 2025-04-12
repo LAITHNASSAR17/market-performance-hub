@@ -35,6 +35,7 @@ import AdminTrades from "./pages/admin/AdminTrades";
 import AdminHashtags from "./pages/admin/AdminHashtags";
 import AdminNotes from "./pages/admin/AdminNotes";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminDatabase from "./pages/admin/AdminDatabase";
 import AdminLayout from "./components/layouts/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -76,6 +77,7 @@ const App = () => (
                     <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
                     <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
                     <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
+                    <Route path="/admin/database" element={<AdminLayout><AdminDatabase /></AdminLayout>} />
                     
                     {/* Catch-all route */}
                     <Route path="*" element={<NotFound />} />
