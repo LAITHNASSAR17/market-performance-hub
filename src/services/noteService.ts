@@ -16,23 +16,27 @@ interface NoteData {
 
 export async function getNoteById(id: string): Promise<NoteData | null> {
   await connectToDatabase();
-  return Note.findById(id).lean();
+  // Use await directly on the method chain
+  return await Note.findById(id).lean();
 }
 
 export async function getNotesByUserId(userId: string): Promise<NoteData[]> {
   await connectToDatabase();
-  return Note.find({ userId }).lean();
+  // Use await directly on the method chain
+  return await Note.find({ userId }).lean();
 }
 
 export async function createNote(noteData: NoteData): Promise<NoteData> {
   await connectToDatabase();
+  // Create a new document instance and save it
   const note = new Note(noteData);
-  return note.save();
+  return await note.save();
 }
 
 export async function updateNote(id: string, noteData: Partial<NoteData>): Promise<NoteData | null> {
   await connectToDatabase();
-  return Note.findByIdAndUpdate(
+  // Use await directly on the method chain
+  return await Note.findByIdAndUpdate(
     id,
     noteData,
     { new: true }
@@ -41,10 +45,12 @@ export async function updateNote(id: string, noteData: Partial<NoteData>): Promi
 
 export async function deleteNote(id: string): Promise<NoteData | null> {
   await connectToDatabase();
-  return Note.findByIdAndDelete(id).lean();
+  // Use await directly on the method chain
+  return await Note.findByIdAndDelete(id).lean();
 }
 
 export async function getAllNotes(): Promise<NoteData[]> {
   await connectToDatabase();
-  return Note.find({}).lean();
+  // Use await directly on the method chain
+  return await Note.find({}).lean();
 }

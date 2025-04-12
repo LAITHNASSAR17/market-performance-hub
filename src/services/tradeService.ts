@@ -31,23 +31,27 @@ interface TradeData {
 
 export async function getTradeById(id: string): Promise<TradeData | null> {
   await connectToDatabase();
-  return Trade.findById(id).lean();
+  // Use await directly on the method chain
+  return await Trade.findById(id).lean();
 }
 
 export async function getTradesByUserId(userId: string): Promise<TradeData[]> {
   await connectToDatabase();
-  return Trade.find({ userId }).lean();
+  // Use await directly on the method chain
+  return await Trade.find({ userId }).lean();
 }
 
 export async function createTrade(tradeData: TradeData): Promise<TradeData> {
   await connectToDatabase();
+  // Create a new document instance and save it
   const trade = new Trade(tradeData);
-  return trade.save();
+  return await trade.save();
 }
 
 export async function updateTrade(id: string, tradeData: Partial<TradeData>): Promise<TradeData | null> {
   await connectToDatabase();
-  return Trade.findByIdAndUpdate(
+  // Use await directly on the method chain
+  return await Trade.findByIdAndUpdate(
     id,
     tradeData,
     { new: true }
@@ -56,10 +60,12 @@ export async function updateTrade(id: string, tradeData: Partial<TradeData>): Pr
 
 export async function deleteTrade(id: string): Promise<TradeData | null> {
   await connectToDatabase();
-  return Trade.findByIdAndDelete(id).lean();
+  // Use await directly on the method chain
+  return await Trade.findByIdAndDelete(id).lean();
 }
 
 export async function getAllTrades(): Promise<TradeData[]> {
   await connectToDatabase();
-  return Trade.find({}).lean();
+  // Use await directly on the method chain
+  return await Trade.find({}).lean();
 }

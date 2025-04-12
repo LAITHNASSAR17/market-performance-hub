@@ -14,23 +14,27 @@ interface UserData {
 
 export async function getUserById(id: string): Promise<UserData | null> {
   await connectToDatabase();
-  return User.findById(id).lean();
+  // Use await directly on the method chain
+  return await User.findById(id).lean();
 }
 
 export async function getUserByEmail(email: string): Promise<UserData | null> {
   await connectToDatabase();
-  return User.findOne({ email }).lean();
+  // Use await directly on the method chain
+  return await User.findOne({ email }).lean();
 }
 
 export async function createUser(userData: UserData): Promise<UserData> {
   await connectToDatabase();
+  // Create a new document instance and save it
   const user = new User(userData);
-  return user.save();
+  return await user.save();
 }
 
 export async function updateUser(id: string, userData: Partial<UserData>): Promise<UserData | null> {
   await connectToDatabase();
-  return User.findByIdAndUpdate(
+  // Use await directly on the method chain
+  return await User.findByIdAndUpdate(
     id, 
     userData, 
     { new: true }
@@ -39,10 +43,12 @@ export async function updateUser(id: string, userData: Partial<UserData>): Promi
 
 export async function deleteUser(id: string): Promise<UserData | null> {
   await connectToDatabase();
-  return User.findByIdAndDelete(id).lean();
+  // Use await directly on the method chain
+  return await User.findByIdAndDelete(id).lean();
 }
 
 export async function getAllUsers(): Promise<UserData[]> {
   await connectToDatabase();
-  return User.find({}).lean();
+  // Use await directly on the method chain
+  return await User.find({}).lean();
 }
