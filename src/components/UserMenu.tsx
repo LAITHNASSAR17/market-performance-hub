@@ -13,13 +13,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, User, Settings } from 'lucide-react';
 
-// Define a User interface that matches what's coming from the AuthContext
+// Update the AuthUser interface to match what's coming from the AuthContext
 interface AuthUser {
   id: string;
   name?: string;
   email?: string;
   image?: string;
-  profileImage?: string; // Add this as a fallback
+  profileImage?: string;
   isAdmin?: boolean;
 }
 
@@ -40,13 +40,17 @@ const UserMenu = () => {
       .toUpperCase();
   };
 
+  // Use the AuthUser type to properly type the user
+  const userImage = (user as AuthUser)?.profileImage || (user as AuthUser)?.image;
+  const userName = (user as AuthUser)?.name || 'User';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center space-x-1 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.profileImage || user?.image} alt={user?.name || 'User'} />
-            <AvatarFallback>{user?.name ? getInitials(user.name) : 'U'}</AvatarFallback>
+            <AvatarImage src={userImage} alt={userName} />
+            <AvatarFallback>{userName ? getInitials(userName) : 'U'}</AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
