@@ -25,7 +25,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
 import HashtagInput from '@/components/HashtagInput';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { 
   Folder, File, Plus, Edit, Trash2, Tag, ChevronDown, MoreVertical, 
   Search, Star, Clock, Bookmark, ThumbsUp, Palette, FileText, 
@@ -364,14 +364,18 @@ const Notebook = () => {
     
     // If connected to MySQL, delete from database
     if (mysql.connectionStatus === 'connected') {
-      mysql.deleteNote(parseInt(selectedNoteId, 10)).catch(error => {
-        console.error("Error deleting note from MySQL:", error);
-        toast({
-          title: "Delete Error",
-          description: "Failed to delete note from database",
-          variant: "destructive"
+      // Convert string ID to number
+      const noteId = parseInt(selectedNoteId, 10);
+      if (!isNaN(noteId)) {
+        mysql.deleteNote(noteId).catch(error => {
+          console.error("Error deleting note from MySQL:", error);
+          toast({
+            title: "Delete Error",
+            description: "Failed to delete note from database",
+            variant: "destructive"
+          });
         });
-      });
+      }
     }
 
     toast({
@@ -393,14 +397,18 @@ const Notebook = () => {
     
     // If connected to MySQL, update in database
     if (mysql.connectionStatus === 'connected') {
-      mysql.updateNote(parseInt(selectedNoteId, 10), { content }).catch(error => {
-        console.error("Error updating note in MySQL:", error);
-        toast({
-          title: "Save Error",
-          description: "Failed to save note to database",
-          variant: "destructive"
+      // Convert string ID to number
+      const noteId = parseInt(selectedNoteId, 10);
+      if (!isNaN(noteId)) {
+        mysql.updateNote(noteId, { content }).catch(error => {
+          console.error("Error updating note in MySQL:", error);
+          toast({
+            title: "Save Error",
+            description: "Failed to save note to database",
+            variant: "destructive"
+          });
         });
-      });
+      }
     }
   };
   
@@ -417,14 +425,18 @@ const Notebook = () => {
     
     // If connected to MySQL, update in database
     if (mysql.connectionStatus === 'connected') {
-      mysql.updateNote(parseInt(selectedNoteId, 10), { title }).catch(error => {
-        console.error("Error updating note in MySQL:", error);
-        toast({
-          title: "Save Error",
-          description: "Failed to save note to database",
-          variant: "destructive"
+      // Convert string ID to number
+      const noteId = parseInt(selectedNoteId, 10);
+      if (!isNaN(noteId)) {
+        mysql.updateNote(noteId, { title }).catch(error => {
+          console.error("Error updating note in MySQL:", error);
+          toast({
+            title: "Save Error",
+            description: "Failed to save note to database",
+            variant: "destructive"
+          });
         });
-      });
+      }
     }
   };
   
@@ -461,14 +473,18 @@ const Notebook = () => {
     
     // If connected to MySQL, update in database
     if (mysql.connectionStatus === 'connected') {
-      mysql.updateNote(parseInt(selectedNoteId, 10), { tags }).catch(error => {
-        console.error("Error updating note tags in MySQL:", error);
-        toast({
-          title: "Save Error",
-          description: "Failed to save tags to database",
-          variant: "destructive"
+      // Convert string ID to number
+      const noteId = parseInt(selectedNoteId, 10);
+      if (!isNaN(noteId)) {
+        mysql.updateNote(noteId, { tags }).catch(error => {
+          console.error("Error updating note tags in MySQL:", error);
+          toast({
+            title: "Save Error",
+            description: "Failed to save tags to database",
+            variant: "destructive"
+          });
         });
-      });
+      }
     }
   };
   
@@ -493,14 +509,18 @@ const Notebook = () => {
     
     // If connected to MySQL, update in database
     if (mysql.connectionStatus === 'connected') {
-      mysql.updateTemplate(parseInt(template.id, 10), { type: 'favorite' }).catch(error => {
-        console.error("Error updating template in MySQL:", error);
-        toast({
-          title: "Save Error",
-          description: "Failed to save template to database",
-          variant: "destructive"
+      // Convert string ID to number
+      const templateId = parseInt(template.id, 10);
+      if (!isNaN(templateId)) {
+        mysql.updateTemplate(templateId, { type: 'favorite' }).catch(error => {
+          console.error("Error updating template in MySQL:", error);
+          toast({
+            title: "Save Error",
+            description: "Failed to save template to database",
+            variant: "destructive"
+          });
         });
-      });
+      }
     }
     
     toast({
