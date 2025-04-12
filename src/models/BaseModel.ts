@@ -16,6 +16,17 @@ export abstract class BaseModel {
     // This is a compatibility layer to migrate from SQL to MongoDB
     // In a real implementation, we would convert SQL to MongoDB queries
     // For now, we'll return mock data based on the collection name
+    
+    // For SQL operations that check for affected rows
+    if (sql.toLowerCase().includes('update') || 
+        sql.toLowerCase().includes('delete') || 
+        sql.toLowerCase().includes('insert')) {
+      return [{
+        affectedRows: 1,
+        insertId: Date.now().toString()
+      }];
+    }
+    
     return this.findAll();
   }
 

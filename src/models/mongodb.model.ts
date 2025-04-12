@@ -1,7 +1,8 @@
 
-import { MongoDB, MongoDBConfig } from '../utils/mongodb';
+import { MongoDB } from '../utils/mongodb';
+import type { MongoDBConfig } from '../utils/mongodb';
 
-export { MongoDBConfig };
+export type { MongoDBConfig };
 
 export interface MongoDBCollection {
   name: string;

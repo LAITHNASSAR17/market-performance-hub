@@ -1,4 +1,3 @@
-
 import { BaseModel } from './BaseModel';
 
 export interface Report {
@@ -59,7 +58,9 @@ export class ReportModel extends BaseModel {
       updatedAt: now
     };
     
-    return this.create(reportWithTimestamps);
+    const result = await this.create(reportWithTimestamps);
+    // Convert string IDs to number if needed
+    return typeof result === 'string' ? parseInt(result, 10) : result;
   }
 
   // Update a report
@@ -75,14 +76,14 @@ export class ReportModel extends BaseModel {
     
     const sql = "UPDATE reports SET ? WHERE id = ? AND userId = ?";
     const result = await this.query(sql, [dataWithTimestamp, id, userId]);
-    return result.affectedRows > 0;
+    return result.length > 0 && result[0].affectedRows > 0;
   }
 
   // Delete a report
   async deleteReport(id: number, userId: number): Promise<boolean> {
     const sql = "DELETE FROM reports WHERE id = ? AND userId = ?";
     const result = await this.query(sql, [id, userId]);
-    return result.affectedRows > 0;
+    return result.length > 0 && result[0].affectedRows > 0;
   }
 
   // Generate a performance summary report

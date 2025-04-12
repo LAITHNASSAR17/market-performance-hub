@@ -71,7 +71,9 @@ export class TranslationModel extends BaseModel {
         updatedAt: now
       };
       
-      return this.create(translationWithTimestamps);
+      const result = await this.create(translationWithTimestamps);
+      // Convert string IDs to number if needed
+      return typeof result === 'string' ? parseInt(result, 10) : result;
     }
   }
 

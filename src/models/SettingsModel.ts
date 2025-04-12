@@ -1,4 +1,3 @@
-
 import { BaseModel } from './BaseModel';
 
 export interface Settings {
@@ -82,7 +81,7 @@ export class SettingsModel extends BaseModel {
   async deleteSetting(userId: number, category: string, settingKey: string): Promise<boolean> {
     const sql = "DELETE FROM settings WHERE userId = ? AND category = ? AND settingKey = ?";
     const result = await this.query(sql, [userId, category, settingKey]);
-    return result.affectedRows > 0;
+    return result.length > 0 && result[0].affectedRows > 0;
   }
 
   // Get all user settings as a structured object

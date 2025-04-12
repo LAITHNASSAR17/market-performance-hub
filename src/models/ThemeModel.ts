@@ -65,7 +65,9 @@ export class ThemeModel extends BaseModel {
       await this.clearDefaultThemes();
     }
     
-    return this.create(themeWithTimestamps);
+    const result = await this.create(themeWithTimestamps);
+    // Convert string IDs to number if needed
+    return typeof result === 'string' ? parseInt(result, 10) : result;
   }
 
   // Update a theme
@@ -84,7 +86,7 @@ export class ThemeModel extends BaseModel {
       await this.clearDefaultThemes();
     }
     
-    return this.update(id, dataWithTimestamp);
+    return this.update(id.toString(), dataWithTimestamp);
   }
 
   // Delete a theme
@@ -99,7 +101,7 @@ export class ThemeModel extends BaseModel {
       throw new Error('Cannot delete a system theme');
     }
     
-    return this.delete(id);
+    return this.delete(id.toString());
   }
 
   // Set a theme as the default theme
@@ -109,7 +111,7 @@ export class ThemeModel extends BaseModel {
       await this.clearDefaultThemes();
       
       // Then set this theme as default
-      return this.update(id, { isDefault: true });
+      return this.update(id.toString(), { isDefault: true });
     } catch (error) {
       console.error('Error setting default theme:', error);
       return false;
