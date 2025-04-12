@@ -57,7 +57,7 @@ const Payment = () => {
           description: `تم دفع ${amount} بنجاح`,
         });
         setLoading(false);
-        navigate('/dashboard');
+        navigate('/payment-success');
       }, 2000);
     } catch (error) {
       console.error('Payment error:', error);
