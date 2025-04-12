@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { useMySQL } from '@/contexts/MySQLContext';
@@ -874,4 +875,317 @@ const Notebook = () => {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="ghost" size
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>More options</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </div>
+                
+                <div className="mt-2">
+                  <HashtagInput
+                    value={selectedNote.tags}
+                    onChange={handleTagsChange}
+                    suggestions={tags.map(tag => tag.name)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex-1 p-4 overflow-auto">
+                <Textarea
+                  value={selectedNote.content}
+                  onChange={(e) => handleContentChange(e.target.value)}
+                  className="w-full h-full border-none focus-visible:ring-0 resize-none bg-transparent"
+                  placeholder="Write your note here..."
+                />
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full">
+              <FileTextIcon className="h-16 w-16 text-gray-300 mb-4" />
+              <h3 className="text-xl font-medium text-gray-700 dark:text-gray-300 mb-2">
+                No note selected
+              </h3>
+              <p className="text-sm text-gray-500 text-center max-w-md mb-4">
+                Select a note from the sidebar or create a new one to start writing.
+              </p>
+              <Button
+                onClick={() => {
+                  setIsAddDialogOpen(true);
+                  setNewNote({
+                    ...newNote,
+                    folderId: selectedFolderId !== 'all' ? selectedFolderId : 'trade-notes'
+                  });
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Note
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Add Note Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Create New Note</DialogTitle>
+            <DialogDescription>
+              Add a new note to your notebook. You can choose a folder and add tags.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={newNote.title}
+                onChange={(e) => setNewNote({ ...newNote, title: e.target.value })}
+                placeholder="Enter note title"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="folder">Folder</Label>
+              <Select
+                value={newNote.folderId}
+                onValueChange={(value) => setNewNote({ ...newNote, folderId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a folder" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {folders.filter(folder => folder.id !== 'all' && folder.id !== 'recently-deleted').map((folder) => (
+                      <SelectItem key={folder.id} value={folder.id}>
+                        {folder.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="tags">Tags</Label>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7"
+                  onClick={() => setIsTemplateDialogOpen(true)}
+                >
+                  <StarIcon className="h-3.5 w-3.5 text-amber-500 mr-1" />
+                  Use Template
+                </Button>
+              </div>
+              <HashtagInput
+                id="tags"
+                value={newNote.tags}
+                onChange={(tags) => setNewNote({ ...newNote, tags })}
+                suggestions={tags.map(tag => tag.name)}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                value={newNote.content}
+                onChange={(e) => setNewNote({ ...newNote, content: e.target.value })}
+                placeholder="Write your note content here..."
+                className="min-h-[200px]"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddNote}>
+              Create Note
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Folder Dialog */}
+      <Dialog open={isAddFolderDialogOpen} onOpenChange={setIsAddFolderDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Folder</DialogTitle>
+            <DialogDescription>
+              Add a new folder to organize your notes.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="folder-name">Folder Name</Label>
+              <Input
+                id="folder-name"
+                value={newFolder.name}
+                onChange={(e) => setNewFolder({ ...newFolder, name: e.target.value })}
+                placeholder="Enter folder name"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label>Folder Color</Label>
+              <div className="flex flex-wrap gap-2">
+                {['#9c59ff', '#5974ff', '#4269ff', '#f5cb42', '#e45fff', '#2dc653', '#ff6b6b', '#ff9800', '#00bcd4'].map((color) => (
+                  <div
+                    key={color}
+                    className={cn(
+                      "w-8 h-8 rounded-full cursor-pointer border-2",
+                      newFolder.color === color ? "border-gray-900 dark:border-white" : "border-transparent"
+                    )}
+                    style={{ backgroundColor: color }}
+                    onClick={() => setNewFolder({ ...newFolder, color })}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddFolderDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddFolder}>
+              Create Folder
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Template Selection Dialog */}
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Choose a Template</DialogTitle>
+            <DialogDescription>
+              Select a template to use for your note.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex items-center space-x-4 py-2">
+            <Button
+              variant={templateType === 'favorite' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTemplateType('favorite')}
+            >
+              <StarIcon className="h-4 w-4 mr-2 text-amber-500" />
+              Favorites
+            </Button>
+            <Button
+              variant={templateType === 'recommended' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTemplateType('recommended')}
+            >
+              <ThumbsUp className="h-4 w-4 mr-2" />
+              Recommended
+            </Button>
+            <Button
+              variant={templateType === 'custom' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTemplateType('custom')}
+            >
+              <PenLine className="h-4 w-4 mr-2" />
+              My Templates
+            </Button>
+          </div>
+          
+          <ScrollArea className="h-[400px] border rounded-md">
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredTemplates.length > 0 ? (
+                filteredTemplates.map((template) => (
+                  <div
+                    key={template.id}
+                    className="border rounded-md p-4 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer transition-colors"
+                    onClick={() => handleUseTemplate(template)}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-sm">
+                        {template.emoji && <span className="mr-2">{template.emoji}</span>}
+                        {template.title}
+                      </h4>
+                      <div className="flex items-center">
+                        {template.type !== 'favorite' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddFavorite(template);
+                                  }}
+                                >
+                                  <Star className="h-3.5 w-3.5 text-gray-400 hover:text-amber-500" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Add to favorites</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 line-clamp-3 whitespace-pre-line">
+                      {template.content.substring(0, 150)}
+                      {template.content.length > 150 && '...'}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-2 flex flex-col items-center justify-center py-8">
+                  <FileTextIcon className="h-10 w-10 text-gray-300 mb-2" />
+                  <p className="text-sm text-gray-500 text-center">
+                    {templateType === 'favorite' 
+                      ? "No favorite templates yet. Mark templates as favorites to see them here."
+                      : templateType === 'recommended'
+                      ? "No recommended templates available."
+                      : "You haven't created any custom templates yet."}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the selected note.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteNote} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Layout>
+  );
+};
+
+export default Notebook;
