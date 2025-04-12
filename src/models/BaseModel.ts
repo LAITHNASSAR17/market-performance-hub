@@ -1,3 +1,4 @@
+
 import { MongoDB } from '../utils/mongodb';
 
 export abstract class BaseModel {
