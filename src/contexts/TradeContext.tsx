@@ -111,6 +111,8 @@ const sampleTrades: Trade[] = [
     durationMinutes: 180,
     notes: 'Failed breakout, stopped out',
     imageUrl: null,
+    beforeImageUrl: null,
+    afterImageUrl: null,
     hashtags: ['mistake', 'fakeout'],
     createdAt: '2025-04-08T09:45:00Z'
   },
@@ -132,6 +134,8 @@ const sampleTrades: Trade[] = [
     durationMinutes: 200,
     notes: 'Traded the retracement from daily high',
     imageUrl: null,
+    beforeImageUrl: null,
+    afterImageUrl: null,
     hashtags: ['retracement', 'setup'],
     createdAt: '2025-04-07T14:20:00Z'
   },
@@ -153,6 +157,8 @@ const sampleTrades: Trade[] = [
     durationMinutes: 150,
     notes: 'Bad timing, should have waited for confirmation',
     imageUrl: null,
+    beforeImageUrl: null,
+    afterImageUrl: null,
     hashtags: ['mistake', 'patience'],
     createdAt: '2025-04-06T10:30:00Z'
   }
