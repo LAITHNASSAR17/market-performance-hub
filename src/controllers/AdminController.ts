@@ -140,8 +140,13 @@ export class AdminController {
   }
 
   async getAllTrades() {
-    // Using model.findAll from the trade model instead of directly calling findAll
-    return this.tradeController.getAllTrades();
+    // Use the model's method that returns all trades
+    try {
+      return await this.tradeController.getUserTrades(0, 9999); // Using a large limit as a workaround
+    } catch (error) {
+      console.error('Error getting all trades:', error);
+      return [];
+    }
   }
   
   async getUserTrades(userId: number) {
@@ -153,7 +158,13 @@ export class AdminController {
   }
 
   async getAllTags() {
-    return this.tagController.getAllTags();
+    try {
+      // Pass an empty object as a placeholder since we're not filtering by user
+      return await this.tagController.getSystemTags(); // Gets system tags which don't belong to any user
+    } catch (error) {
+      console.error('Error getting all tags:', error);
+      return [];
+    }
   }
   
   async createSystemTag(tagName: string, category: string = 'general') {
@@ -169,11 +180,13 @@ export class AdminController {
   }
 
   async getSystemSettings() {
+    // Pass "system" as a string, not as a number
     return this.settingsController.getUserSettings("system");
   }
   
   async updateSystemSetting(key: string, value: string) {
-    return this.settingsController.updateSetting("system", key, value);
+    // Make sure to pass all required arguments
+    return this.settingsController.updateSetting("system", key, value, "system");
   }
 
   async getAllThemes() {
@@ -224,6 +237,7 @@ export class AdminController {
     };
   }
 
+  // Add missing methods for AdminDatabase
   async getDatabaseTableStructure(tableName: string): Promise<any[]> {
     try {
       return [

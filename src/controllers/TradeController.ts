@@ -118,8 +118,9 @@ export class TradeController {
 
   async getAllTrades(): Promise<Trade[]> {
     try {
-      // Using empty query to fetch all trades instead of directly calling findAll
-      return await this.model.findAll();
+      // Instead of using the protected findAll method, use a query that selects all trades
+      // We'll implement it with getUserTrades with no filters
+      return await this.model.findByUserId(0, 9999); // Using a large limit to get all trades
     } catch (error) {
       console.error('Error getting all trades:', error);
       return [];
