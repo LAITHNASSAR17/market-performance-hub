@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { TradeNote, NoteTemplate, useTradeNotebook } from '@/contexts/TradeNotebookContext';
@@ -72,10 +71,8 @@ const TradeNotebook: React.FC = () => {
     color: '#9c59ff'
   });
 
-  // Get the selected note
   const selectedNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) : null;
   
-  // Filter notes based on current folder and search term
   const filteredNotes = notes.filter(note => {
     const matchesSearch = searchTerm === '' || 
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -86,12 +83,10 @@ const TradeNotebook: React.FC = () => {
     return matchesSearch && matchesFolder;
   });
 
-  // Sort notes by updated date (newest first)
   const sortedNotes = [...filteredNotes].sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
-  // Filter templates based on type
   const filteredTemplates = templates.filter(template => 
     templateType === 'favorite' ? template.type === 'favorite' : 
     templateType === 'recommended' ? template.type === 'recommended' : 
@@ -99,7 +94,6 @@ const TradeNotebook: React.FC = () => {
   );
 
   useEffect(() => {
-    // Select the first note by default if available
     if (sortedNotes.length > 0 && !selectedNoteId) {
       setSelectedNoteId(sortedNotes[0].id);
     }
@@ -187,7 +181,6 @@ const TradeNotebook: React.FC = () => {
     setIsAddDialogOpen(true);
   };
 
-  // Helper function to format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -196,7 +189,6 @@ const TradeNotebook: React.FC = () => {
     }).format(amount);
   };
 
-  // Helper function to get folder by ID
   const getFolderById = (id: string) => {
     return folders.find(folder => folder.id === id);
   };
@@ -204,7 +196,6 @@ const TradeNotebook: React.FC = () => {
   return (
     <Layout>
       <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-        {/* Left sidebar - Folders */}
         <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
             <h2 className="font-semibold text-lg flex items-center">
@@ -283,7 +274,6 @@ const TradeNotebook: React.FC = () => {
           </ScrollArea>
         </div>
         
-        {/* Middle section - Notes list */}
         <div className="w-72 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -395,7 +385,6 @@ const TradeNotebook: React.FC = () => {
           </ScrollArea>
         </div>
         
-        {/* Right section - Note content */}
         <div className="flex-1 bg-white dark:bg-gray-800 flex flex-col">
           {selectedNote ? (
             <>
@@ -484,7 +473,6 @@ const TradeNotebook: React.FC = () => {
               
               <ScrollArea className="flex-1 p-6">
                 <div className="max-w-4xl mx-auto">
-                  {/* Note content rendered here */}
                   <Textarea
                     value={selectedNote.content}
                     onChange={(e) => handleContentChange(e.target.value)}
@@ -515,7 +503,6 @@ const TradeNotebook: React.FC = () => {
         </div>
       </div>
 
-      {/* Add Note Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -603,7 +590,6 @@ const TradeNotebook: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Folder Dialog */}
       <Dialog open={isAddFolderDialogOpen} onOpenChange={setIsAddFolderDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -649,8 +635,7 @@ const TradeNotebook: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Template Selection Dialog */}
-      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen} className="max-w-4xl">
+      <Dialog open={isTemplateDialogOpen} onOpenChange={setIsTemplateDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-center text-xl">Select a notebook template</DialogTitle>
@@ -785,7 +770,6 @@ const TradeNotebook: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
