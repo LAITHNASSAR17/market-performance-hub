@@ -80,16 +80,16 @@ export class ChartModel extends BaseModel {
       WHERE userId = ?
     `;
     
-    const params = [userId];
+    const params: any[] = [userId];
     
     if (startDate) {
       sql += " AND entryDate >= ?";
-      params.push(startDate);
+      params.push(startDate.toISOString());
     }
     
     if (endDate) {
       sql += " AND entryDate <= ?";
-      params.push(endDate);
+      params.push(endDate.toISOString());
     }
     
     sql += " GROUP BY DATE(entryDate) ORDER BY date ASC";
@@ -123,16 +123,16 @@ export class ChartModel extends BaseModel {
       WHERE userId = ?
     `;
     
-    const params = [userId];
+    const params: any[] = [userId];
     
     if (startDate) {
       sql += " AND entryDate >= ?";
-      params.push(startDate);
+      params.push(startDate.toISOString());
     }
     
     if (endDate) {
       sql += " AND entryDate <= ?";
-      params.push(endDate);
+      params.push(endDate.toISOString());
     }
     
     sql += " GROUP BY DATE(entryDate) ORDER BY date ASC";
@@ -150,16 +150,16 @@ export class ChartModel extends BaseModel {
       WHERE userId = ?
     `;
     
-    const params = [userId];
+    const params: any[] = [userId];
     
     if (startDate) {
       sql += " AND entryDate >= ?";
-      params.push(startDate);
+      params.push(startDate.toISOString());
     }
     
     if (endDate) {
       sql += " AND entryDate <= ?";
-      params.push(endDate);
+      params.push(endDate.toISOString());
     }
     
     sql += " GROUP BY instrument ORDER BY value DESC";
@@ -178,16 +178,16 @@ export class ChartModel extends BaseModel {
       WHERE userId = ?
     `;
     
-    const params = [userId];
+    const params: any[] = [userId];
     
     if (startDate) {
       sql += " AND entryDate >= ?";
-      params.push(startDate);
+      params.push(startDate.toISOString());
     }
     
     if (endDate) {
       sql += " AND entryDate <= ?";
-      params.push(endDate);
+      params.push(endDate.toISOString());
     }
     
     sql += " GROUP BY DATE(entryDate) ORDER BY date ASC";

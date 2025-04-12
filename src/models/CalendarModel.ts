@@ -24,16 +24,16 @@ export class CalendarModel extends BaseModel {
   // Get all calendar events for a user
   async getUserEvents(userId: number, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
     let sql = "SELECT * FROM calendar_events WHERE userId = ?";
-    const params = [userId];
+    const params: any[] = [userId];
     
     if (startDate) {
       sql += " AND startDate >= ?";
-      params.push(startDate);
+      params.push(startDate.toISOString());
     }
     
     if (endDate) {
       sql += " AND endDate <= ?";
-      params.push(endDate);
+      params.push(endDate.toISOString());
     }
     
     sql += " ORDER BY startDate ASC";

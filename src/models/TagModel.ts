@@ -28,7 +28,23 @@ export class TagModel extends BaseModel {
 
   // Get a tag by ID
   async getTagById(id: number): Promise<Tag | null> {
-    return this.findById(id);
+    const sql = "SELECT * FROM tags WHERE id = ?";
+    const results = await this.query(sql, [id]);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  // Find a tag by name
+  async findByName(name: string, userId: number | null = null): Promise<Tag | null> {
+    let sql = "SELECT * FROM tags WHERE name = ?";
+    const params: (string | number)[] = [name];
+    
+    if (userId !== null) {
+      sql += " AND userId = ?";
+      params.push(userId);
+    }
+    
+    const results = await this.query(sql, params);
+    return results.length > 0 ? results[0] : null;
   }
 
   // Create a new tag
@@ -91,8 +107,40 @@ export class TagModel extends BaseModel {
     return this.query(sql, [userId, limit]);
   }
 
+  // Get system tags (tags without a user ID)
+  async getSystemTags(): Promise<Tag[]> {
+    const sql = "SELECT * FROM tags WHERE userId IS NULL";
+    return this.query(sql, []);
+  }
+
+  // Get user tags
+  async getUserTags(userId: number, category?: string): Promise<Tag[]> {
+    let sql = "SELECT * FROM tags WHERE userId = ?";
+    const params: any[] = [userId];
+    
+    if (category) {
+      sql += " AND type = ?";
+      params.push(category);
+    }
+    
+    return this.query(sql, params);
+  }
+
+  // Get popular tags
+  async getPopularTags(limit = 10): Promise<Tag[]> {
+    const sql = `
+      SELECT t.*, COUNT(tt.tradeId) as count
+      FROM tags t
+      LEFT JOIN trade_tags tt ON t.id = tt.tagId
+      GROUP BY t.id
+      ORDER BY count DESC
+      LIMIT ?
+    `;
+    return this.query(sql, [limit]);
+  }
+
   // Get tags for a specific trade
-  async getTagsForTrade(tradeId: number): Promise<Tag[]> {
+  async getTradeTags(tradeId: number): Promise<Tag[]> {
     const sql = `
       SELECT t.* 
       FROM tags t 
@@ -126,6 +174,18 @@ export class TagModel extends BaseModel {
     }
   }
 
+  // Add a single tag to a trade
+  async addTagToTrade(tradeId: number, tagId: number): Promise<boolean> {
+    try {
+      const sql = "INSERT INTO trade_tags (tradeId, tagId) VALUES (?, ?)";
+      await this.query(sql, [tradeId, tagId]);
+      return true;
+    } catch (error) {
+      console.error("Error adding tag to trade:", error);
+      return false;
+    }
+  }
+
   // Remove all tag associations from a trade
   async removeTagsFromTrade(tradeId: number): Promise<boolean> {
     try {
@@ -138,14 +198,26 @@ export class TagModel extends BaseModel {
     }
   }
 
+  // Remove a specific tag from a trade
+  async removeTagFromTrade(tradeId: number, tagId: number): Promise<boolean> {
+    try {
+      const sql = "DELETE FROM trade_tags WHERE tradeId = ? AND tagId = ?";
+      await this.query(sql, [tradeId, tagId]);
+      return true;
+    } catch (error) {
+      console.error("Error removing tag from trade:", error);
+      return false;
+    }
+  }
+
   // Get all trades that have a specific tag
-  async getTradesWithTag(tagId: number): Promise<any[]> {
+  async getTradesByTag(tagId: number): Promise<number[]> {
     const sql = `
-      SELECT t.* 
-      FROM trades t 
-      JOIN trade_tags tt ON t.id = tt.tradeId 
-      WHERE tt.tagId = ?
+      SELECT tradeId
+      FROM trade_tags
+      WHERE tagId = ?
     `;
-    return this.query(sql, [tagId]);
+    const results = await this.query(sql, [tagId]);
+    return results.map((row: any) => row.tradeId);
   }
 }

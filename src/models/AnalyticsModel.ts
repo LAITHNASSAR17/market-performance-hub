@@ -1,4 +1,3 @@
-
 import { BaseModel } from './BaseModel';
 
 export interface AnalyticsData {
@@ -27,7 +26,7 @@ export class AnalyticsModel extends BaseModel {
   // Get analytics data for a user
   async getUserAnalytics(userId: number, metricType?: string): Promise<AnalyticsData[]> {
     let sql = "SELECT * FROM analytics_data WHERE userId = ?";
-    const params = [userId];
+    const params: any[] = [userId];
     
     if (metricType) {
       sql += " AND metricType = ?";
@@ -42,16 +41,16 @@ export class AnalyticsModel extends BaseModel {
   // Get specific metric data
   async getMetricData(userId: number, metricName: string, startDate?: Date, endDate?: Date): Promise<AnalyticsData[]> {
     let sql = "SELECT * FROM analytics_data WHERE userId = ? AND metricName = ?";
-    const params = [userId, metricName];
+    const params: any[] = [userId, metricName];
     
     if (startDate) {
       sql += " AND date >= ?";
-      params.push(startDate);
+      params.push(startDate.toISOString());
     }
     
     if (endDate) {
       sql += " AND date <= ?";
-      params.push(endDate);
+      params.push(endDate.toISOString());
     }
     
     sql += " ORDER BY date ASC";
@@ -169,11 +168,11 @@ export class AnalyticsModel extends BaseModel {
       WHERE userId = ? AND entryDate >= ?
     `;
     
-    const params = [userId, startDate];
+    const params: any[] = [userId, startDate.toISOString()];
     
     if (endDate) {
       sql += " AND entryDate <= ?";
-      params.push(endDate);
+      params.push(endDate.toISOString());
     }
     
     const results = await this.query(sql, params);

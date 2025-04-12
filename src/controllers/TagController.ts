@@ -10,7 +10,7 @@ export class TagController {
 
   async getTag(id: number): Promise<Tag | null> {
     try {
-      return await this.model.findById(id);
+      return await this.model.getTagById(id);
     } catch (error) {
       console.error('Error getting tag:', error);
       return null;
@@ -26,9 +26,9 @@ export class TagController {
     }
   }
 
-  async createTag(tagData: Omit<Tag, 'id' | 'createdAt' | 'count' | 'lastUsed'>): Promise<number | null> {
+  async createTag(tagData: Omit<Tag, 'id' | 'createdAt'>): Promise<number | null> {
     try {
-      return await this.model.create(tagData);
+      return await this.model.createTag(tagData);
     } catch (error) {
       console.error('Error creating tag:', error);
       return null;
@@ -38,7 +38,7 @@ export class TagController {
   async updateTag(id: number, tagData: Partial<Tag>): Promise<boolean> {
     try {
       // Business logic - check if tag exists first
-      const existingTag = await this.model.findById(id);
+      const existingTag = await this.model.getTagById(id);
       if (!existingTag) {
         throw new Error('Tag not found');
       }
@@ -48,7 +48,7 @@ export class TagController {
         throw new Error('Cannot change ownership of system tags');
       }
 
-      return await this.model.update(id, tagData);
+      return await this.model.updateTag(id, tagData);
     } catch (error) {
       console.error('Error updating tag:', error);
       return false;
@@ -58,12 +58,12 @@ export class TagController {
   async deleteTag(id: number): Promise<boolean> {
     try {
       // Business logic - check if tag exists first
-      const existingTag = await this.model.findById(id);
+      const existingTag = await this.model.getTagById(id);
       if (!existingTag) {
         throw new Error('Tag not found');
       }
 
-      return await this.model.delete(id);
+      return await this.model.deleteTag(id);
     } catch (error) {
       console.error('Error deleting tag:', error);
       return false;
@@ -104,17 +104,17 @@ export class TagController {
       let tag = await this.model.findByName(tagName, userId);
       
       if (!tag) {
-        const tagId = await this.model.create({
+        const tagId = await this.model.createTag({
           name: tagName,
           userId,
-          category
+          type: category
         });
         
         if (!tagId) {
           throw new Error('Failed to create tag');
         }
         
-        tag = await this.model.findById(tagId);
+        tag = await this.model.getTagById(tagId);
         
         if (!tag) {
           throw new Error('Failed to retrieve created tag');
