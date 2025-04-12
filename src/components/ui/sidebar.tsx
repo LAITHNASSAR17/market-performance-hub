@@ -5,7 +5,7 @@ import { cva } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const sidebarVariants = cva(
-  "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out transform",
+  "fixed inset-y-0 left-0 z-50 w-64 bg-[#060B26] border-r border-gray-800 transition-transform duration-300 ease-in-out transform",
   {
     variants: {
       expanded: {
@@ -20,7 +20,7 @@ const sidebarVariants = cva(
 )
 
 const sidebarTriggerVariants = cva(
-  "fixed z-50 flex items-center justify-center p-2 text-gray-600 bg-white border border-gray-200 rounded-md shadow-sm hover:text-primary transition-all duration-300 ease-in-out",
+  "fixed z-50 flex items-center justify-center p-2 text-gray-300 bg-[#060B26] border border-gray-700 rounded-md shadow-sm hover:text-white transition-all duration-300 ease-in-out",
   {
     variants: {
       expanded: {
@@ -142,7 +142,7 @@ export function SidebarHeader({
   return (
     <div
       className={cn(
-        "flex items-center p-4 h-16 border-b border-gray-200",
+        "flex items-center p-4 h-16 border-b border-gray-800",
         expanded ? "justify-between" : "justify-center",
         className
       )}
@@ -186,7 +186,7 @@ export function SidebarGroupLabel({
   return (
     <div
       className={cn(
-        "px-4 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider",
+        "px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider",
         className
       )}
     >
@@ -243,7 +243,7 @@ export function SidebarMenuButton({
     <Comp
       {...childProps}
       className={cn(
-        "flex items-center w-full text-gray-700 hover:text-purple-700 hover:bg-purple-50 rounded-md transition-colors",
+        "flex items-center w-full text-gray-300 hover:text-white hover:bg-purple-800/40 rounded-md transition-colors",
         expanded ? "px-4 py-2.5 justify-start" : "justify-center p-3",
         className
       )}
@@ -280,7 +280,7 @@ export function SidebarFooter({
   return (
     <div
       className={cn(
-        "border-t border-gray-200 p-4 mt-auto",
+        "border-t border-gray-800 p-4 mt-auto",
         expanded ? "flex items-center justify-between" : "flex flex-col items-center",
         className
       )}
