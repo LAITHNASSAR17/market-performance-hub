@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { useMySQL } from '@/contexts/MySQLContext';
@@ -194,6 +193,7 @@ const Notebook = () => {
       if (notesResult.length > 0) {
         setNotes(notesResult.map((note: any) => ({
           id: note.id.toString(),
+          userId: note.userId?.toString() || user?.id || '1',
           title: note.title,
           content: note.content,
           folderId: note.folderId.toString(),
@@ -267,9 +267,9 @@ const Notebook = () => {
       mysql.createNote({
         title: newNote.title,
         content: newNote.content,
-        folderId: newNote.folderId,
+        folderId: parseInt(newNote.folderId, 10),
         userId: user?.id,
-        tradeId: newNote.tradeId,
+        tradeId: newNote.tradeId ? parseInt(newNote.tradeId, 10) : undefined,
         tags: newNote.tags
       }).catch(error => {
         console.error("Error creating note in MySQL:", error);
