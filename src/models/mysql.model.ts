@@ -44,7 +44,10 @@ export const MySQLModel = {
     };
   },
   
-  saveConfig: () => {},
+  saveConfig: (config: MySQLConfig): void => {
+    // Mock implementation
+    console.log('Saving MySQL config:', config);
+  },
   
   loadConnectionStatus: (): 'disconnected' | 'connected' | 'error' => {
     return 'disconnected';
@@ -54,11 +57,23 @@ export const MySQLModel = {
     return [];
   },
   
-  saveConnectionStatus: () => {},
+  saveConnectionStatus: (status: 'disconnected' | 'connected' | 'error'): void => {
+    // Mock implementation
+    console.log('Saving MySQL connection status:', status);
+  },
   
-  saveTables: () => {},
+  saveTables: (tables: MySQLTable[]): void => {
+    // Mock implementation
+    console.log('Saving MySQL tables:', tables);
+  },
   
-  connect: async (): Promise<boolean> => {
-    return false;
+  connect: (): Promise<boolean> => {
+    // Mock implementation
+    return Promise.resolve(false);
+  },
+  
+  disconnect: (): void => {
+    // Mock implementation
+    console.log('Disconnecting from MySQL');
   }
 };

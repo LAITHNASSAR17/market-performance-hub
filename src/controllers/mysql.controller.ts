@@ -1,4 +1,5 @@
 
+
 import { Database } from '../utils/database';
 import { MySQLConfig, MySQLTable, MySQLTableColumn, MySQLQueryResult, MySQLModel } from '../models/mysql.model';
 
@@ -26,6 +27,7 @@ export class MySQLController {
   static async connect(config: MySQLConfig): Promise<boolean> {
     // Update config and try to connect
     MySQLModel.saveConfig(config);
+    // Use the connect method without parameters since config is already saved
     const connected = await MySQLModel.connect();
     
     if (connected) {
