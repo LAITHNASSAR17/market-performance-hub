@@ -22,12 +22,18 @@ import Reports from "./pages/Reports";
 import Insights from "./pages/Insights";
 import Analytics from "./pages/Analytics";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminTrades from "./pages/admin/AdminTrades";
+import AdminHashtags from "./pages/admin/AdminHashtags";
+import AdminNotes from "./pages/admin/AdminNotes";
+import AdminSettings from "./pages/admin/AdminSettings";
 import TradingChart from "./pages/TradingChart";
 import TradeTracking from "./pages/TradeTracking";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
+import AdminLayout from "./components/layouts/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -55,12 +61,20 @@ const App = () => (
                     <Route path="/insights" element={<Insights />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/chart" element={<TradingChart />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/tracking/:id" element={<TradeTracking />} />
                     <Route path="/payment" element={<Payment />} />
                     <Route path="/payment-success" element={<PaymentSuccess />} />
                     <Route path="/settings" element={<Settings />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    
+                    {/* Admin Routes - Wrapped with AdminLayout */}
+                    <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+                    <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
+                    <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
+                    <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
+                    <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
+                    <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
+                    
+                    {/* Catch-all route */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </NotebookProvider>
