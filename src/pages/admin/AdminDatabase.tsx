@@ -87,7 +87,7 @@ const AdminDatabase = () => {
       
       toast({
         title: "Query Executed",
-        description: `Operation completed successfully`
+        description: "Operation completed successfully"
       });
     } catch (error) {
       console.error("Query execution error:", error);
