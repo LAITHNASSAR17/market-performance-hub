@@ -4,6 +4,19 @@
 import { MySQLConfig, MySQLModel, MySQLTable, MySQLQueryResult } from '../models/mysql.model';
 
 export const MySQLController = {
+  // Expose model functions for configuration
+  loadConfig: MySQLModel.loadConfig,
+  saveConfig: MySQLModel.saveConfig,
+  isConfigValid: MySQLModel.isConfigValid,
+  
+  // Expose model functions for connection status
+  loadConnectionStatus: MySQLModel.loadConnectionStatus,
+  saveConnectionStatus: MySQLModel.saveConnectionStatus,
+  
+  // Expose model functions for tables
+  loadTables: MySQLModel.loadTables,
+  saveTables: MySQLModel.saveTables,
+
   // Connect to MySQL database
   connect: async (config: MySQLConfig): Promise<boolean> => {
     if (!MySQLModel.isConfigValid(config)) {
