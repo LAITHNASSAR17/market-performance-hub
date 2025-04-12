@@ -1,3 +1,4 @@
+
 // MySQL Data Model - Handles database logic and data structures
 
 import { Database } from '../utils/database';
