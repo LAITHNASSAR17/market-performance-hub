@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TradeProvider } from "@/contexts/TradeContext";
 import { NotebookProvider } from "@/contexts/NotebookContext";
-import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { MySQLProvider } from "@/contexts/MySQLContext";
 
@@ -26,6 +25,7 @@ import TradingChart from "./pages/TradingChart";
 import TradeTracking from "./pages/TradeTracking";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
+import Subscriptions from "./pages/Subscriptions";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 
@@ -37,6 +37,7 @@ import AdminHashtags from "./pages/admin/AdminHashtags";
 import AdminNotes from "./pages/admin/AdminNotes";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminDatabase from "./pages/admin/AdminDatabase";
+import AdminPages from "./pages/admin/AdminPages";
 import AdminLayout from "./components/layouts/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -44,53 +45,53 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <LanguageProvider>
-        <ThemeProvider>
-          <MySQLProvider>
-            <BrowserRouter>
-              <AuthProvider>
-                <TradeProvider>
-                  <NotebookProvider>
-                    <Toaster />
-                    <Sonner />
-                    <Routes>
-                      {/* User Routes */}
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route path="/" element={<Index />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/add-trade" element={<AddTrade />} />
-                      <Route path="/trades" element={<Trades />} />
-                      <Route path="/journal" element={<Journal />} />
-                      <Route path="/notebook" element={<Notebook />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/insights" element={<Insights />} />
-                      <Route path="/analytics" element={<Analytics />} />
-                      <Route path="/chart" element={<TradingChart />} />
-                      <Route path="/tracking/:id" element={<TradeTracking />} />
-                      <Route path="/payment" element={<Payment />} />
-                      <Route path="/payment-success" element={<PaymentSuccess />} />
-                      <Route path="/settings" element={<Settings />} />
-                      
-                      {/* Admin Routes - Completely Separate */}
-                      <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-                      <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
-                      <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
-                      <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
-                      <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
-                      <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
-                      <Route path="/admin/database" element={<AdminLayout><AdminDatabase /></AdminLayout>} />
-                      
-                      {/* Catch-all route */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </NotebookProvider>
-                </TradeProvider>
-              </AuthProvider>
-            </BrowserRouter>
-          </MySQLProvider>
-        </ThemeProvider>
-      </LanguageProvider>
+      <ThemeProvider>
+        <MySQLProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <TradeProvider>
+                <NotebookProvider>
+                  <Toaster />
+                  <Sonner />
+                  <Routes>
+                    {/* User Routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/" element={<Index />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/add-trade" element={<AddTrade />} />
+                    <Route path="/trades" element={<Trades />} />
+                    <Route path="/journal" element={<Journal />} />
+                    <Route path="/notebook" element={<Notebook />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/insights" element={<Insights />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/chart" element={<TradingChart />} />
+                    <Route path="/tracking/:id" element={<TradeTracking />} />
+                    <Route path="/payment" element={<Payment />} />
+                    <Route path="/payment-success" element={<PaymentSuccess />} />
+                    <Route path="/subscriptions" element={<Subscriptions />} />
+                    <Route path="/settings" element={<Settings />} />
+                    
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+                    <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
+                    <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
+                    <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
+                    <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
+                    <Route path="/admin/pages" element={<AdminLayout><AdminPages /></AdminLayout>} />
+                    <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
+                    <Route path="/admin/database" element={<AdminLayout><AdminDatabase /></AdminLayout>} />
+                    
+                    {/* Catch-all route */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </NotebookProvider>
+              </TradeProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </MySQLProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -9,7 +9,7 @@ interface PaymentButtonProps extends ButtonProps {
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({ 
-  text = "الاشتراك الآن", 
+  text = "Subscribe Now", 
   className,
   ...props 
 }) => {
@@ -17,7 +17,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
 
   return (
     <Button
-      onClick={() => navigate('/payment')}
+      onClick={() => navigate('/subscriptions')}
       className={className}
       {...props}
     >

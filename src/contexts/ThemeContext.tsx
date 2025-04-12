@@ -1,6 +1,5 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useLanguage } from './LanguageContext';
 
 type Theme = 'light' | 'dark';
 
@@ -21,8 +20,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return savedTheme || systemPreference;
   });
 
-  const { language } = useLanguage();
-
   // Update the data-theme attribute and localStorage when theme changes
   useEffect(() => {
     const root = window.document.documentElement;
@@ -30,20 +27,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(theme);
     localStorage.setItem('theme', theme);
   }, [theme]);
-
-  // Apply any language-specific theme adjustments
-  useEffect(() => {
-    const root = window.document.documentElement;
-    
-    // Make sure RTL is set correctly based on language
-    if (language === 'ar') {
-      root.dir = 'rtl';
-      root.lang = 'ar';
-    } else {
-      root.dir = 'ltr';
-      root.lang = 'en';
-    }
-  }, [language]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');

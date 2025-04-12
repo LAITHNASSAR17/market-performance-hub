@@ -10,12 +10,14 @@ import {
   Hash, 
   FileText, 
   Settings, 
-  LogOut 
+  LogOut,
+  Layers,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
 import ThemeToggle from '@/components/ThemeToggle';
-import LanguageToggle from '@/components/LanguageToggle';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -24,8 +26,8 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { user, isAdmin, logout } = useAuth();
   const { toast } = useToast();
-  const { t } = useLanguage();
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
   
   // Redirect non-admin users to dashboard
   if (!isAdmin) {
@@ -51,6 +53,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: <TrendingUp className="w-5 h-5" />, label: "Trades", path: "/admin/trades" },
     { icon: <Hash className="w-5 h-5" />, label: "Hashtags", path: "/admin/hashtags" },
     { icon: <FileText className="w-5 h-5" />, label: "Notes", path: "/admin/notes" },
+    { icon: <Layers className="w-5 h-5" />, label: "Pages", path: "/admin/pages" },
     { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/admin/settings" },
   ];
 
@@ -92,9 +95,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </nav>
           
           <div className="p-4 border-t dark:border-gray-700 space-y-4">
-            <div className="flex items-center justify-between">
-              <ThemeToggle />
-              <LanguageToggle variant="switch" />
+            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-2 rounded-md">
+              <span className="text-sm text-gray-700 dark:text-gray-300">Theme</span>
+              <button 
+                onClick={toggleTheme}
+                className="p-1.5 rounded-md bg-gray-200 dark:bg-gray-600"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-4 w-4 text-amber-500" />
+                ) : (
+                  <Moon className="h-4 w-4 text-indigo-600" />
+                )}
+              </button>
             </div>
             <button 
               onClick={handleLogout}
