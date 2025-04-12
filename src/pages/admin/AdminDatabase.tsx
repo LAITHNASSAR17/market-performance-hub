@@ -228,7 +228,7 @@ const AdminDatabase = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Example: "find users {}" or 'insertOne users {"name": "John"}'
+                  Example: "find users {}" or 'insertOne users \{"name": "John"\}'
                 </p>
               </div>
               

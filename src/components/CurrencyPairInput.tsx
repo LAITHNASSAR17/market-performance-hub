@@ -26,6 +26,7 @@ interface CurrencyPairInputProps {
   placeholder?: string;
   className?: string;
   error?: string;
+  onAddTrade?: () => void; // New prop to trigger trade addition
 }
 
 const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
@@ -34,7 +35,8 @@ const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
   options,
   placeholder = "Select or type currency pair",
   className,
-  error
+  error,
+  onAddTrade
 }) => {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -50,6 +52,12 @@ const CurrencyPairInput: React.FC<CurrencyPairInputProps> = ({
   const handleSelect = (currentValue: string) => {
     onChange(currentValue);
     setInputValue(currentValue);
+    
+    // Call onAddTrade if provided and reset dropdown
+    if (onAddTrade) {
+      onAddTrade();
+    }
+    
     setOpen(false);
   };
 
