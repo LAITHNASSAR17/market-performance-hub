@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import UserTable from '@/components/admin/UserTable';
@@ -31,15 +32,19 @@ const AdminUsers: React.FC = () => {
     try {
       const allUsers = getAllUsers();
       
-      const completeUsers = allUsers.map(user => ({
-        ...user,
-        id: user.id,
-        username: user.username || user.name || '',
-        name: user.name || '',
-        email: user.email || '',
-        isBlocked: user.isBlocked || false,
-        createdAt: user.createdAt || new Date()
-      }));
+      // Transform users to ensure they have all required properties
+      const completeUsers = allUsers.map(user => {
+        // Create a display user with all required fields, providing defaults where needed
+        const displayUser: DisplayUser = {
+          id: user.id,
+          username: user.username || user.name || '',
+          name: user.name || '',
+          email: user.email || '',
+          isBlocked: user.isBlocked || false,
+          createdAt: user.createdAt || new Date()
+        };
+        return displayUser;
+      });
       
       setUsers(completeUsers);
     } catch (error) {
