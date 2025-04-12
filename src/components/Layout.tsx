@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
+import ThemeToggle from '@/components/ThemeToggle';
 import {
   Tooltip,
   TooltipContent,
@@ -36,7 +37,6 @@ const Layout: React.FC<LayoutProps> = ({
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
-  // Handle window resize to auto-collapse sidebar on mobile
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
@@ -105,7 +105,7 @@ const Layout: React.FC<LayoutProps> = ({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex h-screen bg-gray-50" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900" dir={language === 'ar' ? 'rtl' : 'ltr'}>
         <div className={cn(
           "relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30",
           sidebarOpen ? "w-64" : "w-16",
@@ -126,24 +126,28 @@ const Layout: React.FC<LayoutProps> = ({
                 <h2 className="text-xl font-bold flex-1 text-center">{t('app.name') || 'TradeTracker'}</h2>
               )}
               
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    onClick={toggleLanguage}
-                    size="icon"
-                    className="flex items-center justify-center"
-                  >
-                    <Globe className="h-5 w-5" />
-                    {sidebarOpen && (
-                      <span className="ml-2 hidden">{language === 'ar' ? 'English' : 'العربية'}</span>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center">
-                  {language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
-                </TooltipContent>
-              </Tooltip>
+              <div className="flex items-center space-x-1 rtl:space-x-reverse">
+                <ThemeToggle />
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={toggleLanguage}
+                      size="icon"
+                      className="flex items-center justify-center"
+                    >
+                      <Globe className="h-5 w-5" />
+                      {sidebarOpen && (
+                        <span className="ml-2 hidden">{language === 'ar' ? 'English' : 'العربية'}</span>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center">
+                    {language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
             
             <div className="flex items-center gap-2 mt-4 w-full">
@@ -243,7 +247,7 @@ const Layout: React.FC<LayoutProps> = ({
           />
         )}
 
-        <main className="flex-1 overflow-y-auto bg-trading-background p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
           {children}
         </main>
       </div>

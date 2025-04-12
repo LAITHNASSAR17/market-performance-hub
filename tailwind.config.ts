@@ -75,7 +75,11 @@ export default {
 					chart: "#0ea5e9",
 					background: "#f8fafc",
 					card: "#ffffff",
-					hover: "#f1f5f9"
+					hover: "#f1f5f9",
+					darkBlue: "#0f172a",
+					darkBackground: "#1e293b",
+					darkCard: "#334155",
+					darkHover: "#475569"
 				}
 			},
 			borderRadius: {
