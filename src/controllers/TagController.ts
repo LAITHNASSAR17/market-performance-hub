@@ -9,7 +9,8 @@ export class TagController {
 
   async getAllTags(): Promise<Tag[]> {
     try {
-      return await this.model.getAllTags();
+      // Using empty object as parameter to match the expected argument count
+      return await this.model.getAllTags({});
     } catch (error) {
       console.error('Error getting all tags:', error);
       return [];

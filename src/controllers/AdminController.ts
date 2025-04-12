@@ -1,3 +1,4 @@
+
 import { UserController } from './UserController';
 import { TradeController } from './TradeController';
 import { TagController } from './TagController';
@@ -67,19 +68,19 @@ export class AdminController {
       const activeUsers = allUsers.filter(user => !user.isBlocked).length;
       const blockedUsers = totalUsers - activeUsers;
       
-      const allTrades = await this.tradeController.getAllTrades();
+      const allTrades = await this.getAllTrades();
       const totalTrades = allTrades.length;
       
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       const recentTrades = allTrades.filter(trade => 
-        new Date(trade.entryDate) >= oneWeekAgo
+        new Date(trade.date) >= oneWeekAgo
       ).length;
       
       const totalProfitLoss = allTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
       
       const popularTags = await this.tagController.getPopularTags(5);
-      const totalTags = (await this.tagController.getAllTags()).length;
+      const totalTags = (await this.getAllTags()).length;
       
       const systemHealth = {
         databaseStatus: 'online' as const,
@@ -139,6 +140,7 @@ export class AdminController {
   }
 
   async getAllTrades() {
+    // Using model.findAll from the trade model instead of directly calling findAll
     return this.tradeController.getAllTrades();
   }
   
@@ -167,11 +169,11 @@ export class AdminController {
   }
 
   async getSystemSettings() {
-    return this.settingsController.getSystemSettings();
+    return this.settingsController.getUserSettings("system");
   }
   
-  async updateSystemSettings(key: string, value: string) {
-    return this.settingsController.updateSystemSetting(key, value);
+  async updateSystemSetting(key: string, value: string) {
+    return this.settingsController.updateSetting("system", key, value);
   }
 
   async getAllThemes() {

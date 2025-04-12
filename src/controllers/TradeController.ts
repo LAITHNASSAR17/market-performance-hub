@@ -1,3 +1,4 @@
+
 import { TradeModel, Trade } from '../models/TradeModel';
 
 export class TradeController {
@@ -117,6 +118,7 @@ export class TradeController {
 
   async getAllTrades(): Promise<Trade[]> {
     try {
+      // Using empty query to fetch all trades instead of directly calling findAll
       return await this.model.findAll();
     } catch (error) {
       console.error('Error getting all trades:', error);
