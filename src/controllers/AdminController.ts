@@ -144,7 +144,7 @@ export class AdminController {
 
   async getAllTrades() {
     try {
-      return await this.tradeController.getUserTrades("0", "9999");
+      return await this.tradeController.getUserTrades("0", 9999);
     } catch (error) {
       console.error('Error getting all trades:', error);
       return [];
