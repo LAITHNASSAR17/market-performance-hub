@@ -1,4 +1,3 @@
-
 import { BaseModel } from './BaseModel';
 
 export interface Tag {
@@ -58,7 +57,9 @@ export class TagModel extends BaseModel {
       createdAt: new Date()
     };
     
-    return this.create(tagWithDate);
+    const result = await this.create(tagWithDate);
+    // Convert string IDs to number if needed
+    return typeof result === 'string' ? parseInt(result, 10) : result;
   }
 
   // Update a tag
@@ -66,12 +67,12 @@ export class TagModel extends BaseModel {
     // Sanitize input
     const sanitizedTag = this.sanitizeObject(tagData);
     
-    return this.update(id, sanitizedTag);
+    return this.update(id.toString(), sanitizedTag);
   }
 
   // Delete a tag
   async deleteTag(id: number): Promise<boolean> {
-    return this.delete(id);
+    return this.delete(id.toString());
   }
 
   // Check if a tag exists by name for a user

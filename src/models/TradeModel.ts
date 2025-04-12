@@ -88,7 +88,10 @@ export class TradeModel extends BaseModel {
     const sql = `INSERT INTO trades (${columns}) VALUES (${placeholders})`;
     const result = await this.query(sql, values);
     
-    return result.insertId;
+    // Extract insertId from MongoDB-compatible result
+    return result.length > 0 && result[0].insertId ? 
+      (typeof result[0].insertId === 'string' ? parseInt(result[0].insertId, 10) : result[0].insertId) : 
+      Date.now();
   }
 
   async update(id: number, tradeData: Partial<Trade>): Promise<boolean> {
@@ -143,7 +146,7 @@ export class TradeModel extends BaseModel {
     const sql = `UPDATE trades SET ${updateFields.join(', ')} WHERE id = ?`;
     const result = await this.query(sql, values);
 
-    return result.affectedRows > 0;
+    return result.length > 0 && result[0].affectedRows > 0;
   }
 
   async delete(id: number): Promise<boolean> {

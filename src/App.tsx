@@ -9,7 +9,7 @@ import { TradeProvider } from "@/contexts/TradeContext";
 import { NotebookProvider } from "@/contexts/NotebookContext";
 import { TradeNotebookProvider } from "@/contexts/TradeNotebookContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { MySQLProvider } from "@/contexts/MySQLContext";
+import { MongoDBProvider } from "@/contexts/MongoDBContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
 import Index from "./pages/Index";
@@ -48,7 +48,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <ThemeProvider>
-        <MySQLProvider>
+        <MongoDBProvider>
           <BrowserRouter>
             <AuthProvider>
               <TradeProvider>
@@ -97,7 +97,7 @@ const App = () => (
               </TradeProvider>
             </AuthProvider>
           </BrowserRouter>
-        </MySQLProvider>
+        </MongoDBProvider>
       </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
