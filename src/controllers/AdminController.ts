@@ -1,3 +1,4 @@
+
 import { UserController } from './UserController';
 import { TradeController } from './TradeController';
 import { TagController } from './TagController';
@@ -177,7 +178,8 @@ export class AdminController {
   }
   
   async deleteTag(tagId: string) {
-    return this.tagController.deleteTag(tagId);
+    // Convert string tagId to number since TagController expects a number
+    return this.tagController.deleteTag(Number(tagId));
   }
 
   async getSystemSettings() {
