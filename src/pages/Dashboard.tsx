@@ -1,18 +1,14 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
-import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2 } from 'lucide-react';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { 
-  AreaChart, 
-  Area,
-  PieChart as RechartPieChart, 
-  Pie,
   LineChart, 
   Line, 
   XAxis, 
@@ -30,11 +26,52 @@ import { useAuth } from '@/contexts/AuthContext';
 import TradeDetailsDialog from '@/components/TradeDetailsDialog';
 import CumulativePLChart from '@/components/CumulativePLChart';
 import DailyPLBarChart from '@/components/DailyPLBarChart';
-import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO, isMonday, isSunday } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO, isMonday, isSunday, getWeek } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
+import AverageTradeCards from '@/components/AverageTradeCards';
 
-const COLORS = ['#36B37E', '#FF5630', '#6554C0', '#FFAB00', '#00B8D9', '#6B778C'];
+// Create a collapsible sidebar component
+const CollapsibleSidebar = ({ isOpen, onToggle, children }) => {
+  return (
+    <div className={cn(
+      "fixed inset-y-0 left-0 z-30 flex flex-col h-screen bg-indigo-900 text-white transition-all duration-300 ease-in-out",
+      isOpen ? "w-64" : "w-16"
+    )}>
+      <div className="flex items-center justify-between p-4 border-b border-indigo-800">
+        {isOpen && <span className="font-bold text-xl">Trading Platform</span>}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-white hover:bg-indigo-800"
+          onClick={onToggle}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="overflow-y-auto flex-1">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const NavItem = ({ icon: Icon, label, to, isOpen }) => {
+  const navigate = useNavigate();
+  
+  return (
+    <button 
+      className={cn(
+        "w-full flex items-center py-3 px-4 hover:bg-indigo-800 transition-colors",
+        !isOpen ? "justify-center" : "justify-start"
+      )}
+      onClick={() => navigate(to)}
+    >
+      <Icon className="h-5 w-5" />
+      {isOpen && <span className="ml-3">{label}</span>}
+    </button>
+  );
+};
 
 const Dashboard: React.FC = () => {
   const { trades, deleteTrade } = useTrade();
@@ -44,6 +81,23 @@ const Dashboard: React.FC = () => {
   const [timeframeFilter, setTimeframeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTradeDetails, setShowTradeDetails] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // Effect to handle export report functionality
+  const exportReport = () => {
+    toast({
+      title: "Exporting report",
+      description: "Your trading report is being generated and will download shortly."
+    });
+    
+    // Simulation of report export - in a real app, this would generate a PDF or CSV
+    setTimeout(() => {
+      toast({
+        title: "Report exported",
+        description: "Your trading report has been successfully downloaded.",
+      });
+    }, 1500);
+  };
 
   const userTrades = user ? trades.filter(trade => trade.userId === user.id) : [];
 
@@ -66,35 +120,35 @@ const Dashboard: React.FC = () => {
     return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
   }, [userTrades, timeframeFilter]);
 
-  const totalTrades = userTrades.length;
-  const totalProfit = userTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const winningTrades = userTrades.filter(trade => trade.profitLoss > 0).length;
-  const losingTrades = userTrades.filter(trade => trade.profitLoss < 0).length;
+  const totalTrades = filteredTrades.length;
+  const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const winningTrades = filteredTrades.filter(trade => trade.profitLoss > 0).length;
+  const losingTrades = filteredTrades.filter(trade => trade.profitLoss < 0).length;
   const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
   
-  const bestTrade = userTrades.length > 0 ? userTrades.reduce(
+  const bestTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
     (best, trade) => (trade.profitLoss > best.profitLoss ? trade : best),
-    userTrades[0]
+    filteredTrades[0]
   ) : null;
   
-  const worstTrade = userTrades.length > 0 ? userTrades.reduce(
+  const worstTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
     (worst, trade) => (trade.profitLoss < worst.profitLoss ? trade : worst),
-    userTrades[0]
+    filteredTrades[0]
   ) : null;
 
-  const winningTradesData = userTrades.filter(trade => trade.profitLoss > 0);
+  const winningTradesData = filteredTrades.filter(trade => trade.profitLoss > 0);
   const avgWinningTrade = winningTradesData.length > 0 
     ? winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTradesData.length
     : 0;
 
-  const losingTradesData = userTrades.filter(trade => trade.profitLoss < 0);
+  const losingTradesData = filteredTrades.filter(trade => trade.profitLoss < 0);
   const avgLosingTrade = losingTradesData.length > 0 
     ? losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTradesData.length
     : 0;
 
   const grossProfit = winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0);
   const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
-  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : 0;
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (winningTradesData.length > 0 ? Infinity : 0);
 
   const getLast7Days = () => {
     const result = [];
@@ -119,57 +173,6 @@ const Dashboard: React.FC = () => {
       date: dayInfo.date
     };
   });
-
-  const cumulativeProfitData = () => {
-    const sorted = [...filteredTrades].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
-    let cumulative = 0;
-    return sorted.map(trade => {
-      cumulative += trade.profitLoss;
-      return {
-        date: trade.date,
-        value: cumulative
-      };
-    });
-  };
-
-  const winRateData = [
-    { name: 'Winning', value: winningTrades, color: '#36B37E' },
-    { name: 'Losing', value: losingTrades, color: '#FF5630' }
-  ];
-
-  const getMonthlyPerformanceData = () => {
-    const monthMap = new Map();
-    
-    trades.forEach(trade => {
-      const date = new Date(trade.date);
-      const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
-      
-      if (!monthMap.has(monthKey)) {
-        monthMap.set(monthKey, {
-          month: date.toLocaleString('default', { month: 'short' }),
-          year: date.getFullYear(),
-          profit: 0,
-          trades: 0
-        });
-      }
-      
-      const monthData = monthMap.get(monthKey);
-      monthData.profit += trade.profitLoss;
-      monthData.trades += 1;
-    });
-    
-    return Array.from(monthMap.values())
-      .sort((a, b) => {
-        if (a.year !== b.year) return a.year - b.year;
-        return new Date(0, a.month, 0).getMonth() - new Date(0, b.month, 0).getMonth();
-      })
-      .map(item => ({
-        name: `${item.month} ${item.year}`,
-        profit: item.profit,
-        trades: item.trades
-      }));
-  };
 
   const getCalendarData = () => {
     const currentDate = new Date();
@@ -213,10 +216,15 @@ const Dashboard: React.FC = () => {
           .filter(day => day !== null)
           .reduce((sum, day) => sum + (day?.trades || 0), 0);
         
+        // Get the week number
+        const weekNumber = currentWeek.some(day => day !== null) ? 
+          getWeek(new Date(currentWeek.find(day => day !== null)?.date || new Date())) : 0;
+        
         weeks.push({
           days: [...currentWeek],
           weeklyTotal,
           weeklyTrades,
+          weekNumber
         });
         
         currentWeek = [];
@@ -236,10 +244,14 @@ const Dashboard: React.FC = () => {
         .filter(day => day !== null)
         .reduce((sum, day) => sum + (day?.trades || 0), 0);
       
+      const weekNumber = currentWeek.some(day => day !== null) ? 
+        getWeek(new Date(currentWeek.find(day => day !== null)?.date || new Date())) : 0;
+      
       weeks.push({
         days: [...currentWeek],
         weeklyTotal,
         weeklyTrades,
+        weekNumber
       });
     }
     
@@ -272,270 +284,264 @@ const Dashboard: React.FC = () => {
     });
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
-    <Layout>
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold mb-1">Trading Dashboard</h1>
-          <p className="text-gray-500">Overview of your trading performance</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select timeframe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="week">Last 7 Days</SelectItem>
-              <SelectItem value="month">Last 30 Days</SelectItem>
-              <SelectItem value="quarter">Last 3 Months</SelectItem>
-              <SelectItem value="year">Last Year</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline">
-            <Calendar className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-8">
-        <StatCard
-          title="Total P&L"
-          value={`$${totalProfit.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}`}
-          trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
-          icon={<DollarSign className="h-5 w-5" />}
-          color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
-          description={`Trades in total: ${totalTrades}`}
-        />
-        <StatCard
-          title="Profit factor"
-          value={profitFactor.toFixed(2)}
-          icon={<Activity className="h-5 w-5" />}
-          description={`${profitFactor > 1 ? '+' : ''}${(profitFactor - 1).toFixed(2)}`}
-        />
-        <StatCard
-          title="Average winning trade"
-          value={`$${avgWinningTrade.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}`}
-          icon={<TrendingUp className="h-5 w-5" />}
-          color="green"
-          description={winningTradesData.length > 0 ? `${winningTradesData.length} winning trades` : 'No winning trades yet'}
-        />
-        <StatCard
-          title="Average losing trade"
-          value={`$${Math.abs(avgLosingTrade).toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}`}
-          icon={<TrendingDown className="h-5 w-5" />}
-          color="red"
-          description={losingTradesData.length > 0 ? `${losingTradesData.length} losing trades` : 'No losing trades yet'}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-        <Card className="col-span-1">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center">
-                Winning % By Trades
-                <CircleIcon className="h-4 w-4 ml-2 text-gray-400" />
-              </CardTitle>
+    <>
+      <CollapsibleSidebar isOpen={sidebarOpen} onToggle={toggleSidebar}>
+        <NavItem icon={BarChart2} label="Dashboard" to="/dashboard" isOpen={sidebarOpen} />
+        <NavItem icon={TrendingUp} label="Add Trade" to="/add-trade" isOpen={sidebarOpen} />
+        <NavItem icon={Activity} label="Trades" to="/trades" isOpen={sidebarOpen} />
+        <NavItem icon={Calendar} label="Daily Journal" to="/journal" isOpen={sidebarOpen} />
+        <NavItem icon={CircleIcon} label="Notebook" to="/notebook" isOpen={sidebarOpen} />
+        <NavItem icon={BarChart2} label="Reports" to="/reports" isOpen={sidebarOpen} />
+        <NavItem icon={TrendingUp} label="Insights" to="/insights" isOpen={sidebarOpen} />
+        <NavItem icon={Activity} label="Analytics" to="/analytics" isOpen={sidebarOpen} />
+        <NavItem icon={LineChart} label="Chart" to="/chart" isOpen={sidebarOpen} />
+      </CollapsibleSidebar>
+      
+      <div className={cn(
+        "transition-all duration-300",
+        sidebarOpen ? "ml-64" : "ml-16"
+      )}>
+        <Layout>
+          <div className="mb-6 flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold mb-1">Trading Dashboard</h1>
+              <p className="text-gray-500">Overview of your trading performance</p>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] flex items-center justify-center">
-              <div className="relative w-[220px] h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartPieChart>
-                    <Pie
-                      data={winRateData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={70}
-                      outerRadius={90}
-                      fill="#8884d8"
-                      paddingAngle={0}
-                      dataKey="value"
-                    >
-                      {winRateData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </RechartPieChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
-                  <span className="text-sm text-gray-500">winrate</span>
-                </div>
-              </div>
-              <div className="ml-4">
-                <div className="mb-4">
-                  <div className="flex items-center mb-1">
-                    <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
-                    <span className="text-sm">{winningTrades} winners</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                    <span className="text-sm">{losingTrades} losers</span>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select timeframe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="week">Last 7 Days</SelectItem>
+                  <SelectItem value="month">Last 30 Days</SelectItem>
+                  <SelectItem value="quarter">Last 3 Months</SelectItem>
+                  <SelectItem value="year">Last Year</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={exportReport}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card className="col-span-1">
-          <Tabs defaultValue="daily">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-8">
+            <StatCard
+              title="Total P&L"
+              value={`$${totalProfit.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}`}
+              trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
+              icon={<DollarSign className="h-5 w-5" />}
+              color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
+              description={`Trades in total: ${totalTrades}`}
+            />
+            <StatCard
+              title="Profit factor"
+              value={profitFactor === Infinity ? "∞" : profitFactor.toFixed(2)}
+              icon={<Activity className="h-5 w-5" />}
+              description={`${profitFactor > 1 ? '+' : ''}${profitFactor === Infinity ? "" : (profitFactor - 1).toFixed(2)}`}
+            />
+            
+            <div className="lg:col-span-2">
+              <AverageTradeCards 
+                avgWin={avgWinningTrade} 
+                avgLoss={avgLosingTrade}
+                winCount={winningTrades}
+                lossCount={losingTrades}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+            <Card className="col-span-1">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center">
+                    Winning % By Trades
+                    <CircleIcon className="h-4 w-4 ml-2 text-gray-400" />
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px] flex items-center justify-center">
+                  <div className="relative w-[220px] h-[220px]">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                      <span className="text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
+                      <span className="text-sm text-gray-500">winrate</span>
+                    </div>
+                    <svg viewBox="0 0 100 100" className="w-full h-full">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke="#f1f1f1"
+                        strokeWidth="15"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="none"
+                        stroke="#36B37E"
+                        strokeWidth="15"
+                        strokeDasharray={`${winRate * 2.512} ${(100 - winRate) * 2.512}`}
+                        strokeDashoffset="0"
+                        transform="rotate(-90, 50, 50)"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <div className="mb-4">
+                      <div className="flex items-center mb-1">
+                        <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
+                        <span className="text-sm">{winningTrades} winners</span>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                        <span className="text-sm">{losingTrades} losers</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="col-span-1">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-lg">P&L Analysis</CardTitle>
-                <TabsList>
-                  <TabsTrigger value="daily">Daily Net</TabsTrigger>
-                  <TabsTrigger value="cumulative">Net cumulative</TabsTrigger>
-                </TabsList>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <TabsContent value="daily" className="mt-0">
+              </CardHeader>
+              <CardContent>
                 <div className="h-[300px]">
                   <DailyPLBarChart 
                     data={dailyPerformanceData}
                     title=""
                   />
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="cumulative" className="mt-0">
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={cumulativeProfitData()} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip
-                        formatter={(value) => [`$${Number(value).toFixed(2)}`, 'Cumulative P&L']}
-                        labelFormatter={(label) => `Date: ${label}`}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#36B37E"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </TabsContent>
-            </CardContent>
-          </Tabs>
-        </Card>
-      </div>
-
-      <div className="mb-8">
-        <CumulativePLChart 
-          trades={filteredTrades} 
-          timeRange={timeframeFilter as 'week' | 'month' | 'quarter' | 'year' | 'all'} 
-          title="Daily Net Cumulative P&L"
-        />
-      </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
-            <Calendar className="h-4 w-4 mr-2" />
-            Journal View
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-1">
-            <div className="text-sm font-medium text-center p-2">Sun</div>
-            <div className="text-sm font-medium text-center p-2">Mon</div>
-            <div className="text-sm font-medium text-center p-2">Tue</div>
-            <div className="text-sm font-medium text-center p-2">Wed</div>
-            <div className="text-sm font-medium text-center p-2">Thu</div>
-            <div className="text-sm font-medium text-center p-2">Fri</div>
-            <div className="text-sm font-medium text-center p-2">Sat</div>
-            
-            {getCalendarData().map((week, weekIndex) => (
-              <React.Fragment key={`week-${weekIndex}`}>
-                {week.days.map((day, dayIndex) => 
-                  day === null ? (
-                    <div key={`empty-${weekIndex}-${dayIndex}`} className="p-2"></div>
-                  ) : (
-                    <div 
-                      key={`day-${day.day}`} 
-                      className={cn(
-                        "border rounded p-2 text-center min-h-[80px] cursor-pointer transition-colors",
-                        day.profit > 0 ? "bg-green-50 border-green-200 hover:bg-green-100" : 
-                        day.profit < 0 ? "bg-red-50 border-red-200 hover:bg-red-100" : 
-                        "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                      )}
-                      onClick={() => handleDayClick(day.date)}
-                    >
-                      <div className="text-sm">{day.day}</div>
-                      {day.trades > 0 && (
-                        <>
-                          <div className={cn(
-                            "text-lg font-bold mt-1",
-                            day.profit > 0 ? "text-emerald-500" : "text-red-500"
-                          )}>
-                            {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
-                          </div>
-                          <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="mt-1 text-xs h-6 px-2 flex items-center"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigateToJournal(day.date);
-                            }}
-                          >
-                            View
-                            <ExternalLink className="ml-1 h-3 w-3" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )
-                )}
-                
-                <div className="col-span-7 py-1 px-4 border-t mt-1 bg-gray-50 flex justify-between items-center">
-                  <div className="text-sm text-gray-500">
-                    Week {weekIndex + 1} | {week.weeklyTrades} {week.weeklyTrades === 1 ? 'trade' : 'trades'}
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-500 mr-2">Weekly Total:</span>
-                    <span className={cn(
-                      "font-semibold",
-                      week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : ""
-                    )}>
-                      {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </React.Fragment>
-            ))}
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-      
-      <TradeDetailsDialog 
-        isOpen={showTradeDetails}
-        onClose={handleCloseTradeDetails}
-        selectedDate={selectedDate}
-        trades={trades.filter(t => t.date === selectedDate && t.userId === user?.id)}
-      />
-    </Layout>
+
+          <div className="mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg">Daily Net Cumulative P&L</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[300px]">
+                <DailyPLBarChart 
+                  data={dailyPerformanceData}
+                  title=""
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
+                <Calendar className="h-4 w-4 mr-2" />
+                Journal View
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-7 gap-1">
+                <div className="text-sm font-medium text-center p-2">Sun</div>
+                <div className="text-sm font-medium text-center p-2">Mon</div>
+                <div className="text-sm font-medium text-center p-2">Tue</div>
+                <div className="text-sm font-medium text-center p-2">Wed</div>
+                <div className="text-sm font-medium text-center p-2">Thu</div>
+                <div className="text-sm font-medium text-center p-2">Fri</div>
+                <div className="text-sm font-medium text-center p-2">Sat</div>
+                
+                {getCalendarData().map((week, weekIndex) => (
+                  <React.Fragment key={`week-${weekIndex}`}>
+                    {week.days.map((day, dayIndex) => 
+                      day === null ? (
+                        <div key={`empty-${weekIndex}-${dayIndex}`} className="p-2"></div>
+                      ) : (
+                        <div 
+                          key={`day-${day.day}`} 
+                          className={cn(
+                            "border rounded p-2 text-center min-h-[80px] cursor-pointer transition-colors",
+                            day.profit > 0 ? "bg-green-50 border-green-200 hover:bg-green-100" : 
+                            day.profit < 0 ? "bg-red-50 border-red-200 hover:bg-red-100" : 
+                            "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                          )}
+                          onClick={() => handleDayClick(day.date)}
+                        >
+                          <div className="text-sm">{day.day}</div>
+                          {day.trades > 0 && (
+                            <>
+                              <div className={cn(
+                                "text-lg font-bold mt-1",
+                                day.profit > 0 ? "text-emerald-500" : "text-red-500"
+                              )}>
+                                {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
+                              </div>
+                              <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="mt-1 text-xs h-6 px-2 flex items-center"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigateToJournal(day.date);
+                                }}
+                              >
+                                View
+                                <ExternalLink className="ml-1 h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )
+                    )}
+                    
+                    {/* Weekly summary - separate card on the right */}
+                    <div className="col-span-7 mt-1 mb-4 flex justify-end">
+                      <div className="w-[200px] bg-gray-50 border rounded-md p-3 flex flex-col">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-medium">Week {week.weekNumber}</span>
+                          <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                            {week.weeklyTrades} {week.weeklyTrades === 1 ? 'trade' : 'trades'}
+                          </span>
+                        </div>
+                        <div className={cn(
+                          "font-bold text-lg",
+                          week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : "text-gray-600"
+                        )}>
+                          {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          Net P&L for week {week.weekNumber}
+                        </div>
+                      </div>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <TradeDetailsDialog 
+            isOpen={showTradeDetails}
+            onClose={handleCloseTradeDetails}
+            selectedDate={selectedDate}
+            trades={trades.filter(t => t.date === selectedDate && t.userId === user?.id)}
+          />
+        </Layout>
+      </div>
+    </>
   );
 };
 

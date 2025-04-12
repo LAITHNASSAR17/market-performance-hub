@@ -16,6 +16,7 @@ const AverageTradeCards: React.FC<AverageTradeCardsProps> = ({
   winCount,
   lossCount
 }) => {
+  // Calculate win/loss ratio (avoid division by zero)
   const ratio = avgWin && avgLoss ? Math.abs(avgWin / avgLoss).toFixed(2) : "0";
   
   return (

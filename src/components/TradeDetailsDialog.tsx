@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { 
@@ -16,6 +17,7 @@ import { ChevronLeft, ChevronRight, ExternalLink, Eye, Trash2 } from 'lucide-rea
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
+import { useToast } from '@/components/ui/use-toast';
 
 interface TradeDetailsDialogProps {
   isOpen: boolean;
@@ -34,6 +36,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
   const [activeTab, setActiveTab] = useState('stats');
   const { deleteTrade } = useTrade();
   const { playbooks } = usePlaybooks();
+  const { toast } = useToast();
   
   if (!selectedDate) return null;
 
@@ -58,7 +61,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
     ? (totalProfit / volume) * 100 
     : 0;
   
-  const adjustedCost = Math.abs(grossLoss) * 0.05;
+  const adjustedCost = grossLoss * 0.05;
   
   const chartData = [];
   let runningTotal = 0;
@@ -92,9 +95,37 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
   const handleDeleteTrade = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     deleteTrade(id);
+    toast({
+      title: "Trade deleted",
+      description: "Trade has been successfully removed"
+    });
   };
 
-  const relevantPlaybooks = playbooks.slice(0, 2);
+  // Sample playbook data for demonstration
+  const samplePlaybooks = [
+    {
+      id: "1",
+      name: "Breakout Strategy",
+      description: "Trading breakouts from key resistance levels",
+      winRate: 68,
+      rMultiple: "1.8",
+      expectedValue: "1.2",
+      rating: 4,
+      tags: ["breakout", "momentum", "trend"]
+    },
+    {
+      id: "2",
+      name: "Pullback Entry",
+      description: "Entering on pullbacks in strong trending markets",
+      winRate: 72,
+      rMultiple: "2.1",
+      expectedValue: "1.5",
+      rating: 5,
+      tags: ["pullback", "trend", "retracement"]
+    }
+  ];
+  
+  const relevantPlaybooks = playbooks.length > 0 ? playbooks.slice(0, 2) : samplePlaybooks;
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
@@ -171,7 +202,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                     >
                       {chartData.map((entry, index) => (
                         <Cell 
-                          key={`bar-${index}`} 
+                          key={`cell-${index}`} 
                           fill={entry.tradeValue >= 0 ? "#36B37E" : "#FF5630"} 
                         />
                       ))}
@@ -302,7 +333,11 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                 </thead>
                 <tbody>
                   {dayTrades.map((trade, index) => (
-                    <tr key={trade.id} className="border-b hover:bg-gray-50">
+                    <tr 
+                      key={trade.id} 
+                      className="border-b hover:bg-gray-50 cursor-pointer"
+                      onClick={() => navigateToTrade(trade.id)}
+                    >
                       <td className="px-3 py-2">{format(new Date(), 'HH:mm:ss')}</td>
                       <td className="px-3 py-2">{trade.pair}</td>
                       <td className="px-3 py-2">
@@ -340,7 +375,10 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={() => navigateToTrade(trade.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateToTrade(trade.id);
+                            }}
                             className="h-8 w-8"
                           >
                             <Eye className="h-4 w-4" />
@@ -366,7 +404,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
             {relevantPlaybooks.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {relevantPlaybooks.map(playbook => (
-                  <div key={playbook.id} className="border rounded-lg p-4">
+                  <div key={playbook.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                     <h3 className="text-lg font-bold">{playbook.name}</h3>
                     <p className="text-sm text-gray-500 mt-1">{playbook.description}</p>
                     
