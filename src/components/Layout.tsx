@@ -18,13 +18,11 @@ import {
   UserCog,
   ShieldAlert,
   LineChart as LineChart3,
-  BarChart2  // Add the BarChart2 icon for Analytics
+  BarChart2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import LanguageToggle from '@/components/LanguageToggle';
 
@@ -34,7 +32,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isAuthenticated, logout, user, isAdmin } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile);
@@ -51,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: t('nav.notebook'), icon: BookText, href: '/notebook' },
     { name: t('nav.reports'), icon: BarChart, href: '/reports' },
     { name: t('nav.insights'), icon: Sparkles, href: '/insights' },
-    { name: t('analytics.title') || 'Analytics', icon: BarChart2, href: '/analytics' }, // Add Analytics to the navigation
+    { name: t('analytics.title') || 'Analytics', icon: BarChart2, href: '/analytics' },
     { name: t('chart.title') || 'Chart', icon: LineChart3, href: '/chart' },
   ];
 
@@ -65,9 +63,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Mobile menu button */}
-      <div className="fixed top-4 left-4 z-50 md:hidden">
+      <div className={`fixed top-4 ${language === 'ar' ? 'right-4' : 'left-4'} z-50 md:hidden`}>
         <Button
           variant="outline"
           size="icon"
@@ -81,14 +79,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out md:relative md:translate-x-0",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed inset-y-0 transform bg-trading-blue text-white shadow-lg transition-transform duration-300 ease-in-out md:relative",
+          language === 'ar' 
+            ? (sidebarOpen ? "translate-x-0 right-0" : "translate-x-full right-0") 
+            : (sidebarOpen ? "translate-x-0 left-0" : "-translate-x-full left-0"),
+          "w-64 md:translate-x-0"
         )}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between h-16 px-4 border-b">
-            <h1 className="text-xl font-bold text-trading-blue">{t('nav.platform')}</h1>
-            <LanguageToggle />
+          <div className="flex items-center justify-between h-16 px-4 border-b border-trading-blue-dark">
+            <h1 className="text-xl font-bold text-white">{t('nav.platform')}</h1>
+            <LanguageToggle className="text-white hover:bg-trading-blue-dark" />
           </div>
 
           <div className="flex-1 overflow-y-auto py-4 px-3">
@@ -100,32 +101,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   className={cn(
                     "flex items-center px-4 py-3 text-sm font-medium rounded-md",
                     location.pathname === item.href
-                      ? "bg-blue-50 text-trading-blue"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-trading-blue-dark text-white"
+                      : "text-white hover:bg-trading-blue-dark"
                   )}
                   onClick={() => isMobile && setSidebarOpen(false)}
                 >
-                  <item.icon className="mr-3 h-5 w-5" />
+                  <item.icon className={`h-5 w-5 ${language === 'ar' ? 'ml-3' : 'mr-3'}`} />
                   {item.name}
                 </Link>
               ))}
             </nav>
           </div>
 
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-trading-blue-dark">
             <div className="mb-4">
-              <p className="text-sm font-medium text-gray-700">{t('nav.loggedInAs')}</p>
-              <p className="text-sm text-gray-500 truncate">{user?.name}</p>
+              <p className="text-sm font-medium text-white">{t('nav.loggedInAs')}</p>
+              <p className="text-sm text-gray-300 truncate">{user?.name}</p>
               {isAdmin && (
                 <Badge className="mt-1 bg-purple-500">{t('nav.admin')}</Badge>
               )}
             </div>
             <Button
               variant="outline"
-              className="w-full justify-start"
+              className="w-full justify-start text-white border-white hover:bg-trading-blue-dark"
               onClick={logout}
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className={`h-4 w-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
               {t('nav.logout')}
             </Button>
           </div>

@@ -14,14 +14,13 @@ const LanguageToggle: React.FC<{ className?: string }> = ({ className }) => {
   return (
     <Button
       variant="ghost"
-      size="icon"
       onClick={toggleLanguage}
-      className={className}
+      className={`${className} flex items-center gap-2`}
       title={language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
     >
       <Globe className="h-5 w-5" />
-      <span className="sr-only">
-        {language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+      <span className="hidden md:inline">
+        {language === 'ar' ? 'English' : 'العربية'}
       </span>
     </Button>
   );
