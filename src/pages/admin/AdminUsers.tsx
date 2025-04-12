@@ -127,7 +127,9 @@ const AdminUsers: React.FC = () => {
       
       // Refresh users list
       fetchUsers();
-      return data;
+      
+      // Fix the type error by not returning the data
+      return;
     } catch (error) {
       console.error('Error adding user:', error);
       toast({

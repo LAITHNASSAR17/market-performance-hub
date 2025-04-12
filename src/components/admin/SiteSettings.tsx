@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { supabase, getSiteSettings, updateSiteSettings } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -36,18 +36,13 @@ const SiteSettings: React.FC = () => {
   
   const loadSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*')
-        .single();
-        
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-      
+      const data = await getSiteSettings();
       if (data) {
         setSettings(data);
         setFormValues(data);
+        
+        // Update document title
+        document.title = data.site_name;
       } else {
         // Initialize settings if not exists
         await initializeSettings();
@@ -66,8 +61,7 @@ const SiteSettings: React.FC = () => {
     try {
       const { error } = await supabase
         .from('site_settings')
-        .insert([settings])
-        .single();
+        .insert([settings]);
         
       if (error) throw error;
       
@@ -91,12 +85,7 @@ const SiteSettings: React.FC = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('site_settings')
-        .update(formValues)
-        .eq('site_name', settings.site_name);
-        
-      if (error) throw error;
+      await updateSiteSettings(formValues);
       
       setSettings(formValues);
       setIsEditing(false);

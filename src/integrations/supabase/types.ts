@@ -39,6 +39,30 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          company_email: string
+          copyright_text: string | null
+          site_name: string
+          support_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_email: string
+          copyright_text?: string | null
+          site_name: string
+          support_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_email?: string
+          copyright_text?: string | null
+          site_name?: string
+          support_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trades: {
         Row: {
           created_at: string
@@ -102,6 +126,7 @@ export type Database = {
           name: string
           password: string
           role: string
+          subscription_tier: string | null
           updated_at: string
         }
         Insert: {
@@ -112,6 +137,7 @@ export type Database = {
           name: string
           password: string
           role?: string
+          subscription_tier?: string | null
           updated_at?: string
         }
         Update: {
@@ -122,6 +148,7 @@ export type Database = {
           name?: string
           password?: string
           role?: string
+          subscription_tier?: string | null
           updated_at?: string
         }
         Relationships: []
