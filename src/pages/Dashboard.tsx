@@ -1,10 +1,9 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
 import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, 
-  ChevronRight, ChevronLeft, Info, Plus, Filter, FileImport, Settings, CheckCircle2 } from 'lucide-react';
+  ChevronRight, ChevronLeft, Info, Plus, Filter, FileUp, Settings, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -113,20 +112,16 @@ const Dashboard: React.FC = () => {
   const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (winningTradesData.length > 0 ? Infinity : 0);
 
-  // Current streak tracking
   const getCurrentStreak = () => {
     if (totalTrades === 0) return { days: 0, trades: 0, isPositive: true, profit: 0 };
     
-    // Sort trades by date (newest first)
     const sortedTrades = [...filteredTrades].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
     
-    // Get the most recent trade
     const latestTrade = sortedTrades[0];
     const isPositive = latestTrade.profitLoss > 0;
     
-    // Count consecutive trades with the same result (win/loss)
     let streakCount = 0;
     let streakDays = 0;
     let lastDate = '';
@@ -139,7 +134,6 @@ const Dashboard: React.FC = () => {
         streakCount++;
         totalProfit += trade.profitLoss;
         
-        // Count unique days
         if (trade.date !== lastDate) {
           streakDays++;
           lastDate = trade.date;
@@ -192,12 +186,10 @@ const Dashboard: React.FC = () => {
     
     const calendarDays = [];
     
-    // Fill in empty days for the first week
     for (let i = 0; i < firstDay; i++) {
       calendarDays.push(null);
     }
     
-    // Fill in actual days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const dateString = date.toISOString().slice(0, 10);
@@ -212,7 +204,6 @@ const Dashboard: React.FC = () => {
       });
     }
     
-    // Group days into weeks
     const weeks = [];
     let currentWeek = [];
     
@@ -220,7 +211,6 @@ const Dashboard: React.FC = () => {
       currentWeek.push(calendarDays[i]);
       
       if (currentWeek.length === 7 || i === calendarDays.length - 1) {
-        // If this is the last row and we don't have a full week, pad with null
         while (currentWeek.length < 7) {
           currentWeek.push(null);
         }
@@ -251,17 +241,13 @@ const Dashboard: React.FC = () => {
   };
 
   const calculateWeeklyPerformance = () => {
-    // Get all weeks in the current month
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
     
-    // Create a map to store weekly data
     const weekMap = new Map();
     
-    // Process each trade
     userTrades.forEach(trade => {
       const tradeDate = new Date(trade.date);
-      // Only include trades from the current month
       if (tradeDate >= start && tradeDate <= end) {
         const week = getWeek(tradeDate);
         if (!weekMap.has(week)) {
@@ -280,7 +266,6 @@ const Dashboard: React.FC = () => {
       }
     });
     
-    // Convert map to array and calculate days
     return Array.from(weekMap.values()).map(week => ({
       ...week,
       days: week.days.size
@@ -579,7 +564,7 @@ const Dashboard: React.FC = () => {
                               : day.profit < 0 
                                 ? "bg-red-50 border-red-100 hover:bg-red-100" 
                                 : day.trades > 0 
-                                  ? "bg-gray-50 border-gray-100 hover:bg-gray-100"
+                                  ? "bg-gray-50 border-gray-100 hover:bg-gray-50"
                                   : "border-gray-100 hover:bg-gray-50",
                             day.trades > 0 && "cursor-pointer"
                           )}
@@ -705,7 +690,7 @@ const Dashboard: React.FC = () => {
               <div className="flex justify-between items-center">
                 <CardTitle className="text-base font-semibold">Daily Net Cumulative P&L</CardTitle>
                 <Button variant="outline" size="sm" className="flex items-center gap-2 text-sm shadow-sm">
-                  <FileImport className="h-4 w-4" />
+                  <FileUp className="h-4 w-4" />
                   <span>Import trades</span>
                 </Button>
               </div>
