@@ -39,14 +39,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     return <Navigate to="/dashboard" />;
   }
 
-  const handleLogout = () => {
-    logout();
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully"
-    });
-  };
-
   const navItems = [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: "Dashboard", path: "/admin" },
     { icon: <Users className="w-5 h-5" />, label: "Users", path: "/admin/users" },
@@ -60,6 +52,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   // Check if the current path matches the item
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully"
+    });
   };
 
   return (
@@ -135,7 +135,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
         
         {/* Page Content */}
-        <div className="p-0">
+        <div className="p-6">
           {children}
         </div>
       </div>

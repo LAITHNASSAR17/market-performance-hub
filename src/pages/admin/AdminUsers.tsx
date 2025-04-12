@@ -4,12 +4,16 @@ import { useToast } from '@/hooks/use-toast';
 import UserTable from '@/components/admin/UserTable';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { AdminController } from '@/controllers/AdminController';
-import { User } from '@/models/UserModel'; // Import User type
+import { User } from '@/models/UserModel';
+import { PlusCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import AddUserDialog from '@/components/admin/AddUserDialog';
 
 const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const { toast } = useToast();
   
   const adminController = new AdminController();
@@ -51,7 +55,7 @@ const AdminUsers: React.FC = () => {
       await adminController.blockUser(userId);
       toast({
         title: "User Blocked",
-        description: `${user.name} has been blocked`
+        description: `${user.username || user.name} has been blocked`
       });
       loadUsers(); // Refresh user list
     } catch (error) {
@@ -71,7 +75,7 @@ const AdminUsers: React.FC = () => {
       await adminController.unblockUser(userId);
       toast({
         title: "User Unblocked",
-        description: `${user.name} has been unblocked`
+        description: `${user.username || user.name} has been unblocked`
       });
       loadUsers(); // Refresh user list
     } catch (error) {
@@ -109,6 +113,25 @@ const AdminUsers: React.FC = () => {
     }
   };
 
+  const handleAddUser = async (userData: any) => {
+    try {
+      await adminController.createUser(userData);
+      toast({
+        title: "User Added",
+        description: "New user has been created successfully"
+      });
+      loadUsers(); // Refresh user list
+      setShowAddUserDialog(false);
+    } catch (error) {
+      console.error("Error adding user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add user",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <AdminLayout>
       <header className="mb-6">
@@ -119,6 +142,16 @@ const AdminUsers: React.FC = () => {
           View and manage user accounts on the platform.
         </p>
       </header>
+
+      <div className="flex justify-end mb-4">
+        <Button 
+          onClick={() => setShowAddUserDialog(true)}
+          className="flex items-center gap-2"
+        >
+          <PlusCircle className="h-4 w-4" />
+          Add New User
+        </Button>
+      </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
         {loading ? (
@@ -138,6 +171,14 @@ const AdminUsers: React.FC = () => {
           />
         )}
       </div>
+
+      {showAddUserDialog && (
+        <AddUserDialog 
+          open={showAddUserDialog}
+          onClose={() => setShowAddUserDialog(false)}
+          onAddUser={handleAddUser}
+        />
+      )}
     </AdminLayout>
   );
 };

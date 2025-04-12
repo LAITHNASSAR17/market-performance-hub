@@ -1,290 +1,266 @@
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState } from 'react';
 import Layout from '@/components/Layout';
-import { useToast } from '@/components/ui/use-toast';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ThemeToggle from '@/components/ThemeToggle';
-import LanguageToggle from '@/components/LanguageToggle';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import { UserCircle, Mail, Key, Shield, Globe, Bell, Moon, Sun, Brush } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
+import UpdateUserProfileDialog from '@/components/settings/UpdateUserProfileDialog';
 
-// Add interface for user with subscription
-interface UserWithSubscription {
-  id: string;
-  name: string;
-  email: string;
-  subscription?: {
-    status?: string;
-    plan?: string;
-  };
-  [key: string]: any;
-}
-
-const Settings = () => {
-  const { user, updateUser, logout } = useAuth();
+const Settings: React.FC = () => {
+  const { user, updateUserProfile, changePassword } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const { toast } = useToast();
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: ''
+  const [notifications, setNotifications] = useState({
+    tradeAlerts: true,
+    systemUpdates: true,
+    marketNews: false,
+    emailDigest: true
   });
-  
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || '',
-        email: user.email || '',
-        password: ''
-      });
-    }
-  }, [user]);
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+
+  const handleUpdateProfile = async (userData: any) => {
     try {
-      // Only include password if it was changed
-      const updateData = {
-        ...formData,
-        password: formData.password ? formData.password : undefined
-      };
-      
-      // Filter out empty password field
-      if (!updateData.password) {
-        delete updateData.password;
+      if (userData.newPassword) {
+        // If updating password
+        await changePassword(userData.currentPassword, userData.newPassword);
+      } else {
+        // If updating profile info
+        await updateUserProfile(userData);
       }
       
-      // Update user with the user's ID and other required fields
-      if (user) {
-        await updateUser({
-          id: user.id,
-          ...updateData
-        });
-      }
+      setShowProfileDialog(false);
       
       toast({
-        title: "Settings updated",
-        description: "Your profile settings have been updated successfully."
+        title: "Settings Updated",
+        description: "Your settings have been updated successfully."
       });
-      
-      // Clear password field after update
-      setFormData(prev => ({
-        ...prev,
-        password: ''
-      }));
     } catch (error) {
+      console.error("Failed to update settings:", error);
       toast({
-        title: "Error",
-        description: "Failed to update settings. Please try again.",
+        title: "Update Failed",
+        description: "Failed to update your settings. Please try again.",
         variant: "destructive"
       });
     }
   };
 
-  // Safely cast user to UserWithSubscription
-  const userWithSub = user as UserWithSubscription;
+  const handleToggleNotification = (key: string) => {
+    setNotifications(prev => ({ 
+      ...prev, 
+      [key]: !prev[key as keyof typeof notifications] 
+    }));
+    
+    toast({
+      title: "Notification Settings Updated",
+      description: "Your notification preferences have been saved."
+    });
+  };
 
   return (
     <Layout>
-      <div className="container mx-auto py-6 max-w-5xl">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-gray-500 dark:text-gray-400">Manage your account settings and preferences.</p>
-        </div>
-        
-        <Tabs defaultValue="account">
-          <TabsList className="mb-6">
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          </TabsList>
-          
-          {/* Account Settings */}
-          <TabsContent value="account">
-            <div className="grid gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Profile</CardTitle>
-                  <CardDescription>
-                    Manage your personal information.
-                  </CardDescription>
-                </CardHeader>
-                <form onSubmit={handleSubmit}>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="name">Name</Label>
-                      <Input 
-                        id="name" 
-                        name="name" 
-                        value={formData.name} 
-                        onChange={handleInputChange} 
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        name="email" 
-                        type="email" 
-                        value={formData.email} 
-                        onChange={handleInputChange} 
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="password">Password</Label>
-                      <Input 
-                        id="password" 
-                        name="password" 
-                        type="password" 
-                        value={formData.password} 
-                        onChange={handleInputChange} 
-                        placeholder="Leave blank to keep current password" 
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button type="submit">Save Changes</Button>
-                  </CardFooter>
-                </form>
-              </Card>
-              
-              {/* Subscription Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Subscription</CardTitle>
-                  <CardDescription>
-                    Manage your subscription plan.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {userWithSub && userWithSub.subscription?.status === 'active' ? (
-                    <div>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">Current Plan</p>
-                          <p className="text-sm text-gray-500">
-                            {userWithSub.subscription?.plan || 'Pro Plan'}
-                          </p>
-                        </div>
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                          Active
-                        </span>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        className="mt-4"
-                      >
-                        Manage Subscription
-                      </Button>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="mb-4">You are currently on the free plan with limited features.</p>
-                      <Button asChild>
-                        <a href="/payment">Upgrade to Pro</a>
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              {/* Danger Zone */}
-              <Card className="border-red-200 dark:border-red-800">
-                <CardHeader>
-                  <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                  <CardDescription>
-                    Irreversible actions for your account.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">Delete Account</p>
-                      <p className="text-sm text-gray-500">
-                        This action cannot be undone. All your data will be permanently deleted.
-                      </p>
-                    </div>
-                    <Button variant="destructive">
-                      Delete Account
-                    </Button>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium">Logout</p>
-                      <p className="text-sm text-gray-500">
-                        Log out of your account on this device.
-                      </p>
-                    </div>
-                    <Button variant="outline" onClick={logout}>
-                      Logout
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+      <div className="max-w-4xl mx-auto space-y-6">
+        <header>
+          <h1 className="text-2xl font-bold">Account Settings</h1>
+          <p className="text-gray-500 mt-1">Manage your account settings and preferences</p>
+        </header>
+
+        {/* Profile Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <UserCircle className="h-5 w-5 text-primary" />
+              <CardTitle>Profile Information</CardTitle>
             </div>
-          </TabsContent>
-          
-          {/* Appearance Settings */}
-          <TabsContent value="appearance">
-            <Card>
-              <CardHeader>
-                <CardTitle>Appearance</CardTitle>
-                <CardDescription>
-                  Customize how the application looks on your device.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">Theme</p>
-                    <p className="text-sm text-gray-500">
-                      Select a light or dark theme.
-                    </p>
-                  </div>
-                  <ThemeToggle />
+            <CardDescription>
+              Manage your personal information and email settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center py-2">
+              <div className="flex items-center gap-2">
+                <UserCircle className="h-5 w-5 text-gray-500" />
+                <div>
+                  <Label>Username</Label>
+                  <p className="text-sm text-gray-500">{user?.name}</p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">Language</p>
-                    <p className="text-sm text-gray-500">
-                      Choose your preferred language.
-                    </p>
-                  </div>
-                  <LanguageToggle />
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center py-2">
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-gray-500" />
+                <div>
+                  <Label>Email Address</Label>
+                  <p className="text-sm text-gray-500">{user?.email}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {/* Notifications Settings */}
-          <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notifications</CardTitle>
-                <CardDescription>
-                  Configure how you want to be notified.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500 dark:text-gray-400">
-                  Notification preferences will be available in a future update.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center py-2">
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-gray-500" />
+                <div>
+                  <Label>Account Type</Label>
+                  <p className="text-sm text-gray-500">{user?.isAdmin ? 'Administrator' : 'Standard User'}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="border-t py-4">
+            <Button onClick={() => setShowProfileDialog(true)}>Edit Profile</Button>
+          </CardFooter>
+        </Card>
+
+        {/* Theme Settings */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Brush className="h-5 w-5 text-primary" />
+              <CardTitle>Display Settings</CardTitle>
+            </div>
+            <CardDescription>
+              Customize the appearance of your dashboard
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center py-2">
+              <div className="flex items-center gap-2">
+                {theme === 'dark' ? (
+                  <Moon className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <Sun className="h-5 w-5 text-gray-500" />
+                )}
+                <div>
+                  <Label>Dark Mode</Label>
+                  <p className="text-sm text-gray-500">Switch between light and dark theme</p>
+                </div>
+              </div>
+              <Switch 
+                checked={theme === 'dark'} 
+                onCheckedChange={toggleTheme} 
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Notifications */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary" />
+              <CardTitle>Notifications</CardTitle>
+            </div>
+            <CardDescription>
+              Manage how you receive notifications and alerts
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center py-2">
+              <div>
+                <Label>Trade Alerts</Label>
+                <p className="text-sm text-gray-500">Receive notifications about your trades</p>
+              </div>
+              <Switch 
+                checked={notifications.tradeAlerts} 
+                onCheckedChange={() => handleToggleNotification('tradeAlerts')} 
+              />
+            </div>
+            
+            <Separator />
+            
+            <div className="flex justify-between items-center py-2">
+              <div>
+                <Label>System Updates</Label>
+                <p className="text-sm text-gray-500">Important updates and announcements</p>
+              </div>
+              <Switch 
+                checked={notifications.systemUpdates} 
+                onCheckedChange={() => handleToggleNotification('systemUpdates')} 
+              />
+            </div>
+            
+            <Separator />
+            
+            <div className="flex justify-between items-center py-2">
+              <div>
+                <Label>Market News</Label>
+                <p className="text-sm text-gray-500">Latest news about markets and assets</p>
+              </div>
+              <Switch 
+                checked={notifications.marketNews} 
+                onCheckedChange={() => handleToggleNotification('marketNews')} 
+              />
+            </div>
+            
+            <Separator />
+            
+            <div className="flex justify-between items-center py-2">
+              <div>
+                <Label>Email Digest</Label>
+                <p className="text-sm text-gray-500">Weekly summary of your trading activity</p>
+              </div>
+              <Switch 
+                checked={notifications.emailDigest} 
+                onCheckedChange={() => handleToggleNotification('emailDigest')} 
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Regional Settings */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" />
+              <CardTitle>Regional Settings</CardTitle>
+            </div>
+            <CardDescription>
+              Set your language and timezone preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center py-2">
+              <div>
+                <Label>Language</Label>
+                <p className="text-sm text-gray-500">English (US)</p>
+              </div>
+              <Button variant="outline" size="sm">Change</Button>
+            </div>
+            
+            <Separator />
+            
+            <div className="flex justify-between items-center py-2">
+              <div>
+                <Label>Timezone</Label>
+                <p className="text-sm text-gray-500">UTC+00:00</p>
+              </div>
+              <Button variant="outline" size="sm">Change</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {showProfileDialog && (
+          <UpdateUserProfileDialog 
+            open={showProfileDialog}
+            onClose={() => setShowProfileDialog(false)}
+            onUpdateProfile={handleUpdateProfile}
+            currentUsername={user?.name || ''}
+            currentEmail={user?.email || ''}
+          />
+        )}
       </div>
     </Layout>
   );

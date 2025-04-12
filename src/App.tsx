@@ -30,7 +30,7 @@ import Subscriptions from "./pages/Subscriptions";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 
-// Admin Components
+// Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTrades from "./pages/admin/AdminTrades";
@@ -39,7 +39,6 @@ import AdminNotes from "./pages/admin/AdminNotes";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminDatabase from "./pages/admin/AdminDatabase";
 import AdminPages from "./pages/admin/AdminPages";
-import AdminLayout from "./components/layouts/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -76,14 +75,14 @@ const App = () => (
                       <Route path="/settings" element={<Settings />} />
                       
                       {/* Admin Routes */}
-                      <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-                      <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
-                      <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
-                      <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
-                      <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
-                      <Route path="/admin/pages" element={<AdminLayout><AdminPages /></AdminLayout>} />
-                      <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
-                      <Route path="/admin/database" element={<AdminLayout><AdminDatabase /></AdminLayout>} />
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/admin/users" element={<AdminUsers />} />
+                      <Route path="/admin/trades" element={<AdminTrades />} />
+                      <Route path="/admin/hashtags" element={<AdminHashtags />} />
+                      <Route path="/admin/notes" element={<AdminNotes />} />
+                      <Route path="/admin/pages" element={<AdminPages />} />
+                      <Route path="/admin/settings" element={<AdminSettings />} />
+                      <Route path="/admin/database" element={<AdminDatabase />} />
                       
                       {/* Catch-all route */}
                       <Route path="*" element={<NotFound />} />
