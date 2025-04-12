@@ -37,11 +37,11 @@ const AdminUsers: React.FC = () => {
         // Create a display user with all required fields, providing defaults where needed
         const displayUser: DisplayUser = {
           id: user.id,
-          username: user.username || user.name || '',
+          username: user.name || '', // Use name as fallback if username doesn't exist
           name: user.name || '',
           email: user.email || '',
           isBlocked: user.isBlocked || false,
-          createdAt: user.createdAt || new Date()
+          createdAt: new Date() // Default to current date if createdAt doesn't exist
         };
         return displayUser;
       });
