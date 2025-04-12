@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -24,6 +24,7 @@ import {
 interface LayoutProps {
   children: React.ReactNode;
 }
+
 const Layout: React.FC<LayoutProps> = ({
   children
 }) => {
@@ -39,7 +40,16 @@ const Layout: React.FC<LayoutProps> = ({
   } = useLanguage();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile);
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  // Handle window resize to auto-collapse sidebar on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    } else {
+      setSidebarOpen(true);
+    }
+  }, [isMobile]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
@@ -105,41 +115,39 @@ const Layout: React.FC<LayoutProps> = ({
           sidebarOpen ? "w-64" : "w-16",
           language === 'ar' ? "border-l" : "border-r"
         )}>
-          {/* Collapse/Expand button */}
-          <button 
-            onClick={toggleSidebar}
-            className={cn(
-              "absolute top-1/2 -translate-y-1/2 bg-white p-1 rounded-full shadow-md z-40 border",
-              language === 'ar' ? "right-0 translate-x-1/2" : "left-0 -translate-x-1/2"
-            )}
-          >
-            {language === 'ar' ? (
-              sidebarOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />
-            ) : (
-              sidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-
           {/* Sidebar Header */}
-          <div className="flex flex-col items-center gap-2 py-4 px-4">
+          <div className="flex flex-col items-center py-4 px-4">
             <div className="flex items-center justify-between w-full">
-              {sidebarOpen && <h2 className="text-xl font-bold">{t('app.name') || 'TradeTracker'}</h2>}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="text-sidebar-foreground"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              
+              {sidebarOpen && (
+                <h2 className="text-xl font-bold flex-1 text-center">{t('app.name') || 'TradeTracker'}</h2>
+              )}
+              
               <LanguageToggle />
             </div>
+            
             {sidebarOpen && (
-              <div className="flex items-center gap-2 mt-2 w-full">
+              <div className="flex items-center gap-2 mt-4 w-full">
                 <div className="flex flex-col flex-1">
                   <span className="text-sm font-medium">{user?.name}</span>
                   <span className="text-xs text-muted-foreground">{user?.email}</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={logout}>
+                <Button variant="ghost" size="icon" onClick={logout} title={t('auth.logout')}>
                   <LogOut className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -150,6 +158,7 @@ const Layout: React.FC<LayoutProps> = ({
                     "flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                   )}
+                  title={!sidebarOpen ? item.name : undefined}
                 >
                   <item.icon className="h-5 w-5 flex-shrink-0" />
                   {sidebarOpen && <span className="ml-3">{item.name}</span>}
@@ -168,6 +177,7 @@ const Layout: React.FC<LayoutProps> = ({
                 "w-full flex items-center justify-center",
                 !sidebarOpen && "px-2"
               )}
+              title={!sidebarOpen ? t('nav.settings') : undefined}
             >
               <Link to="/settings">
                 <Settings className="h-4 w-4" />
@@ -178,7 +188,12 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
 
         {/* Overlay for mobile */}
-        {sidebarOpen && isMobile && <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={() => setSidebarOpen(false)} />}
+        {sidebarOpen && isMobile && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-20" 
+            onClick={() => setSidebarOpen(false)} 
+          />
+        )}
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto bg-trading-background p-6">
@@ -188,4 +203,5 @@ const Layout: React.FC<LayoutProps> = ({
     </SidebarProvider>
   );
 };
+
 export default Layout;
