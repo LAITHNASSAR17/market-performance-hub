@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -228,7 +229,7 @@ const AdminDatabase = () => {
                   </Button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Example: "find users {}" or 'insertOne users \{"name": "John"\}'
+                  Example: "find users {}" or "insertOne users {\"name\": \"John\"}"
                 </p>
               </div>
               
