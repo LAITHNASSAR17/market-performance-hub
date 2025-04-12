@@ -19,7 +19,7 @@ const LanguageToggle: React.FC<{ className?: string }> = ({ className }) => {
       title={language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
     >
       <Globe className="h-5 w-5" />
-      <span className="hidden md:inline">
+      <span>
         {language === 'ar' ? 'English' : 'العربية'}
       </span>
     </Button>

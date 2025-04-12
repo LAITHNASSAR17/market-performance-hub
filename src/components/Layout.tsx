@@ -89,7 +89,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between h-16 px-4 border-b border-trading-blue-dark">
             <h1 className="text-xl font-bold text-white">{t('nav.platform')}</h1>
-            <LanguageToggle className="text-white hover:bg-trading-blue-dark" />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-white hover:bg-trading-blue-dark"
+              onClick={toggleSidebar}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto py-4 px-3">
@@ -121,14 +128,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Badge className="mt-1 bg-purple-500">{t('nav.admin')}</Badge>
               )}
             </div>
-            <Button
-              variant="outline"
-              className="w-full justify-start text-white border-white hover:bg-trading-blue-dark"
-              onClick={logout}
-            >
-              <LogOut className={`h-4 w-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
-              {t('nav.logout')}
-            </Button>
+            <div className="flex justify-between items-center">
+              <Button
+                variant="outline"
+                className="flex-1 justify-start text-white border-white hover:bg-trading-blue-dark"
+                onClick={logout}
+              >
+                <LogOut className={`h-4 w-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
+                {t('nav.logout')}
+              </Button>
+              
+              <LanguageToggle className="text-white hover:bg-trading-blue-dark" />
+            </div>
           </div>
         </div>
       </div>
