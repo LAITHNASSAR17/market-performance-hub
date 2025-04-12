@@ -21,11 +21,11 @@ interface MySQLContextType {
 const MySQLContext = createContext<MySQLContextType | undefined>(undefined);
 
 export const MySQLProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<MySQLConfig>(() => MySQLController.getConfig());
+  const [config, setConfig] = useState<MySQLConfig>(MySQLController.getConfig());
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connected' | 'error'>(
     MySQLController.getConnectionStatus()
   );
-  const [tables, setTables] = useState<MySQLTable[]>(() => MySQLController.getTables());
+  const [tables, setTables] = useState<MySQLTable[]>(MySQLController.getTables());
   const { toast } = useToast();
 
   const isConfigured = Boolean(

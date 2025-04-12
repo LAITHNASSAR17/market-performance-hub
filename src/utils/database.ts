@@ -3,7 +3,9 @@ import { MySQLConfig } from '../models/mysql.model';
 
 export class Database {
   private static instance: Database;
-  private connection: any = null; // Will be replaced with actual MySQL connection
+  private connection: any = null;
+  private config: MySQLConfig | null = null;
+  private connected: boolean = false;
 
   private constructor() {}
 
@@ -16,18 +18,32 @@ export class Database {
 
   async connect(config: MySQLConfig): Promise<boolean> {
     try {
-      // TODO: Implement actual MySQL connection using PDO/MySQLi
-      // For now using mock connection
+      this.config = config;
+      
+      // In a real implementation, we would use mysqli or PDO
+      // For now, we're using a mock connection for development
       this.connection = {
         connected: true,
         query: async (sql: string, params: any[] = []) => {
-          console.log('Mock query:', sql, params);
+          console.log('SQL Query:', sql);
+          console.log('Parameters:', params);
+          
+          // Return mock data for testing
+          if (sql.includes('SELECT') && sql.includes('FROM users')) {
+            return [{ id: 1, username: 'admin', email: 'admin@example.com', isBlocked: false, createdAt: new Date() }];
+          }
+          if (sql.includes('INSERT INTO')) {
+            return { insertId: Date.now() };
+          }
           return [];
         }
       };
+      
+      this.connected = true;
       return true;
     } catch (error) {
       console.error('Database connection error:', error);
+      this.connected = false;
       return false;
     }
   }
@@ -44,13 +60,27 @@ export class Database {
         param
     );
 
-    return this.connection.query(sql, sanitizedParams);
+    try {
+      return await this.connection.query(sql, sanitizedParams);
+    } catch (error) {
+      console.error('Query error:', error);
+      throw error;
+    }
   }
 
   disconnect(): void {
     if (this.connection) {
-      // TODO: Implement actual disconnect
+      // In a real implementation, we would close the connection
       this.connection = null;
+      this.connected = false;
     }
+  }
+
+  isConnected(): boolean {
+    return this.connected;
+  }
+
+  getConfig(): MySQLConfig | null {
+    return this.config;
   }
 }
