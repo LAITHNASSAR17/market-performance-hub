@@ -1,8 +1,8 @@
 import { BaseModel } from './BaseModel';
 
 export interface Trade {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   account: string;
   date: string;
   pair: string;
@@ -30,16 +30,16 @@ export class TradeModel extends BaseModel {
     super('trades');
   }
 
-  async findById(id: string): Promise<Trade | null> {
-    if (!this.validateString(id)) {
+  async findById(id: number): Promise<Trade | null> {
+    if (!this.validateNumber(id)) {
       throw new Error('Invalid trade ID');
     }
 
     return super.findById(id);
   }
 
-  async findByUserId(userId: string, limit?: number, offset?: number): Promise<Trade[]> {
-    if (!this.validateString(userId)) {
+  async findByUserId(userId: number, limit?: number, offset?: number): Promise<Trade[]> {
+    if (!this.validateNumber(userId)) {
       throw new Error('Invalid user ID');
     }
 
@@ -50,7 +50,7 @@ export class TradeModel extends BaseModel {
     return this.query(sql, [userId]);
   }
 
-  async create(tradeData: Omit<Trade, 'id' | 'createdAt'>): Promise<string> {
+  async create(tradeData: Omit<Trade, 'id' | 'createdAt'>): Promise<number> {
     this.validateTradeData(tradeData);
 
     const sanitizedData = this.sanitizeObject(tradeData) as Omit<Trade, 'id' | 'createdAt'>;
@@ -88,12 +88,11 @@ export class TradeModel extends BaseModel {
     const sql = `INSERT INTO trades (${columns}) VALUES (${placeholders})`;
     const result = await this.query(sql, values);
     
-    // Extract insertId from MongoDB-compatible result
-    return result.length > 0 && result[0].insertId ? result[0].insertId.toString() : Date.now().toString();
+    return result.insertId;
   }
 
-  async update(id: string, tradeData: Partial<Trade>): Promise<boolean> {
-    if (!this.validateString(id)) {
+  async update(id: number, tradeData: Partial<Trade>): Promise<boolean> {
+    if (!this.validateNumber(id)) {
       throw new Error('Invalid trade ID');
     }
 
@@ -144,19 +143,19 @@ export class TradeModel extends BaseModel {
     const sql = `UPDATE trades SET ${updateFields.join(', ')} WHERE id = ?`;
     const result = await this.query(sql, values);
 
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
-  async delete(id: string): Promise<boolean> {
-    if (!this.validateString(id)) {
+  async delete(id: number): Promise<boolean> {
+    if (!this.validateNumber(id)) {
       throw new Error('Invalid trade ID');
     }
 
     return super.delete(id);
   }
 
-  async getTradesByAccount(userId: string, account: string): Promise<Trade[]> {
-    if (!this.validateString(userId) || !this.validateString(account)) {
+  async getTradesByAccount(userId: number, account: string): Promise<Trade[]> {
+    if (!this.validateNumber(userId) || !this.validateString(account)) {
       throw new Error('Invalid parameters');
     }
 
@@ -164,8 +163,8 @@ export class TradeModel extends BaseModel {
     return this.query(sql, [userId, account]);
   }
 
-  async getTradesByPair(userId: string, pair: string): Promise<Trade[]> {
-    if (!this.validateString(userId) || !this.validateString(pair)) {
+  async getTradesByPair(userId: number, pair: string): Promise<Trade[]> {
+    if (!this.validateNumber(userId) || !this.validateString(pair)) {
       throw new Error('Invalid parameters');
     }
 
@@ -173,8 +172,8 @@ export class TradeModel extends BaseModel {
     return this.query(sql, [userId, pair]);
   }
 
-  async getTradesByDateRange(userId: string, startDate: string, endDate: string): Promise<Trade[]> {
-    if (!this.validateString(userId) || !this.validateDate(startDate) || !this.validateDate(endDate)) {
+  async getTradesByDateRange(userId: number, startDate: string, endDate: string): Promise<Trade[]> {
+    if (!this.validateNumber(userId) || !this.validateDate(startDate) || !this.validateDate(endDate)) {
       throw new Error('Invalid parameters');
     }
 
@@ -182,8 +181,8 @@ export class TradeModel extends BaseModel {
     return this.query(sql, [userId, startDate, endDate]);
   }
 
-  async getUserTradingPairs(userId: string): Promise<string[]> {
-    if (!this.validateString(userId)) {
+  async getUserTradingPairs(userId: number): Promise<string[]> {
+    if (!this.validateNumber(userId)) {
       throw new Error('Invalid user ID');
     }
 
@@ -192,8 +191,8 @@ export class TradeModel extends BaseModel {
     return results.map((row: any) => row.pair);
   }
 
-  async getUserAccounts(userId: string): Promise<string[]> {
-    if (!this.validateString(userId)) {
+  async getUserAccounts(userId: number): Promise<string[]> {
+    if (!this.validateNumber(userId)) {
       throw new Error('Invalid user ID');
     }
 
@@ -259,7 +258,7 @@ export class TradeModel extends BaseModel {
   }
 
   private validateTradeData(data: Omit<Trade, 'id' | 'createdAt'>): void {
-    if (!this.validateString(data.userId)) {
+    if (!this.validateNumber(data.userId)) {
       throw new Error('Invalid user ID');
     }
     if (!this.validateString(data.account)) {
@@ -293,7 +292,7 @@ export class TradeModel extends BaseModel {
   }
 
   private validatePartialTradeData(data: Partial<Trade>): void {
-    if (data.userId !== undefined && !this.validateString(data.userId)) {
+    if (data.userId !== undefined && !this.validateNumber(data.userId)) {
       throw new Error('Invalid user ID');
     }
     if (data.account !== undefined && !this.validateString(data.account)) {

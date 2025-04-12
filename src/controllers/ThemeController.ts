@@ -1,3 +1,4 @@
+
 import { ThemeModel, Theme } from '../models/ThemeModel';
 
 export class ThemeController {
@@ -18,7 +19,7 @@ export class ThemeController {
   }
 
   // Get theme by ID
-  async getThemeById(id: string): Promise<Theme | null> {
+  async getThemeById(id: number): Promise<Theme | null> {
     try {
       return await this.model.getThemeById(id);
     } catch (error) {
@@ -48,7 +49,7 @@ export class ThemeController {
   }
 
   // Create a new theme
-  async createTheme(theme: Omit<Theme, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> {
+  async createTheme(theme: Omit<Theme, 'id' | 'createdAt' | 'updatedAt'>): Promise<number | null> {
     try {
       // Validate theme data
       this.validateThemeData(theme);
@@ -61,7 +62,7 @@ export class ThemeController {
   }
 
   // Update a theme
-  async updateTheme(id: string, themeData: Partial<Theme>): Promise<boolean> {
+  async updateTheme(id: number, themeData: Partial<Theme>): Promise<boolean> {
     try {
       // Validate theme data
       if (Object.keys(themeData).length > 0) {
@@ -76,7 +77,7 @@ export class ThemeController {
   }
 
   // Delete a theme
-  async deleteTheme(id: string): Promise<boolean> {
+  async deleteTheme(id: number): Promise<boolean> {
     try {
       return await this.model.deleteTheme(id);
     } catch (error) {
@@ -86,7 +87,7 @@ export class ThemeController {
   }
 
   // Set a theme as the default theme
-  async setDefaultTheme(id: string): Promise<boolean> {
+  async setDefaultTheme(id: number): Promise<boolean> {
     try {
       return await this.model.setDefaultTheme(id);
     } catch (error) {
@@ -96,9 +97,16 @@ export class ThemeController {
   }
 
   // Get user theme preference
-  async getUserThemePreference(userId: string): Promise<string | null> {
+  async getUserThemePreference(userId: number): Promise<Theme | null> {
     try {
-      return await this.model.getUserThemePreference(userId);
+      const themeId = await this.model.getUserThemePreference(userId);
+      
+      if (themeId) {
+        return this.model.getThemeById(themeId);
+      }
+      
+      // If no preference, return default theme
+      return this.model.getDefaultTheme();
     } catch (error) {
       console.error('Error getting user theme preference:', error);
       return null;
@@ -106,7 +114,7 @@ export class ThemeController {
   }
 
   // Set user theme preference
-  async setUserThemePreference(userId: string, themeId: string): Promise<boolean> {
+  async setUserThemePreference(userId: number, themeId: number): Promise<boolean> {
     try {
       // Validate that the theme exists
       const theme = await this.model.getThemeById(themeId);

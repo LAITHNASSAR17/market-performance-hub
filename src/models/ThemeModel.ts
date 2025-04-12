@@ -1,7 +1,8 @@
+
 import { BaseModel } from './BaseModel';
 
 export interface Theme {
-  id: string;
+  id: number;
   name: string;
   type: 'light' | 'dark' | 'custom';
   isDefault: boolean;
@@ -28,7 +29,7 @@ export class ThemeModel extends BaseModel {
   }
 
   // Get theme by ID
-  async getThemeById(id: string): Promise<Theme | null> {
+  async getThemeById(id: number): Promise<Theme | null> {
     return this.findById(id);
   }
 
@@ -47,7 +48,7 @@ export class ThemeModel extends BaseModel {
   }
 
   // Create a new theme
-  async createTheme(theme: Omit<Theme, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async createTheme(theme: Omit<Theme, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> {
     // Sanitize input
     const sanitizedTheme = this.sanitizeObject(theme);
     
@@ -64,11 +65,11 @@ export class ThemeModel extends BaseModel {
       await this.clearDefaultThemes();
     }
     
-    return await this.create(themeWithTimestamps);
+    return this.create(themeWithTimestamps);
   }
 
   // Update a theme
-  async updateTheme(id: string, themeData: Partial<Theme>): Promise<boolean> {
+  async updateTheme(id: number, themeData: Partial<Theme>): Promise<boolean> {
     // Sanitize input
     const sanitizedTheme = this.sanitizeObject(themeData);
     
@@ -87,7 +88,7 @@ export class ThemeModel extends BaseModel {
   }
 
   // Delete a theme
-  async deleteTheme(id: string): Promise<boolean> {
+  async deleteTheme(id: number): Promise<boolean> {
     // Check if theme is default
     const theme = await this.getThemeById(id);
     if (theme?.isDefault) {
@@ -102,7 +103,7 @@ export class ThemeModel extends BaseModel {
   }
 
   // Set a theme as the default theme
-  async setDefaultTheme(id: string): Promise<boolean> {
+  async setDefaultTheme(id: number): Promise<boolean> {
     try {
       // First, clear all default flags
       await this.clearDefaultThemes();
@@ -122,14 +123,14 @@ export class ThemeModel extends BaseModel {
   }
 
   // Get user theme preference
-  async getUserThemePreference(userId: string): Promise<string | null> {
+  async getUserThemePreference(userId: number): Promise<number | null> {
     const sql = "SELECT themeId FROM user_theme_preferences WHERE userId = ? LIMIT 1";
     const results = await this.query(sql, [userId]);
     return results.length > 0 ? results[0].themeId : null;
   }
 
   // Set user theme preference
-  async setUserThemePreference(userId: string, themeId: string): Promise<boolean> {
+  async setUserThemePreference(userId: number, themeId: number): Promise<boolean> {
     try {
       // Check if preference already exists
       const existingPref = await this.getUserThemePreference(userId);

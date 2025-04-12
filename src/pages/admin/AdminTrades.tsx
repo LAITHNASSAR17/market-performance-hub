@@ -52,7 +52,7 @@ const AdminTrades: React.FC = () => {
 
   const handleDeleteTrade = async (id: string) => {
     try {
-      await adminController.deleteTrade(id);
+      await adminController.deleteTrade(parseInt(id));
       loadTrades(); // Refresh trade list
       toast({
         title: "Trade Deleted",

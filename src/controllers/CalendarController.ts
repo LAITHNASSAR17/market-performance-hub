@@ -8,7 +8,7 @@ export class CalendarController {
     this.model = new CalendarModel();
   }
 
-  async getUserEvents(userId: string, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
+  async getUserEvents(userId: number, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
     try {
       return await this.model.getUserEvents(userId, startDate, endDate);
     } catch (error) {
@@ -17,7 +17,7 @@ export class CalendarController {
     }
   }
 
-  async getEventById(id: string, userId: string): Promise<CalendarEvent | null> {
+  async getEventById(id: number, userId: number): Promise<CalendarEvent | null> {
     try {
       return await this.model.getEventById(id, userId);
     } catch (error) {
@@ -26,7 +26,7 @@ export class CalendarController {
     }
   }
 
-  async createEvent(eventData: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> {
+  async createEvent(eventData: Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>): Promise<number | null> {
     try {
       // Validate event data
       this.validateEventData(eventData);
@@ -43,7 +43,7 @@ export class CalendarController {
     }
   }
 
-  async updateEvent(id: string, userId: string, eventData: Partial<CalendarEvent>): Promise<boolean> {
+  async updateEvent(id: number, userId: number, eventData: Partial<CalendarEvent>): Promise<boolean> {
     try {
       // Check if event exists first
       const existingEvent = await this.model.getEventById(id, userId);
@@ -80,7 +80,7 @@ export class CalendarController {
     }
   }
 
-  async deleteEvent(id: string, userId: string): Promise<boolean> {
+  async deleteEvent(id: number, userId: number): Promise<boolean> {
     try {
       // Check if event exists first
       const existingEvent = await this.model.getEventById(id, userId);
@@ -95,7 +95,7 @@ export class CalendarController {
     }
   }
 
-  async getEventsByType(userId: string, eventType: string): Promise<CalendarEvent[]> {
+  async getEventsByType(userId: number, eventType: string): Promise<CalendarEvent[]> {
     try {
       return await this.model.getEventsByType(userId, eventType);
     } catch (error) {
@@ -104,7 +104,7 @@ export class CalendarController {
     }
   }
 
-  async getEventsForDate(userId: string, date: Date): Promise<CalendarEvent[]> {
+  async getEventsForDate(userId: number, date: Date): Promise<CalendarEvent[]> {
     try {
       return await this.model.getEventsForDate(userId, date);
     } catch (error) {
@@ -113,7 +113,7 @@ export class CalendarController {
     }
   }
 
-  async getRelatedEvents(userId: string, relatedEntityId: string): Promise<CalendarEvent[]> {
+  async getRelatedEvents(userId: number, relatedEntityId: number): Promise<CalendarEvent[]> {
     try {
       return await this.model.getRelatedEvents(userId, relatedEntityId);
     } catch (error) {

@@ -7,7 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, AlertCircle, Mail, Lock } from 'lucide-react';
+import { LineChart, AlertCircle, Mail, Lock, Key, Info } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import LanguageToggle from '@/components/LanguageToggle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,7 +24,9 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showCredentials, setShowCredentials] = useState(false);
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, forgotPassword, resetPassword } = useAuth();
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
   // Clear localStorage if URL has a clear param (for debugging purposes)
   useEffect(() => {
@@ -41,6 +49,37 @@ const Login: React.FC = () => {
     }
   }, []);
 
+  const forgotPasswordSchema = z.object({
+    email: z.string().email({ message: t('login.error.invalidEmail') }),
+  });
+
+  const resetPasswordSchema = z.object({
+    email: z.string().email({ message: t('login.error.invalidEmail') }),
+    resetCode: z.string().min(6, { message: t('resetPassword.error.codeLength') }),
+    newPassword: z.string().min(6, { message: t('resetPassword.error.passwordLength') }),
+    confirmPassword: z.string().min(6, { message: t('resetPassword.error.passwordLength') }),
+  }).refine((data) => data.newPassword === data.confirmPassword, {
+    message: t('resetPassword.error.passwordMismatch'),
+    path: ["confirmPassword"],
+  });
+
+  const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordSchema>>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const resetPasswordForm = useForm<z.infer<typeof resetPasswordSchema>>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: "",
+      resetCode: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -55,6 +94,26 @@ const Login: React.FC = () => {
     } catch (err) {
       // Error is handled in the login function with toast
       setError(t('login.error.credentials'));
+    }
+  };
+
+  const onForgotPasswordSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    try {
+      await forgotPassword(values.email);
+      setForgotPasswordOpen(false);
+      setResetPasswordOpen(true);
+      resetPasswordForm.setValue("email", values.email);
+    } catch (error) {
+      // Error is handled in the auth context
+    }
+  };
+
+  const onResetPasswordSubmit = async (values: z.infer<typeof resetPasswordSchema>) => {
+    try {
+      await resetPassword(values.email, values.resetCode, values.newPassword);
+      setResetPasswordOpen(false);
+    } catch (error) {
+      // Error is handled in the auth context
     }
   };
 
@@ -74,9 +133,12 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-8 relative">
           <div className="bg-blue-500 p-3 rounded-full">
             <LineChart className="h-8 w-8 text-white" />
+          </div>
+          <div className="absolute top-0 right-0">
+            <LanguageToggle />
           </div>
         </div>
         
@@ -90,6 +152,7 @@ const Login: React.FC = () => {
           <CardContent>
             {showCredentials && (
               <Alert className="mb-4 bg-blue-50 border-blue-200">
+                <Info className="h-4 w-4 text-blue-500" />
                 <AlertDescription className="text-blue-700">
                   <p>Admin account: <strong>lnmr2001@gmail.com</strong></p>
                   <p>Password: <strong>password123</strong></p>
@@ -130,7 +193,17 @@ const Login: React.FC = () => {
               </div>
               
               <div className="mb-6">
-                <Label htmlFor="password">{t('login.password')}</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{t('login.password')}</Label>
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="text-xs p-0 h-auto"
+                    onClick={() => setForgotPasswordOpen(true)}
+                  >
+                    {t('login.forgotPassword')}
+                  </Button>
+                </div>
                 <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                   <Lock className="h-4 w-4 mx-3 text-gray-500" />
                   <Input
@@ -164,6 +237,134 @@ const Login: React.FC = () => {
           </CardFooter>
         </Card>
       </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('forgotPassword.title')}</DialogTitle>
+            <DialogDescription>
+              {t('forgotPassword.description')}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...forgotPasswordForm}>
+            <form onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)} className="space-y-4">
+              <FormField
+                control={forgotPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('login.email')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder={t('login.email')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setForgotPasswordOpen(false)}>
+                  {t('forgotPassword.cancel')}
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? t('forgotPassword.sending') : t('forgotPassword.button')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('resetPassword.title')}</DialogTitle>
+            <DialogDescription>
+              {t('resetPassword.description')}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...resetPasswordForm}>
+            <form onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)} className="space-y-4">
+              <FormField
+                control={resetPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('login.email')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder={t('login.email')} {...field} readOnly className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="resetCode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('resetPassword.code')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Key className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input placeholder={t('resetPassword.code')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('resetPassword.newPassword')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input type="password" placeholder={t('resetPassword.newPassword')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={resetPasswordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('resetPassword.confirmPassword')}</FormLabel>
+                    <FormControl>
+                      <div className="flex items-center border border-input rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                        <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                        <Input type="password" placeholder={t('resetPassword.confirmPassword')} {...field} className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setResetPasswordOpen(false)}>
+                  {t('forgotPassword.cancel')}
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? t('resetPassword.resetting') : t('resetPassword.button')}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

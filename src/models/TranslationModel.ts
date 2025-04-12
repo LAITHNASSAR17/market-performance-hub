@@ -1,7 +1,8 @@
+
 import { BaseModel } from './BaseModel';
 
 export interface Translation {
-  id: string;
+  id: number;
   language: string;
   namespace: string;
   key: string;
@@ -41,7 +42,7 @@ export class TranslationModel extends BaseModel {
   }
 
   // Create or update a translation
-  async setTranslation(translation: Omit<Translation, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async setTranslation(translation: Omit<Translation, 'id' | 'createdAt' | 'updatedAt'>): Promise<number> {
     // Sanitize input
     const sanitizedTranslation = this.sanitizeObject(translation);
     
@@ -70,12 +71,12 @@ export class TranslationModel extends BaseModel {
         updatedAt: now
       };
       
-      return await this.create(translationWithTimestamps);
+      return this.create(translationWithTimestamps);
     }
   }
 
   // Delete a translation
-  async deleteTranslation(id: string): Promise<boolean> {
+  async deleteTranslation(id: number): Promise<boolean> {
     return this.delete(id);
   }
 

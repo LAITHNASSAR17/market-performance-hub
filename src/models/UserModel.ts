@@ -3,7 +3,7 @@ import { BaseModel } from './BaseModel';
 import * as crypto from 'crypto-js';
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
   password?: string;
@@ -19,8 +19,8 @@ export class UserModel extends BaseModel {
     super('users');
   }
 
-  async findById(id: string): Promise<User | null> {
-    if (!this.validateString(id)) {
+  async findById(id: number): Promise<User | null> {
+    if (!this.validateNumber(id)) {
       throw new Error('Invalid user ID');
     }
 
@@ -47,7 +47,7 @@ export class UserModel extends BaseModel {
     return result[0] || null;
   }
 
-  async create(userData: Omit<User, 'id' | 'createdAt'>): Promise<string> {
+  async create(userData: Omit<User, 'id' | 'createdAt'>): Promise<number> {
     if (!this.validateString(userData.username) || !this.validateEmail(userData.email)) {
       throw new Error('Invalid user data');
     }
@@ -80,12 +80,11 @@ export class UserModel extends BaseModel {
       dataToInsert.createdAt
     ]);
 
-    // Extract insertId from MongoDB-compatible result
-    return result.length > 0 && result[0].insertId ? result[0].insertId.toString() : Date.now().toString();
+    return result.insertId;
   }
 
-  async update(id: string, userData: Partial<User>): Promise<boolean> {
-    if (!this.validateString(id)) {
+  async update(id: number, userData: Partial<User>): Promise<boolean> {
+    if (!this.validateNumber(id)) {
       throw new Error('Invalid user ID');
     }
 
@@ -129,30 +128,30 @@ export class UserModel extends BaseModel {
     const sql = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
     const result = await this.query(sql, values);
 
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
-  async updateLastLogin(id: string): Promise<boolean> {
+  async updateLastLogin(id: number): Promise<boolean> {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const sql = 'UPDATE users SET lastLogin = ? WHERE id = ?';
     const result = await this.query(sql, [now, id]);
     
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
-  async delete(id: string): Promise<boolean> {
-    if (!this.validateString(id)) {
+  async delete(id: number): Promise<boolean> {
+    if (!this.validateNumber(id)) {
       throw new Error('Invalid user ID');
     }
 
     return super.delete(id);
   }
 
-  async blockUser(id: string): Promise<boolean> {
+  async blockUser(id: number): Promise<boolean> {
     return this.update(id, { isBlocked: true });
   }
 
-  async unblockUser(id: string): Promise<boolean> {
+  async unblockUser(id: number): Promise<boolean> {
     return this.update(id, { isBlocked: false });
   }
 

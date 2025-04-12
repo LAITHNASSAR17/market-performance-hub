@@ -69,16 +69,14 @@ export class AnalyticsModel extends BaseModel {
       createdAt: new Date()
     };
     
-    const result = await this.create(dataWithTimestamp);
-    // Convert string IDs to number if needed
-    return typeof result === 'string' ? parseInt(result, 10) : result;
+    return this.create(dataWithTimestamp);
   }
 
   // Delete metric data
   async deleteMetricData(id: number, userId: number): Promise<boolean> {
     const sql = "DELETE FROM analytics_data WHERE id = ? AND userId = ?";
     const result = await this.query(sql, [id, userId]);
-    return result.length > 0 && result[0].affectedRows > 0;
+    return result.affectedRows > 0;
   }
 
   // Calculate key trading statistics
