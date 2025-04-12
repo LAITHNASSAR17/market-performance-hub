@@ -19,6 +19,7 @@ const TradingChart: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<any>(null);
   const navigate = useNavigate();
+  const [containerHeight, setContainerHeight] = useState(600); // Default height
   
   // Chart settings
   const [symbolType, setSymbolType] = useState("forex");
@@ -59,6 +60,12 @@ const TradingChart: React.FC = () => {
       }
     }
 
+    // Calculate container height based on viewport
+    updateContainerHeight();
+    
+    // Add resize event listener
+    window.addEventListener('resize', updateContainerHeight);
+
     // Load TradingView script
     if (!window.TradingView) {
       const script = document.createElement('script');
@@ -79,6 +86,7 @@ const TradingChart: React.FC = () => {
     }
 
     return () => {
+      window.removeEventListener('resize', updateContainerHeight);
       if (widgetRef.current) {
         try {
           widgetRef.current = null;
@@ -89,12 +97,32 @@ const TradingChart: React.FC = () => {
     };
   }, [location, getTrade]);
 
+  // Calculate container height based on viewport
+  const updateContainerHeight = () => {
+    if (typeof window !== 'undefined') {
+      // Calculate available height (viewport height minus header, padding, and other elements)
+      const viewportHeight = window.innerHeight;
+      const headerHeight = 150; // Approximate height of header and top elements
+      const padding = 100; // Additional padding
+      const newHeight = Math.max(400, viewportHeight - headerHeight - padding);
+      setContainerHeight(newHeight);
+      
+      // If widget already exists, update its height
+      if (widgetRef.current && containerRef.current) {
+        containerRef.current.style.height = `${newHeight}px`;
+        if (widgetRef.current.iframe) {
+          widgetRef.current.iframe.style.height = `${newHeight}px`;
+        }
+      }
+    }
+  };
+
   // Initialize or update the widget when dependencies change
   useEffect(() => {
     if (window.TradingView && containerRef.current) {
       initWidget();
     }
-  }, [symbolType, currentTrade]);
+  }, [symbolType, currentTrade, containerHeight]);
 
   const initWidget = () => {
     if (!window.TradingView || !containerRef.current) {
@@ -120,7 +148,7 @@ const TradingChart: React.FC = () => {
     // Configure the widget settings
     const widgetOptions = {
       width: '100%',
-      height: 800, // Increased chart height
+      height: containerHeight,
       symbol: symbol,
       interval: 'D', // Default to daily
       timezone: 'Etc/UTC',
@@ -244,7 +272,8 @@ const TradingChart: React.FC = () => {
             <div 
               id="tradingview_chart" 
               ref={containerRef} 
-              className="w-full h-[800px]" // Set fixed height for chart
+              style={{ height: `${containerHeight}px` }}
+              className="w-full" 
             />
           </CardContent>
         </Card>

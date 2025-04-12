@@ -13,9 +13,10 @@ import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
+import { PlusCircle } from 'lucide-react';
 
 const AddTrade: React.FC = () => {
-  const { addTrade, accounts, pairs, allHashtags } = useTrade();
+  const { addTrade, accounts, pairs, symbols, addSymbol, allHashtags } = useTrade();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -23,6 +24,7 @@ const AddTrade: React.FC = () => {
     account: '',
     date: new Date().toISOString().slice(0, 10),
     pair: '',
+    customPair: '',
     type: 'Buy' as 'Buy' | 'Sell',
     entry: '',
     exit: '',
@@ -35,13 +37,14 @@ const AddTrade: React.FC = () => {
     durationMinutes: '',
     notes: '',
     imageUrl: null as string | null,
-    beforeImageUrl: null as string | null,  // Added for before image
-    afterImageUrl: null as string | null,   // Added for after image
+    beforeImageUrl: null as string | null,
+    afterImageUrl: null as string | null,
     hashtags: [] as string[]
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
+  const [showCustomPairInput, setShowCustomPairInput] = useState(false);
 
   // Calculate profit/loss and return percentage automatically when entry, exit, and lotSize are provided
   useEffect(() => {
@@ -87,6 +90,12 @@ const AddTrade: React.FC = () => {
   };
 
   const handleSelectChange = (name: string, value: string) => {
+    // Handle special case for pair select
+    if (name === 'pair' && value === 'custom') {
+      setShowCustomPairInput(true);
+      return;
+    }
+    
     setFormData({ ...formData, [name]: value });
     
     // Clear error when field is edited
@@ -95,13 +104,60 @@ const AddTrade: React.FC = () => {
     }
   };
 
+  const handleAddCustomPair = () => {
+    if (!formData.customPair.trim()) {
+      setErrors({ ...errors, customPair: 'Please enter a valid symbol' });
+      return;
+    }
+    
+    // Add new symbol to the list
+    const symbolType = determineSymbolType(formData.customPair);
+    const newSymbol = {
+      symbol: formData.customPair,
+      name: formData.customPair,
+      type: symbolType
+    };
+    
+    addSymbol(newSymbol);
+    
+    // Update form data with new pair
+    setFormData({ ...formData, pair: formData.customPair, customPair: '' });
+    setShowCustomPairInput(false);
+    
+    toast({
+      title: "Symbol Added",
+      description: `${formData.customPair} has been added to your symbols list`,
+    });
+  };
+  
+  // Helper function to determine symbol type based on naming pattern
+  const determineSymbolType = (symbol: string): 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other' => {
+    if (symbol.includes('/')) {
+      if (symbol.includes('BTC') || symbol.includes('ETH') || symbol.includes('USDT')) {
+        return 'crypto';
+      } else {
+        return 'forex';
+      }
+    } else if (/^[A-Z]{2,6}$/.test(symbol)) {
+      return 'stock';
+    } else if (symbol.toUpperCase().includes('INDEX') || symbol === 'SPX' || symbol === 'NDX' || symbol === 'DJI') {
+      return 'index';
+    } else if (symbol.toUpperCase().includes('GOLD') || symbol.toUpperCase().includes('SILVER') || symbol === 'CL' || symbol === 'OIL') {
+      return 'commodity';
+    }
+    return 'other';
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Get the final pair value (either selected or custom)
+    const finalPair = showCustomPairInput && formData.customPair ? formData.customPair : formData.pair;
     
     // Validate form
     const newErrors: Record<string, string> = {};
     if (!formData.account) newErrors.account = 'Account is required';
-    if (!formData.pair) newErrors.pair = 'Currency pair is required';
+    if (!finalPair) newErrors.pair = 'Currency pair or symbol is required';
     if (!formData.entry) newErrors.entry = 'Entry price is required';
     if (!formData.exit) newErrors.exit = 'Exit price is required';
     if (!formData.lotSize) newErrors.lotSize = 'Lot size is required';
@@ -114,6 +170,7 @@ const AddTrade: React.FC = () => {
     // Convert string values to numbers
     const tradeData = {
       ...formData,
+      pair: finalPair,
       entry: parseFloat(formData.entry),
       exit: parseFloat(formData.exit),
       lotSize: parseFloat(formData.lotSize),
@@ -124,6 +181,9 @@ const AddTrade: React.FC = () => {
       profitLoss: parseFloat(formData.profitLoss || '0'),
       durationMinutes: formData.durationMinutes ? parseInt(formData.durationMinutes) : 0,
     };
+    
+    // Remove the customPair property as it's not needed in the final trade data
+    delete (tradeData as any).customPair;
     
     addTrade(tradeData);
     toast({
@@ -188,25 +248,60 @@ const AddTrade: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Pair */}
               <div>
-                <Label htmlFor="pair">Currency Pair</Label>
-                <Select
-                  value={formData.pair}
-                  onValueChange={(value) => handleSelectChange('pair', value)}
-                >
-                  <SelectTrigger className={errors.pair ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select pair" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {pairs.map((pair) => (
-                        <SelectItem key={pair} value={pair}>
-                          {pair}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="pair">Currency Pair / Symbol</Label>
+                {!showCustomPairInput ? (
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.pair}
+                      onValueChange={(value) => handleSelectChange('pair', value)}
+                    >
+                      <SelectTrigger className={errors.pair ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="Select or add custom pair" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {pairs.map((pair) => (
+                            <SelectItem key={pair} value={pair}>
+                              {pair}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="custom" className="text-blue-600 font-medium">
+                            + Add Custom Symbol
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      id="customPair"
+                      name="customPair"
+                      placeholder="Enter custom symbol (e.g. EUR/USD, AAPL)"
+                      value={formData.customPair}
+                      onChange={handleInputChange}
+                      className={errors.customPair ? 'border-red-500' : ''}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      size="icon"
+                      onClick={handleAddCustomPair}
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowCustomPairInput(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
                 {errors.pair && <p className="text-red-500 text-sm mt-1">{errors.pair}</p>}
+                {errors.customPair && <p className="text-red-500 text-sm mt-1">{errors.customPair}</p>}
               </div>
 
               {/* Type */}

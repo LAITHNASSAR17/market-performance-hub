@@ -171,39 +171,7 @@ const Layout: React.FC<LayoutProps> = ({
             })}
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 py-4 px-4 space-y-2">            
-            {/* Admin Link (if user is admin) */}
-            {isAdmin && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    asChild 
-                    className={cn(
-                      "w-full flex items-center justify-center bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800/30 dark:hover:bg-purple-900/30",
-                      !sidebarOpen && "px-2"
-                    )}
-                  >
-                    <Link to="/admin">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                        <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
-                        <path d="M12 7v6l4 2"/>
-                      </svg>
-                      {sidebarOpen && <span className="ml-2">Admin Panel</span>}
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent 
-                  side="right" 
-                  align="center"
-                  hidden={sidebarOpen}
-                >
-                  Admin Panel
-                </TooltipContent>
-              </Tooltip>
-            )}
-            
+          <div className="absolute bottom-0 left-0 right-0 py-4 px-4 space-y-2">
             {/* Settings Button */}
             <Tooltip>
               <TooltipTrigger asChild>
