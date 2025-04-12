@@ -130,7 +130,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex flex-col space-y-2">
               <Button
                 variant="outline"
-                className="w-full justify-start text-white border-purple-400 hover:bg-purple-600"
+                className="w-full justify-start text-white border-purple-400 hover:bg-purple-600 bg-red-500 hover:bg-red-600"
                 onClick={logout}
               >
                 <LogOut className={`h-4 w-4 ${language === 'ar' ? 'ml-2' : 'mr-2'}`} />
