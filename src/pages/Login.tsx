@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,7 +27,6 @@ const Login: React.FC = () => {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
-  // Clear localStorage if URL has a clear param (for debugging purposes)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('clear')) {
@@ -39,7 +37,6 @@ const Login: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Check if there's a test admin user
     const users = localStorage.getItem('users');
     if (users && JSON.parse(users).length > 0) {
       const adminUser = JSON.parse(users).find((u: any) => u.isAdmin);
@@ -92,7 +89,6 @@ const Login: React.FC = () => {
     try {
       await login(email, password);
     } catch (err) {
-      // Error is handled in the login function with toast
       setError(t('login.error.credentials'));
     }
   };
@@ -104,7 +100,6 @@ const Login: React.FC = () => {
       setResetPasswordOpen(true);
       resetPasswordForm.setValue("email", values.email);
     } catch (error) {
-      // Error is handled in the auth context
     }
   };
 
@@ -113,7 +108,6 @@ const Login: React.FC = () => {
       await resetPassword(values.email, values.resetCode, values.newPassword);
       setResetPasswordOpen(false);
     } catch (error) {
-      // Error is handled in the auth context
     }
   };
 
@@ -131,10 +125,10 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50 p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8 relative">
-          <div className="bg-blue-500 p-3 rounded-full">
+          <div className="bg-purple-600 p-3 rounded-full">
             <LineChart className="h-8 w-8 text-white" />
           </div>
           <div className="absolute top-0 right-0">
@@ -142,9 +136,9 @@ const Login: React.FC = () => {
           </div>
         </div>
         
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">{t('login.title')}</CardTitle>
+        <Card className="shadow-lg border-purple-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-center text-purple-800">{t('login.title')}</CardTitle>
             <CardDescription className="text-center">
               {t('login.description')}
             </CardDescription>
@@ -178,7 +172,7 @@ const Login: React.FC = () => {
               
               <div className="mb-4">
                 <Label htmlFor="email">{t('login.email')}</Label>
-                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-purple-400 focus-within:ring-offset-2">
                   <Mail className="h-4 w-4 mx-3 text-gray-500" />
                   <Input
                     id="email"
@@ -198,13 +192,13 @@ const Login: React.FC = () => {
                   <Button 
                     type="button" 
                     variant="link" 
-                    className="text-xs p-0 h-auto"
+                    className="text-xs p-0 h-auto text-purple-600"
                     onClick={() => setForgotPasswordOpen(true)}
                   >
                     {t('login.forgotPassword')}
                   </Button>
                 </div>
-                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-purple-400 focus-within:ring-offset-2">
                   <Lock className="h-4 w-4 mx-3 text-gray-500" />
                   <Input
                     id="password"
@@ -220,7 +214,7 @@ const Login: React.FC = () => {
               
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-purple-600 hover:bg-purple-700"
                 disabled={loading}
               >
                 {loading ? t('login.loggingIn') : t('login.loginButton')}
@@ -230,7 +224,7 @@ const Login: React.FC = () => {
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
               {t('login.noAccount')}{' '}
-              <Link to="/register" className="text-blue-600 hover:underline">
+              <Link to="/register" className="text-purple-600 hover:underline">
                 {t('login.register')}
               </Link>
             </p>
@@ -238,7 +232,6 @@ const Login: React.FC = () => {
         </Card>
       </div>
 
-      {/* Forgot Password Dialog */}
       <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
         <DialogContent>
           <DialogHeader>
@@ -278,7 +271,6 @@ const Login: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Reset Password Dialog */}
       <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
         <DialogContent>
           <DialogHeader>

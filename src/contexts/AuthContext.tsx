@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const allUsers = getAllUsers();
-      const foundUser = allUsers.find(user => user.email === email);
+      const foundUser = allUsers.find(user => user.email.toLowerCase() === email.toLowerCase());
       
       console.log('Login attempt:', email);
       console.log('Found user:', foundUser ? 'Yes' : 'No');
