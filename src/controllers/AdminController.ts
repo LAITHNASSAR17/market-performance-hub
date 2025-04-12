@@ -1,3 +1,4 @@
+
 import { UserController } from './UserController';
 import { TradeController } from './TradeController';
 import { TagController } from './TagController';
@@ -289,7 +290,8 @@ export class AdminController {
       const themeId = await this.getUserThemePreference(userId);
       
       if (themeId) {
-        const theme = await this.themeController.getThemeById(themeId);
+        // Convert string themeId to number since ThemeController expects a number
+        const theme = await this.themeController.getThemeById(Number(themeId));
         if (theme) {
           return await this.themeController.applyTheme(theme);
         }
