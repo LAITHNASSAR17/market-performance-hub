@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { 
   User, Key, Lock, LogOut, Save, Globe, Clock, Trash2, CreditCard, 
-  ShieldAlert, UserCog, Upload, Check, AlertCircle
+  ShieldAlert, UserCog, Upload, Check, AlertCircle, Search
 } from 'lucide-react';
 import {
   Select,
@@ -30,34 +30,218 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from 'date-fns';
+import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
 
-// Sample country list for demonstration
+// Full list of countries for selection
 const countries = [
-  { value: 'us', label: 'United States' },
-  { value: 'ca', label: 'Canada' },
-  { value: 'uk', label: 'United Kingdom' },
+  { value: 'af', label: 'Afghanistan' },
+  { value: 'al', label: 'Albania' },
+  { value: 'dz', label: 'Algeria' },
+  { value: 'ad', label: 'Andorra' },
+  { value: 'ao', label: 'Angola' },
+  { value: 'ag', label: 'Antigua and Barbuda' },
+  { value: 'ar', label: 'Argentina' },
+  { value: 'am', label: 'Armenia' },
   { value: 'au', label: 'Australia' },
-  { value: 'fr', label: 'France' },
-  { value: 'de', label: 'Germany' },
-  { value: 'jo', label: 'Jordan' },
-  { value: 'sa', label: 'Saudi Arabia' },
-  { value: 'ae', label: 'United Arab Emirates' },
+  { value: 'at', label: 'Austria' },
+  { value: 'az', label: 'Azerbaijan' },
+  { value: 'bs', label: 'Bahamas' },
+  { value: 'bh', label: 'Bahrain' },
+  { value: 'bd', label: 'Bangladesh' },
+  { value: 'bb', label: 'Barbados' },
+  { value: 'by', label: 'Belarus' },
+  { value: 'be', label: 'Belgium' },
+  { value: 'bz', label: 'Belize' },
+  { value: 'bj', label: 'Benin' },
+  { value: 'bt', label: 'Bhutan' },
+  { value: 'bo', label: 'Bolivia' },
+  { value: 'ba', label: 'Bosnia and Herzegovina' },
+  { value: 'bw', label: 'Botswana' },
+  { value: 'br', label: 'Brazil' },
+  { value: 'bn', label: 'Brunei' },
+  { value: 'bg', label: 'Bulgaria' },
+  { value: 'bf', label: 'Burkina Faso' },
+  { value: 'bi', label: 'Burundi' },
+  { value: 'cv', label: 'Cabo Verde' },
+  { value: 'kh', label: 'Cambodia' },
+  { value: 'cm', label: 'Cameroon' },
+  { value: 'ca', label: 'Canada' },
+  { value: 'cf', label: 'Central African Republic' },
+  { value: 'td', label: 'Chad' },
+  { value: 'cl', label: 'Chile' },
+  { value: 'cn', label: 'China' },
+  { value: 'co', label: 'Colombia' },
+  { value: 'km', label: 'Comoros' },
+  { value: 'cg', label: 'Congo' },
+  { value: 'cr', label: 'Costa Rica' },
+  { value: 'hr', label: 'Croatia' },
+  { value: 'cu', label: 'Cuba' },
+  { value: 'cy', label: 'Cyprus' },
+  { value: 'cz', label: 'Czech Republic' },
+  { value: 'dk', label: 'Denmark' },
+  { value: 'dj', label: 'Djibouti' },
+  { value: 'dm', label: 'Dominica' },
+  { value: 'do', label: 'Dominican Republic' },
+  { value: 'tl', label: 'East Timor' },
+  { value: 'ec', label: 'Ecuador' },
   { value: 'eg', label: 'Egypt' },
-];
-
-// Sample timezone list
-const timezones = [
-  { value: 'America/New_York', label: 'Eastern Time (GMT-5)' },
-  { value: 'America/Chicago', label: 'Central Time (GMT-6)' },
-  { value: 'America/Denver', label: 'Mountain Time (GMT-7)' },
-  { value: 'America/Los_Angeles', label: 'Pacific Time (GMT-8)' },
-  { value: 'Europe/London', label: 'Greenwich Mean Time (GMT)' },
-  { value: 'Europe/Paris', label: 'Central European Time (GMT+1)' },
-  { value: 'Asia/Dubai', label: 'Gulf Standard Time (GMT+4)' },
-  { value: 'Asia/Amman', label: 'Eastern European Time (GMT+2)' },
-  { value: 'Asia/Tokyo', label: 'Japan Standard Time (GMT+9)' },
-  { value: 'Australia/Sydney', label: 'Australian Eastern Time (GMT+10)' },
+  { value: 'sv', label: 'El Salvador' },
+  { value: 'gq', label: 'Equatorial Guinea' },
+  { value: 'er', label: 'Eritrea' },
+  { value: 'ee', label: 'Estonia' },
+  { value: 'et', label: 'Ethiopia' },
+  { value: 'fj', label: 'Fiji' },
+  { value: 'fi', label: 'Finland' },
+  { value: 'fr', label: 'France' },
+  { value: 'ga', label: 'Gabon' },
+  { value: 'gm', label: 'Gambia' },
+  { value: 'ge', label: 'Georgia' },
+  { value: 'de', label: 'Germany' },
+  { value: 'gh', label: 'Ghana' },
+  { value: 'gr', label: 'Greece' },
+  { value: 'gd', label: 'Grenada' },
+  { value: 'gt', label: 'Guatemala' },
+  { value: 'gn', label: 'Guinea' },
+  { value: 'gw', label: 'Guinea-Bissau' },
+  { value: 'gy', label: 'Guyana' },
+  { value: 'ht', label: 'Haiti' },
+  { value: 'hn', label: 'Honduras' },
+  { value: 'hu', label: 'Hungary' },
+  { value: 'is', label: 'Iceland' },
+  { value: 'in', label: 'India' },
+  { value: 'id', label: 'Indonesia' },
+  { value: 'ir', label: 'Iran' },
+  { value: 'iq', label: 'Iraq' },
+  { value: 'ie', label: 'Ireland' },
+  { value: 'il', label: 'Israel' },
+  { value: 'it', label: 'Italy' },
+  { value: 'jm', label: 'Jamaica' },
+  { value: 'jp', label: 'Japan' },
+  { value: 'jo', label: 'Jordan' },
+  { value: 'kz', label: 'Kazakhstan' },
+  { value: 'ke', label: 'Kenya' },
+  { value: 'ki', label: 'Kiribati' },
+  { value: 'kp', label: 'North Korea' },
+  { value: 'kr', label: 'South Korea' },
+  { value: 'kw', label: 'Kuwait' },
+  { value: 'kg', label: 'Kyrgyzstan' },
+  { value: 'la', label: 'Laos' },
+  { value: 'lv', label: 'Latvia' },
+  { value: 'lb', label: 'Lebanon' },
+  { value: 'ls', label: 'Lesotho' },
+  { value: 'lr', label: 'Liberia' },
+  { value: 'ly', label: 'Libya' },
+  { value: 'li', label: 'Liechtenstein' },
+  { value: 'lt', label: 'Lithuania' },
+  { value: 'lu', label: 'Luxembourg' },
+  { value: 'mk', label: 'North Macedonia' },
+  { value: 'mg', label: 'Madagascar' },
+  { value: 'mw', label: 'Malawi' },
+  { value: 'my', label: 'Malaysia' },
+  { value: 'mv', label: 'Maldives' },
+  { value: 'ml', label: 'Mali' },
+  { value: 'mt', label: 'Malta' },
+  { value: 'mh', label: 'Marshall Islands' },
+  { value: 'mr', label: 'Mauritania' },
+  { value: 'mu', label: 'Mauritius' },
+  { value: 'mx', label: 'Mexico' },
+  { value: 'fm', label: 'Micronesia' },
+  { value: 'md', label: 'Moldova' },
+  { value: 'mc', label: 'Monaco' },
+  { value: 'mn', label: 'Mongolia' },
+  { value: 'me', label: 'Montenegro' },
+  { value: 'ma', label: 'Morocco' },
+  { value: 'mz', label: 'Mozambique' },
+  { value: 'mm', label: 'Myanmar' },
+  { value: 'na', label: 'Namibia' },
+  { value: 'nr', label: 'Nauru' },
+  { value: 'np', label: 'Nepal' },
+  { value: 'nl', label: 'Netherlands' },
+  { value: 'nz', label: 'New Zealand' },
+  { value: 'ni', label: 'Nicaragua' },
+  { value: 'ne', label: 'Niger' },
+  { value: 'ng', label: 'Nigeria' },
+  { value: 'no', label: 'Norway' },
+  { value: 'om', label: 'Oman' },
+  { value: 'pk', label: 'Pakistan' },
+  { value: 'pw', label: 'Palau' },
+  { value: 'ps', label: 'Palestine' },
+  { value: 'pa', label: 'Panama' },
+  { value: 'pg', label: 'Papua New Guinea' },
+  { value: 'py', label: 'Paraguay' },
+  { value: 'pe', label: 'Peru' },
+  { value: 'ph', label: 'Philippines' },
+  { value: 'pl', label: 'Poland' },
+  { value: 'pt', label: 'Portugal' },
+  { value: 'qa', label: 'Qatar' },
+  { value: 'ro', label: 'Romania' },
+  { value: 'ru', label: 'Russia' },
+  { value: 'rw', label: 'Rwanda' },
+  { value: 'kn', label: 'Saint Kitts and Nevis' },
+  { value: 'lc', label: 'Saint Lucia' },
+  { value: 'vc', label: 'Saint Vincent and the Grenadines' },
+  { value: 'ws', label: 'Samoa' },
+  { value: 'sm', label: 'San Marino' },
+  { value: 'st', label: 'Sao Tome and Principe' },
+  { value: 'sa', label: 'Saudi Arabia' },
+  { value: 'sn', label: 'Senegal' },
+  { value: 'rs', label: 'Serbia' },
+  { value: 'sc', label: 'Seychelles' },
+  { value: 'sl', label: 'Sierra Leone' },
+  { value: 'sg', label: 'Singapore' },
+  { value: 'sk', label: 'Slovakia' },
+  { value: 'si', label: 'Slovenia' },
+  { value: 'sb', label: 'Solomon Islands' },
+  { value: 'so', label: 'Somalia' },
+  { value: 'za', label: 'South Africa' },
+  { value: 'ss', label: 'South Sudan' },
+  { value: 'es', label: 'Spain' },
+  { value: 'lk', label: 'Sri Lanka' },
+  { value: 'sd', label: 'Sudan' },
+  { value: 'sr', label: 'Suriname' },
+  { value: 'sz', label: 'Eswatini' },
+  { value: 'se', label: 'Sweden' },
+  { value: 'ch', label: 'Switzerland' },
+  { value: 'sy', label: 'Syria' },
+  { value: 'tw', label: 'Taiwan' },
+  { value: 'tj', label: 'Tajikistan' },
+  { value: 'tz', label: 'Tanzania' },
+  { value: 'th', label: 'Thailand' },
+  { value: 'tg', label: 'Togo' },
+  { value: 'to', label: 'Tonga' },
+  { value: 'tt', label: 'Trinidad and Tobago' },
+  { value: 'tn', label: 'Tunisia' },
+  { value: 'tr', label: 'Turkey' },
+  { value: 'tm', label: 'Turkmenistan' },
+  { value: 'tv', label: 'Tuvalu' },
+  { value: 'ug', label: 'Uganda' },
+  { value: 'ua', label: 'Ukraine' },
+  { value: 'ae', label: 'United Arab Emirates' },
+  { value: 'gb', label: 'United Kingdom' },
+  { value: 'us', label: 'United States' },
+  { value: 'uy', label: 'Uruguay' },
+  { value: 'uz', label: 'Uzbekistan' },
+  { value: 'vu', label: 'Vanuatu' },
+  { value: 'va', label: 'Vatican City' },
+  { value: 've', label: 'Venezuela' },
+  { value: 'vn', label: 'Vietnam' },
+  { value: 'ye', label: 'Yemen' },
+  { value: 'zm', label: 'Zambia' },
+  { value: 'zw', label: 'Zimbabwe' },
 ];
 
 const UserProfileSettings: React.FC = () => {
@@ -69,10 +253,11 @@ const UserProfileSettings: React.FC = () => {
   const [name, setName] = useState(user?.name || '');
   const [username, setUsername] = useState(user?.name?.split(' ')[0]?.toLowerCase() || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [profilePicture, setProfilePicture] = useState('/placeholder.svg');
-  const [country, setCountry] = useState('us');
-  const [timezone, setTimezone] = useState('America/New_York');
+  const [profilePicture, setProfilePicture] = useState<string>('/placeholder.svg');
+  const [country, setCountry] = useState('');
+  const [countryOpen, setCountryOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [uploading, setUploading] = useState(false);
   
   // Password form state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -88,6 +273,9 @@ const UserProfileSettings: React.FC = () => {
   // 2FA state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   
+  // File input reference
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  
   useEffect(() => {
     // Load user data when component mounts
     if (user) {
@@ -95,9 +283,122 @@ const UserProfileSettings: React.FC = () => {
       setEmail(user.email || '');
       // Initialize with placeholder values if needed
       setUsername(user.name?.split(' ')[0]?.toLowerCase() || '');
-      // Additional fields would be loaded here if they were in the user object
+      
+      // Fetch profile data from Supabase
+      const fetchProfile = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user?.id) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (data && !error) {
+            setCountry(data.country || '');
+            if (data.avatar_url) {
+              setProfilePicture(data.avatar_url);
+            }
+          }
+        }
+      };
+      
+      fetchProfile();
     }
   }, [user]);
+  
+  const uploadAvatar = async (file: File) => {
+    try {
+      setUploading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error("Not authenticated");
+      }
+      
+      const userId = session.user.id;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
+      
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get public URL
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+        
+      const avatarUrl = data.publicUrl;
+      
+      // Update or create profile record
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({ 
+          id: userId, 
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString()
+        });
+        
+      if (updateError) {
+        throw updateError;
+      }
+      
+      setProfilePicture(avatarUrl);
+      
+      toast({
+        title: "Success",
+        description: "Avatar uploaded successfully"
+      });
+      
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Upload Failed",
+        description: "There was an error uploading your avatar",
+        variant: "destructive"
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      // Validate file size and type
+      if (file.size > 2 * 1024 * 1024) { // 2MB
+        toast({
+          title: "File Too Large",
+          description: "Please select an image under 2MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please select an image file",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      uploadAvatar(file);
+    }
+  };
+  
+  const triggerFileSelect = () => {
+    fileInputRef.current?.click();
+  };
   
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +415,19 @@ const UserProfileSettings: React.FC = () => {
     try {
       setIsUpdating(true);
       await updateProfile(name, email);
+      
+      // Update country in profiles table
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        await supabase
+          .from('profiles')
+          .upsert({ 
+            id: session.user.id, 
+            country,
+            updated_at: new Date().toISOString()
+          });
+      }
+      
       toast({
         title: "Profile Updated",
         description: "Your profile has been updated successfully"
@@ -281,10 +595,19 @@ const UserProfileSettings: React.FC = () => {
                           size="sm" 
                           variant="outline" 
                           className="absolute -bottom-2 -right-2 rounded-full p-1"
+                          onClick={triggerFileSelect}
+                          disabled={uploading}
                         >
                           <Upload className="h-4 w-4" />
                           <span className="sr-only">Upload</span>
                         </Button>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          accept="image/*"
+                          className="hidden"
+                        />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-medium dark:text-white mb-1">
@@ -296,10 +619,23 @@ const UserProfileSettings: React.FC = () => {
                             : 'Upload a 1:1 aspect ratio image with high resolution.'}
                         </p>
                         <div className="flex gap-2">
-                          <Button type="button" variant="outline" size="sm">
-                            {language === 'ar' ? 'تحميل صورة' : 'Upload Image'}
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={triggerFileSelect}
+                            disabled={uploading}
+                          >
+                            {uploading 
+                              ? (language === 'ar' ? 'جارٍ التحميل...' : 'Uploading...') 
+                              : (language === 'ar' ? 'تحميل صورة' : 'Upload Image')}
                           </Button>
-                          <Button type="button" variant="ghost" size="sm">
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setProfilePicture('/placeholder.svg')}
+                          >
                             {language === 'ar' ? 'إزالة' : 'Remove'}
                           </Button>
                         </div>
@@ -361,42 +697,57 @@ const UserProfileSettings: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="grid gap-3">
-                        <Label htmlFor="country">
-                          {language === 'ar' ? 'الدولة' : 'Country'}
-                        </Label>
-                        <Select value={country} onValueChange={setCountry}>
-                          <SelectTrigger id="country">
-                            <SelectValue placeholder={language === 'ar' ? 'اختر الدولة' : 'Select country'} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {countries.map((country) => (
-                              <SelectItem key={country.value} value={country.value}>
-                                {country.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="grid gap-3">
-                        <Label htmlFor="timezone">
-                          {language === 'ar' ? 'المنطقة الزمنية' : 'Time Zone'}
-                        </Label>
-                        <Select value={timezone} onValueChange={setTimezone}>
-                          <SelectTrigger id="timezone">
-                            <SelectValue placeholder={language === 'ar' ? 'اختر المنطقة الزمنية' : 'Select timezone'} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {timezones.map((timezone) => (
-                              <SelectItem key={timezone.value} value={timezone.value}>
-                                {timezone.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="grid gap-3">
+                      <Label htmlFor="country">
+                        {language === 'ar' ? 'الدولة' : 'Country'}
+                      </Label>
+                      <Popover open={countryOpen} onOpenChange={setCountryOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={countryOpen}
+                            className="w-full justify-between"
+                          >
+                            {country
+                              ? countries.find((c) => c.value === country)?.label
+                              : language === 'ar' ? 'اختر الدولة' : 'Select country'}
+                            <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder={language === 'ar' ? 'ابحث عن دولة...' : 'Search country...'} 
+                              className="h-9"
+                            />
+                            <CommandEmpty>
+                              {language === 'ar' ? 'لم يتم العثور على نتائج' : 'No results found'}
+                            </CommandEmpty>
+                            <CommandGroup className="max-h-[300px] overflow-auto">
+                              {countries.map((c) => (
+                                <CommandItem
+                                  key={c.value}
+                                  value={c.value}
+                                  onSelect={(currentValue) => {
+                                    setCountry(currentValue);
+                                    setCountryOpen(false);
+                                  }}
+                                  className="flex items-center"
+                                >
+                                  {c.label}
+                                  <Check
+                                    className={cn(
+                                      "ml-auto h-4 w-4",
+                                      country === c.value ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     
                     <div className="flex justify-end">
@@ -460,287 +811,4 @@ const UserProfileSettings: React.FC = () => {
                     
                     <div className="grid gap-3">
                       <Label htmlFor="newPassword">
-                        {language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
-                      </Label>
-                      <Input 
-                        id="newPassword" 
-                        type="password" 
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder={language === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter your new password'}
-                      />
-                    </div>
-                    
-                    <div className="grid gap-3">
-                      <Label htmlFor="confirmPassword">
-                        {language === 'ar' ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
-                      </Label>
-                      <Input 
-                        id="confirmPassword" 
-                        type="password" 
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder={language === 'ar' ? 'أكد كلمة المرور الجديدة' : 'Confirm your new password'}
-                      />
-                    </div>
-                    
-                    <div className="flex justify-end">
-                      <Button 
-                        type="submit" 
-                        disabled={isChangingPassword}
-                        className="flex items-center gap-2"
-                      >
-                        {isChangingPassword ? (
-                          language === 'ar' ? 'جارٍ التحديث...' : 'Updating...'
-                        ) : (
-                          <>
-                            <Lock className="h-4 w-4" />
-                            {language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'المصادقة الثنائية' : 'Two-Factor Authentication'}
-                </CardTitle>
-                <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تعزيز أمان حسابك باستخدام المصادقة الثنائية.' 
-                    : 'Enhance your account security with two-factor authentication.'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div>
-                    <h3 className="font-medium dark:text-white">
-                      {language === 'ar' ? 'المصادقة الثنائية' : 'Two-Factor Authentication'}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {twoFactorEnabled 
-                        ? (language === 'ar' ? 'المصادقة الثنائية مفعلة' : '2FA is currently enabled') 
-                        : (language === 'ar' ? 'المصادقة الثنائية غير مفعلة' : '2FA is currently disabled')}
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={twoFactorEnabled} 
-                    onCheckedChange={setTwoFactorEnabled}
-                    aria-label={language === 'ar' ? 'تبديل المصادقة الثنائية' : 'Toggle two-factor authentication'}
-                  />
-                </div>
-                <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                  <p>
-                    {language === 'ar' 
-                      ? 'ستتوفر هذه الميزة قريبًا. ستتمكن من تفعيل المصادقة الثنائية لحماية حسابك بشكل أفضل.' 
-                      : 'This feature will be available soon. You will be able to enable two-factor authentication for better account protection.'}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {/* Subscription Tab */}
-          <TabsContent value="subscription">
-            <Card>
-              <CardHeader>
-                <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'معلومات الاشتراك' : 'Subscription Information'}
-                </CardTitle>
-                <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'عرض وإدارة خطة اشتراكك.' 
-                    : 'View and manage your subscription plan.'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6">
-                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          {language === 'ar' ? 'الخطة الحالية' : 'Current Plan'}
-                        </h3>
-                        <p className="font-semibold dark:text-white">
-                          {user?.subscription_tier 
-                            ? user.subscription_tier.charAt(0).toUpperCase() + user.subscription_tier.slice(1) 
-                            : 'Free'}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          {language === 'ar' ? 'تاريخ الانضمام' : 'Join Date'}
-                        </h3>
-                        <p className="font-semibold dark:text-white">
-                          {format(new Date(), 'MMM dd, yyyy')}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          {language === 'ar' ? 'تاريخ انتهاء الاشتراك' : 'Expiration Date'}
-                        </h3>
-                        <p className="font-semibold dark:text-white">
-                          {user?.subscription_tier === 'free' 
-                            ? (language === 'ar' ? 'غير متاح' : 'N/A') 
-                            : format(new Date(new Date().setMonth(new Date().getMonth() + 1)), 'MMM dd, yyyy')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-primary/10 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold mb-2 dark:text-white">
-                      {language === 'ar' ? 'ترقية إلى خطة VIP' : 'Upgrade to VIP Plan'}
-                    </h3>
-                    <ul className="space-y-2 mb-4">
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary" />
-                        <span className="dark:text-white">
-                          {language === 'ar' ? 'تحليلات متقدمة للتداول' : 'Advanced trading analytics'}
-                        </span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary" />
-                        <span className="dark:text-white">
-                          {language === 'ar' ? 'استراتيجيات متقدمة' : 'Advanced strategies'}
-                        </span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary" />
-                        <span className="dark:text-white">
-                          {language === 'ar' ? 'تنبيهات متقدمة' : 'Priority alerts'}
-                        </span>
-                      </li>
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary" />
-                        <span className="dark:text-white">
-                          {language === 'ar' ? 'دعم على مدار الساعة' : '24/7 support'}
-                        </span>
-                      </li>
-                    </ul>
-                    <Button onClick={handleUpgradePlan} className="w-full justify-center">
-                      {language === 'ar' ? 'ترقية الخطة الآن' : 'Upgrade Plan Now'}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          {/* Account Management Tab */}
-          <TabsContent value="account">
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'تسجيل الخروج من جميع الأجهزة' : 'Logout from All Devices'}
-                </CardTitle>
-                <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تسجيل الخروج من جميع الأجهزة التي قمت بتسجيل الدخول إليها.' 
-                    : 'Logout from all devices where you have logged in.'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800/50">
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-4">
-                    {language === 'ar' 
-                      ? 'سيؤدي هذا الإجراء إلى تسجيل خروجك من جميع الأجهزة، بما في ذلك هذا الجهاز. ستحتاج إلى تسجيل الدخول مرة أخرى.' 
-                      : 'This action will log you out from all devices, including this one. You will need to log in again.'}
-                  </p>
-                  <Button 
-                    variant="destructive" 
-                    className="flex items-center gap-2"
-                    onClick={handleLogoutAllDevices}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    {language === 'ar' ? 'تسجيل الخروج من كافة الأجهزة' : 'Logout from All Devices'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-destructive">
-                  {language === 'ar' ? 'حذف الحساب' : 'Delete Account'}
-                </CardTitle>
-                <CardDescription>
-                  {language === 'ar' 
-                    ? 'حذف حسابك بشكل دائم. لا يمكن التراجع عن هذا الإجراء.' 
-                    : 'Permanently delete your account. This action cannot be undone.'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="p-4 bg-red-50 rounded-lg border border-red-200 dark:bg-red-900/20 dark:border-red-800/50">
-                  <p className="text-sm text-red-700 dark:text-red-300 mb-4">
-                    {language === 'ar' 
-                      ? 'سيؤدي حذف حسابك إلى إزالة جميع بياناتك وتفضيلاتك وسجلاتك بشكل دائم. لا يمكن التراجع عن هذا الإجراء.' 
-                      : 'Deleting your account will permanently remove all your data, preferences, and records. This cannot be undone.'}
-                  </p>
-                  <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="destructive" 
-                        className="flex items-center gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        {language === 'ar' ? 'حذف الحساب' : 'Delete Account'}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle className="text-red-600 dark:text-red-400">
-                          {language === 'ar' ? 'تأكيد حذف الحساب' : 'Confirm Account Deletion'}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {language === 'ar' 
-                            ? 'هذا الإجراء نهائي ولا يمكن التراجع عنه. سيتم حذف جميع بياناتك.' 
-                            : 'This action is final and cannot be undone. All your data will be deleted.'}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="py-4">
-                        <p className="text-sm mb-4">
-                          {language === 'ar' 
-                            ? 'لتأكيد الحذف، يرجى كتابة كلمة "DELETE" في الحقل أدناه:' 
-                            : 'To confirm deletion, please type "DELETE" in the field below:'}
-                        </p>
-                        <Input 
-                          value={deleteConfirmText}
-                          onChange={(e) => setDeleteConfirmText(e.target.value)}
-                          placeholder="DELETE"
-                          className="mb-4"
-                        />
-                      </div>
-                      <DialogFooter>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setDeleteConfirmOpen(false)}
-                        >
-                          {language === 'ar' ? 'إلغاء' : 'Cancel'}
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          onClick={handleDeleteAccount}
-                          disabled={deleteConfirmText !== 'DELETE'}
-                        >
-                          {language === 'ar' ? 'حذف الحساب نهائيًا' : 'Permanently Delete Account'}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </Layout>
-  );
-};
-
-export default UserProfileSettings;
+                        {language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password

@@ -84,12 +84,12 @@ const TradeCard: React.FC<TradeCardProps> = ({
             <span className="text-muted-foreground">{t('trade.date') || 'Date'}:</span> {trade.date}
           </div>
         </div>
-        <div className="truncate">
-          <span className="text-muted-foreground">{t('trade.notes') || 'Notes'}:</span> {trade.notes.substring(0, 80)}...
+        <div className="line-clamp-2">
+          <span className="text-muted-foreground">{t('trade.notes') || 'Notes'}:</span> {trade.notes}
         </div>
-        <div>
+        <div className="flex flex-wrap gap-1">
           {trade.hashtags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="mr-1">{tag}</Badge>
+            <Badge key={tag} variant="secondary" className="mr-1 mb-1">{tag}</Badge>
           ))}
         </div>
       </CardContent>
