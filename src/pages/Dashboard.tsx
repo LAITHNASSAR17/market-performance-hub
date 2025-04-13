@@ -415,31 +415,7 @@ const Dashboard: React.FC = () => {
       />
       
       <RecentTrades 
-        trades={trades.slice(0, 10).map(trade => ({
-          id: trade.id,
-          userId: trade.userId,
-          account: trade.account || 'Default',
-          date: trade.entryDate.toISOString().split('T')[0],
-          pair: trade.symbol,
-          type: trade.direction === 'long' ? 'Buy' : 'Sell',
-          entry: trade.entryPrice,
-          exit: trade.exitPrice || 0,
-          lotSize: trade.quantity,
-          stopLoss: null,
-          takeProfit: null,
-          riskPercentage: 0,
-          returnPercentage: 0,
-          profitLoss: trade.profitLoss || 0,
-          durationMinutes: trade.exitDate 
-            ? Math.floor((new Date(trade.exitDate).getTime() - new Date(trade.entryDate).getTime()) / (1000 * 60)) 
-            : 0,
-          notes: trade.notes || '',
-          imageUrl: null,
-          beforeImageUrl: null,
-          afterImageUrl: null,
-          hashtags: trade.tags || [],
-          createdAt: trade.createdAt.toISOString()
-        }))}
+        trades={trades.slice(0, 10)}
         onViewTrade={handleTradeView}
         onDeleteTrade={handleTradeDelete}
       />
