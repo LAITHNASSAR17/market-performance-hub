@@ -13,6 +13,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -114,33 +121,48 @@ const Layout: React.FC<LayoutProps> = ({
           
           {sidebarOpen && (
             <div className="flex items-center gap-2 mt-4 w-full">
-              <div className="flex items-center gap-2 flex-1">
-                <span className="text-sm font-medium dark:text-white truncate">{user?.name}</span>
-                {user?.isAdmin && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link to="/admin">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 p-1">
-                          <UserCog className="h-4 w-4 text-purple-500" />
-                        </Button>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
-                      {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" onClick={logout}>
-                    <LogOut className="h-4 w-4" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-left w-full justify-start px-2 py-1 h-auto">
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 overflow-hidden">
+                        {user?.name?.charAt(0) || 'U'}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium dark:text-white truncate">{user?.name || 'User'}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email || 'user@example.com'}</span>
+                      </div>
+                    </div>
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
-                  {t('auth.logout')}
-                </TooltipContent>
-              </Tooltip>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={language === 'ar' ? 'start' : 'end'} className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center gap-2">
+                      <UserCog className="h-4 w-4" />
+                      <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span>{language === 'ar' ? 'الإعدادات' : 'Settings'}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  {user?.isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <UserCog className="h-4 w-4 text-purple-500" />
+                        <span>{language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                    <LogOut className="h-4 w-4" />
+                    <span>{t('auth.logout') || 'Logout'}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>
@@ -176,31 +198,53 @@ const Layout: React.FC<LayoutProps> = ({
 
         <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
           {/* Settings Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
+          {!sidebarOpen ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  asChild 
+                  className="w-full flex items-center justify-center px-2"
+                >
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent 
+                side={language === 'ar' ? 'left' : 'right'} 
+                align="center"
+              >
+                {t('nav.settings') || 'Settings'}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <div className="flex flex-col gap-2">
               <Button 
                 variant="outline" 
                 size="sm" 
                 asChild 
-                className={cn(
-                  "w-full flex items-center justify-center",
-                  !sidebarOpen && "px-2"
-                )}
+                className="w-full flex items-center justify-center"
               >
-                <Link to="/settings">
-                  <Settings className="h-4 w-4" />
-                  {sidebarOpen && <span className="ml-2">{t('nav.settings') || 'Settings'}</span>}
+                <Link to="/profile">
+                  <UserCog className="h-4 w-4 mr-2" />
+                  <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile'}</span>
                 </Link>
               </Button>
-            </TooltipTrigger>
-            <TooltipContent 
-              side={language === 'ar' ? 'left' : 'right'} 
-              align="center"
-              hidden={sidebarOpen}
-            >
-              {t('nav.settings') || 'Settings'}
-            </TooltipContent>
-          </Tooltip>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                asChild 
+                className="w-full flex items-center justify-center"
+              >
+                <Link to="/settings">
+                  <Settings className="h-4 w-4 mr-2" />
+                  <span>{t('nav.settings') || 'Settings'}</span>
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
