@@ -24,6 +24,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { toast } = useToast();
   const { t } = useLanguage();
   
+  // Get site name from localStorage or default
+  const siteName = localStorage.getItem('siteName') || 'TradeTracker';
+  
   // Redirect non-admin users to dashboard
   if (!isAdmin) {
     toast({
@@ -51,9 +54,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/admin/settings" },
   ];
 
-  // Get site name from localStorage or default
-  const siteName = localStorage.getItem('siteName') || 'TradeTracker';
-
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
       {/* Admin Sidebar */}
@@ -73,14 +73,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           
           <nav className="flex-1 p-4 space-y-1">
             {navItems.map((item, index) => (
-              <a 
+              <Link 
                 key={index} 
-                href={item.path}
+                to={item.path}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
               >
                 {item.icon}
                 <span>{item.label}</span>
-              </a>
+              </Link>
             ))}
           </nav>
           

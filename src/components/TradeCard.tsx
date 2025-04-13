@@ -28,6 +28,9 @@ const TradeCard: React.FC<TradeCardProps> = ({
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Get site name from localStorage for toast title
+  const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
   const handleDelete = (e: React.SyntheticEvent) => {
     e.preventDefault();

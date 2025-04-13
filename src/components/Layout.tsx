@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -39,6 +40,9 @@ const Layout: React.FC<LayoutProps> = ({
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+
+  // Get site name from localStorage or use default
+  const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
   useEffect(() => {
     if (isMobile) {
@@ -114,7 +118,7 @@ const Layout: React.FC<LayoutProps> = ({
             </Button>
             
             {sidebarOpen && (
-              <h2 className="text-xl font-bold flex-1 text-center dark:text-white">{t('app.name') || 'TradeTracker'}</h2>
+              <h2 className="text-xl font-bold flex-1 text-center dark:text-white">{siteName}</h2>
             )}
           </div>
           
@@ -144,7 +148,7 @@ const Layout: React.FC<LayoutProps> = ({
                   {user?.isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="flex items-center gap-2">
-                        <UserCog className="h-4 w-4 text-purple-500" />
+                        <Shield className="h-4 w-4 text-purple-500" />
                         <span>{language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}</span>
                       </Link>
                     </DropdownMenuItem>
@@ -191,26 +195,51 @@ const Layout: React.FC<LayoutProps> = ({
 
         <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
           {!sidebarOpen ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  asChild 
-                  className="w-full flex items-center justify-center px-2"
+            <div className="flex flex-col gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    asChild 
+                    className="w-full flex items-center justify-center px-2"
+                  >
+                    <Link to="/profile">
+                      <UserCog className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side={language === 'ar' ? 'left' : 'right'} 
+                  align="center"
                 >
-                  <Link to="/profile">
-                    <UserCog className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent 
-                side={language === 'ar' ? 'left' : 'right'} 
-                align="center"
-              >
-                {language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}
-              </TooltipContent>
-            </Tooltip>
+                  {language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}
+                </TooltipContent>
+              </Tooltip>
+              
+              {user?.isAdmin && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      asChild 
+                      className="w-full flex items-center justify-center px-2 bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700"
+                    >
+                      <Link to="/admin">
+                        <Shield className="h-4 w-4 text-purple-500" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    side={language === 'ar' ? 'left' : 'right'} 
+                    align="center"
+                  >
+                    {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col gap-2">
               <Button 
@@ -224,6 +253,22 @@ const Layout: React.FC<LayoutProps> = ({
                   <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
                 </Link>
               </Button>
+              
+              {user?.isAdmin && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  asChild 
+                  className="w-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700"
+                >
+                  <Link to="/admin">
+                    <Shield className="h-4 w-4 mr-2 text-purple-500" />
+                    <span className="text-purple-700 dark:text-purple-300">
+                      {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+                    </span>
+                  </Link>
+                </Button>
+              )}
             </div>
           )}
         </div>

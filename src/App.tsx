@@ -11,6 +11,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 import Index from "./pages/Index";
+import Homepage from "./pages/Homepage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -39,6 +40,7 @@ import AdminNotes from "./pages/admin/AdminNotes";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminProfileSettings from "./pages/admin/AdminProfileSettings";
 import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
+import AdminPages from "./pages/admin/AdminPages";
 import AdminLayout from "./components/layouts/AdminLayout";
 
 const queryClient = new QueryClient();
@@ -58,7 +60,7 @@ const App = () => (
                     {/* User Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
-                    <Route path="/" element={<Index />} />
+                    <Route path="/" element={<Homepage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/add-trade" element={<AddTrade />} />
                     <Route path="/trades" element={<Trades />} />
@@ -81,6 +83,7 @@ const App = () => (
                     <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
                     <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
                     <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
+                    <Route path="/admin/pages" element={<AdminLayout><AdminPages /></AdminLayout>} />
                     <Route path="/admin/subscriptions" element={<AdminLayout><AdminSubscriptions /></AdminLayout>} />
                     <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
                     <Route path="/admin/profile" element={<AdminLayout><AdminProfileSettings /></AdminLayout>} />
