@@ -112,51 +112,25 @@ const Layout: React.FC<LayoutProps> = ({
             )}
           </div>
           
-          <div className="flex items-center gap-2 mt-4 w-full">
-            <div className="flex items-center gap-2 flex-1">
-              <span className="text-sm font-medium dark:text-white truncate">{user?.name}</span>
-              {user?.isAdmin && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link to="/admin">
-                      <Button variant="ghost" size="icon" className="h-6 w-6 p-1">
-                        <UserCog className="h-4 w-4 text-purple-500" />
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
-                    {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={logout}>
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
-                {t('auth.logout')}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          {!sidebarOpen && (
-            <div className="mt-4 flex justify-center">
-              {user?.isAdmin && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link to="/admin">
-                      <Button variant="ghost" size="icon" className="h-6 w-6 p-1">
-                        <UserCog className="h-4 w-4 text-purple-500" />
-                      </Button>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
-                    {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-                  </TooltipContent>
-                </Tooltip>
-              )}
+          {sidebarOpen && (
+            <div className="flex items-center gap-2 mt-4 w-full">
+              <div className="flex items-center gap-2 flex-1">
+                <span className="text-sm font-medium dark:text-white truncate">{user?.name}</span>
+                {user?.isAdmin && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link to="/admin">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 p-1">
+                          <UserCog className="h-4 w-4 text-purple-500" />
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+                      {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" onClick={logout}>

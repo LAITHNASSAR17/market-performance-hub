@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -14,7 +15,7 @@ import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
 
 const AddTrade: React.FC = () => {
-  const { addTrade, accounts, pairs, allHashtags } = useTrade();
+  const { addTrade, accounts, allHashtags } = useTrade();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -176,24 +177,16 @@ const AddTrade: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="pair">Currency Pair</Label>
-                <Select
+                <Label htmlFor="pair">Currency Pair / Symbol</Label>
+                <Input
+                  id="pair"
+                  name="pair"
+                  type="text"
+                  placeholder="E.g. EURUSD, BTCUSD, AAPL"
                   value={formData.pair}
-                  onValueChange={(value) => handleSelectChange('pair', value)}
-                >
-                  <SelectTrigger className={errors.pair ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select pair" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {pairs.map((pair) => (
-                        <SelectItem key={pair} value={pair}>
-                          {pair}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                  onChange={handleInputChange}
+                  className={errors.pair ? 'border-red-500' : ''}
+                />
                 {errors.pair && <p className="text-red-500 text-sm mt-1">{errors.pair}</p>}
               </div>
 
