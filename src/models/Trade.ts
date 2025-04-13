@@ -14,6 +14,9 @@ const tradeSchema = new mongoose.Schema({
   fees: { type: Number, default: 0 },
   notes: { type: String },
   tags: [{ type: String }],
+  status: { type: String, enum: ['open', 'closed'], default: 'open' },
+  account: { type: String, default: 'Default' },
+  isSimulated: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export const Trade = mongoose.model('Trade', tradeSchema);
