@@ -163,22 +163,8 @@ const Dashboard: React.FC = () => {
       currentWeek.push(calendarDays[i]);
       
       if (currentWeek.length === 7 || i === calendarDays.length - 1) {
-        const weeklyTotal = currentWeek
-          .filter(day => day !== null)
-          .reduce((sum, day) => sum + (day?.profit || 0), 0);
-        
-        const weeklyTrades = currentWeek
-          .filter(day => day !== null)
-          .reduce((sum, day) => sum + (day?.trades || 0), 0);
-        
-        const weekNumber = currentWeek.some(day => day !== null) ? 
-          getWeek(new Date(currentWeek.find(day => day !== null)?.date || new Date())) : 0;
-        
         weeks.push({
           days: [...currentWeek],
-          weeklyTotal,
-          weeklyTrades,
-          weekNumber
         });
         
         currentWeek = [];
@@ -190,22 +176,8 @@ const Dashboard: React.FC = () => {
         currentWeek.push(null);
       }
       
-      const weeklyTotal = currentWeek
-        .filter(day => day !== null)
-        .reduce((sum, day) => sum + (day?.profit || 0), 0);
-      
-      const weeklyTrades = currentWeek
-        .filter(day => day !== null)
-        .reduce((sum, day) => sum + (day?.trades || 0), 0);
-      
-      const weekNumber = currentWeek.some(day => day !== null) ? 
-        getWeek(new Date(currentWeek.find(day => day !== null)?.date || new Date())) : 0;
-      
       weeks.push({
         days: [...currentWeek],
-        weeklyTotal,
-        weeklyTrades,
-        weekNumber
       });
     }
     
@@ -444,26 +416,6 @@ const Dashboard: React.FC = () => {
                       </div>
                     )
                   )}
-                  
-                  <div className="col-span-7 mt-1 mb-4 flex justify-end">
-                    <div className="w-full sm:w-[200px] bg-gray-50 border rounded-md p-3 flex flex-col">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium">Week {week.weekNumber}</span>
-                        <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
-                          {week.weeklyTrades} {week.weeklyTrades === 1 ? 'trade' : 'trades'}
-                        </span>
-                      </div>
-                      <div className={cn(
-                        "font-bold text-lg",
-                        week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : "text-gray-600"
-                      )}>
-                        {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Net P&L for week {week.weekNumber}
-                      </div>
-                    </div>
-                  </div>
                 </React.Fragment>
               ))}
             </div>

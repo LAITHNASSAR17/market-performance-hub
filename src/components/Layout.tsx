@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Settings, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -142,12 +141,6 @@ const Layout: React.FC<LayoutProps> = ({
                       <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span>{language === 'ar' ? 'الإعدادات' : 'Settings'}</span>
-                    </Link>
-                  </DropdownMenuItem>
                   {user?.isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="flex items-center gap-2">
@@ -197,7 +190,6 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
-          {/* Settings Button */}
           {!sidebarOpen ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -207,8 +199,8 @@ const Layout: React.FC<LayoutProps> = ({
                   asChild 
                   className="w-full flex items-center justify-center px-2"
                 >
-                  <Link to="/settings">
-                    <Settings className="h-4 w-4" />
+                  <Link to="/profile">
+                    <UserCog className="h-4 w-4" />
                   </Link>
                 </Button>
               </TooltipTrigger>
@@ -216,7 +208,7 @@ const Layout: React.FC<LayoutProps> = ({
                 side={language === 'ar' ? 'left' : 'right'} 
                 align="center"
               >
-                {t('nav.settings') || 'Settings'}
+                {language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}
               </TooltipContent>
             </Tooltip>
           ) : (
@@ -229,18 +221,7 @@ const Layout: React.FC<LayoutProps> = ({
               >
                 <Link to="/profile">
                   <UserCog className="h-4 w-4 mr-2" />
-                  <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile'}</span>
-                </Link>
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                asChild 
-                className="w-full flex items-center justify-center"
-              >
-                <Link to="/settings">
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span>{t('nav.settings') || 'Settings'}</span>
+                  <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
                 </Link>
               </Button>
             </div>

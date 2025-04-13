@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LineChart, Edit, Trash2, Eye } from 'lucide-react';
+import { Edit, Trash2, Eye } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Trade } from '@/contexts/TradeContext';
@@ -16,7 +16,7 @@ interface TradeCardProps {
   trade: Trade;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onView: (id: string) => void; // New prop
+  onView: (id: string) => void;
 }
 
 const TradeCard: React.FC<TradeCardProps> = ({ 
@@ -58,7 +58,7 @@ const TradeCard: React.FC<TradeCardProps> = ({
           <div className="space-y-0.5">
             <CardTitle className="text-base font-semibold">{trade.pair} - {trade.type}</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              {t('trade.account') || 'Account'}: {trade.account}
+              {trade.account}
             </CardDescription>
           </div>
         </div>
@@ -84,7 +84,7 @@ const TradeCard: React.FC<TradeCardProps> = ({
             <span className="text-muted-foreground">{t('trade.date') || 'Date'}:</span> {trade.date}
           </div>
         </div>
-        <div>
+        <div className="truncate">
           <span className="text-muted-foreground">{t('trade.notes') || 'Notes'}:</span> {trade.notes.substring(0, 80)}...
         </div>
         <div>
@@ -102,13 +102,6 @@ const TradeCard: React.FC<TradeCardProps> = ({
           <Button size="sm" variant="default" className="mr-2" onClick={() => onView(trade.id)}>
             <Eye className="h-4 w-4 mr-1" />
             {t('trade.view') || 'View'}
-          </Button>
-
-          <Button size="sm" variant="outline" asChild className="mr-2">
-            <Link to={`/chart?trade=${trade.id}`}>
-              <LineChart className="h-4 w-4 mr-1" />
-              {t('trade.viewOnChart') || 'Chart'}
-            </Link>
           </Button>
 
           <Button size="sm" variant="ghost" onClick={() => onEdit(trade.id)}>
