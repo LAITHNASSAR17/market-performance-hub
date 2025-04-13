@@ -18,18 +18,18 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
-        "p-3 pointer-events-auto w-full max-w-full bg-white dark:bg-gray-800 dark:text-white rounded-md shadow-sm border border-gray-200 dark:border-gray-700", 
+        "p-3 pointer-events-auto w-full max-w-full dark:bg-gray-800 dark:text-white", 
         className
       )}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4 w-full",
-        caption: "flex justify-center pt-1 relative items-center px-8",
-        caption_label: "text-sm font-medium text-gray-900 dark:text-gray-100",
+        caption: "flex justify-center pt-1 relative items-center",
+        caption_label: "text-sm font-medium",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100 dark:border-gray-600 dark:text-white"
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 dark:border-gray-600 dark:text-white"
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
@@ -54,7 +54,7 @@ function Calendar({
         day_range_end: "day-range-end",
         day_selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground dark:bg-indigo-600 dark:text-white",
-        day_today: "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white font-semibold",
+        day_today: "bg-accent text-accent-foreground dark:bg-gray-700 dark:text-white",
         day_outside:
           "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30 dark:text-gray-500",
         day_disabled: "text-muted-foreground opacity-50 dark:text-gray-600",
@@ -64,8 +64,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-white" />,
-        IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4 text-gray-600 dark:text-white" />,
+        IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4 dark:text-white" />,
+        IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4 dark:text-white" />,
       }}
       // Hide week numbers by passing an empty formatter for week numbers
       formatters={{
@@ -78,7 +78,7 @@ function Calendar({
           fontWeight: 'bold'
         },
         today: {
-          color: 'currentColor',
+          color: 'white',
           fontWeight: 'bold'
         }
       }}

@@ -12,8 +12,6 @@ export interface TradeStats {
   totalTrades: number;
   winningTrades: number;
   losingTrades: number;
-  profitFactor: number;
-  profitFactorFormatted: string;
 }
 
 export const useAnalyticsStats = (): TradeStats => {
@@ -27,9 +25,7 @@ export const useAnalyticsStats = (): TradeStats => {
     largestLoss: '$0.00',
     totalTrades: 0,
     winningTrades: 0,
-    losingTrades: 0,
-    profitFactor: 0,
-    profitFactorFormatted: '0.00'
+    losingTrades: 0
   });
 
   useEffect(() => {
@@ -51,9 +47,7 @@ const calculateStats = (trades: Trade[]): TradeStats => {
       largestLoss: '$0.00',
       totalTrades: 0,
       winningTrades: 0,
-      losingTrades: 0,
-      profitFactor: 0,
-      profitFactorFormatted: '0.00'
+      losingTrades: 0
     };
   }
   
@@ -79,28 +73,6 @@ const calculateStats = (trades: Trade[]): TradeStats => {
     Math.min(...losingTrades.map(trade => trade.profitLoss)) : 
     0;
   
-  // Calculate profit factor (gross profits / gross losses)
-  const grossProfit = winningTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const grossLoss = Math.abs(losingTrades.reduce((sum, trade) => sum + trade.profitLoss, 0) || 0);
-  
-  // Calculate profit factor (handling divide by zero)
-  let profitFactor = 0;
-  if (grossLoss > 0) {
-    profitFactor = grossProfit / grossLoss;
-  } else if (grossProfit > 0) {
-    profitFactor = 100; // A high value to indicate high profitability when no losses
-  }
-  
-  // Format profit factor string
-  let profitFactorFormatted;
-  if (grossLoss === 0 && grossProfit > 0) {
-    profitFactorFormatted = (profitFactor).toFixed(2);
-  } else if (grossLoss === 0 && grossProfit === 0) {
-    profitFactorFormatted = '0.00';
-  } else {
-    profitFactorFormatted = profitFactor.toFixed(2);
-  }
-  
   return {
     totalPL: `$${totalPL.toFixed(2)}`,
     winRate: `${winRate.toFixed(1)}%`,
@@ -110,8 +82,6 @@ const calculateStats = (trades: Trade[]): TradeStats => {
     largestLoss: `$${largestLoss.toFixed(2)}`,
     totalTrades: trades.length,
     winningTrades: winningTrades.length,
-    losingTrades: losingTrades.length,
-    profitFactor: profitFactor,
-    profitFactorFormatted: profitFactorFormatted
+    losingTrades: losingTrades.length
   };
 };
