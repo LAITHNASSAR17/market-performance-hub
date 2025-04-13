@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -111,6 +110,9 @@ const UserProfileSettings: React.FC = () => {
       description: "This feature is not yet implemented."
     });
   };
+
+  // Get current date as fallback for join date
+  const joinDate = new Date().toLocaleDateString();
 
   return (
     <Layout>
@@ -402,7 +404,7 @@ const UserProfileSettings: React.FC = () => {
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div className="space-y-1">
                       <p className="text-gray-500">Join Date</p>
-                      <p className="font-medium">{new Date(user?.created_at || Date.now()).toLocaleDateString()}</p>
+                      <p className="font-medium">{joinDate}</p>
                     </div>
                     
                     <div className="space-y-1">
