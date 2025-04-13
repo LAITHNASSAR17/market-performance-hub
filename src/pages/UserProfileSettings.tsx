@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -811,4 +812,229 @@ const UserProfileSettings: React.FC = () => {
                     
                     <div className="grid gap-3">
                       <Label htmlFor="newPassword">
-                        {language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password
+                        {language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
+                      </Label>
+                      <Input 
+                        id="newPassword" 
+                        type="password" 
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder={language === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter your new password'}
+                      />
+                    </div>
+                    
+                    <div className="grid gap-3">
+                      <Label htmlFor="confirmPassword">
+                        {language === 'ar' ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
+                      </Label>
+                      <Input 
+                        id="confirmPassword" 
+                        type="password" 
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder={language === 'ar' ? 'أكد كلمة المرور الجديدة' : 'Confirm your new password'}
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end">
+                      <Button 
+                        type="submit" 
+                        disabled={isChangingPassword}
+                        className="flex items-center gap-2"
+                      >
+                        {isChangingPassword ? (
+                          language === 'ar' ? 'جارٍ التحديث...' : 'Updating...'
+                        ) : (
+                          <>
+                            <Lock className="h-4 w-4" />
+                            {language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Subscription Tab */}
+          <TabsContent value="subscription">
+            <Card>
+              <CardHeader>
+                <CardTitle className="dark:text-white">
+                  {language === 'ar' ? 'خطة الاشتراك' : 'Subscription Plan'}
+                </CardTitle>
+                <CardDescription className="dark:text-gray-300">
+                  {language === 'ar' 
+                    ? 'إدارة اشتراكك وترقية خطتك.' 
+                    : 'Manage your subscription and upgrade your plan.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                    <h3 className="font-semibold text-lg mb-2 dark:text-white">
+                      {language === 'ar' ? 'الخطة الحالية: المجانية' : 'Current Plan: Free'}
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">
+                      {language === 'ar' 
+                        ? 'أنت حاليًا على الخطة المجانية. ترقية لفتح المزيد من الميزات.' 
+                        : 'You are currently on the free plan. Upgrade to unlock more features.'}
+                    </p>
+                    <Button onClick={handleUpgradePlan}>
+                      {language === 'ar' ? 'ترقية الخطة' : 'Upgrade Plan'}
+                    </Button>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    <h3 className="font-semibold text-base dark:text-white">
+                      {language === 'ar' ? 'مقارنة الخطط' : 'Plan Comparison'}
+                    </h3>
+                    <div className="grid gap-2">
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="font-medium">{language === 'ar' ? 'الخطة المجانية' : 'Free Plan'}</span>
+                        <span className="text-gray-500">$0 / {language === 'ar' ? 'شهر' : 'month'}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="font-medium">{language === 'ar' ? 'الخطة المهنية' : 'Pro Plan'}</span>
+                        <span className="text-gray-500">$9.99 / {language === 'ar' ? 'شهر' : 'month'}</span>
+                      </div>
+                      <div className="flex justify-between py-2 border-b">
+                        <span className="font-medium">{language === 'ar' ? 'خطة المؤسسات' : 'Enterprise Plan'}</span>
+                        <span className="text-gray-500">{language === 'ar' ? 'اتصل بنا' : 'Contact us'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Account Management Tab */}
+          <TabsContent value="account">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="dark:text-white">
+                  {language === 'ar' ? 'الجلسات النشطة' : 'Active Sessions'}
+                </CardTitle>
+                <CardDescription className="dark:text-gray-300">
+                  {language === 'ar' 
+                    ? 'إدارة الأجهزة المتصلة بحسابك.' 
+                    : 'Manage devices connected to your account.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div>
+                      <h3 className="font-medium dark:text-white">
+                        {language === 'ar' ? 'هذا الجهاز' : 'This Device'}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {language === 'ar' ? 'آخر تسجيل دخول: الآن' : 'Last login: Now'}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={logout}
+                      className="text-red-600 dark:text-red-400"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={handleLogoutAllDevices}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      {language === 'ar' ? 'تسجيل الخروج من كافة الأجهزة' : 'Logout from All Devices'}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-red-600 dark:text-red-400">
+                  {language === 'ar' ? 'حذف الحساب' : 'Delete Account'}
+                </CardTitle>
+                <CardDescription className="dark:text-gray-300">
+                  {language === 'ar' 
+                    ? 'هذا إجراء دائم ولا يمكن التراجع عنه.' 
+                    : 'This action is permanent and cannot be undone.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {language === 'ar' ? 'حذف الحساب' : 'Delete Account'}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="text-red-600">
+                        {language === 'ar' ? 'حذف الحساب نهائيًا' : 'Delete Account Permanently'}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {language === 'ar' 
+                          ? 'هذا الإجراء دائم ولا يمكن التراجع عنه. سيتم حذف جميع بياناتك.' 
+                          : 'This action is permanent and cannot be undone. All your data will be deleted.'}
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-4 py-4">
+                      <div className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded-md flex items-start gap-2">
+                        <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm">
+                          {language === 'ar' 
+                            ? 'هذا سيحذف حسابك بشكل دائم وجميع البيانات المرتبطة به. لا يمكن التراجع عن هذا الإجراء.' 
+                            : 'This will permanently delete your account and all associated data. This action cannot be undone.'}
+                        </p>
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label htmlFor="delete-confirm">
+                          {language === 'ar' ? 'اكتب "DELETE" للتأكيد' : 'Type "DELETE" to confirm'}
+                        </Label>
+                        <Input 
+                          id="delete-confirm"
+                          value={deleteConfirmText}
+                          onChange={(e) => setDeleteConfirmText(e.target.value)}
+                          placeholder="DELETE"
+                        />
+                      </div>
+                    </div>
+                    
+                    <DialogFooter>
+                      <Button variant="ghost" onClick={() => setDeleteConfirmOpen(false)}>
+                        {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={handleDeleteAccount}
+                        disabled={deleteConfirmText !== 'DELETE'}
+                      >
+                        {language === 'ar' ? 'نعم، احذف حسابي' : 'Yes, Delete My Account'}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
+  );
+};
+
+export default UserProfileSettings;
