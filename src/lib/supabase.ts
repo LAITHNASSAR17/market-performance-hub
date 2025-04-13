@@ -38,70 +38,6 @@ export const updateSiteSettings = async (settings: any) => {
   return data;
 };
 
-// Function to upload a file to storage
-export const uploadFile = async (
-  bucket: string,
-  path: string,
-  file: File
-): Promise<string | null> => {
-  const { data, error } = await supabase.storage.from(bucket).upload(path, file, {
-    cacheControl: '3600',
-    upsert: true
-  });
-  
-  if (error) {
-    console.error('Error uploading file:', error);
-    return null;
-  }
-  
-  // Get the public URL
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
-  return urlData.publicUrl;
-};
-
-// Function to update user profile
-export const updateUserProfile = async (
-  userId: string,
-  userData: {
-    avatar_url?: string;
-    full_name?: string;
-    username?: string;
-    email?: string;
-    country?: string;
-  }
-) => {
-  const { error } = await supabase
-    .from('profiles')
-    .upsert({ 
-      id: userId,
-      ...userData,
-      updated_at: new Date().toISOString()
-    });
-  
-  if (error) {
-    console.error('Error updating user profile:', error);
-    throw error;
-  }
-  
-  return true;
-};
-
-// Function to get user profile
-export const getUserProfile = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-  
-  if (error && error.code !== 'PGRST116') { // PGRST116 is 'no rows returned' error
-    console.error('Error fetching user profile:', error);
-    return null;
-  }
-  
-  return data || null;
-};
-
 // SQL definitions for our tables
 // This is just for reference, you'll need to create these tables in the Supabase dashboard
 
@@ -150,17 +86,6 @@ create table public.trades (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   primary key (id)
-);
-
--- User Profiles Table
-create table public.profiles (
-  id uuid primary key references auth.users,
-  full_name text,
-  username text,
-  avatar_url text,
-  country text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
 );
 
 -- Site Settings Table

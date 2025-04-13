@@ -1,122 +1,161 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { Button } from '@/components/ui/button';
+import { useTrade, Trade } from '@/contexts/TradeContext';
+import StatCard from '@/components/StatCard';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Download, AreaChart } from 'lucide-react';
-import { addDays, format, getWeek, startOfMonth, endOfMonth, getDay } from 'date-fns';
-
-// Services & Types
-import { tradeService, ITrade } from '@/services/tradeService';
-
-// Dashboard Components
-import { TotalPLCard, ProfitFactorCard, AverageTradeCards } from '@/components/dashboard/TradingStats';
-import WinRateChart from '@/components/dashboard/WinRateChart';
-import TradeCalendar from '@/components/dashboard/TradeCalendar';
-import RecentTrades from '@/components/dashboard/RecentTrades';
+import { Button } from '@/components/ui/button';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  Cell,
+  BarChart as RechartBarChart,
+  Bar
+} from 'recharts';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import TradeDetailsDialog from '@/components/TradeDetailsDialog';
 import CumulativePLChart from '@/components/CumulativePLChart';
 import DailyPLBarChart from '@/components/DailyPLBarChart';
+import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO, isMonday, isSunday, getWeek } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast';
+import AverageTradeCards from '@/components/AverageTradeCards';
 import TradingTips from '@/components/TradingTips';
 
 const Dashboard: React.FC = () => {
+  const { trades, deleteTrade } = useTrade();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // State
-  const [trades, setTrades] = useState<ITrade[]>([]);
   const [timeframeFilter, setTimeframeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTradeDetails, setShowTradeDetails] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
-  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
-  const [calendarData, setCalendarData] = useState<any[]>([]);
-
-  // Fetch trades
-  useEffect(() => {
-    const fetchTrades = async () => {
-      if (!user) return;
-      
-      try {
-        setIsLoading(true);
-        const fetchedTrades = await tradeService.getTradesByUserId(user.id);
-        setTrades(fetchedTrades);
-      } catch (error) {
-        console.error('Error fetching trades:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch trades data.',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTrades();
-  }, [user, toast]);
   
-  // Fetch calendar data
-  useEffect(() => {
-    const fetchCalendarData = async () => {
-      if (!user) return;
-      
-      try {
-        const data = await tradeService.getCalendarData(user.id, calendarYear, calendarMonth);
-        
-        // Convert to calendar format
-        const calendarData = getFormattedCalendarData(data, calendarMonth, calendarYear);
-        setCalendarData(calendarData);
-      } catch (error) {
-        console.error('Error fetching calendar data:', error);
-      }
-    };
+  const exportReport = () => {
+    toast({
+      title: "Exporting report",
+      description: "Your trading report is being generated and will download shortly."
+    });
     
-    fetchCalendarData();
-  }, [user, calendarMonth, calendarYear]);
+    setTimeout(() => {
+      toast({
+        title: "Report exported",
+        description: "Your trading report has been successfully downloaded.",
+      });
+    }, 1500);
+  };
 
-  // Calculate calendar data
-  const getFormattedCalendarData = (dayData: any[], month: number, year: number) => {
-    const firstDay = new Date(year, month, 1);
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const startingDayOfWeek = getDay(firstDay);
+  const userTrades = user ? trades.filter(trade => trade.userId === user.id) : [];
+
+  const filteredTrades = useMemo(() => {
+    if (timeframeFilter === 'all') return userTrades;
     
-    // Create the calendar grid with empty days for the first week
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    if (timeframeFilter === 'week') {
+      cutoffDate.setDate(now.getDate() - 7);
+    } else if (timeframeFilter === 'month') {
+      cutoffDate.setDate(now.getDate() - 30);
+    } else if (timeframeFilter === 'quarter') {
+      cutoffDate.setDate(now.getDate() - 90);
+    } else if (timeframeFilter === 'year') {
+      cutoffDate.setDate(now.getDate() - 365);
+    }
+    
+    return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
+  }, [userTrades, timeframeFilter]);
+
+  const totalTrades = filteredTrades.length;
+  const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const winningTrades = filteredTrades.filter(trade => trade.profitLoss > 0).length;
+  const losingTrades = filteredTrades.filter(trade => trade.profitLoss < 0).length;
+  const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+  
+  const bestTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
+    (best, trade) => (trade.profitLoss > best.profitLoss ? trade : best),
+    filteredTrades[0]
+  ) : null;
+  
+  const worstTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
+    (worst, trade) => (trade.profitLoss < worst.profitLoss ? trade : worst),
+    filteredTrades[0]
+  ) : null;
+
+  const winningTradesData = filteredTrades.filter(trade => trade.profitLoss > 0);
+  const avgWinningTrade = winningTradesData.length > 0 
+    ? winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTradesData.length
+    : 0;
+
+  const losingTradesData = filteredTrades.filter(trade => trade.profitLoss < 0);
+  const avgLosingTrade = losingTradesData.length > 0 
+    ? losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTradesData.length
+    : 0;
+
+  const grossProfit = winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (winningTradesData.length > 0 ? Infinity : 0);
+
+  const getLast7Days = () => {
+    const result = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      result.push({
+        date: date.toISOString().slice(0, 10),
+        label: new Date(date).toLocaleDateString('en-US', { weekday: 'short' })
+      });
+    }
+    return result;
+  };
+
+  const dailyPerformanceData = getLast7Days().map(dayInfo => {
+    const dayTrades = filteredTrades.filter(trade => trade.date === dayInfo.date);
+    const dayProfit = dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+    
+    return {
+      day: dayInfo.label,
+      profit: dayProfit,
+      date: dayInfo.date
+    };
+  });
+
+  const getCalendarData = () => {
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
     const calendarDays = [];
     
-    // Add empty slots for days before the 1st of the month
-    for (let i = 0; i < startingDayOfWeek; i++) {
+    for (let i = 0; i < firstDay; i++) {
       calendarDays.push(null);
     }
     
-    // Add each day of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const dateString = date.toISOString().split('T')[0];
+      const dateString = date.toISOString().slice(0, 10);
+      const dayTrades = trades.filter(trade => trade.date === dateString);
       
-      // Find data for this day if it exists
-      const dayDataItem = dayData.find(item => item.date === dateString);
-      
-      if (dayDataItem) {
-        calendarDays.push(dayDataItem);
-      } else {
-        // If no data for this day, add a placeholder
-        calendarDays.push({
-          day,
-          date: dateString,
-          trades: 0,
-          profit: 0
-        });
-      }
+      calendarDays.push({
+        day,
+        date: dateString,
+        trades: dayTrades.length,
+        profit: dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0)
+      });
     }
     
-    // Group into weeks
     const weeks = [];
     let currentWeek = [];
     
@@ -124,7 +163,6 @@ const Dashboard: React.FC = () => {
       currentWeek.push(calendarDays[i]);
       
       if (currentWeek.length === 7 || i === calendarDays.length - 1) {
-        // Calculate weekly totals
         const weeklyTotal = currentWeek
           .filter(day => day !== null)
           .reduce((sum, day) => sum + (day?.profit || 0), 0);
@@ -133,7 +171,6 @@ const Dashboard: React.FC = () => {
           .filter(day => day !== null)
           .reduce((sum, day) => sum + (day?.trades || 0), 0);
         
-        // Get week number
         const weekNumber = currentWeek.some(day => day !== null) ? 
           getWeek(new Date(currentWeek.find(day => day !== null)?.date || new Date())) : 0;
         
@@ -148,7 +185,6 @@ const Dashboard: React.FC = () => {
       }
     }
     
-    // If there are remaining days, pad with nulls to complete the week
     if (currentWeek.length > 0 && currentWeek.length < 7) {
       while (currentWeek.length < 7) {
         currentWeek.push(null);
@@ -175,103 +211,7 @@ const Dashboard: React.FC = () => {
     
     return weeks;
   };
-
-  // Filter trades based on timeframe
-  const filteredTrades = useMemo(() => {
-    if (timeframeFilter === 'all') return trades;
-    
-    const now = new Date();
-    const cutoffDate = new Date();
-    
-    if (timeframeFilter === 'week') {
-      cutoffDate.setDate(now.getDate() - 7);
-    } else if (timeframeFilter === 'month') {
-      cutoffDate.setMonth(now.getMonth() - 1);
-    } else if (timeframeFilter === 'quarter') {
-      cutoffDate.setMonth(now.getMonth() - 3);
-    } else if (timeframeFilter === 'year') {
-      cutoffDate.setFullYear(now.getFullYear() - 1);
-    }
-    
-    return trades.filter(trade => new Date(trade.entryDate) >= cutoffDate);
-  }, [trades, timeframeFilter]);
-
-  // Calculate statistics from filtered trades
-  const stats = useMemo(() => {
-    const totalTrades = filteredTrades.length;
-    
-    if (totalTrades === 0) {
-      return {
-        totalPL: 0,
-        winRate: 0,
-        profitFactor: 0,
-        totalTrades: 0,
-        winningTrades: 0,
-        losingTrades: 0,
-        avgWinning: 0,
-        avgLosing: 0
-      };
-    }
-    
-    const winningTrades = filteredTrades.filter(trade => (trade.profitLoss || 0) > 0);
-    const losingTrades = filteredTrades.filter(trade => (trade.profitLoss || 0) < 0);
-    
-    const totalPL = filteredTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
-    const winRate = (winningTrades.length / totalTrades) * 100;
-    
-    const totalWinning = winningTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
-    const totalLosing = Math.abs(losingTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0));
-    
-    const profitFactor = totalLosing > 0 ? totalWinning / totalLosing : totalWinning > 0 ? Infinity : 0;
-    
-    const avgWinning = winningTrades.length > 0 ? totalWinning / winningTrades.length : 0;
-    const avgLosing = losingTrades.length > 0 ? totalLosing / losingTrades.length : 0;
-    
-    return {
-      totalPL,
-      winRate,
-      profitFactor,
-      totalTrades,
-      winningTrades: winningTrades.length,
-      losingTrades: losingTrades.length,
-      avgWinning,
-      avgLosing
-    };
-  }, [filteredTrades]);
-
-  // Prepare chart data
-  const [dailyPerformanceData, setDailyPerformanceData] = useState<any[]>([]);
   
-  useEffect(() => {
-    const fetchDailyData = async () => {
-      if (!user) return;
-      
-      try {
-        const data = await tradeService.getDailyPLData(user.id, 7);
-        setDailyPerformanceData(data);
-      } catch (error) {
-        console.error('Error fetching daily performance data:', error);
-      }
-    };
-    
-    fetchDailyData();
-  }, [user]);
-
-  // Handlers
-  const exportReport = () => {
-    toast({
-      title: "Exporting report",
-      description: "Your trading report is being generated and will download shortly."
-    });
-    
-    setTimeout(() => {
-      toast({
-        title: "Report exported",
-        description: "Your trading report has been successfully downloaded.",
-      });
-    }, 1500);
-  };
-
   const handleDayClick = (dateString: string) => {
     setSelectedDate(dateString);
     setShowTradeDetails(true);
@@ -281,40 +221,21 @@ const Dashboard: React.FC = () => {
     setShowTradeDetails(false);
   };
 
-  const navigateToJournal = (dateString: string = '') => {
-    if (dateString) {
-      navigate(`/journal?date=${dateString}`);
-    } else {
-      navigate('/journal');
-    }
+  const navigateToJournal = (dateString: string) => {
+    navigate(`/journal?date=${dateString}`);
   };
   
   const handleTradeView = (tradeId: string) => {
     navigate(`/trades/${tradeId}`);
   };
   
-  const handleTradeDelete = async (id: string, e: React.MouseEvent) => {
+  const handleTradeDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    try {
-      const success = await tradeService.deleteTrade(id);
-      
-      if (success) {
-        setTrades(trades.filter(trade => trade.id !== id));
-        toast({
-          title: "Trade deleted",
-          description: "The trade has been successfully deleted"
-        });
-      } else {
-        throw new Error("Failed to delete trade");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete trade",
-        variant: "destructive"
-      });
-    }
+    deleteTrade(id);
+    toast({
+      title: "Trade deleted",
+      description: "The trade has been successfully deleted"
+    });
   };
 
   return (
@@ -338,36 +259,95 @@ const Dashboard: React.FC = () => {
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={exportReport} className="w-full sm:w-auto">
-            <Download className="h-4 w-4 mr-2" />
+            <Calendar className="h-4 w-4 mr-2" />
             Export Report
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <TotalPLCard 
-          value={stats.totalPL} 
-          tradeCount={stats.totalTrades} 
+        <StatCard
+          title="Total P&L"
+          value={`$${totalProfit.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}`}
+          trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
+          icon={<DollarSign className="h-5 w-5" />}
+          color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
+          description={`Trades in total: ${totalTrades}`}
         />
-        
-        <ProfitFactorCard value={stats.profitFactor} />
+        <StatCard
+          title="Profit factor"
+          value={profitFactor === Infinity ? "∞" : profitFactor.toFixed(2)}
+          icon={<Activity className="h-5 w-5" />}
+          description={`${profitFactor > 1 ? '+' : ''}${profitFactor === Infinity ? "" : (profitFactor - 1).toFixed(2)}`}
+        />
         
         <div className="md:col-span-2">
           <AverageTradeCards 
-            avgWin={stats.avgWinning} 
-            avgLoss={stats.avgLosing}
-            winCount={stats.winningTrades}
-            lossCount={stats.losingTrades}
+            avgWin={avgWinningTrade} 
+            avgLoss={avgLosingTrade}
+            winCount={winningTrades}
+            lossCount={losingTrades}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <WinRateChart 
-          winRate={stats.winRate} 
-          winCount={stats.winningTrades} 
-          lossCount={stats.losingTrades} 
-        />
+        <Card className="col-span-1">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center">
+                Winning % By Trades
+                <CircleIcon className="h-4 w-4 ml-2 text-gray-400" />
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] sm:h-[300px] flex flex-col sm:flex-row items-center justify-center">
+              <div className="relative w-[180px] sm:w-[220px] h-[180px] sm:h-[220px]">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-3xl sm:text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
+                  <span className="text-sm text-gray-500">winrate</span>
+                </div>
+                <svg viewBox="0 0 100 100" className="w-full h-full">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#f1f1f1"
+                    strokeWidth="15"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#36B37E"
+                    strokeWidth="15"
+                    strokeDasharray={`${winRate * 2.512} ${(100 - winRate) * 2.512}`}
+                    strokeDashoffset="0"
+                    transform="rotate(-90, 50, 50)"
+                  />
+                </svg>
+              </div>
+              <div className="ml-0 mt-4 sm:mt-0 sm:ml-4">
+                <div className="mb-4">
+                  <div className="flex items-center mb-1">
+                    <span className="w-3 h-3 bg-emerald-500 rounded-full mr-2"></span>
+                    <span className="text-sm">{winningTrades} winners</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                    <span className="text-sm">{losingTrades} losers</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="col-span-1">
           <CardHeader className="pb-2">
@@ -394,41 +374,108 @@ const Dashboard: React.FC = () => {
             <CardTitle className="text-lg">Daily Net Cumulative P&L</CardTitle>
           </CardHeader>
           <CardContent className="h-[250px] sm:h-[300px]">
-            <CumulativePLChart 
-              trades={filteredTrades}
-              timeRange={timeframeFilter as 'week' | 'month' | 'quarter' | 'year' | 'all'}
+            <DailyPLBarChart 
+              data={dailyPerformanceData}
+              title=""
             />
           </CardContent>
         </Card>
       </div>
 
-      <TradeCalendar 
-        month={calendarMonth}
-        year={calendarYear}
-        calendarData={calendarData}
-        onDayClick={handleDayClick}
-        onMonthChange={(month, year) => {
-          setCalendarMonth(month);
-          setCalendarYear(year);
-        }}
-        onJournalClick={navigateToJournal}
-      />
-      
-      <RecentTrades 
-        trades={trades.slice(0, 10)}
-        onViewTrade={handleTradeView}
-        onDeleteTrade={handleTradeDelete}
-      />
+      <Card className="mb-6">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
+          <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
+            <Calendar className="h-4 w-4 mr-2" />
+            Journal View
+          </Button>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <div className="min-w-[768px] md:min-w-0">
+            <div className="grid grid-cols-7 gap-1">
+              <div className="text-sm font-medium text-center p-2">Sun</div>
+              <div className="text-sm font-medium text-center p-2">Mon</div>
+              <div className="text-sm font-medium text-center p-2">Tue</div>
+              <div className="text-sm font-medium text-center p-2">Wed</div>
+              <div className="text-sm font-medium text-center p-2">Thu</div>
+              <div className="text-sm font-medium text-center p-2">Fri</div>
+              <div className="text-sm font-medium text-center p-2">Sat</div>
+              
+              {getCalendarData().map((week, weekIndex) => (
+                <React.Fragment key={`week-${weekIndex}`}>
+                  {week.days.map((day, dayIndex) => 
+                    day === null ? (
+                      <div key={`empty-${weekIndex}-${dayIndex}`} className="p-2"></div>
+                    ) : (
+                      <div 
+                        key={`day-${day.day}`} 
+                        className={cn(
+                          "border rounded p-2 text-center min-h-[70px] sm:min-h-[80px] cursor-pointer transition-colors",
+                          day.profit > 0 ? "bg-green-50 border-green-200 hover:bg-green-100" : 
+                          day.profit < 0 ? "bg-red-50 border-red-200 hover:bg-red-100" : 
+                          "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                        )}
+                        onClick={() => handleDayClick(day.date)}
+                      >
+                        <div className="text-sm">{day.day}</div>
+                        {day.trades > 0 && (
+                          <>
+                            <div className={cn(
+                              "text-base sm:text-lg font-bold mt-1",
+                              day.profit > 0 ? "text-emerald-500" : "text-red-500"
+                            )}>
+                              {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
+                            </div>
+                            <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="mt-1 text-xs h-6 px-2 flex items-center"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigateToJournal(day.date);
+                              }}
+                            >
+                              View
+                              <ExternalLink className="ml-1 h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )
+                  )}
+                  
+                  <div className="col-span-7 mt-1 mb-4 flex justify-end">
+                    <div className="w-full sm:w-[200px] bg-gray-50 border rounded-md p-3 flex flex-col">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">Week {week.weekNumber}</span>
+                        <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                          {week.weeklyTrades} {week.weeklyTrades === 1 ? 'trade' : 'trades'}
+                        </span>
+                      </div>
+                      <div className={cn(
+                        "font-bold text-lg",
+                        week.weeklyTotal > 0 ? "text-emerald-600" : week.weeklyTotal < 0 ? "text-red-600" : "text-gray-600"
+                      )}>
+                        {week.weeklyTotal > 0 ? "+" : ""}{week.weeklyTotal.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Net P&L for week {week.weekNumber}
+                      </div>
+                    </div>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       <TradeDetailsDialog 
         isOpen={showTradeDetails}
         onClose={handleCloseTradeDetails}
         selectedDate={selectedDate}
-        trades={trades.filter(t => {
-          if (!selectedDate) return false;
-          const tradeDate = new Date(t.entryDate).toISOString().split('T')[0];
-          return tradeDate === selectedDate && t.userId === user?.id;
-        })}
+        trades={trades.filter(t => t.date === selectedDate && t.userId === user?.id)}
       />
     </Layout>
   );
