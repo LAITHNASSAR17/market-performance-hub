@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -396,10 +395,8 @@ const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent className="h-[250px] sm:h-[300px]">
             <CumulativePLChart 
-              data={dailyPerformanceData.map(item => ({
-                date: item.date,
-                value: item.profit
-              }))}
+              trades={filteredTrades}
+              timeRange={timeframeFilter as 'week' | 'month' | 'quarter' | 'year' | 'all'}
             />
           </CardContent>
         </Card>
@@ -418,7 +415,31 @@ const Dashboard: React.FC = () => {
       />
       
       <RecentTrades 
-        trades={trades.slice(0, 10)}
+        trades={trades.slice(0, 10).map(trade => ({
+          id: trade.id,
+          userId: trade.userId,
+          account: trade.account || 'Default',
+          date: trade.entryDate.toISOString().split('T')[0],
+          pair: trade.symbol,
+          type: trade.direction === 'long' ? 'Buy' : 'Sell',
+          entry: trade.entryPrice,
+          exit: trade.exitPrice || 0,
+          lotSize: trade.quantity,
+          stopLoss: null,
+          takeProfit: null,
+          riskPercentage: 0,
+          returnPercentage: 0,
+          profitLoss: trade.profitLoss || 0,
+          durationMinutes: trade.exitDate 
+            ? Math.floor((new Date(trade.exitDate).getTime() - new Date(trade.entryDate).getTime()) / (1000 * 60)) 
+            : 0,
+          notes: trade.notes || '',
+          imageUrl: null,
+          beforeImageUrl: null,
+          afterImageUrl: null,
+          hashtags: trade.tags || [],
+          createdAt: trade.createdAt.toISOString()
+        }))}
         onViewTrade={handleTradeView}
         onDeleteTrade={handleTradeDelete}
       />

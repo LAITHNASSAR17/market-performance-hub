@@ -11,12 +11,12 @@ import {
   ReferenceLine
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trade } from '@/contexts/TradeContext';
+import { ITrade } from '@/services/tradeService';
 import { format, parseISO, eachDayOfInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { Info } from 'lucide-react';
 
 interface CumulativePLChartProps {
-  trades: Trade[];
+  trades: ITrade[];
   title?: string;
   timeRange?: 'week' | 'month' | 'quarter' | 'year' | 'all';
 }
@@ -28,10 +28,11 @@ const CumulativePLChart: React.FC<CumulativePLChartProps> = ({
 }) => {
   // Group trades by date and calculate daily P&L
   const tradesByDate = trades.reduce((acc: Record<string, number>, trade) => {
-    if (!acc[trade.date]) {
-      acc[trade.date] = 0;
+    const dateStr = new Date(trade.entryDate).toISOString().split('T')[0];
+    if (!acc[dateStr]) {
+      acc[dateStr] = 0;
     }
-    acc[trade.date] += trade.profitLoss;
+    acc[dateStr] += trade.profitLoss || 0;
     return acc;
   }, {});
   
@@ -55,7 +56,7 @@ const CumulativePLChart: React.FC<CumulativePLChartProps> = ({
     case 'all':
       // Find the oldest trade date
       if (trades.length > 0) {
-        const dates = trades.map(trade => new Date(trade.date));
+        const dates = trades.map(trade => new Date(trade.entryDate));
         startDate = new Date(Math.min(...dates.map(date => date.getTime())));
       }
       break;
