@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -117,16 +116,14 @@ const UserProfileSettings: React.FC = () => {
       await updateProfile(name, email);
       toast({
         title: "Profile Updated",
-        description: "Your profile has been updated successfully",
-        icon: <Check className="h-4 w-4" />
+        description: "Your profile has been updated successfully"
       });
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         title: "Update Failed",
         description: "There was an error updating your profile. Please try again.",
-        variant: "destructive",
-        icon: <AlertCircle className="h-4 w-4" />
+        variant: "destructive"
       });
     } finally {
       setIsUpdating(false);
@@ -163,8 +160,7 @@ const UserProfileSettings: React.FC = () => {
       
       toast({
         title: "Password Changed",
-        description: "Your password has been updated successfully",
-        icon: <Check className="h-4 w-4" />
+        description: "Your password has been updated successfully"
       });
     } catch (error: any) {
       setPasswordError(error.message || 'Failed to change password');
