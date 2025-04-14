@@ -26,6 +26,7 @@ const EmailVerify = () => {
 
       try {
         console.log(`Attempting to verify email: ${email}`);
+        console.log(`Current app URL: ${window.location.origin}`);
         
         // 1. التحقق من وجود المستخدم
         const { data: userData, error: userError } = await supabase
@@ -50,9 +51,8 @@ const EmailVerify = () => {
 
         console.log('User found:', userData.id);
 
-        // 2. إضافة حقل email_verified إذا لم يكن موجودًا بعد
+        // 2. تحديث حالة التحقق للمستخدم
         try {
-          // 3. تحديث حالة التحقق للمستخدم
           const { error: updateError } = await supabase
             .from('users')
             .update({ email_verified: true })

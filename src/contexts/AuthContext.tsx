@@ -460,6 +460,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(`Sending verification email to ${email}`);
       
       const appUrl = window.location.origin;
+      console.log(`Current application URL: ${appUrl}`);
+      
       const verificationLink = `${appUrl}/verify?email=${encodeURIComponent(email)}`;
       console.log(`Verification link: ${verificationLink}`);
       
@@ -505,7 +507,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending password reset email to ${email}`);
       
-      // 먼저 사용자 존재 여부 확인
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -522,8 +523,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error("User not found");
       }
       
-      // 안전한 비밀번호 재설정 링크 생성
-      const resetLink = `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}`;
+      const appUrl = window.location.origin;
+      console.log(`Current application URL: ${appUrl}`);
+      
+      const resetLink = `${appUrl}/reset-password?email=${encodeURIComponent(email)}`;
+      console.log(`Reset password link: ${resetLink}`);
       
       console.log("Calling Supabase function for password reset email");
       const response = await supabase.functions.invoke('send-email', {
