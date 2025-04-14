@@ -1,7 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export type Trade = {
   id: string;
@@ -21,21 +21,21 @@ export type Trade = {
   durationMinutes: number;
   notes: string;
   imageUrl: string | null;
-  beforeImageUrl: string | null; // Added before image
-  afterImageUrl: string | null;  // Added after image
+  beforeImageUrl: string | null;
+  afterImageUrl: string | null;
   hashtags: string[];
   createdAt: string;
-  commission?: number; // Optional commission field
-  instrumentType?: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other'; // Added instrument type
+  commission?: number;
+  instrumentType?: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other';
 };
 
 type TradeContextType = {
   trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => void;
-  updateTrade: (id: string, trade: Partial<Trade>) => void;
-  deleteTrade: (id: string) => void;
+  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
+  deleteTrade: (id: string) => Promise<void>;
   getTrade: (id: string) => Trade | undefined;
-  getAllTrades: () => Trade[];
+  getAllTrades: () => Promise<Trade[]>;
   loading: boolean;
   accounts: string[];
   pairs: string[];
@@ -104,7 +104,470 @@ const symbolsToPairs = (symbols: Symbol[]): string[] => {
   return symbols.map(symbol => symbol.symbol);
 };
 
-// Sample data for demonstration purposes
+const TradeContext = createContext<TradeContextType | undefined>(undefined);
+
+export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [symbols, setSymbols] = useState<Symbol[]>(defaultSymbols);
+  const [allHashtags, setAllHashtags] = useState<string[]>([
+    'setup', 'momentum', 'breakout', 'retracement', 'technical', 'fundamental', 
+    'news', 'mistake', 'perfecttrade', 'patience', 'fakeout'
+  ]);
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Calculate profit/loss based on instrument type
+  const calculateProfitLoss = (
+    entry: number, 
+    exit: number, 
+    lotSize: number, 
+    type: 'Buy' | 'Sell',
+    instrumentType: string = 'forex'
+  ): number => {
+    // Set multipliers based on instrument type
+    let pipValue = 0;
+    let pipMultiplier = 1;
+    let contractSize = 100000; // Default for forex
+
+    // Determine instrument type from the input or check for specific patterns
+    let detectedType = instrumentType.toLowerCase();
+    
+    if (!detectedType) {
+      // Auto-detect instrument type if not provided
+      if (/\//.test(instrumentType)) {
+        detectedType = 'forex';
+      } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
+        detectedType = 'crypto';
+      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
+        detectedType = 'stock';
+      } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
+        detectedType = 'index';
+      } else if (/^(xau|xag|cl|ng)/i.test(instrumentType)) {
+        detectedType = 'commodity';
+      } else {
+        detectedType = 'stock'; // Default to stock
+      }
+    }
+    
+    // Configure calculation parameters based on instrument type
+    switch (detectedType) {
+      case 'forex':
+        contractSize = 100000; // Standard lot size
+        
+        // Set pip multiplier based on currency pair
+        if (instrumentType.includes('JPY')) {
+          pipMultiplier = 0.01;
+        } else {
+          pipMultiplier = 0.0001;
+        }
+        
+        // Calculate pip value
+        pipValue = pipMultiplier * contractSize;
+        break;
+        
+      case 'crypto':
+        // For crypto, we typically calculate based on direct price difference
+        contractSize = 1;
+        pipMultiplier = 1;
+        pipValue = 1;
+        break;
+        
+      case 'stock':
+        // For stocks, calculate based on share price difference
+        contractSize = lotSize;
+        pipMultiplier = 1;
+        pipValue = 1;
+        break;
+        
+      case 'index':
+        // For indices, multiplier depends on the specific index
+        contractSize = lotSize;
+        pipMultiplier = 1;
+        pipValue = 1;
+        break;
+        
+      case 'commodity':
+        // For commodities, contract specifics vary
+        if (instrumentType.toUpperCase().includes('XAU')) {
+          // Gold is typically $100 per $1 movement per oz
+          contractSize = 100;
+        } else if (instrumentType.toUpperCase().includes('XAG')) {
+          // Silver is typically $50 per $1 movement per oz
+          contractSize = 50;
+        } else {
+          // Default for other commodities
+          contractSize = 1000;
+        }
+        pipMultiplier = 1;
+        pipValue = 1;
+        break;
+        
+      default:
+        // Default calculation for any other instrument
+        contractSize = lotSize;
+        pipMultiplier = 1;
+        pipValue = 1;
+    }
+    
+    // Calculate price difference based on trade type
+    const priceDiff = type === 'Buy' 
+      ? exit - entry 
+      : entry - exit;
+    
+    // Calculate total profit/loss
+    const profitLoss = priceDiff * lotSize * contractSize;
+    
+    return Math.round(profitLoss * 100) / 100; // Round to 2 decimal places
+  };
+
+  // Load trades from Supabase
+  const fetchTradesFromSupabase = async (userId?: string) => {
+    try {
+      let query = supabase.from('trades').select('*');
+      
+      // If userId is provided, filter by that user
+      if (userId) {
+        query = query.eq('user_id', userId);
+      }
+      
+      const { data, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching trades:', error);
+        return [];
+      }
+      
+      // Transform the Supabase data to match our Trade type
+      return data.map((item: any) => ({
+        id: item.id,
+        userId: item.user_id,
+        account: item.account || 'Main Trading',
+        date: new Date(item.entry_date).toISOString().split('T')[0],
+        pair: item.symbol,
+        type: item.direction === 'long' ? 'Buy' : 'Sell',
+        entry: item.entry_price,
+        exit: item.exit_price || 0,
+        lotSize: item.quantity,
+        stopLoss: item.stop_loss || null,
+        takeProfit: item.take_profit || null,
+        riskPercentage: item.risk_percentage || 0,
+        returnPercentage: item.return_percentage || 0,
+        profitLoss: item.profit_loss || 0,
+        durationMinutes: item.duration_minutes || 0,
+        notes: item.notes || '',
+        imageUrl: item.image_url || null,
+        beforeImageUrl: item.before_image_url || null,
+        afterImageUrl: item.after_image_url || null,
+        hashtags: item.tags || [],
+        createdAt: item.created_at,
+        commission: item.fees,
+        instrumentType: item.instrument_type || 'forex',
+      }));
+    } catch (error) {
+      console.error('Error transforming trades:', error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      if (user) {
+        // Load trades from Supabase
+        const userTrades = await fetchTradesFromSupabase(user.id);
+        
+        // Load stored symbols from localStorage for backward compatibility
+        const storedSymbols = loadSymbolsFromStorage();
+        if (storedSymbols.length > 0) {
+          setSymbols(storedSymbols);
+        }
+        
+        // If user has no trades and is demo user, provide sample data
+        if (userTrades.length === 0 && user.email === 'demo@example.com') {
+          // For demo account, use sample trades but update them to Supabase
+          const sampleTradesForDemo = sampleTrades.map(trade => ({
+            ...trade,
+            userId: user.id
+          }));
+          
+          // Save demo trades to Supabase
+          for (const trade of sampleTradesForDemo) {
+            await addTradeToSupabase(trade);
+          }
+          
+          // Fetch again after adding
+          const updatedTrades = await fetchTradesFromSupabase(user.id);
+          setTrades(updatedTrades);
+        } else {
+          setTrades(userTrades);
+        }
+        
+        // Fetch and set hashtags
+        const hashtagsData = await fetchHashtags();
+        if (hashtagsData.length > 0) {
+          setAllHashtags([...new Set([...allHashtags, ...hashtagsData])]);
+        }
+      } else {
+        setTrades([]);
+      }
+      setLoading(false);
+    };
+    
+    loadData();
+  }, [user]);
+
+  // For backward compatibility
+  const loadSymbolsFromStorage = (): Symbol[] => {
+    const storedSymbols = localStorage.getItem('symbols');
+    return storedSymbols ? JSON.parse(storedSymbols) : defaultSymbols;
+  };
+  
+  const saveSymbolsToStorage = (symbols: Symbol[]) => {
+    localStorage.setItem('symbols', JSON.stringify(symbols));
+  };
+
+  // Fetch hashtags from trades in Supabase
+  const fetchHashtags = async (): Promise<string[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('trades')
+        .select('tags');
+        
+      if (error || !data) {
+        console.error('Error fetching hashtags:', error);
+        return [];
+      }
+      
+      // Extract and flatten all hashtags
+      const allTags: string[] = [];
+      data.forEach(item => {
+        if (Array.isArray(item.tags)) {
+          allTags.push(...item.tags);
+        }
+      });
+      
+      // Return unique hashtags
+      return [...new Set(allTags)];
+    } catch (error) {
+      console.error('Error processing hashtags:', error);
+      return [];
+    }
+  };
+
+  // Transform Trade to Supabase format
+  const transformTradeForSupabase = (trade: Trade) => {
+    return {
+      user_id: trade.userId,
+      account: trade.account,
+      symbol: trade.pair,
+      entry_price: trade.entry,
+      exit_price: trade.exit,
+      quantity: trade.lotSize,
+      direction: trade.type === 'Buy' ? 'long' : 'short',
+      entry_date: new Date(trade.date).toISOString(),
+      exit_date: trade.exit ? new Date(trade.date).toISOString() : null,
+      profit_loss: trade.profitLoss,
+      fees: trade.commission || 0,
+      stop_loss: trade.stopLoss,
+      take_profit: trade.takeProfit,
+      risk_percentage: trade.riskPercentage,
+      return_percentage: trade.returnPercentage,
+      duration_minutes: trade.durationMinutes,
+      notes: trade.notes,
+      tags: trade.hashtags,
+      image_url: trade.imageUrl,
+      before_image_url: trade.beforeImageUrl,
+      after_image_url: trade.afterImageUrl,
+      instrument_type: trade.instrumentType || 'forex'
+    };
+  };
+
+  // Add trade to Supabase
+  const addTradeToSupabase = async (trade: Trade) => {
+    const supabaseTrade = transformTradeForSupabase(trade);
+    
+    const { data, error } = await supabase
+      .from('trades')
+      .insert(supabaseTrade)
+      .select();
+      
+    if (error) {
+      console.error('Error adding trade to Supabase:', error);
+      throw error;
+    }
+    
+    return data[0];
+  };
+
+  const addTrade = async (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
+    if (!user) return;
+
+    try {
+      const newTrade: Trade = {
+        ...newTradeData,
+        id: crypto.randomUUID(),
+        userId: user.id,
+        createdAt: new Date().toISOString()
+      };
+
+      // Add to Supabase
+      await addTradeToSupabase(newTrade);
+      
+      // Update local state
+      const updatedTrades = await fetchTradesFromSupabase(user.id);
+      setTrades(updatedTrades);
+      
+      // Update hashtags
+      const newHashtags = newTrade.hashtags.filter(tag => !allHashtags.includes(tag));
+      if (newHashtags.length > 0) {
+        setAllHashtags([...allHashtags, ...newHashtags]);
+      }
+
+      toast({
+        title: "Trade Added",
+        description: "Your trade has been added successfully",
+      });
+    } catch (error) {
+      console.error('Error adding trade:', error);
+      toast({
+        title: "Error Adding Trade",
+        description: "There was an error adding your trade. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateTrade = async (id: string, tradeUpdate: Partial<Trade>) => {
+    if (!user) return;
+    
+    try {
+      const trade = trades.find(t => t.id === id);
+      if (!trade) return;
+      
+      const updatedTrade = { ...trade, ...tradeUpdate };
+      
+      // Update in Supabase
+      const { error } = await supabase
+        .from('trades')
+        .update(transformTradeForSupabase(updatedTrade))
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      const updatedTrades = await fetchTradesFromSupabase(user.id);
+      setTrades(updatedTrades);
+
+      // Update hashtags if they changed
+      if (tradeUpdate.hashtags) {
+        const newHashtags = tradeUpdate.hashtags.filter(tag => !allHashtags.includes(tag));
+        if (newHashtags.length > 0) {
+          setAllHashtags([...allHashtags, ...newHashtags]);
+        }
+      }
+
+      toast({
+        title: "Trade Updated",
+        description: "Your trade has been updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating trade:', error);
+      toast({
+        title: "Error Updating Trade",
+        description: "There was an error updating your trade. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteTrade = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('trades')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      const updatedTrades = trades.filter(trade => trade.id !== id);
+      setTrades(updatedTrades);
+
+      toast({
+        title: "Trade Deleted",
+        description: "Your trade has been deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting trade:', error);
+      toast({
+        title: "Error Deleting Trade",
+        description: "There was an error deleting your trade. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getTrade = (id: string) => {
+    return trades.find(trade => trade.id === id);
+  };
+
+  // Function for admin to get ALL trades from all users
+  const getAllTrades = async (): Promise<Trade[]> => {
+    try {
+      const allTrades = await fetchTradesFromSupabase();
+      return allTrades;
+    } catch (error) {
+      console.error('Error getting all trades:', error);
+      return [];
+    }
+  };
+
+  const addHashtag = (hashtag: string) => {
+    if (!allHashtags.includes(hashtag)) {
+      setAllHashtags([...allHashtags, hashtag]);
+    }
+  };
+  
+  const addSymbol = (symbol: Symbol) => {
+    // Check if symbol already exists
+    if (!symbols.some(s => s.symbol === symbol.symbol)) {
+      const updatedSymbols = [...symbols, symbol];
+      setSymbols(updatedSymbols);
+      saveSymbolsToStorage(updatedSymbols);
+      
+      toast({
+        title: "Symbol Added",
+        description: `${symbol.name} has been added to your symbols list`,
+      });
+    }
+  };
+
+  return (
+    <TradeContext.Provider value={{ 
+      trades, 
+      addTrade, 
+      updateTrade, 
+      deleteTrade, 
+      getTrade,
+      getAllTrades,
+      loading,
+      accounts: sampleAccounts,
+      pairs: symbolsToPairs(symbols),
+      symbols,
+      addSymbol,
+      allHashtags,
+      addHashtag,
+      calculateProfitLoss
+    }}>
+      {children}
+    </TradeContext.Provider>
+  );
+};
+
+// Sample data for demonstration purposes - will only be used for demo users with no trades
 const sampleTrades: Trade[] = [
   {
     id: '1',
@@ -227,309 +690,6 @@ const sampleTrades: Trade[] = [
     commission: 10
   }
 ];
-
-const TradeContext = createContext<TradeContextType | undefined>(undefined);
-
-export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [symbols, setSymbols] = useState<Symbol[]>(defaultSymbols);
-  const [allHashtags, setAllHashtags] = useState<string[]>([
-    'setup', 'momentum', 'breakout', 'retracement', 'technical', 'fundamental', 
-    'news', 'mistake', 'perfecttrade', 'patience', 'fakeout'
-  ]);
-  const { toast } = useToast();
-  const { user } = useAuth();
-
-  // Calculate profit/loss based on instrument type
-  const calculateProfitLoss = (
-    entry: number, 
-    exit: number, 
-    lotSize: number, 
-    type: 'Buy' | 'Sell',
-    instrumentType: string = 'forex'
-  ): number => {
-    // Set multipliers based on instrument type
-    let pipValue = 0;
-    let pipMultiplier = 1;
-    let contractSize = 100000; // Default for forex
-
-    // Determine instrument type from the input or check for specific patterns
-    let detectedType = instrumentType.toLowerCase();
-    
-    if (!detectedType) {
-      // Auto-detect instrument type if not provided
-      if (/\//.test(instrumentType)) {
-        detectedType = 'forex';
-      } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
-        detectedType = 'crypto';
-      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
-        detectedType = 'stock';
-      } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
-        detectedType = 'index';
-      } else if (/^(xau|xag|cl|ng)/i.test(instrumentType)) {
-        detectedType = 'commodity';
-      } else {
-        detectedType = 'stock'; // Default to stock
-      }
-    }
-    
-    // Configure calculation parameters based on instrument type
-    switch (detectedType) {
-      case 'forex':
-        contractSize = 100000; // Standard lot size
-        
-        // Set pip multiplier based on currency pair
-        if (instrumentType.includes('JPY')) {
-          pipMultiplier = 0.01;
-        } else {
-          pipMultiplier = 0.0001;
-        }
-        
-        // Calculate pip value
-        pipValue = pipMultiplier * contractSize;
-        break;
-        
-      case 'crypto':
-        // For crypto, we typically calculate based on direct price difference
-        contractSize = 1;
-        pipMultiplier = 1;
-        pipValue = 1;
-        break;
-        
-      case 'stock':
-        // For stocks, calculate based on share price difference
-        contractSize = lotSize;
-        pipMultiplier = 1;
-        pipValue = 1;
-        break;
-        
-      case 'index':
-        // For indices, multiplier depends on the specific index
-        contractSize = lotSize;
-        pipMultiplier = 1;
-        pipValue = 1;
-        break;
-        
-      case 'commodity':
-        // For commodities, contract specifics vary
-        if (instrumentType.toUpperCase().includes('XAU')) {
-          // Gold is typically $100 per $1 movement per oz
-          contractSize = 100;
-        } else if (instrumentType.toUpperCase().includes('XAG')) {
-          // Silver is typically $50 per $1 movement per oz
-          contractSize = 50;
-        } else {
-          // Default for other commodities
-          contractSize = 1000;
-        }
-        pipMultiplier = 1;
-        pipValue = 1;
-        break;
-        
-      default:
-        // Default calculation for any other instrument
-        contractSize = lotSize;
-        pipMultiplier = 1;
-        pipValue = 1;
-    }
-    
-    // Calculate price difference based on trade type
-    const priceDiff = type === 'Buy' 
-      ? exit - entry 
-      : entry - exit;
-    
-    // Calculate total profit/loss
-    const profitLoss = priceDiff * lotSize * contractSize;
-    
-    return Math.round(profitLoss * 100) / 100; // Round to 2 decimal places
-  };
-
-  useEffect(() => {
-    if (user) {
-      // Load trades and symbols from localStorage
-      const allTrades = loadTradesFromStorage();
-      const storedSymbols = loadSymbolsFromStorage();
-      
-      if (storedSymbols.length > 0) {
-        setSymbols(storedSymbols);
-      }
-      
-      // Filter trades for current user
-      const userTrades = allTrades.filter(trade => trade.userId === user.id);
-      
-      // If user has no trades and is demo user, provide sample data
-      if (userTrades.length === 0 && user.email === 'demo@example.com') {
-        // For demo account, use sample trades but update the userId
-        const demoTrades = sampleTrades.map(trade => ({
-          ...trade,
-          userId: user.id
-        }));
-        
-        setTrades(demoTrades);
-        // Save demo trades to storage
-        saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...demoTrades]);
-      } else {
-        setTrades(userTrades);
-      }
-      
-      // Extract and set all unique hashtags from trades
-      const hashtagSet = new Set<string>();
-      trades.forEach(trade => {
-        trade.hashtags.forEach(tag => hashtagSet.add(tag));
-      });
-      setAllHashtags(Array.from(hashtagSet).concat(allHashtags));
-    } else {
-      setTrades([]);
-    }
-    setLoading(false);
-  }, [user]);
-
-  const loadTradesFromStorage = (): Trade[] => {
-    const storedTrades = localStorage.getItem('trades');
-    return storedTrades ? JSON.parse(storedTrades) : [];
-  };
-
-  const saveTradestoStorage = (trades: Trade[]) => {
-    localStorage.setItem('trades', JSON.stringify(trades));
-  };
-  
-  const loadSymbolsFromStorage = (): Symbol[] => {
-    const storedSymbols = localStorage.getItem('symbols');
-    return storedSymbols ? JSON.parse(storedSymbols) : defaultSymbols;
-  };
-  
-  const saveSymbolsToStorage = (symbols: Symbol[]) => {
-    localStorage.setItem('symbols', JSON.stringify(symbols));
-  };
-
-  const addTrade = (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user) return;
-
-    const newTrade: Trade = {
-      ...newTradeData,
-      id: Date.now().toString(),
-      userId: user.id,
-      createdAt: new Date().toISOString()
-    };
-
-    // Update local state
-    const updatedTrades = [...trades, newTrade];
-    setTrades(updatedTrades);
-    
-    // Update storage with ALL trades (including from other users)
-    const allTrades = loadTradesFromStorage();
-    saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...updatedTrades]);
-    
-    // Update hashtags
-    const newHashtags = newTrade.hashtags.filter(tag => !allHashtags.includes(tag));
-    if (newHashtags.length > 0) {
-      setAllHashtags([...allHashtags, ...newHashtags]);
-    }
-
-    toast({
-      title: "Trade Added",
-      description: "Your trade has been added successfully",
-    });
-  };
-
-  const updateTrade = (id: string, tradeUpdate: Partial<Trade>) => {
-    if (!user) return;
-    
-    const tradeIndex = trades.findIndex(t => t.id === id);
-    if (tradeIndex === -1) return;
-
-    const updatedTrades = [...trades];
-    updatedTrades[tradeIndex] = { ...updatedTrades[tradeIndex], ...tradeUpdate };
-    
-    // Update local state
-    setTrades(updatedTrades);
-    
-    // Update storage with ALL trades (including from other users)
-    const allTrades = loadTradesFromStorage();
-    saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...updatedTrades]);
-
-    // Update hashtags if they changed
-    if (tradeUpdate.hashtags) {
-      const newHashtags = tradeUpdate.hashtags.filter(tag => !allHashtags.includes(tag));
-      if (newHashtags.length > 0) {
-        setAllHashtags([...allHashtags, ...newHashtags]);
-      }
-    }
-
-    toast({
-      title: "Trade Updated",
-      description: "Your trade has been updated successfully",
-    });
-  };
-
-  const deleteTrade = (id: string) => {
-    if (!user) return;
-    
-    // Update local state
-    const updatedTrades = trades.filter(trade => trade.id !== id);
-    setTrades(updatedTrades);
-    
-    // Update storage with ALL trades (including from other users)
-    const allTrades = loadTradesFromStorage();
-    saveTradestoStorage([...allTrades.filter(trade => trade.id !== id)]);
-
-    toast({
-      title: "Trade Deleted",
-      description: "Your trade has been deleted successfully",
-    });
-  };
-
-  const getTrade = (id: string) => {
-    return trades.find(trade => trade.id === id);
-  };
-
-  // Function for admin to get ALL trades from all users
-  const getAllTrades = (): Trade[] => {
-    return loadTradesFromStorage();
-  };
-
-  const addHashtag = (hashtag: string) => {
-    if (!allHashtags.includes(hashtag)) {
-      setAllHashtags([...allHashtags, hashtag]);
-    }
-  };
-  
-  const addSymbol = (symbol: Symbol) => {
-    // Check if symbol already exists
-    if (!symbols.some(s => s.symbol === symbol.symbol)) {
-      const updatedSymbols = [...symbols, symbol];
-      setSymbols(updatedSymbols);
-      saveSymbolsToStorage(updatedSymbols);
-      
-      toast({
-        title: "Symbol Added",
-        description: `${symbol.name} has been added to your symbols list`,
-      });
-    }
-  };
-
-  return (
-    <TradeContext.Provider value={{ 
-      trades, 
-      addTrade, 
-      updateTrade, 
-      deleteTrade, 
-      getTrade,
-      getAllTrades,
-      loading,
-      accounts: sampleAccounts,
-      pairs: symbolsToPairs(symbols),
-      symbols,
-      addSymbol,
-      allHashtags,
-      addHashtag,
-      calculateProfitLoss
-    }}>
-      {children}
-    </TradeContext.Provider>
-  );
-};
 
 export const useTrade = () => {
   const context = useContext(TradeContext);
