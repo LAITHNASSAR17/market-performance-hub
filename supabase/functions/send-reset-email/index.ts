@@ -26,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, name, resetLink, language = 'ar' }: ResetEmailRequest = await req.json();
     
-    // Extract token from reset link
+    // Extract token from reset link 
     const tokenMatch = resetLink.match(/[#&]access_token=([^&]+)/);
     const token = tokenMatch ? tokenMatch[1] : null;
     
@@ -43,7 +43,8 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Create the correct reset link
     const domain = req.headers.get("Origin") || new URL(req.url).origin;
-    // Format the reset link with the token in the URL query params instead of hash
+    
+    // Format using direct path to reset password with token in query params
     const correctResetLink = `${domain}/reset-password?reset_token=${token}`;
     
     console.log("Original reset link:", resetLink);

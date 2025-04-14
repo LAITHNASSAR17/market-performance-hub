@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,143 +14,136 @@ const ResetPassword: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [token, setToken] = useState<string | null>(null);
-  const [processingReset, setProcessingReset] = useState(false);
-  const [tokenProcessed, setTokenProcessed] = useState(false);
-  const [initialSignOutDone, setInitialSignOutDone] = useState(false);
-  const { resetPassword, loading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [signedOut, setSignedOut] = useState(false);
+  const [tokenExtracted, setTokenExtracted] = useState(false);
+  
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
-  // Force sign out when accessing this page to prevent automatic redirects
+  // First step: Sign out any existing user to prevent auto-redirects
   useEffect(() => {
-    const preventAutoRedirect = async () => {
-      if (initialSignOutDone) return;
-      
+    const performSignOut = async () => {
       try {
-        // Sign out current user to prevent auto-redirect
+        console.log("Signing out any existing user...");
         await supabase.auth.signOut();
-        console.log("Signed out user to prevent automatic redirect");
-        setInitialSignOutDone(true);
+        setSignedOut(true);
       } catch (error) {
         console.error("Error signing out:", error);
-        // Still mark as done to prevent infinite loops
-        setInitialSignOutDone(true);
+        // Still mark as done to prevent loops
+        setSignedOut(true);
       }
     };
     
-    preventAutoRedirect();
-  }, [initialSignOutDone]);
+    if (!signedOut) {
+      performSignOut();
+    }
+  }, [signedOut]);
 
+  // Second step: Extract token after sign out is complete
   useEffect(() => {
-    if (tokenProcessed || !initialSignOutDone) return; // Only process token once and after initial signout
+    if (!signedOut || tokenExtracted) return;
     
-    const extractToken = async () => {
-      // First try to get token from URL search params
+    const extractResetToken = () => {
+      console.log("Extracting reset token...");
+      
+      // Try method 1: Get from URL query params
       const resetToken = searchParams.get('reset_token');
       if (resetToken) {
         console.log("Reset token found in URL params:", resetToken);
         setToken(resetToken);
-        setTokenProcessed(true);
-        return true;
+        setTokenExtracted(true);
+        return;
       }
       
-      // Then try to extract token from hash
-      const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
-      const accessToken = hashParams.get('access_token');
+      // Try method 2: Parse from hash directly (Supabase format)
+      const hash = location.hash.replace(/^#/, '');
+      console.log("Looking for token in hash:", hash);
       
-      if (accessToken) {
-        console.log("Access token found from hash:", accessToken);
-        setToken(accessToken);
-        setTokenProcessed(true);
-        return true;
-      }
-      
-      // Try another method to get token from hash
-      const fullHash = location.hash;
-      if (fullHash && fullHash.includes('access_token=')) {
-        const tokenMatch = fullHash.match(/access_token=([^&]+)/);
-        if (tokenMatch && tokenMatch[1]) {
-          console.log("Access token extracted manually:", tokenMatch[1]);
-          setToken(tokenMatch[1]);
-          setTokenProcessed(true);
-          return true;
-        }
-      }
-      
-      // Check if we have a recovery type in the hash
-      if (fullHash && fullHash.includes('type=recovery')) {
-        // This means we're in a recovery flow, but need to extract the token
-        console.log("Recovery flow detected in hash:", fullHash);
-        // Try once more to extract token
-        const secondTokenMatch = fullHash.match(/access_token=([^&]+)/);
-        if (secondTokenMatch && secondTokenMatch[1]) {
-          console.log("Recovery token extracted:", secondTokenMatch[1]);
-          setToken(secondTokenMatch[1]);
-          setTokenProcessed(true);
-          return true;
-        }
-      }
-      
-      // If there's any hash, log it for debugging
-      if (location.hash) {
-        console.log("Hash present but no token found:", location.hash);
-      }
-      
-      return false;
-    };
-
-    // Only run token extraction if we haven't processed it yet
-    if (!tokenProcessed && initialSignOutDone) {
-      const attemptExtraction = async () => {
-        const hasToken = await extractToken();
+      // Check for recovery flow
+      if (hash.includes('type=recovery')) {
+        console.log("Recovery flow detected");
         
-        if (!hasToken) {
-          console.error("No reset token found in URL or hash");
+        // Extract access token from hash
+        const accessTokenMatch = hash.match(/access_token=([^&]+)/);
+        if (accessTokenMatch && accessTokenMatch[1]) {
+          const accessToken = accessTokenMatch[1];
+          console.log("Token found in recovery hash:", accessToken);
+          setToken(accessToken);
+          setTokenExtracted(true);
+          return;
+        }
+      }
+      
+      // Try method 3: Parse access token directly
+      const accessTokenMatch = hash.match(/access_token=([^&]+)/);
+      if (accessTokenMatch && accessTokenMatch[1]) {
+        const accessToken = accessTokenMatch[1];
+        console.log("Access token found in hash:", accessToken);
+        setToken(accessToken);
+        setTokenExtracted(true);
+        return;
+      }
+      
+      // No token found, show error
+      console.error("No reset token found in URL or hash");
+      setError("لم يتم العثور على رمز إعادة تعيين صالح");
+      toast({
+        title: "خطأ في الرابط",
+        description: "رابط إعادة التعيين غير صالح أو منتهي الصلاحية.",
+        variant: "destructive",
+      });
+    };
+    
+    extractResetToken();
+  }, [location, searchParams, toast, signedOut, tokenExtracted]);
+
+  // Verify token is valid
+  useEffect(() => {
+    if (!token || !tokenExtracted) return;
+    
+    const verifyToken = async () => {
+      try {
+        console.log("Verifying token validity...");
+        const { error } = await supabase.auth.getUser(token);
+        if (error) {
+          console.error("Token verification error:", error);
+          setError("رمز إعادة تعيين كلمة المرور غير صالح أو منتهي الصلاحية");
           toast({
-            title: "خطأ في الرابط",
-            description: "رابط إعادة التعيين غير صالح أو منتهي الصلاحية.",
+            title: "الرمز غير صالح",
+            description: "رمز إعادة تعيين غير صالح أو منتهي الصلاحية.",
             variant: "destructive",
           });
-          navigate('/login');
+          // Delay navigation to show the error
+          setTimeout(() => navigate('/login'), 2000);
         } else {
-          // Verify token without logging in
-          try {
-            const { error } = await supabase.auth.getUser(token);
-            if (error) {
-              console.error("Token verification error:", error);
-              toast({
-                title: "الرمز غير صالح",
-                description: "رمز إعادة تعيين غير صالح أو منتهي الصلاحية.",
-                variant: "destructive",
-              });
-              navigate('/login');
-            }
-          } catch (err) {
-            console.error("Error verifying token:", err);
-          }
+          console.log("Token verified successfully");
         }
-      };
-      
-      attemptExtraction();
-    }
-  }, [location, navigate, searchParams, toast, tokenProcessed, initialSignOutDone]);
+      } catch (err) {
+        console.error("Error verifying token:", err);
+        setError("حدث خطأ أثناء التحقق من صلاحية الرمز");
+      }
+    };
+    
+    verifyToken();
+  }, [token, tokenExtracted, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setProcessingReset(true);
+    setLoading(true);
 
     if (newPassword !== confirmPassword) {
       setError('كلمات المرور غير متطابقة');
-      setProcessingReset(false);
+      setLoading(false);
       return;
     }
 
     if (newPassword.length < 6) {
       setError('يجب أن تكون كلمة المرور 6 أحرف على الأقل');
-      setProcessingReset(false);
+      setLoading(false);
       return;
     }
 
@@ -160,13 +152,14 @@ const ResetPassword: React.FC = () => {
         throw new Error("لا يوجد رمز إعادة تعيين");
       }
       
-      // Use the token to update password
+      console.log("Updating password...");
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
       
       if (error) throw error;
       
+      console.log("Password reset successful");
       toast({
         title: "تم تغيير كلمة المرور",
         description: "تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول باستخدام كلمة المرور الجديدة.",
@@ -181,7 +174,7 @@ const ResetPassword: React.FC = () => {
       console.error("Password reset error:", err);
       setError(err.message);
     } finally {
-      setProcessingReset(false);
+      setLoading(false);
     }
   };
 
@@ -195,54 +188,69 @@ const ResetPassword: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                <span className="text-sm">{error}</span>
+          {token ? (
+            <form onSubmit={handleSubmit}>
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+              
+              <div className="mb-4">
+                <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    placeholder="كلمة المرور الجديدة"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
               </div>
-            )}
-            
-            <div className="mb-4">
-              <Label htmlFor="newPassword">كلمة المرور الجديدة</Label>
-              <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                <Lock className="h-4 w-4 mx-3 text-gray-500" />
-                <Input
-                  id="newPassword"
-                  type="password"
-                  placeholder="كلمة المرور الجديدة"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  required
-                />
+              
+              <div className="mb-6">
+                <Label htmlFor="confirmPassword">تأكيد كلمة المرور الجديدة</Label>
+                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                  <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="تأكيد كلمة المرور"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    required
+                  />
+                </div>
               </div>
+              
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? 'جارٍ إعادة التعيين...' : 'إعادة تعيين كلمة المرور'}
+              </Button>
+            </form>
+          ) : (
+            <div className="text-center p-4">
+              {error ? (
+                <div className="text-red-600">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                  <p>{error}</p>
+                </div>
+              ) : (
+                <div className="animate-pulse">
+                  <p>جاري التحقق من رمز إعادة التعيين...</p>
+                </div>
+              )}
             </div>
-            
-            <div className="mb-6">
-              <Label htmlFor="confirmPassword">تأكيد كلمة المرور الجديدة</Label>
-              <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                <Lock className="h-4 w-4 mx-3 text-gray-500" />
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="تأكيد كلمة المرور"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  required
-                />
-              </div>
-            </div>
-            
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading || processingReset}
-            >
-              {processingReset ? 'جارٍ إعادة التعيين...' : 'إعادة تعيين كلمة المرور'}
-            </Button>
-          </form>
+          )}
         </CardContent>
       </Card>
     </div>
