@@ -1,8 +1,8 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useLanguage } from './LanguageContext';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface ExtendedUser extends User {
@@ -43,7 +43,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [users, setUsers] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { language } = useLanguage();
+  
+  // Get the current language from localStorage instead of using the hook
+  const getCurrentLanguage = (): 'ar' | 'en' => {
+    return (localStorage.getItem('language') as 'ar' | 'en') || 'ar';
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -298,7 +302,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('users')
         .select('name')
         .eq('email', email)
-        .single();
+        .maybeSingle();
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
@@ -307,6 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       const resetLink = `${window.location.origin}/reset-password`;
+      const language = getCurrentLanguage();
       
       try {
         const { data, error: emailError } = await supabase.functions.invoke('send-reset-email', {
@@ -341,6 +346,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch (error: any) {
       console.error('Password reset error:', error);
+      const language = getCurrentLanguage();
       toast({
         title: language === 'ar' ? "فشل إعادة التعيين" : "Reset Failed",
         description: error.message,
