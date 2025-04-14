@@ -26,7 +26,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, name, resetLink, language = 'ar' }: ResetEmailRequest = await req.json();
     
-    // استخراج التوكن من رابط إعادة التعيين
+    // Extract token from reset link
     const tokenMatch = resetLink.match(/[#&]access_token=([^&]+)/);
     const token = tokenMatch ? tokenMatch[1] : null;
     
@@ -41,10 +41,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    // إنشاء رابط إعادة التعيين الصحيح
-    // استخدم نفس الدومين الذي جاء من الطلب
+    // Create the correct reset link
     const domain = req.headers.get("Origin") || new URL(req.url).origin;
-    // تأكد من أن الرابط يحتوي على reset-password ويمرر التوكن كمعلمة في ال URL بدلاً من hash
+    // Format the reset link with the token in the URL query params instead of hash
     const correctResetLink = `${domain}/reset-password?reset_token=${token}`;
     
     console.log("Original reset link:", resetLink);
@@ -54,7 +53,7 @@ const handler = async (req: Request): Promise<Response> => {
     const translations = emailTranslations.resetPassword[language];
 
     try {
-      // Attempt to send styled email via Resend
+      // Send styled email via Resend
       const emailResponse = await resend.emails.send({
         from: "Trading Platform <onboarding@resend.dev>",
         to: [email],
@@ -92,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
     } catch (emailError: any) {
       console.error("Email sending error:", emailError);
       
-      // Check if this is a domain verification error
+      // Handle domain verification error
       if (emailError.message && emailError.message.includes("verify a domain")) {
         return new Response(
           JSON.stringify({ 
