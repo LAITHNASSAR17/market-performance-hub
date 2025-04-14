@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -297,6 +297,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) throw error;
+
+      const { data: userData } = await supabase
+        .from('users')
+        .select('name')
+        .eq('email', email)
+        .single();
+
+      const resetLink = `${window.location.origin}/reset-password`;
+      
+      await supabase.functions.invoke('send-reset-email', {
+        body: { 
+          email,
+          name: userData?.name || 'المستخدم',
+          resetLink
+        },
+      });
 
       toast({
         title: "إعادة تعيين كلمة المرور",

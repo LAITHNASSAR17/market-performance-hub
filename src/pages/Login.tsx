@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -89,6 +90,10 @@ const Login = () => {
     try {
       await forgotPassword(values.email);
       setForgotPasswordOpen(false);
+      toast({
+        title: "تم إرسال رابط إعادة التعيين",
+        description: "تحقق من بريدك الإلكتروني للحصول على تعليمات إعادة تعيين كلمة المرور.",
+      });
     } catch (error) {
       // Error is handled in the auth context
     }
