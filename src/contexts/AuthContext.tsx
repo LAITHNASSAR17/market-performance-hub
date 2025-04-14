@@ -1,8 +1,8 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from './LanguageContext';
 import type { User, Session } from '@supabase/supabase-js';
 
 interface ExtendedUser extends User {
@@ -43,6 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [users, setUsers] = useState<any[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { language } = useLanguage();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -293,36 +294,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) throw error;
-
       const { data: userData } = await supabase
         .from('users')
         .select('name')
         .eq('email', email)
         .single();
 
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
       const resetLink = `${window.location.origin}/reset-password`;
       
       await supabase.functions.invoke('send-reset-email', {
         body: { 
           email,
-          name: userData?.name || 'المستخدم',
-          resetLink
+          name: userData?.name || email,
+          resetLink,
+          language
         },
       });
 
       toast({
-        title: "إعادة تعيين كلمة المرور",
-        description: "تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني.",
+        title: language === 'ar' ? "إعادة تعيين كلمة المرور" : "Reset Password",
+        description: language === 'ar' 
+          ? "تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني."
+          : "Reset link has been sent to your email.",
       });
     } catch (error: any) {
       console.error('Password reset error:', error);
       toast({
-        title: "فشل إعادة التعيين",
+        title: language === 'ar' ? "فشل إعادة التعيين" : "Reset Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -351,7 +355,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       console.error('Password update error:', error);
       toast({
-        title: "فشل تغيير كلمة المرور",
+        title: "Failed to Update Password",
         description: error.message,
         variant: "destructive",
       });
