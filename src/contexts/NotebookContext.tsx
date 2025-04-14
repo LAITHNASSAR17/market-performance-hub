@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export type Note = {
   id: string;
@@ -25,38 +26,6 @@ type NotebookContextType = {
   addTag: (tag: string) => void;
 };
 
-// Sample notes for demonstration
-const sampleNotes: Note[] = [
-  {
-    id: '1',
-    userId: '1',
-    title: 'Risk Management Strategy',
-    content: 'Always limit risk to 2% per trade. For volatile pairs like GBP/USD, consider reducing to 1.5%.',
-    tags: ['risk', 'strategy'],
-    createdAt: '2025-04-10T15:30:00Z',
-    updatedAt: '2025-04-10T15:30:00Z'
-  },
-  {
-    id: '2',
-    userId: '1',
-    title: 'EUR/USD Trading Plan',
-    content: 'Focus on trading during London/NY overlap. Look for retracements to key support/resistance levels.',
-    tradeId: '1',
-    tags: ['plan', 'EUR/USD'],
-    createdAt: '2025-04-09T12:15:00Z',
-    updatedAt: '2025-04-09T13:45:00Z'
-  },
-  {
-    id: '3',
-    userId: '1',
-    title: 'Psychology Notes',
-    content: 'Need to work on patience. Too many trades taken out of boredom rather than conviction.',
-    tags: ['psychology', 'improvement'],
-    createdAt: '2025-04-08T09:45:00Z',
-    updatedAt: '2025-04-08T09:45:00Z'
-  }
-];
-
 const NotebookContext = createContext<NotebookContextType | undefined>(undefined);
 
 export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -68,95 +37,183 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Fetch notes from Supabase instead of localStorage
   useEffect(() => {
-    if (user) {
-      // Load notes from localStorage or use sample data
-      const storedNotes = localStorage.getItem('notes');
-      if (storedNotes) {
-        setNotes(JSON.parse(storedNotes));
+    const fetchNotes = async () => {
+      if (user) {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('notes')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          const formattedNotes: Note[] = data.map(note => ({
+            id: note.id,
+            userId: note.user_id,
+            title: note.title,
+            content: note.content,
+            tags: note.tags || [],
+            createdAt: note.created_at,
+            updatedAt: note.updated_at
+          }));
+
+          setNotes(formattedNotes);
+
+          // Extract all unique tags
+          const uniqueTags = Array.from(new Set(
+            formattedNotes.flatMap(note => note.tags)
+          ));
+          setNoteTags(prevTags => [
+            ...prevTags,
+            ...uniqueTags.filter(tag => !prevTags.includes(tag))
+          ]);
+        } catch (error) {
+          console.error('Error fetching notes:', error);
+          toast({
+            title: "خطأ",
+            description: "حدث خطأ أثناء جلب الملاحظات",
+            variant: "destructive"
+          });
+        } finally {
+          setLoading(false);
+        }
       } else {
-        // Use sample data on first load
-        setNotes(sampleNotes);
-        localStorage.setItem('notes', JSON.stringify(sampleNotes));
+        setNotes([]);
+        setLoading(false);
       }
+    };
 
-      // Extract all unique tags
-      const tagSet = new Set<string>();
-      sampleNotes.forEach(note => {
-        note.tags.forEach(tag => tagSet.add(tag));
-      });
-      setNoteTags(prev => Array.from(new Set([...prev, ...tagSet])));
-    } else {
-      setNotes([]);
-    }
-    setLoading(false);
-  }, [user]);
+    fetchNotes();
+  }, [user, toast]);
 
-  const addNote = (newNoteData: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+  // Add note to Supabase
+  const addNote = async (newNoteData: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
 
-    const now = new Date().toISOString();
-    const newNote: Note = {
-      ...newNoteData,
-      id: Date.now().toString(),
-      userId: user.id,
-      createdAt: now,
-      updatedAt: now
-    };
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .insert({
+          user_id: user.id,
+          title: newNoteData.title,
+          content: newNoteData.content,
+          tags: newNoteData.tags || []
+        })
+        .select()
+        .single();
 
-    const updatedNotes = [...notes, newNote];
-    setNotes(updatedNotes);
-    localStorage.setItem('notes', JSON.stringify(updatedNotes));
+      if (error) throw error;
 
-    // Update tags
-    const newTags = newNote.tags.filter(tag => !noteTags.includes(tag));
-    if (newTags.length > 0) {
-      setNoteTags([...noteTags, ...newTags]);
-    }
+      const newNote: Note = {
+        id: data.id,
+        userId: data.user_id,
+        title: data.title,
+        content: data.content,
+        tags: data.tags || [],
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
 
-    toast({
-      title: "Note Added",
-      description: "Your note has been added successfully",
-    });
-  };
+      setNotes(prevNotes => [newNote, ...prevNotes]);
 
-  const updateNote = (id: string, noteUpdate: Partial<Note>) => {
-    const noteIndex = notes.findIndex(n => n.id === id);
-    if (noteIndex === -1) return;
-
-    const updatedNotes = [...notes];
-    updatedNotes[noteIndex] = { 
-      ...updatedNotes[noteIndex], 
-      ...noteUpdate,
-      updatedAt: new Date().toISOString()
-    };
-    
-    setNotes(updatedNotes);
-    localStorage.setItem('notes', JSON.stringify(updatedNotes));
-
-    // Update tags if they changed
-    if (noteUpdate.tags) {
-      const newTags = noteUpdate.tags.filter(tag => !noteTags.includes(tag));
+      // Update tags
+      const newTags = newNote.tags.filter(tag => !noteTags.includes(tag));
       if (newTags.length > 0) {
         setNoteTags([...noteTags, ...newTags]);
       }
-    }
 
-    toast({
-      title: "Note Updated",
-      description: "Your note has been updated successfully",
-    });
+      toast({
+        title: "تمت الإضافة",
+        description: "تمت إضافة الملاحظة بنجاح",
+      });
+    } catch (error) {
+      console.error('Error adding note:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة الملاحظة",
+        variant: "destructive"
+      });
+    }
   };
 
-  const deleteNote = (id: string) => {
-    const updatedNotes = notes.filter(note => note.id !== id);
-    setNotes(updatedNotes);
-    localStorage.setItem('notes', JSON.stringify(updatedNotes));
+  // Update note in Supabase
+  const updateNote = async (id: string, noteUpdate: Partial<Note>) => {
+    if (!user) return;
 
-    toast({
-      title: "Note Deleted",
-      description: "Your note has been deleted successfully",
-    });
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .update({
+          title: noteUpdate.title,
+          content: noteUpdate.content,
+          tags: noteUpdate.tags
+        })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setNotes(prevNotes =>
+        prevNotes.map(note =>
+          note.id === id
+            ? { ...note, ...noteUpdate, updatedAt: new Date().toISOString() }
+            : note
+        )
+      );
+
+      // Update tags if they changed
+      if (noteUpdate.tags) {
+        const newTags = noteUpdate.tags.filter(tag => !noteTags.includes(tag));
+        if (newTags.length > 0) {
+          setNoteTags([...noteTags, ...newTags]);
+        }
+      }
+
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث الملاحظة بنجاح",
+      });
+    } catch (error) {
+      console.error('Error updating note:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث الملاحظة",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Delete note from Supabase
+  const deleteNote = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
+
+      toast({
+        title: "تم الحذف",
+        description: "تم حذف الملاحظة بنجاح",
+      });
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف الملاحظة",
+        variant: "destructive"
+      });
+    }
   };
 
   const getNote = (id: string) => {

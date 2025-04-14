@@ -345,7 +345,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return Math.round(profitLoss * 100) / 100; // Round to 2 decimal places
   };
 
-  // استرجاع التداولات من Supabase بدلاً من localStorage
+  // استرجاع التداولات من Supabase
   useEffect(() => {
     const fetchTrades = async () => {
       if (user) {
@@ -359,10 +359,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           if (error) throw error;
 
-          const formattedTrades = data.map(trade => ({
+          const formattedTrades: Trade[] = data.map(trade => ({
             id: trade.id,
             userId: trade.user_id,
-            account: trade.account || 'Main Trading',
+            account: 'Main Trading', // Default account since it's not in the database
             date: trade.entry_date.split('T')[0],
             pair: trade.symbol,
             type: trade.direction === 'long' ? 'Buy' : 'Sell',
@@ -410,7 +410,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     fetchTrades();
-  }, [user]);
+  }, [user, toast]);
 
   // تعديل addTrade لإضافة التداول مباشرة إلى Supabase
   const addTrade = async (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
@@ -426,8 +426,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           exit_price: newTradeData.exit,
           quantity: newTradeData.lotSize,
           direction: newTradeData.type === 'Buy' ? 'long' : 'short',
-          entry_date: new Date(newTradeData.date),
-          exit_date: newTradeData.exit ? new Date(newTradeData.date) : null,
+          entry_date: new Date(newTradeData.date).toISOString(),
+          exit_date: newTradeData.exit ? new Date(newTradeData.date).toISOString() : null,
           profit_loss: newTradeData.profitLoss,
           fees: 0,
           notes: newTradeData.notes,
@@ -466,20 +466,24 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return;
     
     try {
+      const updateData: any = {};
+      
+      if (tradeUpdate.pair) updateData.symbol = tradeUpdate.pair;
+      if (tradeUpdate.entry !== undefined) updateData.entry_price = tradeUpdate.entry;
+      if (tradeUpdate.exit !== undefined) updateData.exit_price = tradeUpdate.exit;
+      if (tradeUpdate.lotSize !== undefined) updateData.quantity = tradeUpdate.lotSize;
+      if (tradeUpdate.type) updateData.direction = tradeUpdate.type === 'Buy' ? 'long' : 'short';
+      if (tradeUpdate.date) updateData.entry_date = new Date(tradeUpdate.date).toISOString();
+      if (tradeUpdate.exit !== undefined && tradeUpdate.date) {
+        updateData.exit_date = tradeUpdate.exit ? new Date(tradeUpdate.date).toISOString() : null;
+      }
+      if (tradeUpdate.profitLoss !== undefined) updateData.profit_loss = tradeUpdate.profitLoss;
+      if (tradeUpdate.notes !== undefined) updateData.notes = tradeUpdate.notes;
+      if (tradeUpdate.hashtags) updateData.tags = tradeUpdate.hashtags;
+
       const { error } = await supabase
         .from('trades')
-        .update({
-          symbol: tradeUpdate.pair,
-          entry_price: tradeUpdate.entry,
-          exit_price: tradeUpdate.exit,
-          quantity: tradeUpdate.lotSize,
-          direction: tradeUpdate.type === 'Buy' ? 'long' : 'short',
-          entry_date: tradeUpdate.date ? new Date(tradeUpdate.date) : undefined,
-          exit_date: tradeUpdate.exit ? new Date(tradeUpdate.date) : null,
-          profit_loss: tradeUpdate.profitLoss,
-          notes: tradeUpdate.notes,
-          tags: tradeUpdate.hashtags
-        })
+        .update(updateData)
         .eq('id', id)
         .eq('user_id', user.id);
 
