@@ -15,7 +15,7 @@ interface TradingTipsProps {
 
 const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   const { trades } = useTrade();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const stats = useAnalyticsStats();
   const [tips, setTips] = useState<TradingTip[]>([]);
   const [currentTip, setCurrentTip] = useState(0);
@@ -23,7 +23,7 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   const [aiAdvice, setAiAdvice] = useState<string>('');
   const [loadingAdvice, setLoadingAdvice] = useState(false);
 
-  // تحميل النصائح عند تغير البيانات
+  // Load tips when data changes
   useEffect(() => {
     loadTips();
   }, [trades, stats]);
@@ -107,13 +107,13 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   const translateCategory = (category: string) => {
     switch (category) {
       case 'performance':
-        return language === 'ar' ? 'الأداء' : 'Performance';
+        return 'Performance';
       case 'risk':
-        return language === 'ar' ? 'المخاطر' : 'Risk';
+        return 'Risk';
       case 'psychology':
-        return language === 'ar' ? 'علم النفس' : 'Psychology';
+        return 'Psychology';
       case 'strategy':
-        return language === 'ar' ? 'الاستراتيجية' : 'Strategy';
+        return 'Strategy';
       default:
         return category;
     }
@@ -122,23 +122,23 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   const translatePriority = (priority: string) => {
     switch (priority) {
       case 'high':
-        return language === 'ar' ? 'عالية' : 'High';
+        return 'High';
       case 'medium':
-        return language === 'ar' ? 'متوسطة' : 'Medium';
+        return 'Medium';
       case 'low':
-        return language === 'ar' ? 'منخفضة' : 'Low';
+        return 'Low';
       default:
         return priority;
     }
   };
 
   useEffect(() => {
-    // تحميل النصائح عند تحميل المكون لأول مرة
+    // Load tips when component first loads
     if (tips.length === 0 && !loading) {
       loadTips();
     }
     
-    // تحميل نصيحة AI
+    // Load AI advice
     if (aiAdvice === '' && !loadingAdvice) {
       loadAIAdvice();
     }
@@ -151,7 +151,7 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
           <div className="flex justify-between items-center">
             <CardTitle className="text-lg flex items-center">
               <Lightbulb className="h-5 w-5 mr-2" />
-              {language === 'ar' ? 'نصائح ذكية' : 'AI Trading Tips'}
+              AI Trading Tips
             </CardTitle>
             <div className="flex space-x-2">
               <Button variant="ghost" size="sm" onClick={refreshTips} disabled={loading}>
@@ -160,9 +160,7 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
             </div>
           </div>
           <CardDescription>
-            {language === 'ar' 
-              ? 'نصائح مخصصة بناءً على أنماط التداول الخاصة بك' 
-              : 'Personalized tips based on your trading patterns'}
+            Personalized tips based on your trading patterns
           </CardDescription>
         </CardHeader>
         
@@ -184,14 +182,12 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
           ) : loading ? (
             <div className="text-center py-4">
               <div className="animate-pulse">
-                {language === 'ar' ? 'جاري تحليل البيانات...' : 'Analyzing your data...'}
+                Analyzing your data...
               </div>
             </div>
           ) : (
             <div className="text-center py-4">
-              {language === 'ar' 
-                ? 'أضف المزيد من الصفقات للحصول على نصائح مخصصة' 
-                : 'Add more trades to receive personalized tips'}
+              Add more trades to receive personalized tips
             </div>
           )}
         </CardContent>
@@ -199,24 +195,24 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
         {tips.length > 1 && (
           <CardFooter className="flex justify-between pt-0">
             <Button variant="ghost" size="sm" onClick={handlePrevious}>
-              {language === 'ar' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-xs text-muted-foreground">
               {currentTip + 1} / {tips.length}
             </span>
             <Button variant="ghost" size="sm" onClick={handleNext}>
-              {language === 'ar' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </CardFooter>
         )}
       </Card>
       
-      {/* نصيحة التداول المفصلة */}
+      {/* Detailed Trading Advice */}
       {aiAdvice && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">
-              {language === 'ar' ? 'تحليل AI المخصص' : 'AI Custom Analysis'}
+              AI Custom Analysis
             </CardTitle>
           </CardHeader>
           <CardContent>

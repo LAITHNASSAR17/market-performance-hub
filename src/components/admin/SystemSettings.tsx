@@ -19,109 +19,109 @@ const SystemSettings: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card className="bg-white shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle>الإعدادات العامة</CardTitle>
-          <CardDescription>إدارة إعدادات النظام العامة</CardDescription>
+          <CardTitle>General Settings</CardTitle>
+          <CardDescription>Manage general system settings</CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="siteName">اسم الموقع</Label>
-            <Input id="siteName" defaultValue="منصة سجل التداول" />
+            <Label htmlFor="siteName">Site Name</Label>
+            <Input id="siteName" defaultValue="Trading Journal Platform" />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="description">وصف الموقع</Label>
-            <Input id="description" defaultValue="تتبع رحلة التداول الخاصة بك وتحسين أدائك" />
+            <Label htmlFor="description">Site Description</Label>
+            <Input id="description" defaultValue="Track your trading journey and improve your performance" />
           </div>
           
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="allowRegistration">السماح بتسجيل المستخدمين</Label>
-              <p className="text-sm text-gray-500">تمكين أو تعطيل تسجيل المستخدمين الجدد</p>
+              <Label htmlFor="allowRegistration">Allow User Registration</Label>
+              <p className="text-sm text-gray-500">Enable or disable new user registration</p>
             </div>
             <Switch id="allowRegistration" defaultChecked />
           </div>
           
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="maintenanceMode">وضع الصيانة</Label>
-              <p className="text-sm text-gray-500">وضع الموقع في وضع الصيانة</p>
+              <Label htmlFor="maintenanceMode">Maintenance Mode</Label>
+              <p className="text-sm text-gray-500">Put the site in maintenance mode</p>
             </div>
             <Switch id="maintenanceMode" />
           </div>
         </CardContent>
         
         <CardFooter>
-          <Button className="w-full">حفظ الإعدادات</Button>
+          <Button className="w-full">Save Settings</Button>
         </CardFooter>
       </Card>
       
       <Card className="bg-white shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle>إعدادات الإشعارات</CardTitle>
-          <CardDescription>تكوين نظام الإشعارات</CardDescription>
+          <CardTitle>Notification Settings</CardTitle>
+          <CardDescription>Configure the notification system</CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="emailNotifications">إشعارات البريد الإلكتروني</Label>
-              <p className="text-sm text-gray-500">إرسال الإشعارات عبر البريد الإلكتروني</p>
+              <Label htmlFor="emailNotifications">Email Notifications</Label>
+              <p className="text-sm text-gray-500">Send notifications via email</p>
             </div>
             <Switch id="emailNotifications" defaultChecked />
           </div>
           
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="inAppNotifications">إشعارات داخل التطبيق</Label>
-              <p className="text-sm text-gray-500">عرض الإشعارات داخل التطبيق</p>
+              <Label htmlFor="inAppNotifications">In-App Notifications</Label>
+              <p className="text-sm text-gray-500">Display notifications within the app</p>
             </div>
             <Switch id="inAppNotifications" defaultChecked />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="welcomeMessage">رسالة الترحيب</Label>
-            <Input id="welcomeMessage" defaultValue="مرحبًا بك في منصة سجل التداول!" />
+            <Label htmlFor="welcomeMessage">Welcome Message</Label>
+            <Input id="welcomeMessage" defaultValue="Welcome to the Trading Journal Platform!" />
           </div>
           
           <div className="space-y-2">
             <Button variant="outline" className="w-full flex items-center justify-center">
               <Bell className="mr-2 h-4 w-4" />
-              إرسال إشعار تجريبي
+              Send Test Notification
             </Button>
           </div>
         </CardContent>
         
         <CardFooter>
-          <Button className="w-full">حفظ إعدادات الإشعارات</Button>
+          <Button className="w-full">Save Notification Settings</Button>
         </CardFooter>
       </Card>
       
       <Card className="bg-white shadow-sm md:col-span-2">
         <CardHeader className="pb-2">
-          <CardTitle>النسخ الاحتياطي والتصدير</CardTitle>
-          <CardDescription>إنشاء وإدارة النسخ الاحتياطية للنظام</CardDescription>
+          <CardTitle>Backup and Export</CardTitle>
+          <CardDescription>Create and manage system backups</CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Button variant="outline" className="flex items-center justify-center">
               <FileUp className="mr-2 h-4 w-4" />
-              تصدير جميع المستخدمين
+              Export All Users
             </Button>
             <Button variant="outline" className="flex items-center justify-center">
               <FileUp className="mr-2 h-4 w-4" />
-              تصدير جميع الصفقات
+              Export All Trades
             </Button>
             <Button variant="outline" className="flex items-center justify-center">
               <FileUp className="mr-2 h-4 w-4" />
-              تصدير جميع الملاحظات
+              Export All Notes
             </Button>
           </div>
           
           <div className="pt-4">
             <Button className="w-full md:w-auto" variant="default">
-              إنشاء نسخة احتياطية كاملة للنظام
+              Create Full System Backup
             </Button>
           </div>
         </CardContent>

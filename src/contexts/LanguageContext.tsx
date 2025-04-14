@@ -187,6 +187,16 @@ export const translations: TranslationsType = {
   'chart.indices': {
     en: 'Indices',
   },
+  // Theme translations
+  'theme.toggle': {
+    en: 'Toggle theme',
+  },
+  'theme.darkMode': {
+    en: 'Dark mode',
+  },
+  'theme.lightMode': {
+    en: 'Light mode',
+  },
 };
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

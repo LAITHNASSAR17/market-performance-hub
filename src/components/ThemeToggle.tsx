@@ -21,7 +21,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
   className = '' 
 }) => {
   const { theme, toggleTheme } = useTheme();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   
   if (variant === 'switch') {
     return (
@@ -55,7 +55,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           <span className="sr-only">{t('theme.toggle') || 'Toggle theme'}</span>
         </Button>
       </TooltipTrigger>
-      <TooltipContent side={language === 'ar' ? 'left' : 'right'}>
+      <TooltipContent side="right">
         {theme === 'dark' 
           ? (t('theme.lightMode') || 'Light mode') 
           : (t('theme.darkMode') || 'Dark mode')}
