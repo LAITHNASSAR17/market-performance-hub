@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -66,7 +67,7 @@ const auditLogs = [
 const AdminProfileSettings: React.FC = () => {
   const { user, updateProfile, logout } = useAuth();
   const { toast } = useToast();
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
   
   // Profile form state
   const [name, setName] = useState(user?.name || '');
@@ -232,30 +233,30 @@ const AdminProfileSettings: React.FC = () => {
     <AdminLayout>
       <div className="container max-w-6xl py-10">
         <h1 className="text-3xl font-bold mb-6 dark:text-white">
-          {language === 'ar' ? 'إعدادات المسؤول' : 'Admin Settings'}
+          Admin Settings
         </h1>
         
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              {language === 'ar' ? 'الملف الشخصي' : 'Profile'}
+              Profile
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
-              {language === 'ar' ? 'الأمان' : 'Security'}
+              Security
             </TabsTrigger>
             <TabsTrigger value="platform" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
-              {language === 'ar' ? 'إعدادات المنصة' : 'Platform'}
+              Platform
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
-              {language === 'ar' ? 'الإشعارات' : 'Notifications'}
+              Notifications
             </TabsTrigger>
             <TabsTrigger value="logs" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              {language === 'ar' ? 'السجلات' : 'Logs'}
+              Logs
             </TabsTrigger>
           </TabsList>
           
@@ -264,12 +265,10 @@ const AdminProfileSettings: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'معلومات الملف الشخصي للمسؤول' : 'Admin Profile Information'}
+                  Admin Profile Information
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تحديث معلومات حساب المسؤول وتفضيلاته.' 
-                    : 'Update your admin account information and preferences.'}
+                  Update your admin account information and preferences.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -297,19 +296,17 @@ const AdminProfileSettings: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-medium dark:text-white mb-1">
-                          {language === 'ar' ? 'صورة الملف الشخصي للمسؤول' : 'Admin Profile Picture'}
+                          Admin Profile Picture
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                          {language === 'ar' 
-                            ? 'قم بتحميل صورة بحجم 1:1 وبدقة عالية.' 
-                            : 'Upload a 1:1 aspect ratio image with high resolution.'}
+                          Upload a 1:1 aspect ratio image with high resolution.
                         </p>
                         <div className="flex gap-2">
                           <Button type="button" variant="outline" size="sm">
-                            {language === 'ar' ? 'تحميل صورة' : 'Upload Image'}
+                            Upload Image
                           </Button>
                           <Button type="button" variant="ghost" size="sm">
-                            {language === 'ar' ? 'إزالة' : 'Remove'}
+                            Remove
                           </Button>
                         </div>
                       </div>
@@ -317,54 +314,54 @@ const AdminProfileSettings: React.FC = () => {
                     
                     <div className="grid gap-3">
                       <Label htmlFor="admin-name">
-                        {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+                        Full Name
                       </Label>
                       <Input 
                         id="admin-name" 
                         value={name} 
                         onChange={(e) => setName(e.target.value)} 
-                        placeholder={language === 'ar' ? 'أدخل اسمك الكامل' : 'Enter your full name'}
+                        placeholder="Enter your full name"
                       />
                     </div>
                     
                     <div className="grid gap-3">
                       <Label htmlFor="admin-username">
-                        {language === 'ar' ? 'اسم المستخدم' : 'Username'}
+                        Username
                       </Label>
                       <Input 
                         id="admin-username" 
                         value={username} 
                         onChange={(e) => setUsername(e.target.value)} 
-                        placeholder={language === 'ar' ? 'أدخل اسم المستخدم' : 'Enter your username'}
+                        placeholder="Enter your username"
                       />
                     </div>
                     
                     <div className="grid gap-3">
                       <Label htmlFor="admin-email">
-                        {language === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}
+                        Email Address
                       </Label>
                       <Input 
                         id="admin-email" 
                         type="email" 
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)} 
-                        placeholder={language === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email address'}
+                        placeholder="Enter your email address"
                       />
                     </div>
                     
                     <div className="grid gap-3">
                       <Label htmlFor="language">
-                        {language === 'ar' ? 'اللغة المفضلة' : 'Preferred Language'}
+                        Preferred Language
                       </Label>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center space-x-2">
                           <Switch 
                             id="admin-language-toggle" 
-                            checked={language === 'ar'} 
-                            onCheckedChange={(checked) => setLanguage(checked ? 'ar' : 'en')}
+                            checked={false}
+                            disabled={true}
                           />
                           <Label htmlFor="admin-language-toggle">
-                            {language === 'ar' ? 'العربية' : 'English'} / {language === 'ar' ? 'English' : 'العربية'}
+                            English
                           </Label>
                         </div>
                       </div>
@@ -373,11 +370,11 @@ const AdminProfileSettings: React.FC = () => {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="grid gap-3">
                         <Label htmlFor="admin-timezone">
-                          {language === 'ar' ? 'المنطقة الزمنية' : 'Time Zone'}
+                          Time Zone
                         </Label>
                         <Select value={timezone} onValueChange={setTimezone}>
                           <SelectTrigger id="admin-timezone">
-                            <SelectValue placeholder={language === 'ar' ? 'اختر المنطقة الزمنية' : 'Select timezone'} />
+                            <SelectValue placeholder="Select timezone" />
                           </SelectTrigger>
                           <SelectContent>
                             {timezones.map((timezone) => (
@@ -391,7 +388,7 @@ const AdminProfileSettings: React.FC = () => {
                       
                       <div className="grid gap-3">
                         <Label htmlFor="admin-role">
-                          {language === 'ar' ? 'دور المسؤول' : 'Admin Role'}
+                          Admin Role
                         </Label>
                         <Select 
                           value={adminRole} 
@@ -399,7 +396,7 @@ const AdminProfileSettings: React.FC = () => {
                           disabled // Readonly as this is typically assigned by a super admin
                         >
                           <SelectTrigger id="admin-role">
-                            <SelectValue placeholder={language === 'ar' ? 'اختر الدور' : 'Select role'} />
+                            <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Admin">Admin</SelectItem>
@@ -417,11 +414,11 @@ const AdminProfileSettings: React.FC = () => {
                         className="flex items-center gap-2"
                       >
                         {isUpdating ? (
-                          language === 'ar' ? 'جارٍ التحديث...' : 'Updating...'
+                          "Updating..."
                         ) : (
                           <>
                             <Save className="h-4 w-4" />
-                            {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+                            Save Changes
                           </>
                         )}
                       </Button>
@@ -437,12 +434,10 @@ const AdminProfileSettings: React.FC = () => {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+                  Change Password
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تحديث كلمة المرور للحفاظ على أمان حساب المسؤول.' 
-                    : 'Update your password to maintain admin account security.'}
+                  Update your password to maintain admin account security.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -456,14 +451,14 @@ const AdminProfileSettings: React.FC = () => {
                   <div className="grid gap-6">
                     <div className="grid gap-3">
                       <Label htmlFor="adminCurrentPassword">
-                        {language === 'ar' ? 'كلمة المرور الحالية' : 'Current Password'}
+                        Current Password
                       </Label>
                       <Input 
                         id="adminCurrentPassword" 
                         type="password" 
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder={language === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Enter your current password'}
+                        placeholder="Enter your current password"
                       />
                     </div>
                     
@@ -471,27 +466,27 @@ const AdminProfileSettings: React.FC = () => {
                     
                     <div className="grid gap-3">
                       <Label htmlFor="adminNewPassword">
-                        {language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
+                        New Password
                       </Label>
                       <Input 
                         id="adminNewPassword" 
                         type="password" 
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder={language === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter your new password'}
+                        placeholder="Enter your new password"
                       />
                     </div>
                     
                     <div className="grid gap-3">
                       <Label htmlFor="adminConfirmPassword">
-                        {language === 'ar' ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
+                        Confirm New Password
                       </Label>
                       <Input 
                         id="adminConfirmPassword" 
                         type="password" 
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder={language === 'ar' ? 'أكد كلمة المرور الجديدة' : 'Confirm your new password'}
+                        placeholder="Confirm your new password"
                       />
                     </div>
                     
@@ -502,11 +497,11 @@ const AdminProfileSettings: React.FC = () => {
                         className="flex items-center gap-2"
                       >
                         {isChangingPassword ? (
-                          language === 'ar' ? 'جارٍ التحديث...' : 'Updating...'
+                          "Updating..."
                         ) : (
                           <>
                             <Lock className="h-4 w-4" />
-                            {language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+                            Change Password
                           </>
                         )}
                       </Button>
@@ -519,37 +514,33 @@ const AdminProfileSettings: React.FC = () => {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'المصادقة الثنائية' : 'Two-Factor Authentication'}
+                  Two-Factor Authentication
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تعزيز أمان حساب المسؤول باستخدام المصادقة الثنائية.' 
-                    : 'Enhance your admin account security with two-factor authentication.'}
+                  Enhance your admin account security with two-factor authentication.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div>
                     <h3 className="font-medium dark:text-white">
-                      {language === 'ar' ? 'المصادقة الثنائية للمسؤول' : 'Admin Two-Factor Authentication'}
+                      Admin Two-Factor Authentication
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {twoFactorEnabled 
-                        ? (language === 'ar' ? 'المصادقة الثنائية مفعلة' : '2FA is currently enabled') 
-                        : (language === 'ar' ? 'المصادقة الثنائية غير مفعلة' : '2FA is currently disabled')}
+                        ? "2FA is currently enabled" 
+                        : "2FA is currently disabled"}
                     </p>
                   </div>
                   <Switch 
                     checked={twoFactorEnabled} 
                     onCheckedChange={setTwoFactorEnabled}
-                    aria-label={language === 'ar' ? 'تبديل المصادقة الثنائية' : 'Toggle two-factor authentication'}
+                    aria-label="Toggle two-factor authentication"
                   />
                 </div>
                 <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
                   <p>
-                    {language === 'ar' 
-                      ? 'يوصى بشدة بتمكين المصادقة الثنائية لحسابات المسؤولين لتعزيز الأمان. ستتوفر هذه الميزة قريبًا.' 
-                      : 'Enabling two-factor authentication is strongly recommended for admin accounts to enhance security. This feature will be available soon.'}
+                    Enabling two-factor authentication is strongly recommended for admin accounts to enhance security. This feature will be available soon.
                   </p>
                 </div>
               </CardContent>
@@ -558,22 +549,20 @@ const AdminProfileSettings: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'إدارة الجلسات' : 'Session Management'}
+                  Session Management
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'عرض وإدارة جلسات تسجيل الدخول النشطة.' 
-                    : 'View and manage your active login sessions.'}
+                  View and manage your active login sessions.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{language === 'ar' ? 'الجهاز' : 'Device'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'عنوان IP' : 'IP Address'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'آخر نشاط' : 'Last Active'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'الحالة' : 'Status'}</TableHead>
+                      <TableHead>Device</TableHead>
+                      <TableHead>IP Address</TableHead>
+                      <TableHead>Last Active</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -584,8 +573,8 @@ const AdminProfileSettings: React.FC = () => {
                         <TableCell>{format(session.lastActive, 'MMM dd, yyyy HH:mm')}</TableCell>
                         <TableCell>
                           {session.current 
-                            ? <span className="text-green-600 dark:text-green-400">{language === 'ar' ? 'الجلسة الحالية' : 'Current'}</span>
-                            : <span>{language === 'ar' ? 'نشط' : 'Active'}</span>}
+                            ? <span className="text-green-600 dark:text-green-400">Current</span>
+                            : <span>Active</span>}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -599,7 +588,7 @@ const AdminProfileSettings: React.FC = () => {
                     onClick={handleLogoutAllDevices}
                   >
                     <LogOut className="h-4 w-4" />
-                    {language === 'ar' ? 'تسجيل الخروج من كافة الأجهزة' : 'Logout from All Devices'}
+                    Logout from All Devices
                   </Button>
                 </div>
               </CardContent>
@@ -611,12 +600,10 @@ const AdminProfileSettings: React.FC = () => {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'إعدادات المنصة الأساسية' : 'Platform Controls'}
+                  Platform Controls
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'إدارة إعدادات المنصة الأساسية والوصول العام.' 
-                    : 'Manage core platform settings and public access.'}
+                  Manage core platform settings and public access.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -624,33 +611,29 @@ const AdminProfileSettings: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
                       <h3 className="font-medium dark:text-white">
-                        {language === 'ar' ? 'وضع الصيانة' : 'Maintenance Mode'}
+                        Maintenance Mode
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {language === 'ar' 
-                          ? 'تعطيل الوصول العام إلى المنصة أثناء الصيانة.' 
-                          : 'Disable public access to the platform during maintenance.'}
+                        Disable public access to the platform during maintenance.
                       </p>
                     </div>
                     <Switch 
                       checked={maintenanceMode} 
                       onCheckedChange={setMaintenanceMode}
-                      aria-label={language === 'ar' ? 'تبديل وضع الصيانة' : 'Toggle maintenance mode'}
+                      aria-label="Toggle maintenance mode"
                     />
                   </div>
                   
                   {maintenanceMode && (
                     <div className="grid gap-3">
                       <Label htmlFor="maintenance-message">
-                        {language === 'ar' ? 'رسالة الصيانة' : 'Maintenance Message'}
+                        Maintenance Message
                       </Label>
                       <Textarea 
                         id="maintenance-message" 
                         value={maintenanceMessage} 
                         onChange={(e) => setMaintenanceMessage(e.target.value)} 
-                        placeholder={language === 'ar' 
-                          ? 'أدخل الرسالة التي سيراها المستخدمون أثناء وضع الصيانة' 
-                          : 'Enter the message users will see during maintenance mode'}
+                        placeholder="Enter the message users will see during maintenance mode"
                         rows={3}
                       />
                     </div>
@@ -659,18 +642,16 @@ const AdminProfileSettings: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
                       <h3 className="font-medium dark:text-white">
-                        {language === 'ar' ? 'تسجيل المستخدمين' : 'User Registration'}
+                        User Registration
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {language === 'ar' 
-                          ? 'السماح للمستخدمين الجدد بالتسجيل في المنصة.' 
-                          : 'Allow new users to register to the platform.'}
+                        Allow new users to register to the platform.
                       </p>
                     </div>
                     <Switch 
                       checked={userRegistration} 
                       onCheckedChange={setUserRegistration}
-                      aria-label={language === 'ar' ? 'تبديل تسجيل المستخدمين' : 'Toggle user registration'}
+                      aria-label="Toggle user registration"
                     />
                   </div>
                 </div>
@@ -680,12 +661,10 @@ const AdminProfileSettings: React.FC = () => {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'إعدادات SMTP' : 'SMTP Settings'}
+                  SMTP Settings
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تكوين خادم البريد الإلكتروني لإرسال إشعارات النظام.' 
-                    : 'Configure email server for system notifications.'}
+                  Configure email server for system notifications.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -693,7 +672,7 @@ const AdminProfileSettings: React.FC = () => {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="grid gap-3">
                       <Label htmlFor="smtp-host">
-                        {language === 'ar' ? 'خادم SMTP' : 'SMTP Host'}
+                        SMTP Host
                       </Label>
                       <Input 
                         id="smtp-host" 
@@ -705,7 +684,7 @@ const AdminProfileSettings: React.FC = () => {
                     
                     <div className="grid gap-3">
                       <Label htmlFor="smtp-port">
-                        {language === 'ar' ? 'منفذ SMTP' : 'SMTP Port'}
+                        SMTP Port
                       </Label>
                       <Input 
                         id="smtp-port" 
@@ -719,26 +698,26 @@ const AdminProfileSettings: React.FC = () => {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div className="grid gap-3">
                       <Label htmlFor="smtp-user">
-                        {language === 'ar' ? 'اسم مستخدم SMTP' : 'SMTP Username'}
+                        SMTP Username
                       </Label>
                       <Input 
                         id="smtp-user" 
                         value={smtpUser} 
                         onChange={(e) => setSmtpUser(e.target.value)} 
-                        placeholder={language === 'ar' ? 'أدخل اسم المستخدم' : 'Enter username'}
+                        placeholder="Enter username"
                       />
                     </div>
                     
                     <div className="grid gap-3">
                       <Label htmlFor="smtp-password">
-                        {language === 'ar' ? 'كلمة مرور SMTP' : 'SMTP Password'}
+                        SMTP Password
                       </Label>
                       <Input 
                         id="smtp-password" 
                         type="password" 
                         value={smtpPassword} 
                         onChange={(e) => setSmtpPassword(e.target.value)} 
-                        placeholder={language === 'ar' ? 'أدخل كلمة المرور' : 'Enter password'}
+                        placeholder="Enter password"
                       />
                     </div>
                   </div>
@@ -749,7 +728,7 @@ const AdminProfileSettings: React.FC = () => {
                       className="flex items-center gap-2"
                     >
                       <Save className="h-4 w-4" />
-                      {language === 'ar' ? 'حفظ إعدادات المنصة' : 'Save Platform Settings'}
+                      Save Platform Settings
                     </Button>
                   </div>
                 </div>
@@ -759,12 +738,10 @@ const AdminProfileSettings: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'النسخ الاحتياطي واستيراد البيانات' : 'Backup & Data Export'}
+                  Backup & Data Export
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'إدارة النسخ الاحتياطية للبيانات واستيرادها.' 
-                    : 'Manage data backups and exports.'}
+                  Manage data backups and exports.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -772,12 +749,10 @@ const AdminProfileSettings: React.FC = () => {
                   <div className="flex flex-col sm:flex-row justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
                       <h3 className="font-medium dark:text-white">
-                        {language === 'ar' ? 'النسخ الاحتياطي للقاعدة البيانات' : 'Database Backup'}
+                        Database Backup
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {language === 'ar' 
-                          ? 'إنشاء نسخة احتياطية كاملة لقاعدة البيانات.' 
-                          : 'Create a full backup of the database.'}
+                        Create a full backup of the database.
                       </p>
                     </div>
                     <Button 
@@ -786,19 +761,17 @@ const AdminProfileSettings: React.FC = () => {
                       onClick={handleBackupDatabase}
                     >
                       <Database className="h-4 w-4" />
-                      {language === 'ar' ? 'بدء النسخ الاحتياطي' : 'Start Backup'}
+                      Start Backup
                     </Button>
                   </div>
                   
                   <div className="flex flex-col sm:flex-row justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
                       <h3 className="font-medium dark:text-white">
-                        {language === 'ar' ? 'تصدير البيانات' : 'Export Data'}
+                        Export Data
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {language === 'ar' 
-                          ? 'تصدير بيانات المستخدم أو بيانات التداول.' 
-                          : 'Export user or trading data.'}
+                        Export user or trading data.
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -808,7 +781,7 @@ const AdminProfileSettings: React.FC = () => {
                         onClick={handleExportData}
                       >
                         <Download className="h-4 w-4" />
-                        {language === 'ar' ? 'تصدير المستخدمين' : 'Export Users'}
+                        Export Users
                       </Button>
                       <Button 
                         variant="outline" 
@@ -816,7 +789,7 @@ const AdminProfileSettings: React.FC = () => {
                         onClick={handleExportData}
                       >
                         <Download className="h-4 w-4" />
-                        {language === 'ar' ? 'تصدير التداولات' : 'Export Trades'}
+                        Export Trades
                       </Button>
                     </div>
                   </div>
@@ -830,26 +803,24 @@ const AdminProfileSettings: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'تفضيلات الإشعارات' : 'Notification Preferences'}
+                  Notification Preferences
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'إدارة كيفية تلقي إشعارات النظام.' 
-                    : 'Manage how you receive system notifications.'}
+                  Manage how you receive system notifications.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-6">
                   <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <h3 className="text-lg font-medium mb-4 dark:text-white">
-                      {language === 'ar' ? 'قنوات الإشعارات' : 'Notification Channels'}
+                      Notification Channels
                     </h3>
                     <div className="grid gap-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-gray-500" />
                           <Label htmlFor="email-notifications" className="cursor-pointer">
-                            {language === 'ar' ? 'إشعارات البريد الإلكتروني' : 'Email Notifications'}
+                            Email Notifications
                           </Label>
                         </div>
                         <Switch 
@@ -863,7 +834,7 @@ const AdminProfileSettings: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Bell className="h-4 w-4 text-gray-500" />
                           <Label htmlFor="in-app-notifications" className="cursor-pointer">
-                            {language === 'ar' ? 'إشعارات داخل التطبيق' : 'In-app Notifications'}
+                            In-app Notifications
                           </Label>
                         </div>
                         <Switch 
@@ -877,12 +848,12 @@ const AdminProfileSettings: React.FC = () => {
                   
                   <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <h3 className="text-lg font-medium mb-4 dark:text-white">
-                      {language === 'ar' ? 'أحداث الإشعارات' : 'Notification Events'}
+                      Notification Events
                     </h3>
                     <div className="grid gap-4">
                       <div className="flex items-center justify-between">
                         <Label htmlFor="new-user-notification" className="cursor-pointer">
-                          {language === 'ar' ? 'مستخدم جديد مسجل' : 'New User Registered'}
+                          New User Registered
                         </Label>
                         <Switch 
                           id="new-user-notification" 
@@ -893,7 +864,7 @@ const AdminProfileSettings: React.FC = () => {
                       
                       <div className="flex items-center justify-between">
                         <Label htmlFor="new-trade-notification" className="cursor-pointer">
-                          {language === 'ar' ? 'تداول جديد مضاف' : 'New Trade Added'}
+                          New Trade Added
                         </Label>
                         <Switch 
                           id="new-trade-notification" 
@@ -904,7 +875,7 @@ const AdminProfileSettings: React.FC = () => {
                       
                       <div className="flex items-center justify-between">
                         <Label htmlFor="error-notification" className="cursor-pointer">
-                          {language === 'ar' ? 'خطأ في API' : 'API Error'}
+                          API Error
                         </Label>
                         <Switch 
                           id="error-notification" 
@@ -921,7 +892,7 @@ const AdminProfileSettings: React.FC = () => {
                       className="flex items-center gap-2"
                     >
                       <Save className="h-4 w-4" />
-                      {language === 'ar' ? 'حفظ تفضيلات الإشعارات' : 'Save Notification Preferences'}
+                      Save Notification Preferences
                     </Button>
                   </div>
                 </div>
@@ -934,12 +905,10 @@ const AdminProfileSettings: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'سجل المراجعة' : 'Audit Logs'}
+                  Audit Logs
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'عرض وتحليل سجلات إجراءات النظام.' 
-                    : 'View and analyze system action logs.'}
+                  View and analyze system action logs.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -947,24 +916,24 @@ const AdminProfileSettings: React.FC = () => {
                   <div className="flex flex-col sm:flex-row gap-4 mb-4">
                     <div className="flex-1">
                       <Input 
-                        placeholder={language === 'ar' ? 'بحث في السجلات...' : 'Search logs...'}
+                        placeholder="Search logs..."
                       />
                     </div>
                     <div className="flex gap-2">
                       <Select defaultValue="all">
                         <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder={language === 'ar' ? 'نوع الحدث' : 'Event Type'} />
+                          <SelectValue placeholder="Event Type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">{language === 'ar' ? 'جميع الأحداث' : 'All Events'}</SelectItem>
-                          <SelectItem value="login">{language === 'ar' ? 'تسجيل الدخول' : 'Login'}</SelectItem>
-                          <SelectItem value="update">{language === 'ar' ? 'تحديث' : 'Update'}</SelectItem>
-                          <SelectItem value="delete">{language === 'ar' ? 'حذف' : 'Delete'}</SelectItem>
-                          <SelectItem value="error">{language === 'ar' ? 'خطأ' : 'Error'}</SelectItem>
+                          <SelectItem value="all">All Events</SelectItem>
+                          <SelectItem value="login">Login</SelectItem>
+                          <SelectItem value="update">Update</SelectItem>
+                          <SelectItem value="delete">Delete</SelectItem>
+                          <SelectItem value="error">Error</SelectItem>
                         </SelectContent>
                       </Select>
                       <Button variant="outline">
-                        {language === 'ar' ? 'تصفية' : 'Filter'}
+                        Filter
                       </Button>
                     </div>
                   </div>
@@ -972,10 +941,10 @@ const AdminProfileSettings: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{language === 'ar' ? 'الإجراء' : 'Action'}</TableHead>
-                        <TableHead>{language === 'ar' ? 'المستخدم' : 'User'}</TableHead>
-                        <TableHead>{language === 'ar' ? 'الوقت' : 'Timestamp'}</TableHead>
-                        <TableHead>{language === 'ar' ? 'عنوان IP' : 'IP Address'}</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Timestamp</TableHead>
+                        <TableHead>IP Address</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -996,13 +965,13 @@ const AdminProfileSettings: React.FC = () => {
                       size="sm"
                       disabled
                     >
-                      {language === 'ar' ? 'السابق' : 'Previous'}
+                      Previous
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                     >
-                      {language === 'ar' ? 'التالي' : 'Next'}
+                      Next
                     </Button>
                   </div>
                 </div>
