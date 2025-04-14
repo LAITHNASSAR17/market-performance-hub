@@ -122,7 +122,7 @@ const Layout: React.FC<LayoutProps> = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-red-600 dark:text-red-400">
                     <LogOut className="h-4 w-4" />
-                    <span className="Logout">{t('auth.logout') || 'Logout'}</span>
+                    <span className="">{t('auth.logout') || 'Logout'}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
