@@ -459,8 +459,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending verification email to ${email}`);
       
-      const appUrl = window.location.origin;
-      console.log(`Current application URL: ${appUrl}`);
+      // Use trackmind.vip domain
+      const appUrl = 'https://trackmind.vip';
+      console.log(`Application URL: ${appUrl}`);
       
       const verificationLink = `${appUrl}/verify?email=${encodeURIComponent(email)}`;
       console.log(`Verification link: ${verificationLink}`);
@@ -523,8 +524,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error("User not found");
       }
       
-      const appUrl = window.location.origin;
-      console.log(`Current application URL: ${appUrl}`);
+      // Use trackmind.vip domain
+      const appUrl = 'https://trackmind.vip';
+      console.log(`Application URL: ${appUrl}`);
       
       const resetLink = `${appUrl}/reset-password?email=${encodeURIComponent(email)}`;
       console.log(`Reset password link: ${resetLink}`);

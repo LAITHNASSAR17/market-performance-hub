@@ -12,9 +12,9 @@ console.log("RESEND_API_KEY exists:", !!RESEND_API_KEY);
 const resend = new Resend(RESEND_API_KEY);
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://trackmind.vip',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
   console.log("Edge function called, method:", req.method);
@@ -53,7 +53,7 @@ serve(async (req) => {
 
     let html = '';
     let subject = '';
-    const fromEmail = "noreply@trackmind.vip"; // استخدم المجال الخاص بك للإرسال
+    const fromEmail = "noreply@trackmind.vip"; // Update the sender email domain
 
     if (type === 'verification') {
       console.log('Rendering verification email for:', email);
