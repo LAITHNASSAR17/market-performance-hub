@@ -48,8 +48,8 @@ const queryClient = new QueryClient();
 const App = () => (
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <LanguageProvider>
+      <LanguageProvider>
+        <AuthProvider>
           <ThemeProvider>
             <TradeProvider>
               <NotebookProvider>
@@ -95,8 +95,8 @@ const App = () => (
               </NotebookProvider>
             </TradeProvider>
           </ThemeProvider>
-        </LanguageProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   </BrowserRouter>
 );
