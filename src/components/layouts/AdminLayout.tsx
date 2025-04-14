@@ -51,6 +51,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: <TrendingUp className="w-5 h-5" />, label: "Trades", path: "/admin/trades" },
     { icon: <Hash className="w-5 h-5" />, label: "Hashtags", path: "/admin/hashtags" },
     { icon: <FileText className="w-5 h-5" />, label: "Notes", path: "/admin/notes" },
+    { icon: <LayoutDashboard className="w-5 h-5" />, label: "Pages", path: "/admin/pages" },
     { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/admin/settings" },
   ];
 

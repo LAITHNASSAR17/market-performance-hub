@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,36 +6,37 @@ import { useTrade, Trade } from '@/contexts/TradeContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/components/ui/use-toast';
-
 declare global {
   interface Window {
     TradingView: any;
   }
 }
-
 const TradingChart: React.FC = () => {
-  const { t } = useLanguage();
+  const {
+    t
+  } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<any>(null);
   const navigate = useNavigate();
-  
+
   // Chart settings
   const [symbolType, setSymbolType] = useState("forex");
   const [currentTrade, setCurrentTrade] = useState<Trade | null>(null);
-  const { trades, getTrade } = useTrade();
+  const {
+    trades,
+    getTrade
+  } = useTrade();
   const location = useLocation();
 
   // Initialize the chart and load trade if specified
   useEffect(() => {
     console.log("TradingChart initialized, checking for trade params");
-    
+
     // Check if a trade ID was passed in the URL
     const params = new URLSearchParams(location.search);
     const tradeId = params.get('trade');
-    
     if (tradeId) {
       const trade = getTrade(tradeId);
-      
       if (trade) {
         setCurrentTrade(trade);
         // Set symbol type based on the pair
@@ -45,10 +45,9 @@ const TradingChart: React.FC = () => {
         } else if (trade.pair.includes('BTC') || trade.pair.includes('ETH')) {
           setSymbolType('crypto');
         }
-        
         toast({
           title: t('chart.tradeLoaded') || "تم تحميل الصفقة",
-          description: `${trade.pair} - ${trade.type} - ${trade.date}`,
+          description: `${trade.pair} - ${trade.type} - ${trade.date}`
         });
       } else {
         toast({
@@ -68,7 +67,6 @@ const TradingChart: React.FC = () => {
         initWidget();
       };
       document.head.appendChild(script);
-
       return () => {
         if (script.parentNode) {
           script.parentNode.removeChild(script);
@@ -77,7 +75,6 @@ const TradingChart: React.FC = () => {
     } else {
       initWidget();
     }
-
     return () => {
       if (widgetRef.current) {
         try {
@@ -95,7 +92,6 @@ const TradingChart: React.FC = () => {
       initWidget();
     }
   }, [symbolType, currentTrade]);
-
   const initWidget = () => {
     if (!window.TradingView || !containerRef.current) {
       return;
@@ -105,9 +101,8 @@ const TradingChart: React.FC = () => {
     if (widgetRef.current) {
       containerRef.current.innerHTML = '';
     }
-
     let symbol = getDefaultSymbol();
-    
+
     // If we have a current trade, use its pair
     if (currentTrade) {
       symbol = convertPairToTradingViewSymbol(currentTrade.pair);
@@ -116,13 +111,15 @@ const TradingChart: React.FC = () => {
     // Create a unique ID for the container
     const containerId = containerRef.current.id || 'tradingview_chart_' + Math.random().toString(36).substring(2, 15);
     containerRef.current.id = containerId;
-    
+
     // Configure the widget settings
     const widgetOptions = {
       width: '100%',
-      height: 800, // Increased chart height
+      height: 800,
+      // Increased chart height
       symbol: symbol,
-      interval: 'D', // Default to daily
+      interval: 'D',
+      // Default to daily
       timezone: 'Etc/UTC',
       theme: 'dark',
       style: '1',
@@ -135,15 +132,11 @@ const TradingChart: React.FC = () => {
       details: true,
       hotlist: true,
       calendar: true,
-      studies: [
-        'MASimple@tv-basicstudies',
-        'RSI@tv-basicstudies',
-        'MACD@tv-basicstudies'
-      ],
+      studies: ['MASimple@tv-basicstudies', 'RSI@tv-basicstudies', 'MACD@tv-basicstudies'],
       container_id: containerId,
       debug: false
     };
-    
+
     // Create the widget
     widgetRef.current = new window.TradingView.widget(widgetOptions);
 
@@ -158,20 +151,17 @@ const TradingChart: React.FC = () => {
       });
     }
   };
-
   const displayTradeOnChart = (trade: Trade) => {
     if (!widgetRef.current) {
       return;
     }
-    
     widgetRef.current.onChartReady(() => {
       toast({
         title: t('chart.tradeDisplayed') || "تم عرض الصفقة على الشارت",
-        description: t('chart.useControls') || "استخدم أدوات التحكم لمشاهدة الصفقة",
+        description: t('chart.useControls') || "استخدم أدوات التحكم لمشاهدة الصفقة"
       });
     });
   };
-
   const convertPairToTradingViewSymbol = (pair: string): string => {
     if (pair.includes('/')) {
       if (pair.startsWith('BTC') || pair.startsWith('ETH')) {
@@ -182,9 +172,8 @@ const TradingChart: React.FC = () => {
     }
     return pair;
   };
-
   const getDefaultSymbol = () => {
-    switch(symbolType) {
+    switch (symbolType) {
       case 'crypto':
         return 'BINANCE:BTCUSDT';
       case 'stock':
@@ -196,61 +185,27 @@ const TradingChart: React.FC = () => {
         return 'FX:EURUSD';
     }
   };
-
   const changeSymbolType = (type: string) => {
     setSymbolType(type);
   };
-
-  return (
-    <Layout>
+  return <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold tracking-tight">{t('chart.title') || 'الشارت'}</h1>
+          
         </div>
 
         <Card className="overflow-hidden">
-          <CardHeader>
-            <CardTitle>
-              {t('chart.tradingViewChart') || 'مخطط التداول'}
-            </CardTitle>
-            <CardDescription>
-              {currentTrade 
-                ? `${currentTrade.pair} - ${currentTrade.type} - ${currentTrade.date}` 
-                : (t('chart.description') || 'استخدم مخطط TradingView للتحليل الفني وتتبع الأسواق المالية')}
-            </CardDescription>
-          </CardHeader>
+          
           <CardContent className="space-y-6 p-0">
             {/* Chart Symbol Type Selection */}
-            <div className="p-4 border-b">
-              <div className="mb-4 flex flex-wrap gap-2">
-                <Select 
-                  value={symbolType} 
-                  onValueChange={changeSymbolType}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder={t('chart.selectSymbolType') || 'اختر نوع الرمز'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="forex">{t('chart.forex') || 'العملات'}</SelectItem>
-                    <SelectItem value="crypto">{t('chart.crypto') || 'العملات الرقمية'}</SelectItem>
-                    <SelectItem value="stock">{t('chart.stocks') || 'الأسهم'}</SelectItem>
-                    <SelectItem value="index">{t('chart.indices') || 'المؤشرات'}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            
             
             {/* Chart */}
-            <div 
-              id="tradingview_chart" 
-              ref={containerRef} 
-              className="w-full h-[800px]" // Set fixed height for chart
-            />
+            <div id="tradingview_chart" ref={containerRef} className="w-full h-[800px]" // Set fixed height for chart
+          />
           </CardContent>
         </Card>
       </div>
-    </Layout>
-  );
+    </Layout>;
 };
-
 export default TradingChart;

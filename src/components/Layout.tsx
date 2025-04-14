@@ -1,291 +1,222 @@
-
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, LineChart, TrendingUp, BookText, Settings, MenuIcon, X, LogOut, User, Moon, Sun, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
+import { useToast } from '@/hooks/use-toast';
+import AdminNavLink from './AdminNavLink';
 interface LayoutProps {
   children: React.ReactNode;
 }
-
 const Layout: React.FC<LayoutProps> = ({
   children
 }) => {
   const {
-    isAuthenticated,
-    logout,
-    user
+    user,
+    logout
   } = useAuth();
   const {
-    t,
-    language
+    pathname
+  } = useLocation();
+  const {
+    toast
+  } = useToast();
+  const {
+    language,
+    toggleLanguage,
+    t
   } = useLanguage();
-  const location = useLocation();
-  const isMobile = useIsMobile();
-  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const {
+    theme,
+    toggleTheme
+  } = useTheme();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  // Get site name from localStorage or use default
+  // Get site name from localStorage or default
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
+  // Close mobile menu when route changes
   useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    } else {
-      setSidebarOpen(true);
-    }
-  }, [isMobile]);
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
-
-  const navigation = [{
-    name: t('nav.dashboard'),
-    icon: Home,
-    href: '/dashboard'
-  }, {
-    name: t('nav.addTrade'),
-    icon: PlusCircle,
-    href: '/add-trade'
-  }, {
-    name: t('nav.trades'),
-    icon: BookText,
-    href: '/trades'
-  }, {
-    name: t('nav.journal'),
-    icon: Calendar,
-    href: '/journal'
-  }, {
-    name: t('nav.notebook'),
-    icon: BookText,
-    href: '/notebook'
-  }, {
-    name: t('nav.reports'),
-    icon: BarChart,
-    href: '/reports'
-  }, {
-    name: t('nav.insights'),
-    icon: Sparkles,
-    href: '/insights'
-  }, {
-    name: t('analytics.title') || 'Analytics',
-    icon: BarChart2,
-    href: '/analytics'
-  }, {
-    name: t('chart.title') || 'Chart',
-    icon: LineChart3,
-    href: '/chart'
-  }];
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    setMobileMenuOpen(false);
+  }, [pathname]);
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: t('loggedOut'),
+      description: t('youHaveBeenLoggedOut')
+    });
   };
-
-  return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className={cn(
-        "relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30",
-        sidebarOpen ? "w-64" : "w-16",
-        language === 'ar' ? "border-l" : "border-r",
-        "dark:bg-indigo-900/90 dark:border-indigo-800"
-      )}>
-        <div className="flex flex-col items-center py-4 px-4">
-          <div className="flex items-center justify-between w-full">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="text-sidebar-foreground dark:text-white"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            
-            {sidebarOpen && (
-              <h2 className="text-xl font-bold flex-1 text-center dark:text-white">{siteName}</h2>
-            )}
-          </div>
-          
-          {sidebarOpen && (
-            <div className="flex items-center gap-2 mt-4 w-full">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-left w-full justify-start px-2 py-1 h-auto">
-                    <div className="flex items-center gap-2 flex-1">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 overflow-hidden">
-                        {user?.name?.charAt(0) || 'U'}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium dark:text-white truncate">{user?.name || 'User'}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email || 'user@example.com'}</span>
-                      </div>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={language === 'ar' ? 'start' : 'end'} className="w-56">
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="flex items-center gap-2">
-                      <UserCog className="h-4 w-4" />
-                      <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  {user?.isAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin" className="flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-purple-500" />
-                        <span>{language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                    <LogOut className="h-4 w-4" />
-                    <span>{t('auth.logout') || 'Logout'}</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Tooltip key={item.href}>
-                <TooltipTrigger asChild>
-                  <Link 
-                    to={item.href} 
-                    className={cn(
-                      "flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-indigo-800 dark:hover:text-white",
-                      isActive && "bg-sidebar-accent text-sidebar-accent-foreground dark:bg-indigo-800 dark:text-white font-medium"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
-                    {sidebarOpen && <span className="ml-3">{item.name}</span>}
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent 
-                  side={language === 'ar' ? 'left' : 'right'} 
-                  align="center"
-                  hidden={sidebarOpen}
-                >
-                  {item.name}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
-          {!sidebarOpen ? (
-            <div className="flex flex-col gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    asChild 
-                    className="w-full flex items-center justify-center px-2"
-                  >
-                    <Link to="/profile">
-                      <UserCog className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent 
-                  side={language === 'ar' ? 'left' : 'right'} 
-                  align="center"
-                >
-                  {language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}
-                </TooltipContent>
-              </Tooltip>
-              
-              {user?.isAdmin && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      asChild 
-                      className="w-full flex items-center justify-center px-2 bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700"
-                    >
-                      <Link to="/admin">
-                        <Shield className="h-4 w-4 text-purple-500" />
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent 
-                    side={language === 'ar' ? 'left' : 'right'} 
-                    align="center"
-                  >
-                    {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                asChild 
-                className="w-full flex items-center justify-center"
-              >
-                <Link to="/profile">
-                  <UserCog className="h-4 w-4 mr-2" />
-                  <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
+  const navigationItems = [{
+    name: t('dashboard'),
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    href: '/dashboard',
+    current: pathname === '/dashboard'
+  }, {
+    name: t('trades'),
+    icon: <TrendingUp className="h-5 w-5" />,
+    href: '/trades',
+    current: pathname === '/trades'
+  }, {
+    name: t('journal'),
+    icon: <BookText className="h-5 w-5" />,
+    href: '/journal',
+    current: pathname === '/journal'
+  }, {
+    name: t('analytics'),
+    icon: <LineChart className="h-5 w-5" />,
+    href: '/analytics',
+    current: pathname === '/analytics'
+  }];
+  return <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex lg:flex-shrink-0">
+        <div className="flex w-64 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
+            <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
+              <div className="flex flex-shrink-0 items-center px-4">
+                <Link to="/dashboard" className="flex items-center">
+                  <div className="bg-indigo-600 rounded-md p-1 mr-2">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <span className="font-bold text-xl text-gray-900 dark:text-white">{siteName}</span>
                 </Link>
-              </Button>
-              
-              {user?.isAdmin && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  asChild 
-                  className="w-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700"
-                >
-                  <Link to="/admin">
-                    <Shield className="h-4 w-4 mr-2 text-purple-500" />
-                    <span className="text-purple-700 dark:text-purple-300">
-                      {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-                    </span>
-                  </Link>
-                </Button>
-              )}
+              </div>
+              <nav className="mt-8 flex-1 space-y-1 px-2">
+                {navigationItems.map(item => <Link key={item.name} to={item.href} className={`${item.current ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} group flex items-center rounded-md py-2 px-3`}>
+                    {item.icon}
+                    <span className="ml-3">{item.name}</span>
+                  </Link>)}
+              </nav>
             </div>
-          )}
+            <div className="flex flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center w-full">
+                <div className="flex flex-col flex-1 text-sm">
+                  <span className="font-medium text-gray-900 dark:text-gray-200">{user?.name}</span>
+                  <span className="text-gray-500 dark:text-gray-400 truncate">{user?.email}</span>
+                </div>
+                <div className="flex-shrink-0">
+                  <Menu />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {sidebarOpen && isMobile && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-20" 
-          onClick={() => setSidebarOpen(false)} 
-        />
-      )}
-
-      <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
-        {children}
-      </main>
-    </div>
-  );
+      
+      {/* Mobile menu */}
+      <div className={`${mobileMenuOpen ? 'fixed inset-0 z-40 flex' : 'hidden'} lg:hidden`}>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setMobileMenuOpen(false)}></div>
+        <div className="relative flex w-full max-w-xs flex-1 flex-col bg-white dark:bg-gray-800 pt-5 pb-4">
+          <div className="absolute top-0 right-0 -mr-12 pt-2">
+            <button type="button" className="ml-1 flex h-10 w-10 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white" onClick={() => setMobileMenuOpen(false)}>
+              <span className="sr-only">Close sidebar</span>
+              <X className="h-6 w-6 text-white" />
+            </button>
+          </div>
+          
+          <div className="flex flex-shrink-0 items-center px-4">
+            <Link to="/dashboard" className="flex items-center">
+              <div className="bg-indigo-600 rounded-md p-1 mr-2">
+                <TrendingUp className="h-6 w-6 text-white" />
+              </div>
+              <span className="font-bold text-xl text-gray-900 dark:text-white">{siteName}</span>
+            </Link>
+          </div>
+          
+          <div className="mt-5 h-0 flex-1 overflow-y-auto">
+            <nav className="space-y-1 px-2">
+              {navigationItems.map(item => <Link key={item.name} to={item.href} className={`${item.current ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} group flex items-center rounded-md py-2 px-2`}>
+                  {item.icon}
+                  <span className="ml-3">{item.name}</span>
+                </Link>)}
+            </nav>
+          </div>
+          
+          <div className="flex flex-shrink-0 border-t border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                  <User className="h-6 w-6 text-indigo-600" />
+                </div>
+              </div>
+              <div className="ml-3 flex flex-col">
+                <span className="text-base font-medium text-gray-900 dark:text-white">{user?.name}</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400 truncate">{user?.email}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="w-14 flex-shrink-0" aria-hidden="true"></div>
+      </div>
+      
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="w-full">
+          <div className="relative z-10 flex h-16 flex-shrink-0 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-sm">
+            <button type="button" className="border-r border-gray-200 dark:border-gray-700 px-4 text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 lg:hidden" onClick={() => setMobileMenuOpen(true)}>
+              <span className="sr-only">Open sidebar</span>
+              <MenuIcon className="h-6 w-6" />
+            </button>
+            <div className="flex flex-1 justify-between px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-1 items-center">
+                <h1 className="text-lg font-medium text-gray-900 dark:text-white">
+                  {pathname === '/dashboard' && t('dashboard')}
+                  {pathname === '/trades' && t('trades')}
+                  {pathname === '/journal' && t('journal')}
+                  {pathname === '/analytics' && t('analytics')}
+                  {pathname === '/settings' && t('settings')}
+                  {pathname === '/profile' && t('profile')}
+                </h1>
+              </div>
+              <div className="ml-4 flex items-center gap-3">
+                <AdminNavLink />
+                
+                <button type="button" onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Toggle theme">
+                  {theme === 'dark' ? <Sun className="h-5 w-5 text-gray-400" /> : <Moon className="h-5 w-5 text-gray-400" />}
+                </button>
+                
+                <button type="button" onClick={toggleLanguage} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Toggle language">
+                  <Globe className="h-5 w-5 text-gray-400" />
+                </button>
+                
+                <Link to="/settings" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Settings">
+                  <Settings className="h-5 w-5 text-gray-400" />
+                </Link>
+                
+                <button type="button" onClick={handleLogout} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" aria-label="Logout">
+                  <LogOut className="h-5 w-5 text-gray-400" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+          {children}
+        </main>
+      </div>
+    </div>;
 };
 
+// Menu component for user dropdown
+const Menu = () => {
+  const {
+    logout
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    t
+  } = useLanguage();
+  const handleLogout = () => {
+    logout();
+    toast({
+      title: t('loggedOut'),
+      description: t('youHaveBeenLoggedOut')
+    });
+  };
+  return;
+};
 export default Layout;
