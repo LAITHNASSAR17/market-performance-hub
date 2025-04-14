@@ -27,16 +27,18 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "Lovable <onboarding@yourdomain.com>",
       to: [email],
-      subject: "Verify Your Account",
+      subject: "تحقق من حسابك",
       html: `
-        <h1>Welcome, ${name}!</h1>
-        <p>Thank you for registering. Please verify your email by clicking the link below:</p>
-        <a href="${verificationLink}">Verify Email</a>
-        <p>If you didn't create an account, you can safely ignore this email.</p>
+        <div dir="rtl">
+          <h1>مرحباً ${name}!</h1>
+          <p>شكراً لتسجيلك. الرجاء التحقق من بريدك الإلكتروني بالنقر على الرابط أدناه:</p>
+          <a href="${verificationLink}">تحقق من البريد الإلكتروني</a>
+          <p>إذا لم تقم بإنشاء حساب، يمكنك تجاهل هذا البريد الإلكتروني بأمان.</p>
+        </div>
       `,
     });
 
-    console.log("Verification email sent successfully:", emailResponse);
+    console.log("تم إرسال البريد الإلكتروني بنجاح:", emailResponse);
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,
@@ -46,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error in send-verification-email function:", error);
+    console.error("خطأ في وظيفة إرسال التحقق من البريد الإلكتروني:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
