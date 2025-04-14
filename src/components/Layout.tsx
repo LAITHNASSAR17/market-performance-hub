@@ -7,9 +7,11 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import AdminNavLink from './AdminNavLink';
+
 interface LayoutProps {
   children: React.ReactNode;
 }
+
 const Layout: React.FC<LayoutProps> = ({
   children
 }) => {
@@ -69,6 +71,7 @@ const Layout: React.FC<LayoutProps> = ({
     href: '/analytics',
     current: pathname === '/analytics'
   }];
+
   return <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:flex-shrink-0">
@@ -97,7 +100,7 @@ const Layout: React.FC<LayoutProps> = ({
                   <span className="text-gray-500 dark:text-gray-400 truncate">{user?.email}</span>
                 </div>
                 <div className="flex-shrink-0">
-                  <Menu />
+                  <UserMenu />
                 </div>
               </div>
             </div>
@@ -199,17 +202,12 @@ const Layout: React.FC<LayoutProps> = ({
     </div>;
 };
 
-// Menu component for user dropdown
-const Menu = () => {
-  const {
-    logout
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
-  const {
-    t
-  } = useLanguage();
+// Menu component for user dropdown - fixed to return JSX
+const UserMenu = () => {
+  const { logout } = useAuth();
+  const { toast } = useToast();
+  const { t } = useLanguage();
+  
   const handleLogout = () => {
     logout();
     toast({
@@ -217,6 +215,15 @@ const Menu = () => {
       description: t('youHaveBeenLoggedOut')
     });
   };
-  return;
+  
+  return (
+    <div className="flex items-center">
+      {/* Menu content can be expanded later */}
+      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
+        <User className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 };
+
 export default Layout;

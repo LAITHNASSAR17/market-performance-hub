@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { Paintbrush, Settings, Globe, Mail, Phone, Copyright } from 'lucide-react';
+import { Paintbrush, Settings, Globe, Mail, Phone, Copyright, Pencil } from 'lucide-react';
 import FaviconUpload from '@/components/FaviconUpload';
 import { useAuth } from '@/contexts/AuthContext';
 import SystemSettings from '@/components/admin/SystemSettings';
