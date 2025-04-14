@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { Resend } from "npm:resend@2.0.0"
 import { renderAsync } from "npm:@react-email/render@0.0.12"
@@ -11,8 +12,9 @@ console.log("RESEND_API_KEY exists:", !!RESEND_API_KEY);
 // Initialize Resend with the API key
 const resend = new Resend(RESEND_API_KEY);
 
+// Allow both the Lovable preview domain and trackmind.vip domain
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://trackmind.vip',
+  'Access-Control-Allow-Origin': '*',  // Allow all origins during development
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -53,7 +55,7 @@ serve(async (req) => {
 
     let html = '';
     let subject = '';
-    const fromEmail = "noreply@trackmind.vip"; // Update the sender email domain
+    const fromEmail = "noreply@trackmind.vip"; // Use trackmind.vip domain
 
     if (type === 'verification') {
       console.log('Rendering verification email for:', email);
