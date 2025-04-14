@@ -1,10 +1,21 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from './LanguageContext';
+
+// Extended User type with our custom properties
+interface User {
+  id: string;
+  email: string;
+  name?: string; // Optional because it might not be set
+  isAdmin?: boolean;
+  subscription_tier?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 // Define the shape of the context
 interface AuthContextType {
@@ -12,6 +23,7 @@ interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   loading: boolean;
+  users: User[]; // Array of users for admin pages
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -20,6 +32,11 @@ interface AuthContextType {
   updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
   updateSubscriptionTier: (tier: string) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  // Admin functions
+  getAllUsers: () => Promise<User[]>;
+  blockUser: (user: User) => Promise<void>;
+  unblockUser: (user: User) => Promise<void>;
+  updateUser: (user: User) => Promise<void>;
 }
 
 // Create context with default values
@@ -32,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { language } = useLanguage();
@@ -46,12 +64,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             setSession(session);
-            setUser(session?.user ?? null);
-            setIsAuthenticated(!!session);
             
             if (session?.user) {
+              const userData: User = {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.user_metadata?.name || '',
+              };
+              
+              setUser(userData);
+              setIsAuthenticated(true);
               await checkUserRole(session.user.id);
             } else {
+              setUser(null);
+              setIsAuthenticated(false);
               setIsAdmin(false);
             }
           }
@@ -60,11 +86,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Check for existing session
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
-        setUser(session?.user ?? null);
-        setIsAuthenticated(!!session);
         
         if (session?.user) {
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || '',
+          };
+          
+          setUser(userData);
+          setIsAuthenticated(true);
           await checkUserRole(session.user.id);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          setIsAdmin(false);
         }
         
         return () => {
@@ -83,17 +119,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check if user has admin role
   const checkUserRole = async (userId: string) => {
     try {
-      // Fetch user data from profiles table
+      // First check in the users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('is_blocked, role, subscription_tier')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (userData && !userError) {
+        console.log("User data:", userData);
+        const isAdminUser = userData.role === 'admin';
+        setIsAdmin(isAdminUser);
+        
+        // Update user data with additional info
+        setUser(prevUser => {
+          if (prevUser) {
+            return {
+              ...prevUser,
+              isAdmin: isAdminUser,
+              subscription_tier: userData.subscription_tier || 'free',
+            };
+          }
+          return prevUser;
+        });
+        
+        return;
+      }
+      
+      // Fallback to profiles table if users table doesn't have the data
       const { data, error } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', userId)
         .maybeSingle();
       
-      if (error) throw error;
-      
-      console.log("Admin check data:", data);
-      setIsAdmin(data?.is_admin === true);
+      if (!error && data) {
+        console.log("Admin check data:", data);
+        const isAdminUser = data.is_admin === true;
+        setIsAdmin(isAdminUser);
+        
+        // Update user data
+        setUser(prevUser => {
+          if (prevUser) {
+            return {
+              ...prevUser,
+              isAdmin: isAdminUser,
+            };
+          }
+          return prevUser;
+        });
+      } else {
+        setIsAdmin(false);
+      }
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
@@ -283,7 +360,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Refresh user data
       const { data: { user: updatedUser } } = await supabase.auth.getUser();
-      setUser(updatedUser);
+      if (updatedUser) {
+        setUser({
+          id: updatedUser.id,
+          email: updatedUser.email || '',
+          name: updatedUser.user_metadata?.name || '',
+          isAdmin: user?.isAdmin || false,
+          subscription_tier: user?.subscription_tier || 'free'
+        });
+      }
       
       toast({
         title: language === 'ar' ? "تم التحديث" : "Profile Updated",
@@ -343,14 +428,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // This would typically involve updating a user's subscription in your database
-      // Example implementation - adjust based on your actual data structure
-      const { error } = await supabase
-        .from('profiles')
-        .update({ subscription_tier: tier })
-        .eq('id', user?.id);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
       
-      if (error) throw error;
+      // Try to update in the users table first
+      const { error: usersError } = await supabase
+        .from('users')
+        .update({ subscription_tier: tier })
+        .eq('id', user.id);
+      
+      // If users table update fails, try profiles
+      if (usersError) {
+        const { error: profilesError } = await supabase
+          .from('profiles')
+          .update({ 
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', user.id);
+          
+        if (profilesError) {
+          throw profilesError;
+        }
+      }
+      
+      // Update local user state
+      setUser(prevUser => {
+        if (prevUser) {
+          return {
+            ...prevUser,
+            subscription_tier: tier
+          };
+        }
+        return prevUser;
+      });
       
       toast({
         title: language === 'ar' ? "تم تحديث الاشتراك" : "Subscription Updated",
@@ -371,11 +482,157 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Admin Functions
+  const getAllUsers = async (): Promise<User[]> => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.from('users').select('*');
+      
+      if (error) throw error;
+      
+      if (data) {
+        const formattedUsers = data.map(user => ({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isAdmin: user.role === 'admin',
+          subscription_tier: user.subscription_tier || 'free',
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        }));
+        
+        setUsers(formattedUsers);
+        return formattedUsers;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: language === 'ar' ? "فشل في جلب المستخدمين" : "Failed to fetch users",
+        description: "An error occurred while fetching users",
+        variant: "destructive",
+      });
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const blockUser = async (user: User): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ is_blocked: true })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update users array
+      setUsers(prevUsers => prevUsers.map(u => 
+        u.id === user.id ? { ...u, is_blocked: true } : u
+      ));
+      
+      toast({
+        title: language === 'ar' ? "تم حظر المستخدم" : "User Blocked",
+        description: language === 'ar'
+          ? `تم حظر ${user.name || user.email} بنجاح`
+          : `${user.name || user.email} has been blocked successfully`,
+      });
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: language === 'ar' ? "فشل في حظر المستخدم" : "Failed to block user",
+        description: "An error occurred while blocking the user",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const unblockUser = async (user: User): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ is_blocked: false })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update users array
+      setUsers(prevUsers => prevUsers.map(u => 
+        u.id === user.id ? { ...u, is_blocked: false } : u
+      ));
+      
+      toast({
+        title: language === 'ar' ? "تم إلغاء حظر المستخدم" : "User Unblocked",
+        description: language === 'ar'
+          ? `تم إلغاء حظر ${user.name || user.email} بنجاح`
+          : `${user.name || user.email} has been unblocked successfully`,
+      });
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: language === 'ar' ? "فشل في إلغاء حظر المستخدم" : "Failed to unblock user",
+        description: "An error occurred while unblocking the user",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUser = async (user: User): Promise<void> => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ 
+          name: user.name, 
+          email: user.email,
+          role: user.isAdmin ? 'admin' : 'user',
+          subscription_tier: user.subscription_tier,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update users array
+      setUsers(prevUsers => prevUsers.map(u => 
+        u.id === user.id ? user : u
+      ));
+      
+      toast({
+        title: language === 'ar' ? "تم تحديث المستخدم" : "User Updated",
+        description: language === 'ar'
+          ? `تم تحديث ${user.name || user.email} بنجاح`
+          : `${user.name || user.email} has been updated successfully`,
+      });
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: language === 'ar' ? "فشل في تحديث المستخدم" : "Failed to update user",
+        description: "An error occurred while updating the user",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const contextValue: AuthContextType = {
     isAuthenticated,
     user,
     isAdmin,
     loading,
+    users,
     login,
     register,
     logout,
@@ -384,6 +641,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateProfile,
     updateSubscriptionTier,
     changePassword,
+    getAllUsers,
+    blockUser,
+    unblockUser,
+    updateUser,
   };
 
   return (
