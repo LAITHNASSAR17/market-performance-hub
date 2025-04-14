@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -129,6 +128,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+      
+      if (existingUser) {
+        throw new Error('البريد الإلكتروني مسجل بالفعل. الرجاء استخدام بريد إلكتروني آخر أو تسجيل الدخول.');
+      }
+      
       const { data: { user: newUser }, error } = await supabase.auth.signUp({
         email,
         password,
@@ -142,7 +151,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (newUser) {
-        // Call the Edge Function to send a verification email
         const verificationLink = `${window.location.origin}/login?verified=true`;
         
         try {
@@ -161,8 +169,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Failed to invoke send-verification-email function:', emailErr);
         }
 
-        // Fix: Include a dummy password field for database schema compatibility
-        // This doesn't store the actual user password - auth is handled by Supabase Auth
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -171,10 +177,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email,
             role: 'user',
             is_blocked: false,
-            password: 'stored_in_auth' // Add this dummy password value to satisfy the table schema
+            password: 'stored_in_auth'
           });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          throw profileError;
+        }
 
         await supabase
           .from('user_preferences')
@@ -185,19 +193,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
         toast({
-          title: "Registration Successful",
-          description: "Please check your email to verify your account.",
+          title: "تم التسجيل بنجاح",
+          description: "يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك.",
         });
 
         navigate('/login');
       }
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast({
-        title: "Registration Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      
+      if (error.code === '23505' || error.message?.includes('duplicate key') || error.message?.includes('already exists')) {
+        toast({
+          title: "فشل التسجيل",
+          description: "البريد الإلكتروني مسجل بالفعل. الرجاء استخدام بريد إلكتروني آخر أو تسجيل الدخول.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "فشل التسجيل",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      
       throw error;
     } finally {
       setLoading(false);

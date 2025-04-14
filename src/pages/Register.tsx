@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { LineChart, AlertCircle, Mail, Lock, User } from 'lucide-react';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
@@ -19,7 +20,27 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [isChecking, setIsChecking] = useState(false);
   const { register, isAuthenticated, loading } = useAuth();
+
+  // التحقق من وجود البريد الإلكتروني
+  const checkEmailExists = async (email: string) => {
+    try {
+      setIsChecking(true);
+      const { data } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+      
+      return !!data;
+    } catch (error) {
+      console.error('Error checking email:', error);
+      return false;
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,18 +60,33 @@ const Register: React.FC = () => {
       setError(t('register.error.passwordLength'));
       return;
     }
+
+    // التحقق من وجود البريد الإلكتروني قبل التسجيل
+    const emailExists = await checkEmailExists(email);
+    if (emailExists) {
+      setError('البريد الإلكتروني مسجل بالفعل. الرجاء استخدام بريد إلكتروني آخر أو تسجيل الدخول.');
+      return;
+    }
     
     try {
       await register(name, email, password);
       toast({
-        title: "Registration Successful",
-        description: "Your account has been created successfully.",
+        title: t('register.success.title'),
+        description: t('register.success.description'),
       });
-    } catch (err) {
-      setError(t('register.error.failed'));
+    } catch (err: any) {
+      console.error('Registration error:', err);
+      
+      // التعامل مع خطأ البريد الإلكتروني المكرر
+      if (err.code === '23505' || err.message?.includes('duplicate key') || err.message?.includes('already exists')) {
+        setError('البريد الإلكتروني مسجل بالفعل. الرجاء استخدام بريد إلكتروني آخر أو تسجيل الدخول.');
+      } else {
+        setError(t('register.error.failed'));
+      }
+      
       toast({
-        title: "Registration Failed",
-        description: "There was an error creating your account.",
+        title: t('register.error.title'),
+        description: t('register.error.description'),
         variant: "destructive",
       });
     }
@@ -151,9 +187,9 @@ const Register: React.FC = () => {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loading}
+                disabled={loading || isChecking}
               >
-                {loading ? t('register.registering') : t('register.createAccount')}
+                {loading || isChecking ? t('register.registering') : t('register.createAccount')}
               </Button>
             </form>
           </CardContent>
