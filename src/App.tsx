@@ -14,6 +14,7 @@ import Index from "./pages/Index";
 import Homepage from "./pages/Homepage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AddTrade from "./pages/AddTrade";
 import Trades from "./pages/Trades";
@@ -48,9 +49,9 @@ const queryClient = new QueryClient();
 const App = () => (
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <ThemeProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <AuthProvider>
             <TradeProvider>
               <NotebookProvider>
                 <TooltipProvider>
@@ -60,6 +61,7 @@ const App = () => (
                     {/* User Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/" element={<Homepage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/add-trade" element={<AddTrade />} />
@@ -94,9 +96,9 @@ const App = () => (
                 </TooltipProvider>
               </NotebookProvider>
             </TradeProvider>
-          </ThemeProvider>
-        </AuthProvider>
-      </LanguageProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </BrowserRouter>
 );

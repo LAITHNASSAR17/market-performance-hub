@@ -314,6 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const language = getCurrentLanguage();
       
       try {
+        // Attempt to send styled email via edge function
         const { data, error: emailError } = await supabase.functions.invoke('send-reset-email', {
           body: { 
             email,
@@ -327,6 +328,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error invoking send-reset-email function:', emailError);
         }
         
+        // Handle the Resend email validation error by showing a success message anyway
+        // (Supabase's default email will still be sent)
         if (data && data.status === "domain_not_verified") {
           toast({
             title: language === 'ar' ? "تم إرسال رابط إعادة التعيين" : "Reset Link Sent",
@@ -336,6 +339,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (emailErr) {
         console.error('Failed to invoke send-reset-email function:', emailErr);
+        // Don't throw here - we still want to show success since Supabase's email was sent
       }
 
       toast({

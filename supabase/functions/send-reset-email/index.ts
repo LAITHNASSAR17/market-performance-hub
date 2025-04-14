@@ -29,6 +29,7 @@ const handler = async (req: Request): Promise<Response> => {
     const translations = emailTranslations.resetPassword[language];
 
     try {
+      // Attempt to send styled email via Resend
       const emailResponse = await resend.emails.send({
         from: "Trading Platform <onboarding@resend.dev>",
         to: [email],
@@ -73,8 +74,8 @@ const handler = async (req: Request): Promise<Response> => {
             error: emailError.message,
             status: "domain_not_verified",
             message: language === 'ar' 
-              ? "تم إرسال رمز إعادة تعيين كلمة المرور إلى Supabase. يرجى التحقق من بريدك الإلكتروني." 
-              : "Password reset code has been sent via Supabase. Please check your email."
+              ? "تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. يرجى التحقق من بريدك الإلكتروني." 
+              : "Password reset code has been sent to your email. Please check your email."
           }),
           {
             status: 200, // Return 200 even though there was an error with Resend
