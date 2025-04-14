@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 
@@ -344,139 +345,193 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return Math.round(profitLoss * 100) / 100; // Round to 2 decimal places
   };
 
+  // استرجاع التداولات من Supabase بدلاً من localStorage
   useEffect(() => {
-    if (user) {
-      // Load trades and symbols from localStorage
-      const allTrades = loadTradesFromStorage();
-      const storedSymbols = loadSymbolsFromStorage();
-      
-      if (storedSymbols.length > 0) {
-        setSymbols(storedSymbols);
-      }
-      
-      // Filter trades for current user
-      const userTrades = allTrades.filter(trade => trade.userId === user.id);
-      
-      // If user has no trades and is demo user, provide sample data
-      if (userTrades.length === 0 && user.email === 'demo@example.com') {
-        // For demo account, use sample trades but update the userId
-        const demoTrades = sampleTrades.map(trade => ({
-          ...trade,
-          userId: user.id
-        }));
-        
-        setTrades(demoTrades);
-        // Save demo trades to storage
-        saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...demoTrades]);
+    const fetchTrades = async () => {
+      if (user) {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('trades')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          const formattedTrades = data.map(trade => ({
+            id: trade.id,
+            userId: trade.user_id,
+            account: trade.account || 'Main Trading',
+            date: trade.entry_date.split('T')[0],
+            pair: trade.symbol,
+            type: trade.direction === 'long' ? 'Buy' : 'Sell',
+            entry: trade.entry_price,
+            exit: trade.exit_price || 0,
+            lotSize: trade.quantity,
+            stopLoss: null,
+            takeProfit: null,
+            riskPercentage: 0,
+            returnPercentage: 0,
+            profitLoss: trade.profit_loss || 0,
+            durationMinutes: 0,
+            notes: trade.notes || '',
+            imageUrl: null,
+            beforeImageUrl: null,
+            afterImageUrl: null,
+            hashtags: trade.tags || [],
+            createdAt: trade.created_at,
+          }));
+
+          setTrades(formattedTrades);
+
+          // استخراج الهاشتاجات الفريدة
+          const uniqueHashtags = Array.from(new Set(
+            formattedTrades.flatMap(trade => trade.hashtags)
+          ));
+          setAllHashtags(prevHashtags => [
+            ...prevHashtags,
+            ...uniqueHashtags.filter(tag => !prevHashtags.includes(tag))
+          ]);
+        } catch (error) {
+          console.error('Error fetching trades:', error);
+          toast({
+            title: "خطأ",
+            description: "حدث خطأ أثناء جلب التداولات",
+            variant: "destructive"
+          });
+        } finally {
+          setLoading(false);
+        }
       } else {
-        setTrades(userTrades);
+        setTrades([]);
+        setLoading(false);
       }
-      
-      // Extract and set all unique hashtags from trades
-      const hashtagSet = new Set<string>();
-      trades.forEach(trade => {
-        trade.hashtags.forEach(tag => hashtagSet.add(tag));
-      });
-      setAllHashtags(Array.from(hashtagSet).concat(allHashtags));
-    } else {
-      setTrades([]);
-    }
-    setLoading(false);
-  }, [user]);
-
-  const loadTradesFromStorage = (): Trade[] => {
-    const storedTrades = localStorage.getItem('trades');
-    return storedTrades ? JSON.parse(storedTrades) : [];
-  };
-
-  const saveTradestoStorage = (trades: Trade[]) => {
-    localStorage.setItem('trades', JSON.stringify(trades));
-  };
-  
-  const loadSymbolsFromStorage = (): Symbol[] => {
-    const storedSymbols = localStorage.getItem('symbols');
-    return storedSymbols ? JSON.parse(storedSymbols) : defaultSymbols;
-  };
-  
-  const saveSymbolsToStorage = (symbols: Symbol[]) => {
-    localStorage.setItem('symbols', JSON.stringify(symbols));
-  };
-
-  const addTrade = (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user) return;
-
-    const newTrade: Trade = {
-      ...newTradeData,
-      id: Date.now().toString(),
-      userId: user.id,
-      createdAt: new Date().toISOString()
     };
 
-    // Update local state
-    const updatedTrades = [...trades, newTrade];
-    setTrades(updatedTrades);
-    
-    // Update storage with ALL trades (including from other users)
-    const allTrades = loadTradesFromStorage();
-    saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...updatedTrades]);
-    
-    // Update hashtags
-    const newHashtags = newTrade.hashtags.filter(tag => !allHashtags.includes(tag));
-    if (newHashtags.length > 0) {
-      setAllHashtags([...allHashtags, ...newHashtags]);
-    }
+    fetchTrades();
+  }, [user]);
 
-    toast({
-      title: "Trade Added",
-      description: "Your trade has been added successfully",
-    });
+  // تعديل addTrade لإضافة التداول مباشرة إلى Supabase
+  const addTrade = async (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('trades')
+        .insert({
+          user_id: user.id,
+          symbol: newTradeData.pair,
+          entry_price: newTradeData.entry,
+          exit_price: newTradeData.exit,
+          quantity: newTradeData.lotSize,
+          direction: newTradeData.type === 'Buy' ? 'long' : 'short',
+          entry_date: new Date(newTradeData.date),
+          exit_date: newTradeData.exit ? new Date(newTradeData.date) : null,
+          profit_loss: newTradeData.profitLoss,
+          fees: 0,
+          notes: newTradeData.notes,
+          tags: newTradeData.hashtags
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newTrade: Trade = {
+        ...newTradeData,
+        id: data.id,
+        userId: user.id,
+        createdAt: data.created_at,
+      };
+
+      setTrades(prevTrades => [newTrade, ...prevTrades]);
+      
+      toast({
+        title: "تم إضافة التداول",
+        description: "تم إضافة التداول بنجاح",
+      });
+    } catch (error) {
+      console.error('Error adding trade:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة التداول",
+        variant: "destructive"
+      });
+    }
   };
 
-  const updateTrade = (id: string, tradeUpdate: Partial<Trade>) => {
+  // تعديل updateTrade لتحديث التداول مباشرة في Supabase
+  const updateTrade = async (id: string, tradeUpdate: Partial<Trade>) => {
     if (!user) return;
     
-    const tradeIndex = trades.findIndex(t => t.id === id);
-    if (tradeIndex === -1) return;
+    try {
+      const { error } = await supabase
+        .from('trades')
+        .update({
+          symbol: tradeUpdate.pair,
+          entry_price: tradeUpdate.entry,
+          exit_price: tradeUpdate.exit,
+          quantity: tradeUpdate.lotSize,
+          direction: tradeUpdate.type === 'Buy' ? 'long' : 'short',
+          entry_date: tradeUpdate.date ? new Date(tradeUpdate.date) : undefined,
+          exit_date: tradeUpdate.exit ? new Date(tradeUpdate.date) : null,
+          profit_loss: tradeUpdate.profitLoss,
+          notes: tradeUpdate.notes,
+          tags: tradeUpdate.hashtags
+        })
+        .eq('id', id)
+        .eq('user_id', user.id);
 
-    const updatedTrades = [...trades];
-    updatedTrades[tradeIndex] = { ...updatedTrades[tradeIndex], ...tradeUpdate };
-    
-    // Update local state
-    setTrades(updatedTrades);
-    
-    // Update storage with ALL trades (including from other users)
-    const allTrades = loadTradesFromStorage();
-    saveTradestoStorage([...allTrades.filter(trade => trade.userId !== user.id), ...updatedTrades]);
+      if (error) throw error;
 
-    // Update hashtags if they changed
-    if (tradeUpdate.hashtags) {
-      const newHashtags = tradeUpdate.hashtags.filter(tag => !allHashtags.includes(tag));
-      if (newHashtags.length > 0) {
-        setAllHashtags([...allHashtags, ...newHashtags]);
-      }
+      setTrades(prevTrades => 
+        prevTrades.map(trade => 
+          trade.id === id ? { ...trade, ...tradeUpdate } : trade
+        )
+      );
+
+      toast({
+        title: "تم تحديث التداول",
+        description: "تم تحديث التداول بنجاح",
+      });
+    } catch (error) {
+      console.error('Error updating trade:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث التداول",
+        variant: "destructive"
+      });
     }
-
-    toast({
-      title: "Trade Updated",
-      description: "Your trade has been updated successfully",
-    });
   };
 
-  const deleteTrade = (id: string) => {
+  // تعديل deleteTrade لحذف التداول مباشرة من Supabase
+  const deleteTrade = async (id: string) => {
     if (!user) return;
     
-    // Update local state
-    const updatedTrades = trades.filter(trade => trade.id !== id);
-    setTrades(updatedTrades);
-    
-    // Update storage with ALL trades (including from other users)
-    const allTrades = loadTradesFromStorage();
-    saveTradestoStorage([...allTrades.filter(trade => trade.id !== id)]);
+    try {
+      const { error } = await supabase
+        .from('trades')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
 
-    toast({
-      title: "Trade Deleted",
-      description: "Your trade has been deleted successfully",
-    });
+      if (error) throw error;
+
+      setTrades(prevTrades => prevTrades.filter(trade => trade.id !== id));
+
+      toast({
+        title: "تم حذف التداول",
+        description: "تم حذف التداول بنجاح",
+      });
+    } catch (error) {
+      console.error('Error deleting trade:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف التداول",
+        variant: "destructive"
+      });
+    }
   };
 
   const getTrade = (id: string) => {
@@ -485,7 +540,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Function for admin to get ALL trades from all users
   const getAllTrades = (): Trade[] => {
-    return loadTradesFromStorage();
+    return trades;
   };
 
   const addHashtag = (hashtag: string) => {
@@ -499,8 +554,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!symbols.some(s => s.symbol === symbol.symbol)) {
       const updatedSymbols = [...symbols, symbol];
       setSymbols(updatedSymbols);
-      saveSymbolsToStorage(updatedSymbols);
-      
       toast({
         title: "Symbol Added",
         description: `${symbol.name} has been added to your symbols list`,
