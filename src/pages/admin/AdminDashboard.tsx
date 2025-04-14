@@ -15,10 +15,11 @@ import {
   Briefcase
 } from 'lucide-react';
 import StatCard from '@/components/StatCard';
-import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+
+// Import our admin components
 import AdminCharts from '@/components/admin/AdminCharts';
 
 const AdminDashboard: React.FC = () => {
@@ -31,14 +32,14 @@ const AdminDashboard: React.FC = () => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [allTrades, setAllTrades] = useState<any[]>([]);
   const [totalNotes, setTotalNotes] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Load initial data
   useEffect(() => {
     handleRefreshData();
+    fetchStatsFromDatabase();
   }, []);
 
-  // Fetch data from database
+  // Fetch additional stats from database
   const fetchStatsFromDatabase = async () => {
     try {
       // Get total notes count
@@ -54,7 +55,7 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  // Statistics calculations
+  // Statistics calculations - now derived from loaded data
   const totalUsers = users ? users.length : 0;
   const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
   const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
@@ -64,10 +65,10 @@ const AdminDashboard: React.FC = () => {
   const totalTrades = allTrades.length;
   
   // Calculate profit/loss and other trade statistics
-  const allProfitLoss = allTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
+  const allProfitLoss = allTrades.reduce((sum, trade) => sum + (trade.profit_loss || 0), 0);
   
-  const winningTrades = allTrades.filter(trade => (trade.profitLoss || 0) > 0).length;
-  const losingTrades = allTrades.filter(trade => (trade.profitLoss || 0) < 0).length;
+  const winningTrades = allTrades.filter(trade => (trade.profit_loss || 0) > 0).length;
+  const losingTrades = allTrades.filter(trade => (trade.profit_loss || 0) < 0).length;
   const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
   
   // Today's trades
@@ -77,7 +78,7 @@ const AdminDashboard: React.FC = () => {
   
   const todayProfit = allTrades
     .filter(trade => new Date(trade.entry_date).toISOString().split('T')[0] === today)
-    .reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
+    .reduce((sum, trade) => sum + (trade.profit_loss || 0), 0);
   
   // Find most traded symbol
   const symbolCount: Record<string, number> = {};
@@ -96,39 +97,38 @@ const AdminDashboard: React.FC = () => {
   }
 
   const handleRefreshData = async () => {
-    setIsLoading(true);
+    // Fetch users data
+    const userData = await getAllUsers();
+    
+    // Fetch ALL trades across users for admin dashboard
     try {
-      // Fetch users data
-      await getAllUsers();
+      const { data: tradesData, error } = await supabase
+        .from('trades')
+        .select('*');
       
-      // Fetch ALL trades across users for admin dashboard
-      const tradesData = await getAllTrades();
-      setAllTrades(tradesData);
-      
-      // Fetch additional statistics
-      await fetchStatsFromDatabase();
-      
-      // Update refresh timestamp
-      setLastRefresh(new Date());
-      
-      toast({
-        title: "البيانات محدثة",
-        description: "تم تحديث بيانات لوحة الإدارة"
-      });
+      if (!error && tradesData) {
+        setAllTrades(tradesData);
+      } else {
+        console.error('Error fetching trades:', error);
+      }
     } catch (error) {
-      console.error('Error refreshing data:', error);
-      toast({
-        title: "خطأ في التحديث",
-        description: "حدث خطأ أثناء تحديث البيانات. الرجاء المحاولة مرة أخرى.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+      console.error('Error fetching trades:', error);
     }
+    
+    // Fetch additional statistics
+    fetchStatsFromDatabase();
+    
+    // Update refresh timestamp
+    setLastRefresh(new Date());
+    
+    toast({
+      title: "البيانات محدثة",
+      description: "تم تحديث بيانات لوحة الإدارة"
+    });
   };
 
   return (
-    <Layout>
+    <div>
       <header className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
@@ -145,9 +145,8 @@ const AdminDashboard: React.FC = () => {
             size={isMobile ? "sm" : "default"} 
             onClick={handleRefreshData}
             className="flex items-center"
-            disabled={isLoading}
           >
-            <RefreshCw className={`h-4 w-4 ml-1 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className="h-4 w-4 ml-1" />
             {isMobile ? "تحديث" : "تحديث البيانات"}
           </Button>
         </div>
@@ -244,7 +243,7 @@ const AdminDashboard: React.FC = () => {
           </Button>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 };
 
