@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useLanguage } from './LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -20,13 +21,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
+  const { language } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  // Get the language directly from document or localStorage
-  const getLanguage = (): 'ar' | 'en' => {
-    return document.documentElement.lang === 'ar' ? 'ar' : 'en';
-  };
 
   // Load theme preference from Supabase when user logs in
   useEffect(() => {
@@ -93,11 +90,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(theme);
   }, [theme]);
 
-  // Apply RTL/LTR based on language from document or localStorage
+  // Apply RTL/LTR based on language
   useEffect(() => {
-    const language = getLanguage();
     const root = window.document.documentElement;
-    
     if (language === 'ar') {
       root.dir = 'rtl';
       root.lang = 'ar';
@@ -105,7 +100,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       root.dir = 'ltr';
       root.lang = 'en';
     }
-  }, []);
+  }, [language]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');

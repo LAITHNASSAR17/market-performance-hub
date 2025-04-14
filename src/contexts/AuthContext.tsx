@@ -1,568 +1,362 @@
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Session } from '@supabase/supabase-js';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from './LanguageContext';
+import { supabase } from '@/lib/supabase';
 
 interface User {
   id: string;
+  name: string;
   email: string;
-  name?: string;
+  password?: string;
   isAdmin?: boolean;
   isBlocked?: boolean;
+  role?: string;
   subscription_tier?: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 interface AuthContextType {
-  isAuthenticated: boolean;
   user: User | null;
   isAdmin: boolean;
+  isAuthenticated: boolean;
   loading: boolean;
   users: User[];
-  login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (newPassword: string) => Promise<void>;
+  resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
+  updateUser: (updatedUser: User) => Promise<void>;
   updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
-  updateSubscriptionTier: (tier: string) => Promise<void>;
-  changePassword: (email: string, password: string) => Promise<void>;
   getAllUsers: () => Promise<User[]>;
   blockUser: (user: User) => Promise<void>;
   unblockUser: (user: User) => Promise<void>;
-  updateUser: (user: User) => Promise<void>;
+  changePassword: (email: string, newPassword: string) => Promise<void>;
+  updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [loading, setLoading] = useState(true);
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [users, setUsers] = useState<User[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { language } = useLanguage();
 
+  // Initialize the admin user in Supabase if it doesn't exist
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        setLoading(true);
-        
-        // First set up the auth state listener
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, session) => {
-            console.log("Auth state change:", event, session);
-            setSession(session);
-            
-            if (session?.user) {
-              const userData: User = {
-                id: session.user.id,
-                email: session.user.email || '',
-                name: session.user.user_metadata?.name || '',
-              };
-              
-              setUser(userData);
-              setIsAuthenticated(true);
-              
-              // Use setTimeout to avoid recursive auth calls
-              setTimeout(() => {
-                checkUserRole(session.user.id);
-              }, 0);
-            } else {
-              setUser(null);
-              setIsAuthenticated(false);
-              setIsAdmin(false);
-            }
-          }
-        );
-        
-        // Then check for existing session
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log("Initial session check:", session);
-        setSession(session);
-        
-        if (session?.user) {
-          const userData: User = {
-            id: session.user.id,
-            email: session.user.email || '',
-            name: session.user.user_metadata?.name || '',
-          };
-          
-          setUser(userData);
-          setIsAuthenticated(true);
-          await checkUserRole(session.user.id);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-          setIsAdmin(false);
-        }
-        
-        return () => {
-          subscription.unsubscribe();
-        };
-      } catch (error) {
-        console.error('Session check error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkUser();
-  }, []);
-
-  const checkUserRole = async (userId: string) => {
-    try {
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('is_blocked, role, subscription_tier')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (userData && !userError) {
-        console.log("User data:", userData);
-        const isAdminUser = userData.role === 'admin';
-        setIsAdmin(isAdminUser);
-        
-        setUser(prevUser => {
-          if (prevUser) {
-            return {
-              ...prevUser,
-              isAdmin: isAdminUser,
-              isBlocked: userData.is_blocked,
-              subscription_tier: userData.subscription_tier || 'free',
-            };
-          }
-          return prevUser;
-        });
-        
-        return;
-      }
-      
+    const initializeAdminUser = async () => {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (!error && data) {
-        console.log("Profile data:", data);
-        setIsAdmin(false);
-        
-        setUser(prevUser => {
-          if (prevUser) {
-            return {
-              ...prevUser,
-              isAdmin: false,
-            };
-          }
-          return prevUser;
-        });
-      } else {
-        setIsAdmin(false);
-      }
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-      setIsAdmin(false);
-    }
-  };
-
-  const login = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      
-      console.log("Login successful:", data);
-      navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Login error:', error);
-      toast({
-        title: language === 'ar' ? "فشل تسجيل الدخول" : "Login Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (name: string, email: string, password: string) => {
-    try {
-      setLoading(true);
-      
-      // Check if the email already exists in our custom users table
-      const { data: existingUser, error: checkError } = await supabase
         .from('users')
-        .select('email')
-        .eq('email', email)
-        .maybeSingle();
+        .select('*')
+        .eq('email', 'lnmr2001@gmail.com')
+        .single();
 
-      if (existingUser) {
-        throw new Error(language === 'ar' 
-          ? 'البريد الإلكتروني مسجل بالفعل. الرجاء استخدام بريد إلكتروني آخر أو تسجيل الدخول.' 
-          : 'Email already registered. Please use a different email or sign in.');
-      }
-      
-      // Register the user with Supabase Auth with email confirmation
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-          },
-          emailRedirectTo: `${window.location.origin}`,
-        },
-      });
-      
-      if (error) throw error;
-      console.log("Registration successful:", data);
-
-      // Create the user in our custom users table
-      if (data.user) {
+      if (error && error.code === 'PGRST116') {
+        // User doesn't exist, create the admin
+        const adminEmail = 'lnmr2001@gmail.com';
+        const adminPassword = hashPassword('password123');
+        
         const { error: insertError } = await supabase
           .from('users')
           .insert({
-            id: data.user.id,
-            name: name,
-            email: email,
-            password: 'hashed_in_auth', // We don't store actual passwords here
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            name: 'Admin User',
+            email: adminEmail,
+            password: adminPassword,
+            role: 'admin',
+            is_blocked: false,
+            subscription_tier: 'premium'
           });
           
         if (insertError) {
-          console.error('Error creating user in database:', insertError);
-          // We don't throw here as the auth user is already created
+          console.error('Error creating admin user:', insertError);
+        } else {
+          console.log('Test admin user created:', adminEmail);
         }
       }
+    };
 
-      // Prepare and send verification email
-      try {
-        // Get verification URL from Supabase (this might be different depending on your Supabase setup)
-        const verificationLink = `${window.location.origin}?type=signup`;
+    initializeAdminUser();
+  }, []);
 
-        // Call our custom verification email edge function
-        const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
-          body: {
-            email,
-            name,
-            verificationLink,
-            language: language || 'ar'
-          },
-        });
+  // Use Supabase auth state change listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
 
-        if (emailError) {
-          console.error('Error sending verification email:', emailError);
+          if (data) {
+            setUser(data);
+            setIsAdmin(data.role === 'admin');
+            setIsAuthenticated(true);
+          }
+        } else {
+          setUser(null);
+          setIsAdmin(false);
+          setIsAuthenticated(false);
         }
-      } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
-        // We don't throw here as the user is already created
+        setLoading(false);
       }
-      
-      toast({
-        title: language === 'ar' ? "تم التسجيل بنجاح" : "Registration Successful",
-        description: language === 'ar' 
-          ? "تم إنشاء حسابك بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك." 
-          : "Your account has been created successfully. Please check your email to verify your account.",
-      });
-      
-      // Redirect to login instead of auto-login
-      navigate('/login');
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      
-      toast({
-        title: language === 'ar' ? "فشل التسجيل" : "Registration Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
 
-  const logout = async () => {
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const register = async (name: string, email: string, password: string): Promise<void> => {
+    setLoading(true);
     try {
-      setLoading(true);
+      const hashedPassword = hashPassword(password);
       
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) throw error;
-      
-      navigate('/login');
-    } catch (error: any) {
-      console.error('Logout error:', error);
-      toast({
-        title: language === 'ar' ? "خطأ" : "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const forgotPassword = async (email: string) => {
-    try {
-      setLoading(true);
-      
-      const origin = window.location.origin;
-      const redirectUrl = `${origin}/reset-password`;
-      
-      console.log("Reset password redirect URL:", redirectUrl);
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: language === 'ar' ? "تم إرسال البريد الإلكتروني" : "Email Sent",
-        description: language === 'ar' 
-          ? "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني" 
-          : "A password reset link has been sent to your email",
-      });
-    } catch (error: any) {
-      console.error('Password reset error:', error);
-      toast({
-        title: language === 'ar' ? "فشل إرسال البريد الإلكتروني" : "Email Send Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetPassword = async (newPassword: string) => {
-    try {
-      if (newPassword.length < 8) {
-        throw new Error(language === 'ar' 
-          ? 'يجب أن تكون كلمة المرور 8 أحرف على الأقل' 
-          : 'Password must be at least 8 characters long');
-      }
-
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
-      if (!passwordRegex.test(newPassword)) {
-        throw new Error(language === 'ar' 
-          ? 'كلمة المرور يجب أن تحتوي على أحرف كبيرة وصغيرة وأرقام' 
-          : 'Password must include uppercase, lowercase letters and numbers');
-      }
-
-      setLoading(true);
-      
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: language === 'ar' ? "تم تغيير كلمة المرور" : "Password Changed",
-        description: language === 'ar' 
-          ? "تم تحديث كلمة المرور بنجاح" 
-          : "Your password has been successfully updated",
-      });
-      
-      navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Password update error:', error);
-      toast({
-        title: language === 'ar' ? "فشل تحديث كلمة المرور" : "Password Update Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateProfile = async (
-    name: string, 
-    email: string, 
-    currentPassword?: string, 
-    newPassword?: string
-  ) => {
-    try {
-      setLoading(true);
-      
-      if (currentPassword && newPassword) {
-        await changePassword(email, newPassword);
-      }
-      
-      const { error } = await supabase.auth.updateUser({
-        email: email !== user?.email ? email : undefined,
-        data: { name },
-      });
-      
-      if (error) throw error;
-      
-      const { data: { user: updatedUser } } = await supabase.auth.getUser();
-      if (updatedUser) {
-        setUser({
-          id: updatedUser.id,
-          email: updatedUser.email || '',
-          name: updatedUser.user_metadata?.name || '',
-          isAdmin: user?.isAdmin || false,
-          isBlocked: user?.isBlocked || false,
-          subscription_tier: user?.subscription_tier || 'free'
-        });
-      }
-      
-      toast({
-        title: language === 'ar' ? "تم التحديث" : "Profile Updated",
-        description: language === 'ar' 
-          ? "تم تحديث الملف الشخصي بنجاح" 
-          : "Your profile has been updated successfully",
-      });
-    } catch (error: any) {
-      console.error('Profile update error:', error);
-      toast({
-        title: language === 'ar' ? "فشل التحديث" : "Update Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const changePassword = async (email: string, newPassword: string) => {
-    try {
-      const { error } = await supabase.auth.admin.updateUserById(
-        user?.id || '',
-        { password: newPassword }
-      );
-      
-      if (error) throw error;
-      
-      toast({
-        title: language === 'ar' ? "تم التحديث" : "Password Updated",
-        description: language === 'ar' 
-          ? "تم تحديث كلمة المرور بنجاح" 
-          : "Password has been updated successfully",
-      });
-    } catch (error: any) {
-      console.error('Password change error:', error);
-      throw error;
-    }
-  };
-
-  const updateSubscriptionTier = async (tier: string) => {
-    try {
-      setLoading(true);
-      
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-      
-      const { error: usersError } = await supabase
+      const { data, error } = await supabase
         .from('users')
-        .update({ subscription_tier: tier })
-        .eq('id', user.id);
+        .insert({
+          name,
+          email,
+          password: hashedPassword,
+          role: 'user',
+          is_blocked: false,
+          subscription_tier: 'free'
+        })
+        .select()
+        .single();
       
-      if (usersError) {
-        const { error: profilesError } = await supabase
-          .from('profiles')
-          .update({ 
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', user.id);
-          
-        if (profilesError) {
-          throw profilesError;
-        }
-      }
+      if (error) throw new Error(error.message);
       
-      setUser(prevUser => {
-        if (prevUser) {
-          return {
-            ...prevUser,
-            subscription_tier: tier
-          };
-        }
-        return prevUser;
-      });
-      
+      // Auto login after registration
+      await login(email, password);
+    } catch (error) {
+      console.error('Registration error:', error);
       toast({
-        title: language === 'ar' ? "تم تحديث الاشتراك" : "Subscription Updated",
-        description: language === 'ar' 
-          ? `تم تحديث خطة اشتراكك إلى ${tier}` 
-          : `Your subscription has been updated to ${tier}`,
-      });
-    } catch (error: any) {
-      console.error('Subscription update error:', error);
-      toast({
-        title: language === 'ar' ? "فشل تحديث الاشتراك" : "Subscription Update Failed",
-        description: error.message,
+        title: "Registration Failed",
+        description: (error as Error).message || "Could not register user",
         variant: "destructive",
       });
       throw error;
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Modify login method to ensure proper local storage
+  const login = async (email: string, password: string): Promise<void> => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+      
+      if (error || !data) throw new Error('Invalid credentials');
+      
+      console.log('Login attempt:', email);
+      console.log('Found user:', data ? 'Yes' : 'No');
+      
+      if (comparePassword(password, data.password)) {
+        if (data.is_blocked) {
+          throw new Error('User is blocked');
+        }
+        
+        setUser(data);
+        setIsAdmin(data.role === 'admin');
+        setIsAuthenticated(true);
+        
+        navigate('/dashboard');
+        toast({
+          title: "Login Successful",
+          description: `Welcome back, ${data.name}!`,
+        });
+      } else {
+        throw new Error('Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      toast({
+        title: "Login Failed",
+        description: (error as Error).message || "Invalid credentials",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setIsAdmin(false);
+    setIsAuthenticated(false);
+    navigate('/login');
+  };
+
+  const forgotPassword = async (email: string): Promise<void> => {
+    console.log(`Forgot password requested for ${email}`);
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    localStorage.setItem(`resetCode_${email}`, resetCode);
+    console.log(`Reset code for ${email}: ${resetCode}`);
+    toast({
+      title: "Reset Code Generated",
+      description: "Check console for the reset code (would be emailed in a real app)"
+    });
+  };
+
+  const resetPassword = async (email: string, resetCode: string, newPassword: string): Promise<void> => {
+    const storedResetCode = localStorage.getItem(`resetCode_${email}`);
+    if (storedResetCode === resetCode) {
+      const hashedPassword = hashPassword(newPassword);
+      
+      const { error } = await supabase
+        .from('users')
+        .update({ password: hashedPassword })
+        .eq('email', email);
+      
+      if (error) throw new Error('Failed to reset password');
+      
+      localStorage.removeItem(`resetCode_${email}`);
+      toast({
+        title: "Success",
+        description: "Password reset successfully",
+      });
+      navigate('/login');
+    } else {
+      throw new Error('Invalid reset code');
+    }
+  };
+
+  const updateUser = async (updatedUser: User): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
+          is_blocked: updatedUser.isBlocked || false,
+          subscription_tier: updatedUser.subscription_tier || 'free'
+        })
+        .eq('id', updatedUser.id);
+      
+      if (error) throw error;
+      
+      // Refresh users list
+      const allUsers = await getAllUsers();
+      setUsers(allUsers);
+      
+      // Update local user if it's the current user
+      if (user && user.id === updatedUser.id) {
+        const updatedCurrentUser = {
+          ...updatedUser,
+          role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user')
+        };
+        setUser(updatedCurrentUser);
+        setIsAdmin(updatedCurrentUser.role === 'admin' || updatedCurrentUser.isAdmin || false);
+      }
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  };
+
+  // New method to update user profile
+  const updateProfile = async (name: string, email: string, currentPassword?: string, newPassword?: string): Promise<void> => {
+    try {
+      if (!user) throw new Error('No user logged in');
+      
+      // Prepare update data
+      const updateData: any = {
+        name,
+        email
+      };
+      
+      // If changing password, verify current password first
+      if (newPassword && currentPassword) {
+        const { data } = await supabase
+          .from('users')
+          .select('password')
+          .eq('id', user.id)
+          .single();
+          
+        if (!data || !comparePassword(currentPassword, data.password)) {
+          throw new Error('Current password is incorrect');
+        }
+        
+        updateData.password = hashPassword(newPassword);
+      }
+      
+      // Update the user
+      const { error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      // Update local user
+      const updatedUser = {
+        ...user,
+        name,
+        email
+      };
+      
+      setUser(updatedUser);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Update Failed",
+        description: (error as Error).message || "Could not update profile",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 
   const getAllUsers = async (): Promise<User[]> => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase.from('users').select('*');
+      const { data, error } = await supabase
+        .from('users')
+        .select('*');
       
       if (error) throw error;
       
-      if (data) {
-        const formattedUsers = data.map(user => ({
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          isAdmin: user.role === 'admin',
-          isBlocked: user.is_blocked || false,
-          subscription_tier: user.subscription_tier || 'free',
-          created_at: user.created_at,
-          updated_at: user.updated_at
-        }));
-        
-        setUsers(formattedUsers);
-        return formattedUsers;
-      }
+      const formattedUsers = data.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.role === 'admin',
+        isBlocked: user.is_blocked,
+        subscription_tier: user.subscription_tier || 'free'
+      }));
       
-      return [];
+      setUsers(formattedUsers);
+      return formattedUsers;
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast({
-        title: language === 'ar' ? "فشل في جلب المستخدمين" : "Failed to fetch users",
-        description: "An error occurred while fetching users",
-        variant: "destructive",
-      });
       return [];
-    } finally {
-      setLoading(false);
     }
   };
 
   const blockUser = async (user: User): Promise<void> => {
     try {
-      setLoading(true);
-      
       const { error } = await supabase
         .from('users')
         .update({ is_blocked: true })
@@ -570,32 +364,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      setUsers(prevUsers => prevUsers.map(u => 
-        u.id === user.id ? { ...u, isBlocked: true } : u
-      ));
+      // Refresh users list
+      const allUsers = await getAllUsers();
+      setUsers(allUsers);
       
-      toast({
-        title: language === 'ar' ? "تم حظر المستخدم" : "User Blocked",
-        description: language === 'ar'
-          ? `تم حظر ${user.name || user.email} بنجاح`
-          : `${user.name || user.email} has been blocked successfully`,
-      });
+      // Logout if blocked user is current user
+      if (user.id === user?.id) {
+        logout();
+      }
     } catch (error) {
       console.error('Error blocking user:', error);
-      toast({
-        title: language === 'ar' ? "فشل في حظر المستخدم" : "Failed to block user",
-        description: "An error occurred while blocking the user",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
 
   const unblockUser = async (user: User): Promise<void> => {
     try {
-      setLoading(true);
-      
       const { error } = await supabase
         .from('users')
         .update({ is_blocked: false })
@@ -603,90 +387,97 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      setUsers(prevUsers => prevUsers.map(u => 
-        u.id === user.id ? { ...u, isBlocked: false } : u
-      ));
-      
-      toast({
-        title: language === 'ar' ? "تم إلغاء حظر المستخدم" : "User Unblocked",
-        description: language === 'ar'
-          ? `تم إلغاء حظر ${user.name || user.email} بنجاح`
-          : `${user.name || user.email} has been unblocked successfully`,
-      });
+      // Refresh users list
+      const allUsers = await getAllUsers();
+      setUsers(allUsers);
     } catch (error) {
       console.error('Error unblocking user:', error);
-      toast({
-        title: language === 'ar' ? "فشل في إلغاء حظر المستخدم" : "Failed to unblock user",
-        description: "An error occurred while unblocking the user",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
 
-  const updateUser = async (user: User): Promise<void> => {
+  const changePassword = async (email: string, newPassword: string): Promise<void> => {
     try {
-      setLoading(true);
+      const hashedPassword = hashPassword(newPassword);
       
       const { error } = await supabase
         .from('users')
-        .update({ 
-          name: user.name, 
-          email: user.email,
-          role: user.isAdmin ? 'admin' : 'user',
-          subscription_tier: user.subscription_tier,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+        .update({ password: hashedPassword })
+        .eq('email', email);
       
       if (error) throw error;
       
-      setUsers(prevUsers => prevUsers.map(u => 
-        u.id === user.id ? user : u
-      ));
-      
       toast({
-        title: language === 'ar' ? "تم تحديث المستخدم" : "User Updated",
-        description: language === 'ar'
-          ? `تم تحديث ${user.name || user.email} بنجاح`
-          : `${user.name || user.email} has been updated successfully`,
+        title: "Success", 
+        description: "Password changed successfully"
       });
     } catch (error) {
-      console.error('Error updating user:', error);
-      toast({
-        title: language === 'ar' ? "فشل في تحديث المستخدم" : "Failed to update user",
-        description: "An error occurred while updating the user",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error changing password:', error);
+      throw error;
     }
   };
 
-  const contextValue: AuthContextType = {
-    isAuthenticated,
+  // New method to update subscription tier
+  const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ subscription_tier: tier })
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
+      // Update local state if it's the current user
+      if (user && user.id === userId) {
+        const updatedUser = {
+          ...user,
+          subscription_tier: tier
+        };
+        
+        setUser(updatedUser);
+      }
+      
+      // Refresh users list
+      await getAllUsers();
+      
+      toast({
+        title: "Subscription Updated",
+        description: `Subscription tier updated to ${tier}`
+      });
+    } catch (error) {
+      console.error('Error updating subscription tier:', error);
+      toast({
+        title: "Update Failed",
+        description: (error as Error).message || "Could not update subscription",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const value = {
     user,
     isAdmin,
+    isAuthenticated,
     loading,
     users,
-    login,
     register,
+    login,
     logout,
     forgotPassword,
     resetPassword,
+    updateUser,
     updateProfile,
-    updateSubscriptionTier,
-    changePassword,
     getAllUsers,
     blockUser,
     unblockUser,
-    updateUser,
+    changePassword,
+    updateSubscriptionTier,
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

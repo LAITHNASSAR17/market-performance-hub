@@ -19,8 +19,6 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isRegistrationComplete, setIsRegistrationComplete] = useState(false);
   const { register, isAuthenticated, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,48 +41,23 @@ const Register: React.FC = () => {
     }
     
     try {
-      setIsRegistering(true);
       await register(name, email, password);
-      setIsRegistrationComplete(true);
       toast({
-        title: t('register.success.title'),
-        description: t('register.success.description'),
+        title: "Registration Successful",
+        description: "Your account has been created successfully.",
       });
-    } catch (err: any) {
-      console.error('Registration error:', err);
-      setError(err.message || t('register.error.failed'));
-    } finally {
-      setIsRegistering(false);
+    } catch (err) {
+      setError(t('register.error.failed'));
+      toast({
+        title: "Registration Failed",
+        description: "There was an error creating your account.",
+        variant: "destructive",
+      });
     }
   };
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" />;
-  }
-
-  if (isRegistrationComplete) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center">{t('register.success.title')}</CardTitle>
-              <CardDescription className="text-center">
-                {t('register.success.verifyEmail')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <p className="mb-4">
-                {t('register.success.checkEmail')}
-              </p>
-              <Button asChild>
-                <Link to="/login">{t('register.login')}</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -178,9 +151,9 @@ const Register: React.FC = () => {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={loading || isRegistering}
+                disabled={loading}
               >
-                {isRegistering ? t('register.registering') : t('register.createAccount')}
+                {loading ? t('register.registering') : t('register.createAccount')}
               </Button>
             </form>
           </CardContent>
