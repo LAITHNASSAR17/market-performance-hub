@@ -85,7 +85,7 @@ const Layout: React.FC<LayoutProps> = ({
     icon: Sparkles,
     href: '/insights'
   }, {
-    name: t('analytics.title') || 'Analytics',
+    name: 'Analytics',
     icon: BarChart2,
     href: '/analytics'
   }, {
