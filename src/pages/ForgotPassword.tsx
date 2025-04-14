@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Mail, ExternalLink, CheckCircle } from 'lucide-react';
+import { LineChart, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -19,7 +19,6 @@ const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [simulatedResetLink, setSimulatedResetLink] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,13 +36,6 @@ const ForgotPassword: React.FC = () => {
       const response = await sendPasswordResetEmail(email);
       console.log('ForgotPassword: Response from sendPasswordResetEmail:', response);
       
-      // Check if we got a simulated response (development mode)
-      if (response?.data?.simulatedData?.resetLink) {
-        setSimulatedResetLink(response.data.simulatedData.resetLink);
-        console.log('Simulated reset link:', response.data.simulatedData.resetLink);
-      }
-      
-      // Success regardless of whether it's a simulation or real email
       setEmailSent(true);
       toast({
         title: "تم إرسال البريد الإلكتروني",
@@ -124,30 +116,12 @@ const ForgotPassword: React.FC = () => {
               </form>
             ) : (
               <div className="text-center">
-                <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-                <p className="text-sm text-gray-600 mb-4">
-                  تم إرسال رابط إعادة تعيين كلمة المرور إلى <strong>{email}</strong>. 
-                  يرجى التحقق من بريدك الإلكتروني واتباع التعليمات.
-                </p>
-                
-                {simulatedResetLink && (
-                  <div className="bg-blue-50 p-4 rounded-md mb-4 text-right">
-                    <p className="text-sm text-blue-800 mb-2 font-bold">
-                      وضع التطوير: استخدم الرابط المباشر أدناه
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      className="flex items-center w-full justify-center mb-2"
-                      onClick={() => window.open(simulatedResetLink, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      فتح رابط إعادة تعيين كلمة المرور
-                    </Button>
-                    <p className="text-xs text-blue-600">
-                      ملاحظة: في بيئة الإنتاج، سيتم إرسال رابط إعادة تعيين كلمة المرور عبر البريد الإلكتروني
-                    </p>
-                  </div>
-                )}
+                <div className="bg-green-50 p-4 rounded-md mb-4">
+                  <p className="text-sm text-green-800">
+                    تم إرسال رابط إعادة تعيين كلمة المرور إلى <strong>{email}</strong>. 
+                    يرجى التحقق من بريدك الإلكتروني واتباع التعليمات.
+                  </p>
+                </div>
                 
                 <div className="space-y-2">
                   <Button 

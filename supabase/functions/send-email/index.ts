@@ -111,24 +111,41 @@ serve(async (req) => {
       );
     }
 
-    // Always return successful simulation response with the relevant links
-    // This is necessary because Resend free tier has limitations
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Email simulation successful",
-        note: "Due to Resend restrictions, real emails can only be sent to verified domains. In production, set up a verified domain.",
-        simulatedData: {
-          resetLink,
-          verificationLink,
-          email
+    // Actually send the email using Resend
+    try {
+      const emailResponse = await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: email,
+        subject: subject,
+        html: html
+      });
+
+      console.log('Email sent successfully:', emailResponse);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: "Email sent successfully",
+          data: emailResponse
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
         }
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      }
-    );
+      );
+    } catch (sendError) {
+      console.error('Error sending email:', sendError);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to send email",
+          details: sendError.message
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        }
+      );
+    }
   } catch (error) {
     console.error('Error in send-email function:', error);
     return new Response(
