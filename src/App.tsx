@@ -32,6 +32,7 @@ import UserProfileSettings from "./pages/UserProfileSettings";
 import Subscriptions from "./pages/Subscriptions";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import EmailVerify from "./pages/EmailVerify";
 
 // Admin Components
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -64,6 +65,7 @@ const App = () => (
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/verify" element={<EmailVerify />} />
                     <Route path="/" element={<Homepage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/add-trade" element={<AddTrade />} />
