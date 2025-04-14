@@ -27,12 +27,27 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, name, resetLink, language = 'ar' }: ResetEmailRequest = await req.json();
     
     // استخراج التوكن من رابط إعادة التعيين
-    const token = new URL(resetLink).hash.split('=')[1]?.split('&')[0];
+    const tokenMatch = resetLink.match(/[#&]access_token=([^&]+)/);
+    const token = tokenMatch ? tokenMatch[1] : null;
     
-    // إنشاء رابط صحيح للموقع
-    const correctResetLink = `${new URL(req.url).origin}/reset-password?reset_token=${token}`;
+    if (!token) {
+      console.error("Failed to extract token from reset link:", resetLink);
+      return new Response(
+        JSON.stringify({ error: "Invalid reset link format" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+    
+    // إنشاء رابط إعادة التعيين الصحيح
+    // استخدم نفس الدومين الذي جاء من الطلب
+    const domain = req.headers.get("Origin") || new URL(req.url).origin;
+    const correctResetLink = `${domain}/reset-password?reset_token=${token}`;
     
     console.log("Original reset link:", resetLink);
+    console.log("Token extracted:", token);
     console.log("Correct reset link created:", correctResetLink);
     
     const translations = emailTranslations.resetPassword[language];
