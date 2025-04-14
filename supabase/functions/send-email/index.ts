@@ -23,7 +23,7 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     console.log("Handling OPTIONS request");
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -54,6 +54,8 @@ serve(async (req) => {
 
     let html = '';
     let subject = '';
+    // استخدم عنوان البريد الإلكتروني المتحقق منه
+    const fromEmail = "noreply@yourdomain.com"; // قم بتغيير هذا إلى نطاقك المتحقق منه
 
     if (type === 'verification') {
       console.log('Rendering verification email for:', email);
@@ -111,10 +113,10 @@ serve(async (req) => {
       );
     }
 
-    // Actually send the email using Resend
+    // Send the email using Resend
     try {
       const emailResponse = await resend.emails.send({
-        from: 'onboarding@resend.dev',
+        from: fromEmail,
         to: email,
         subject: subject,
         html: html
