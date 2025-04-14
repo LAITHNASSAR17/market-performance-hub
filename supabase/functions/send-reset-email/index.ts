@@ -26,6 +26,15 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, name, resetLink, language = 'ar' }: ResetEmailRequest = await req.json();
     
+    // استخراج التوكن من رابط إعادة التعيين
+    const token = new URL(resetLink).hash.split('=')[1]?.split('&')[0];
+    
+    // إنشاء رابط صحيح للموقع
+    const correctResetLink = `${new URL(req.url).origin}/reset-password?reset_token=${token}`;
+    
+    console.log("Original reset link:", resetLink);
+    console.log("Correct reset link created:", correctResetLink);
+    
     const translations = emailTranslations.resetPassword[language];
 
     try {
@@ -39,7 +48,7 @@ const handler = async (req: Request): Promise<Response> => {
             <h1>${translations.title}</h1>
             <p>${translations.greeting} ${name},</p>
             <p>${translations.description}</p>
-            <a href="${resetLink}" style="
+            <a href="${correctResetLink}" style="
               display: inline-block;
               padding: 10px 20px;
               background-color: #007bff;

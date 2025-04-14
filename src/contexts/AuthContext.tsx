@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
@@ -6,25 +5,23 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from './LanguageContext';
 
-// Extended User type with our custom properties
 interface User {
   id: string;
   email: string;
   name?: string;
   isAdmin?: boolean;
-  isBlocked?: boolean; // Ensure isBlocked property is included
+  isBlocked?: boolean;
   subscription_tier?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-// Define the shape of the context
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   isAdmin: boolean;
   loading: boolean;
-  users: User[]; // Array of users for admin pages
+  users: User[];
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -33,17 +30,14 @@ interface AuthContextType {
   updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
   updateSubscriptionTier: (tier: string) => Promise<void>;
   changePassword: (email: string, password: string) => Promise<void>;
-  // Admin functions
   getAllUsers: () => Promise<User[]>;
   blockUser: (user: User) => Promise<void>;
   unblockUser: (user: User) => Promise<void>;
   updateUser: (user: User) => Promise<void>;
 }
 
-// Create context with default values
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
@@ -55,13 +49,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
   const { language } = useLanguage();
 
-  // Check if user is authenticated on mount
   useEffect(() => {
     const checkUser = async () => {
       try {
         setLoading(true);
         
-        // Set up auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             setSession(session);
@@ -84,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         );
         
-        // Check for existing session
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         
@@ -116,11 +107,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     checkUser();
   }, []);
-  
-  // Check if user has admin role
+
   const checkUserRole = async (userId: string) => {
     try {
-      // First check in the users table
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('is_blocked, role, subscription_tier')
@@ -132,7 +121,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isAdminUser = userData.role === 'admin';
         setIsAdmin(isAdminUser);
         
-        // Update user data with additional info
         setUser(prevUser => {
           if (prevUser) {
             return {
@@ -148,7 +136,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Fallback to profiles table if users table doesn't have the data
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -157,10 +144,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!error && data) {
         console.log("Profile data:", data);
-        // Since profiles table doesn't have role field, default to false
         setIsAdmin(false);
         
-        // Update user data with profile info
         setUser(prevUser => {
           if (prevUser) {
             return {
@@ -179,7 +164,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Login function
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
@@ -205,7 +189,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Register function
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
@@ -222,7 +205,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Auto login after registration
       await login(email, password);
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -237,7 +219,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Logout function
   const logout = async () => {
     try {
       setLoading(true);
@@ -259,13 +240,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Forgot password function
   const forgotPassword = async (email: string) => {
     try {
       setLoading(true);
       
+      const origin = window.location.origin;
+      const redirectUrl = `${origin}/reset-password`;
+      
+      console.log("Reset password redirect URL:", redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
       
       if (error) throw error;
@@ -289,17 +274,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Reset password function
   const resetPassword = async (newPassword: string) => {
     try {
-      // Password validation
       if (newPassword.length < 8) {
         throw new Error(language === 'ar' 
           ? 'يجب أن تكون كلمة المرور 8 أحرف على الأقل' 
           : 'Password must be at least 8 characters long');
       }
 
-      // Strong password regex (at least one uppercase, one lowercase, one number)
       const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
       if (!passwordRegex.test(newPassword)) {
         throw new Error(language === 'ar' 
@@ -336,7 +318,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Update profile function
   const updateProfile = async (
     name: string, 
     email: string, 
@@ -346,13 +327,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Update auth data first (email or password)
       if (currentPassword && newPassword) {
-        // Change password flow
         await changePassword(email, newPassword);
       }
       
-      // Update user metadata
       const { error } = await supabase.auth.updateUser({
         email: email !== user?.email ? email : undefined,
         data: { name },
@@ -360,7 +338,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Refresh user data
       const { data: { user: updatedUser } } = await supabase.auth.getUser();
       if (updatedUser) {
         setUser({
@@ -392,11 +369,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Change password function
   const changePassword = async (email: string, newPassword: string) => {
     try {
-      // Admin function to change password for any user
-      // Here we directly update the password without verification
       const { error } = await supabase.auth.admin.updateUserById(
         user?.id || '',
         { password: newPassword }
@@ -416,7 +390,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Update subscription tier
   const updateSubscriptionTier = async (tier: string) => {
     try {
       setLoading(true);
@@ -425,13 +398,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('User not authenticated');
       }
       
-      // Try to update in the users table first
       const { error: usersError } = await supabase
         .from('users')
         .update({ subscription_tier: tier })
         .eq('id', user.id);
       
-      // If users table update fails, try profiles
       if (usersError) {
         const { error: profilesError } = await supabase
           .from('profiles')
@@ -445,7 +416,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       
-      // Update local user state
       setUser(prevUser => {
         if (prevUser) {
           return {
@@ -475,7 +445,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Admin Functions
   const getAllUsers = async (): Promise<User[]> => {
     try {
       setLoading(true);
@@ -489,7 +458,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: user.email,
           name: user.name,
           isAdmin: user.role === 'admin',
-          isBlocked: user.is_blocked || false, // Ensure isBlocked is always defined
+          isBlocked: user.is_blocked || false,
           subscription_tier: user.subscription_tier || 'free',
           created_at: user.created_at,
           updated_at: user.updated_at
@@ -524,7 +493,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Update users array
       setUsers(prevUsers => prevUsers.map(u => 
         u.id === user.id ? { ...u, isBlocked: true } : u
       ));
@@ -558,7 +526,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Update users array
       setUsers(prevUsers => prevUsers.map(u => 
         u.id === user.id ? { ...u, isBlocked: false } : u
       ));
@@ -598,7 +565,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Update users array
       setUsers(prevUsers => prevUsers.map(u => 
         u.id === user.id ? user : u
       ));
@@ -648,7 +614,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// Hook for using auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

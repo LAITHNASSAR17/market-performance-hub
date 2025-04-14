@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,22 +16,29 @@ const ResetPassword: React.FC = () => {
   const { resetPassword, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   useEffect(() => {
-    // في المستقبل يمكن إضافة التحقق من رمز إعادة التعيين
-    const searchParams = new URLSearchParams(location.search);
+    // Check for reset token in search params first
     const resetToken = searchParams.get('reset_token');
     
-    if (!resetToken) {
+    // If not in search params, try to extract from hash
+    const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+    const hashToken = hashParams.get('access_token');
+    
+    console.log("Reset token from URL params:", resetToken);
+    console.log("Reset token from hash:", hashToken);
+    
+    if (!resetToken && !hashToken) {
       toast({
         title: "خطأ في الرابط",
-        description: "رابط إعادة التعيين غير صالح.",
+        description: "رابط إعادة التعيين غير صالح أو منتهي الصلاحية.",
         variant: "destructive",
       });
       navigate('/login');
     }
-  }, [location, navigate, toast]);
+  }, [location, navigate, toast, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +56,11 @@ const ResetPassword: React.FC = () => {
 
     try {
       await resetPassword(newPassword);
+      toast({
+        title: "تم تغيير كلمة المرور",
+        description: "تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول باستخدام كلمة المرور الجديدة.",
+      });
+      navigate('/login');
     } catch (err: any) {
       setError(err.message);
     }
