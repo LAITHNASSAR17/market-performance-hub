@@ -1,7 +1,6 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
+import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
@@ -61,7 +60,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .single();
 
       if (error && error.code === 'PGRST116') {
-        // User doesn't exist, create the admin
+        // Create admin if doesn't exist
         const adminEmail = 'lnmr2001@gmail.com';
         const adminPassword = hashPassword('password123');
         
@@ -78,8 +77,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
         if (insertError) {
           console.error('Error creating admin user:', insertError);
-        } else {
-          console.log('Test admin user created:', adminEmail);
         }
       }
     };
@@ -87,25 +84,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAdminUser();
   }, []);
 
-  // Improved local storage management
+  // Check session on mount
   useEffect(() => {
-    const loadUserFromStorage = () => {
-      try {
-        const storedUserData = localStorage.getItem('user');
-        if (storedUserData) {
-          const decryptedUser = JSON.parse(decryptData(storedUserData));
-          setUser(decryptedUser);
-          setIsAuthenticated(!!decryptedUser);
-          setIsAdmin(decryptedUser.role === 'admin');
+    const checkSession = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (sessionData?.session?.user) {
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', sessionData.session.user.id)
+            .single();
+
+          if (error) throw error;
+
+          const currentUser = {
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role,
+            isAdmin: userData.role === 'admin',
+            subscription_tier: userData.subscription_tier || 'free'
+          };
+
+          setUser(currentUser);
+          setIsAdmin(currentUser.isAdmin);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          await supabase.auth.signOut();
+          setUser(null);
+          setIsAdmin(false);
+          setIsAuthenticated(false);
         }
-      } catch (error) {
-        console.error('Error loading user from storage:', error);
-        localStorage.removeItem('user');
       }
+      
       setLoading(false);
     };
 
-    loadUserFromStorage();
+    checkSession();
   }, []);
 
   const register = async (name: string, email: string, password: string): Promise<void> => {
@@ -172,9 +190,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           subscription_tier: data.subscription_tier || 'free'
         };
       
-        // Ensure robust local storage
-        localStorage.setItem('user', encryptData(JSON.stringify(userToStore)));
-        
         setUser(userToStore);
         setIsAdmin(data.role === 'admin');
         setIsAuthenticated(true);
@@ -200,8 +215,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('user');
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
     setIsAuthenticated(false);
@@ -267,7 +282,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ...updatedUser,
           role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user')
         };
-        localStorage.setItem('user', encryptData(JSON.stringify(updatedCurrentUser)));
         setUser(updatedCurrentUser);
         setIsAdmin(updatedCurrentUser.role === 'admin' || updatedCurrentUser.isAdmin || false);
       }
@@ -318,7 +332,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email
       };
       
-      localStorage.setItem('user', encryptData(JSON.stringify(updatedUser)));
       setUser(updatedUser);
       
       toast({
@@ -441,7 +454,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           subscription_tier: tier
         };
         
-        localStorage.setItem('user', encryptData(JSON.stringify(updatedUser)));
         setUser(updatedUser);
       }
       
