@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
   Settings, Globe, Bell, Shield, Database, FileText, Mail, 
-  BrandTelegram, Instagram, Camera, Youtube, MessageSquare,
+  MessageSquare, Send, Instagram, Camera, Youtube,
   Sparkles, Crown, Save, Upload, CheckCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -836,7 +835,7 @@ const AdminSettings: React.FC = () => {
                         <FormItem>
                           <FormLabel>
                             <div className="flex items-center">
-                              <BrandTelegram className="mr-2 h-4 w-4 text-blue-500" />
+                              <Send className="mr-2 h-4 w-4 text-blue-500" />
                               Telegram Link
                             </div>
                           </FormLabel>
