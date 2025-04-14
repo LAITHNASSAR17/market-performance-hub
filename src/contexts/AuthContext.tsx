@@ -21,7 +21,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
+  resetPassword: (newPassword: string) => Promise<void>;
   updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
   getAllUsers: () => Promise<any[]>;
   blockUser: (user: any) => Promise<void>;
@@ -299,13 +299,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       toast({
-        title: "Reset Email Sent",
-        description: "Check your email for the password reset link.",
+        title: "إعادة تعيين كلمة المرور",
+        description: "تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني.",
       });
     } catch (error: any) {
       console.error('Password reset error:', error);
       toast({
-        title: "Reset Failed",
+        title: "فشل إعادة التعيين",
         description: error.message,
         variant: "destructive",
       });
@@ -315,7 +315,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resetPassword = async (email: string, resetCode: string, newPassword: string) => {
+  const resetPassword = async (newPassword: string) => {
     try {
       setLoading(true);
       
@@ -326,15 +326,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       toast({
-        title: "Password Reset Successful",
-        description: "Your password has been updated.",
+        title: "تم تغيير كلمة المرور",
+        description: "تم تحديث كلمة المرور بنجاح.",
       });
       
       navigate('/login');
     } catch (error: any) {
       console.error('Password update error:', error);
       toast({
-        title: "Reset Failed",
+        title: "فشل تغيير كلمة المرور",
         description: error.message,
         variant: "destructive",
       });
