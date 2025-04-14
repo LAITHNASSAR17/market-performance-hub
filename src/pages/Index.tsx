@@ -8,15 +8,13 @@ const Index = () => {
   const [searchParams] = useSearchParams();
   
   // Check for password reset tokens in multiple formats
-  const resetToken = searchParams.get('reset_token');
+  const resetToken = searchParams.get('reset_token') || searchParams.get('type') === 'recovery';
   const hashToken = location.hash.includes('access_token=') || location.hash.includes('type=recovery');
   
   // If it's a password reset, redirect to reset-password page with all parameters intact
   if (resetToken || hashToken) {
     console.log("Password reset detected, redirecting to reset-password page");
-    const queryString = location.search;
-    const hashString = location.hash;
-    return <Navigate to={`/reset-password${queryString}${hashString}`} replace />;
+    return <Navigate to={`/reset-password${location.search}${location.hash}`} replace />;
   }
   
   // Normal auth flow

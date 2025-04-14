@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
@@ -193,21 +194,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      const { error } = await supabase.auth.signUp({
+      // Directly create the user in our custom users table first
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existingUser) {
+        throw new Error(language === 'ar' 
+          ? 'البريد الإلكتروني مسجل بالفعل. الرجاء استخدام بريد إلكتروني آخر أو تسجيل الدخول.' 
+          : 'Email already registered. Please use a different email or sign in.');
+      }
+      
+      // Register the user with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name,
           },
+          emailRedirectTo: `${window.location.origin}/dashboard`
         },
       });
       
       if (error) throw error;
+
+      // Create the user in our custom users table
+      if (data.user) {
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            id: data.user.id,
+            name: name,
+            email: email,
+            password: 'hashed_in_auth', // We don't store actual passwords here
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          
+        if (insertError) {
+          console.error('Error creating user in database:', insertError);
+          // We don't throw here as the auth user is already created
+        }
+      }
       
-      await login(email, password);
+      toast({
+        title: language === 'ar' ? "تم التسجيل بنجاح" : "Registration Successful",
+        description: language === 'ar' 
+          ? "تم إنشاء حسابك بنجاح. يمكنك الآن تسجيل الدخول." 
+          : "Your account has been created successfully. You can now sign in.",
+      });
+      
+      // Redirect to login instead of auto-login
+      navigate('/login');
     } catch (error: any) {
       console.error('Registration error:', error);
+      
       toast({
         title: language === 'ar' ? "فشل التسجيل" : "Registration Failed",
         description: error.message,
