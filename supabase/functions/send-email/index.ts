@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { Resend } from "npm:resend@2.0.0"
 import { renderAsync } from "npm:@react-email/render@0.0.12"
@@ -54,7 +53,7 @@ serve(async (req) => {
 
     let html = '';
     let subject = '';
-    const fromEmail = "onboarding@resend.dev"; // استخدام النطاق الافتراضي من Resend الذي لا يحتاج إلى تحقق
+    const fromEmail = "noreply@trackmind.vip"; // استخدم المجال الخاص بك للإرسال
 
     if (type === 'verification') {
       console.log('Rendering verification email for:', email);
@@ -112,7 +111,7 @@ serve(async (req) => {
       );
     }
 
-    // Send the email using Resend with the verified domain
+    // Send the email using Resend
     try {
       const emailResponse = await resend.emails.send({
         from: fromEmail,
