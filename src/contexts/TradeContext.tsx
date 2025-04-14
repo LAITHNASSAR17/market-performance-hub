@@ -613,13 +613,23 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const createTradingAccount = async (name: string, balance: number) => {
     if (!user) throw new Error('User not authenticated');
 
+    // Add validation for account name and balance
+    if (!name.trim()) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء إدخال اسم الحساب",
+        variant: "destructive"
+      });
+      throw new Error('Account name is required');
+    }
+
     try {
       const { data, error } = await supabase
         .from('trading_accounts')
         .insert({
           user_id: user.id,
           name,
-          balance
+          balance: balance || 0  // Default to 0 if no balance provided
         })
         .select()
         .single();
@@ -630,7 +640,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         id: data.id,
         userId: data.user_id,
         name: data.name,
-        balance: data.balance,
+        balance: Number(data.balance || 0),
         createdAt: data.created_at
       };
 
