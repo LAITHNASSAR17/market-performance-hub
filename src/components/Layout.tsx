@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,20 +16,10 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({
-  children
-}) => {
-  const {
-    isAuthenticated,
-    logout,
-    user,
-    isAdmin
-  } = useAuth();
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { isAuthenticated, logout, user, isAdmin } = useAuth();
   const { toast } = useToast();
-  const {
-    t,
-    language
-  } = useLanguage();
+  const { t } = useLanguage();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
@@ -89,13 +80,13 @@ const Layout: React.FC<LayoutProps> = ({
     try {
       await logout();
       toast({
-        title: language === 'ar' ? "تم تسجيل الخروج" : "Logged Out",
-        description: language === 'ar' ? "تم تسجيل خروجك بنجاح" : "You have been logged out successfully"
+        title: "Logged Out",
+        description: "You have been logged out successfully"
       });
     } catch (error) {
       toast({
-        title: language === 'ar' ? "خطأ" : "Error",
-        description: language === 'ar' ? "حدث خطأ أثناء تسجيل الخروج" : "An error occurred while logging out",
+        title: "Error",
+        description: "An error occurred while logging out",
         variant: "destructive"
       });
     }
@@ -105,8 +96,9 @@ const Layout: React.FC<LayoutProps> = ({
     setSidebarOpen(!sidebarOpen);
   };
 
-  return <div className="flex h-screen bg-gray-50 dark:bg-gray-900" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className={cn("relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-64" : "w-16", language === 'ar' ? "border-l" : "border-r", "dark:bg-indigo-900/90 dark:border-indigo-800")}>
+  return (
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={cn("relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-64" : "w-16", "border-r", "dark:bg-indigo-900/90 dark:border-indigo-800")}>
         <div className="flex flex-col items-center py-4 px-4">
           <div className="flex items-center justify-between w-full">
             <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-sidebar-foreground dark:text-white">
@@ -141,7 +133,7 @@ const Layout: React.FC<LayoutProps> = ({
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center">
                       <UserCog className="mr-2 h-4 w-4" />
-                      {language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}
+                      Profile Settings
                     </Link>
                   </DropdownMenuItem>
                   
@@ -151,7 +143,7 @@ const Layout: React.FC<LayoutProps> = ({
                       <DropdownMenuItem asChild>
                         <Link to="/admin" className="flex items-center text-purple-600">
                           <Shield className="mr-2 h-4 w-4" />
-                          {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+                          Admin Dashboard
                         </Link>
                       </DropdownMenuItem>
                     </>
@@ -160,7 +152,7 @@ const Layout: React.FC<LayoutProps> = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-red-500">
                     <LogOut className="mr-2 h-4 w-4" />
-                    {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                    Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -169,31 +161,40 @@ const Layout: React.FC<LayoutProps> = ({
 
         <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
           {navigation.map(item => {
-          const isActive = location.pathname === item.href;
-          return <Tooltip key={item.href}>
+            const isActive = location.pathname === item.href;
+            return (
+              <Tooltip key={item.href}>
                 <TooltipTrigger asChild>
-                  <Link to={item.href} className={cn("flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-indigo-800 dark:hover:text-white", isActive && "bg-sidebar-accent text-sidebar-accent-foreground dark:bg-indigo-800 dark:text-white font-medium")}>
+                  <Link 
+                    to={item.href} 
+                    className={cn("flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-indigo-800 dark:hover:text-white", 
+                      isActive && "bg-sidebar-accent text-sidebar-accent-foreground dark:bg-indigo-800 dark:text-white font-medium")}
+                  >
                     <item.icon className="h-5 w-5 flex-shrink-0" />
                     {sidebarOpen && <span className="ml-3">{item.name}</span>}
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center" hidden={sidebarOpen}>
+                <TooltipContent side="right" align="center" hidden={sidebarOpen}>
                   {item.name}
                 </TooltipContent>
-              </Tooltip>;
-        })}
+              </Tooltip>
+            );
+          })}
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
         </div>
       </div>
 
-      {sidebarOpen && isMobile && <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={() => setSidebarOpen(false)} />}
+      {sidebarOpen && isMobile && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={() => setSidebarOpen(false)} />
+      )}
 
       <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
         {children}
       </main>
-    </div>;
+    </div>
+  );
 };
 
 export default Layout;

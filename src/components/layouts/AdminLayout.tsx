@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +21,6 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { user, isAdmin, logout } = useAuth();
   const { toast } = useToast();
-  const { t } = useLanguage();
   
   // Get site name from localStorage or default
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
