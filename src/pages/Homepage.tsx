@@ -19,6 +19,7 @@ interface HomeContent {
     description: string;
     icon?: string;
   }[];
+  hero_image?: string;
 }
 
 const defaultContent: HomeContent = {
@@ -100,6 +101,32 @@ const Homepage: React.FC = () => {
     fetchHomepageContent();
   }, []);
 
+  // Fetch site settings for consistent branding
+  useEffect(() => {
+    const fetchSiteSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('site_settings')
+          .select('site_name, site_description, site_logo')
+          .single();
+          
+        if (error) {
+          console.error('Error fetching site settings:', error);
+          return;
+        }
+        
+        if (data && data.site_name) {
+          localStorage.setItem('siteName', data.site_name);
+          document.title = data.site_name;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    };
+    
+    fetchSiteSettings();
+  }, []);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -171,11 +198,19 @@ const Homepage: React.FC = () => {
       <section className="container mx-auto px-4 pb-16">
         <div className="relative">
           <div className="bg-black/30 backdrop-blur-sm p-4 rounded-xl overflow-hidden shadow-2xl">
-            <img 
-              src="/lovable-uploads/657fc0fa-5872-40db-972a-3dfc7ef0e1ba.png"
-              alt="Trading Journal Dashboard"
-              className="w-full rounded-lg border border-indigo-700/50"
-            />
+            {content.hero_image ? (
+              <img 
+                src={content.hero_image}
+                alt="Trading Journal Dashboard"
+                className="w-full rounded-lg border border-indigo-700/50"
+              />
+            ) : (
+              <img 
+                src="/lovable-uploads/657fc0fa-5872-40db-972a-3dfc7ef0e1ba.png"
+                alt="Trading Journal Dashboard"
+                className="w-full rounded-lg border border-indigo-700/50"
+              />
+            )}
           </div>
         </div>
       </section>
