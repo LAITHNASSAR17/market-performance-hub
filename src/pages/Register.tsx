@@ -40,7 +40,9 @@ const Register: React.FC = () => {
     }
     
     try {
+      console.log('Registering user with email:', email);
       await register(name, email, password);
+      console.log('User registered successfully, sending verification email');
       await sendVerificationEmail(email);
       
       toast({
@@ -48,6 +50,7 @@ const Register: React.FC = () => {
         description: t('register.success.checkEmail'),
       });
     } catch (err) {
+      console.error('Registration error:', err);
       setError(t('register.error.failed'));
       toast({
         title: t('register.error.title'),

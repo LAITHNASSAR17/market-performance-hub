@@ -23,6 +23,7 @@ const ForgotPassword: React.FC = () => {
 
     setLoading(true);
     try {
+      console.log('Sending password reset email to:', email);
       await sendPasswordResetEmail(email);
       toast({
         title: "تم إرسال البريد الإلكتروني",
@@ -30,6 +31,11 @@ const ForgotPassword: React.FC = () => {
       });
     } catch (error) {
       console.error('Error in password reset:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

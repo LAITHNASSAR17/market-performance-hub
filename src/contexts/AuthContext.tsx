@@ -441,16 +441,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const sendVerificationEmail = async (email: string) => {
     try {
-      const { error: authError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: window.location.origin + '/verify',
-        },
-      });
-
-      if (authError) throw authError;
-
+      console.log(`Sending verification email to ${email}`);
+      
       const verificationLink = `${window.location.origin}/verify?email=${email}`;
+      console.log(`Verification link: ${verificationLink}`);
       
       const { error } = await supabase.functions.invoke('send-email', {
         body: {
@@ -460,7 +454,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from edge function:', error);
+        throw error;
+      }
 
       toast({
         title: "تم إرسال البريد الإلكتروني",
@@ -479,13 +476,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const sendPasswordResetEmail = async (email: string) => {
     try {
-      const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password',
-      });
-
-      if (authError) throw authError;
-
+      console.log(`Sending password reset email to ${email}`);
+      
       const resetLink = `${window.location.origin}/reset-password?email=${email}`;
+      console.log(`Reset link: ${resetLink}`);
       
       const { error } = await supabase.functions.invoke('send-email', {
         body: {
@@ -495,7 +489,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error from edge function:', error);
+        throw error;
+      }
 
       toast({
         title: "تم إرسال البريد الإلكتروني",
