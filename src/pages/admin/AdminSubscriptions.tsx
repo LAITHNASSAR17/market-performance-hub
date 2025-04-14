@@ -30,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Search, Crown, Filter } from 'lucide-react';
 
 const AdminSubscriptions: React.FC = () => {
-  const { users, getAllUsers } = useAuth();
+  const { users, getAllUsers, updateUser } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,12 +79,6 @@ const AdminSubscriptions: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-  
-  // Fix for the expected 1 argument but got 2 error
-  const updateUser = async (user: any) => {
-    const { updateUser } = useAuth();
-    return updateUser(user);
   };
   
   const filteredUsers = users

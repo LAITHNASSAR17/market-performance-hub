@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from './LanguageContext';
 
@@ -12,6 +12,7 @@ interface User {
   email: string;
   name?: string; // Optional because it might not be set
   isAdmin?: boolean;
+  isBlocked?: boolean; // Added isBlocked property
   subscription_tier?: string;
   created_at?: string;
   updated_at?: string;
@@ -31,7 +32,7 @@ interface AuthContextType {
   resetPassword: (newPassword: string) => Promise<void>;
   updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
   updateSubscriptionTier: (tier: string) => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  changePassword: (email: string, password: string) => Promise<void>;
   // Admin functions
   getAllUsers: () => Promise<User[]>;
   blockUser: (user: User) => Promise<void>;
@@ -137,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return {
               ...prevUser,
               isAdmin: isAdminUser,
+              isBlocked: userData.is_blocked,
               subscription_tier: userData.subscription_tier || 'free',
             };
           }
@@ -149,21 +151,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fallback to profiles table if users table doesn't have the data
       const { data, error } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('*')
         .eq('id', userId)
         .maybeSingle();
       
       if (!error && data) {
-        console.log("Admin check data:", data);
-        const isAdminUser = data.is_admin === true;
-        setIsAdmin(isAdminUser);
+        console.log("Profile data:", data);
+        // Since profiles table doesn't have is_admin field, default to false
+        setIsAdmin(false);
         
-        // Update user data
+        // Update user data with profile info
         setUser(prevUser => {
           if (prevUser) {
             return {
               ...prevUser,
-              isAdmin: isAdminUser,
+              isAdmin: false,
             };
           }
           return prevUser;
@@ -347,7 +349,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update auth data first (email or password)
       if (currentPassword && newPassword) {
         // Change password flow
-        await changePassword(currentPassword, newPassword);
+        await changePassword(email, newPassword);
       }
       
       // Update user metadata
@@ -366,6 +368,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: updatedUser.email || '',
           name: updatedUser.user_metadata?.name || '',
           isAdmin: user?.isAdmin || false,
+          isBlocked: user?.isBlocked || false,
           subscription_tier: user?.subscription_tier || 'free'
         });
       }
@@ -390,24 +393,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Change password function
-  const changePassword = async (currentPassword: string, newPassword: string) => {
+  const changePassword = async (email: string, newPassword: string) => {
     try {
-      // Sign in with current password to verify it
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user?.email || '',
-        password: currentPassword,
-      });
-      
-      if (signInError) {
-        throw new Error(language === 'ar' 
-          ? "كلمة المرور الحالية غير صحيحة" 
-          : "Current password is incorrect");
-      }
-      
-      // Update to new password
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
+      // Admin function to change password for any user
+      // Here we directly update the password without verification
+      const { error } = await supabase.auth.admin.updateUserById(
+        user?.id || '',
+        { password: newPassword }
+      );
       
       if (error) throw error;
       
@@ -415,7 +408,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: language === 'ar' ? "تم التحديث" : "Password Updated",
         description: language === 'ar' 
           ? "تم تحديث كلمة المرور بنجاح" 
-          : "Your password has been updated successfully",
+          : "Password has been updated successfully",
       });
     } catch (error: any) {
       console.error('Password change error:', error);
@@ -496,6 +489,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: user.email,
           name: user.name,
           isAdmin: user.role === 'admin',
+          isBlocked: user.is_blocked || false, // Ensure isBlocked is always defined
           subscription_tier: user.subscription_tier || 'free',
           created_at: user.created_at,
           updated_at: user.updated_at
@@ -532,7 +526,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Update users array
       setUsers(prevUsers => prevUsers.map(u => 
-        u.id === user.id ? { ...u, is_blocked: true } : u
+        u.id === user.id ? { ...u, isBlocked: true } : u
       ));
       
       toast({
@@ -566,7 +560,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Update users array
       setUsers(prevUsers => prevUsers.map(u => 
-        u.id === user.id ? { ...u, is_blocked: false } : u
+        u.id === user.id ? { ...u, isBlocked: false } : u
       ));
       
       toast({
