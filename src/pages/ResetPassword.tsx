@@ -30,11 +30,14 @@ const ResetPassword: React.FC = () => {
       if (initialSignOutDone) return;
       
       try {
+        // Sign out current user to prevent auto-redirect
         await supabase.auth.signOut();
         console.log("Signed out user to prevent automatic redirect");
         setInitialSignOutDone(true);
       } catch (error) {
         console.error("Error signing out:", error);
+        // Still mark as done to prevent infinite loops
+        setInitialSignOutDone(true);
       }
     };
     
@@ -72,6 +75,20 @@ const ResetPassword: React.FC = () => {
         if (tokenMatch && tokenMatch[1]) {
           console.log("Access token extracted manually:", tokenMatch[1]);
           setToken(tokenMatch[1]);
+          setTokenProcessed(true);
+          return true;
+        }
+      }
+      
+      // Check if we have a recovery type in the hash
+      if (fullHash && fullHash.includes('type=recovery')) {
+        // This means we're in a recovery flow, but need to extract the token
+        console.log("Recovery flow detected in hash:", fullHash);
+        // Try once more to extract token
+        const secondTokenMatch = fullHash.match(/access_token=([^&]+)/);
+        if (secondTokenMatch && secondTokenMatch[1]) {
+          console.log("Recovery token extracted:", secondTokenMatch[1]);
+          setToken(secondTokenMatch[1]);
           setTokenProcessed(true);
           return true;
         }
