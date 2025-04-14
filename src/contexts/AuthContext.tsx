@@ -135,12 +135,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw new Error(error.message);
       
-      await login(email, password);
+      console.log("User registered successfully:", data);
+      
+      // Send verification email right after registration
+      try {
+        await sendVerificationEmail(email);
+        console.log("Verification email sent successfully");
+      } catch (emailError) {
+        console.error("Error sending verification email:", emailError);
+        // Don't throw here, we still want to complete registration
+      }
+      
+      toast({
+        title: "التسجيل ناجح",
+        description: "تم إنشاء حسابك بنجاح. تحقق من بريدك الإلكتروني للتحقق من حسابك.",
+      });
+      
+      navigate('/login');
     } catch (error) {
       console.error('Registration error:', error);
       toast({
-        title: "Registration Failed",
-        description: (error as Error).message || "Could not register user",
+        title: "فشل التسجيل",
+        description: (error as Error).message || "تعذر تسجيل المستخدم",
         variant: "destructive",
       });
       throw error;
@@ -443,10 +459,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending verification email to ${email}`);
       
-      const verificationLink = `${window.location.origin}/verify?email=${email}`;
+      const verificationLink = `${window.location.origin}/verify?email=${encodeURIComponent(email)}`;
       console.log(`Verification link: ${verificationLink}`);
       
-      const { error } = await supabase.functions.invoke('send-email', {
+      const response = await supabase.functions.invoke('send-email', {
         body: {
           type: 'verification',
           email,
@@ -454,15 +470,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
-      if (error) {
-        console.error('Error from edge function:', error);
-        throw error;
+      if (response.error) {
+        console.error('Error from edge function:', response.error);
+        throw new Error(response.error.message || 'Failed to send verification email');
       }
 
+      console.log('Verification email sent response:', response);
+      
       toast({
         title: "تم إرسال البريد الإلكتروني",
         description: "تم إرسال رابط التحقق إلى بريدك الإلكتروني",
       });
+      
+      return response;
     } catch (error) {
       console.error('Error sending verification email:', error);
       toast({
@@ -478,10 +498,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending password reset email to ${email}`);
       
-      const resetLink = `${window.location.origin}/reset-password?email=${email}`;
+      const resetLink = `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}`;
       console.log(`Reset link: ${resetLink}`);
       
-      const { error } = await supabase.functions.invoke('send-email', {
+      const response = await supabase.functions.invoke('send-email', {
         body: {
           type: 'reset-password',
           email,
@@ -489,15 +509,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
-      if (error) {
-        console.error('Error from edge function:', error);
-        throw error;
+      if (response.error) {
+        console.error('Error from edge function:', response.error);
+        throw new Error(response.error.message || 'Failed to send password reset email');
       }
 
+      console.log('Password reset email sent response:', response);
+      
       toast({
         title: "تم إرسال البريد الإلكتروني",
         description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
       });
+      
+      return response;
     } catch (error) {
       console.error('Error sending password reset email:', error);
       toast({

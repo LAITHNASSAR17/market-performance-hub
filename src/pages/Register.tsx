@@ -18,7 +18,7 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const { register, isAuthenticated, loading, sendVerificationEmail } = useAuth();
+  const { register, isAuthenticated, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +42,6 @@ const Register: React.FC = () => {
     try {
       console.log('Registering user with email:', email);
       await register(name, email, password);
-      console.log('User registered successfully, sending verification email');
-      await sendVerificationEmail(email);
       
       toast({
         title: t('register.success.title'),
