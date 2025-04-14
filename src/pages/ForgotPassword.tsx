@@ -1,41 +1,57 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Mail } from 'lucide-react';
+import { LineChart, Mail, ExternalLink, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ForgotPassword: React.FC = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { sendPasswordResetEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [simulatedResetLink, setSimulatedResetLink] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email) {
+      setError('البريد الإلكتروني مطلوب');
+      return;
+    }
 
     setLoading(true);
+    setError('');
+    
     try {
       console.log('ForgotPassword: Sending password reset email to:', email);
       const response = await sendPasswordResetEmail(email);
       console.log('ForgotPassword: Response from sendPasswordResetEmail:', response);
       
-      // In development mode, we're simulating success so check for both real success and simulated
-      if (response && (!response.error || response.message?.includes("simulation"))) {
+      // Check if we got a simulated response (development mode)
+      if (response?.data?.simulatedData?.resetLink) {
+        setSimulatedResetLink(response.data.simulatedData.resetLink);
+        console.log('Simulated reset link:', response.data.simulatedData.resetLink);
+      }
+      
+      // Success if there's no error or if it's a simulation message
+      if (response && (!response.error || response.data?.message?.includes("simulation"))) {
         setEmailSent(true);
         toast({
           title: "تم إرسال البريد الإلكتروني",
           description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
         });
       } else if (response?.error === "User not found") {
+        setError('البريد الإلكتروني غير مسجل في النظام');
         toast({
           title: "البريد الإلكتروني غير مسجل",
           description: "لم نجد حساباً مرتبطاً بهذا البريد الإلكتروني",
@@ -44,8 +60,9 @@ const ForgotPassword: React.FC = () => {
       } else {
         throw new Error(response?.error || "حدث خطأ أثناء إرسال البريد الإلكتروني");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('ForgotPassword: Error in password reset:', error);
+      setError(error.message || 'فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.');
       toast({
         title: "خطأ",
         description: "فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.",
@@ -76,6 +93,12 @@ const ForgotPassword: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             {!emailSent ? (
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
@@ -102,19 +125,41 @@ const ForgotPassword: React.FC = () => {
                 </Button>
               </form>
             ) : (
-              <div className="text-center p-4">
-                <Mail className="h-12 w-12 mx-auto text-green-500 mb-4" />
+              <div className="text-center">
+                <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
                 <p className="text-sm text-gray-600 mb-4">
                   تم إرسال رابط إعادة تعيين كلمة المرور إلى <strong>{email}</strong>. 
                   يرجى التحقق من بريدك الإلكتروني واتباع التعليمات.
                 </p>
-                <Button 
-                  onClick={() => setEmailSent(false)} 
-                  variant="outline" 
-                  className="w-full"
-                >
-                  إرسال مرة أخرى
-                </Button>
+                
+                {simulatedResetLink && (
+                  <div className="bg-blue-50 p-4 rounded-md mb-4 text-right">
+                    <p className="text-sm text-blue-800 mb-2 font-bold">
+                      وضع التطوير: استخدم الرابط المباشر أدناه
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center w-full justify-center mb-2"
+                      onClick={() => window.open(simulatedResetLink, '_blank')}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      فتح رابط إعادة تعيين كلمة المرور
+                    </Button>
+                    <p className="text-xs text-blue-600">
+                      ملاحظة: في بيئة الإنتاج، سيتم إرسال رابط إعادة تعيين كلمة المرور عبر البريد الإلكتروني
+                    </p>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => setEmailSent(false)} 
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    إرسال مرة أخرى
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

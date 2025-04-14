@@ -504,6 +504,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending password reset email to ${email}`);
       
+      // First check if the user exists
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -543,11 +544,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error('Error from edge function:', response.error);
         throw new Error(response.error.message || 'Failed to send password reset email');
       }
-      
-      toast({
-        title: "تم إرسال البريد الإلكتروني",
-        description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
-      });
       
       return response;
     } catch (error) {
