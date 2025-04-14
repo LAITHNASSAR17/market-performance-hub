@@ -459,7 +459,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending verification email to ${email}`);
       
-      const verificationLink = `${window.location.origin}/verify?email=${encodeURIComponent(email)}`;
+      const appUrl = window.location.origin;
+      const verificationLink = `${appUrl}/verify?email=${encodeURIComponent(email)}`;
       console.log(`Verification link: ${verificationLink}`);
       
       console.log("Calling Supabase function with parameters:", {

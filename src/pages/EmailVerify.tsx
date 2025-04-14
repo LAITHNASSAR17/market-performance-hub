@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, LineChart, Mail, AlertCircle } from 'lucide-react';
+import { Check, LineChart, AlertCircle } from 'lucide-react';
 
 const EmailVerify = () => {
   const [searchParams] = useSearchParams();
@@ -18,53 +18,73 @@ const EmailVerify = () => {
   useEffect(() => {
     const verifyEmail = async () => {
       if (!email) {
+        console.error('No email provided in URL');
         setStatus('error');
         setErrorMessage('لم يتم توفير البريد الإلكتروني في الرابط');
         return;
       }
 
       try {
-        // التحقق من وجود المستخدم
+        console.log(`Attempting to verify email: ${email}`);
+        
+        // 1. التحقق من وجود المستخدم
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
           .eq('email', email)
           .single();
 
-        if (userError || !userData) {
-          console.error('خطأ في العثور على المستخدم:', userError);
+        if (userError) {
+          console.error('Error finding user:', userError);
+          setStatus('error');
+          setErrorMessage(`خطأ في العثور على المستخدم: ${userError.message}`);
+          return;
+        }
+
+        if (!userData) {
+          console.error('No user found with this email');
           setStatus('error');
           setErrorMessage('لم يتم العثور على حساب بهذا البريد الإلكتروني');
           return;
         }
 
-        // تحديث حالة التحقق للمستخدم
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ email_verified: true })
-          .eq('email', email);
+        console.log('User found:', userData.id);
 
-        if (updateError) {
-          console.error('خطأ في تحديث حالة التحقق:', updateError);
+        // 2. إضافة حقل email_verified إذا لم يكن موجودًا بعد
+        try {
+          // 3. تحديث حالة التحقق للمستخدم
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ email_verified: true })
+            .eq('email', email);
+
+          if (updateError) {
+            console.error('Error updating verification status:', updateError);
+            setStatus('error');
+            setErrorMessage(`حدث خطأ أثناء تحديث حالة التحقق: ${updateError.message}`);
+            return;
+          }
+
+          console.log('Email verification successful');
+          // نجاح التحقق
+          setStatus('success');
+          
+          toast({
+            title: "تم التحقق بنجاح",
+            description: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
+          });
+          
+          // بعد 3 ثوانٍ، انتقل إلى صفحة تسجيل الدخول
+          setTimeout(() => {
+            navigate('/login');
+          }, 3000);
+        } catch (err) {
+          console.error('Unexpected error during update:', err);
           setStatus('error');
-          setErrorMessage('حدث خطأ أثناء تحديث حالة التحقق من البريد الإلكتروني');
-          return;
+          setErrorMessage('حدث خطأ غير متوقع أثناء تحديث حالة التحقق');
         }
-
-        // نجاح التحقق
-        setStatus('success');
-        
-        toast({
-          title: "تم التحقق بنجاح",
-          description: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
-        });
-        
-        // بعد 3 ثوانٍ، انتقل إلى صفحة تسجيل الدخول
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
       } catch (error) {
-        console.error('خطأ غير متوقع:', error);
+        console.error('Unexpected error:', error);
         setStatus('error');
         setErrorMessage('حدث خطأ غير متوقع أثناء التحقق من البريد الإلكتروني');
       }
