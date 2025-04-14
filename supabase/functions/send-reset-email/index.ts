@@ -26,9 +26,19 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { email, name, resetLink, language = 'ar' }: ResetEmailRequest = await req.json();
     
-    // Extract token from reset link 
-    const tokenMatch = resetLink.match(/[#&]access_token=([^&]+)/);
-    const token = tokenMatch ? tokenMatch[1] : null;
+    // Extract token from reset link (handle multiple formats)
+    let token = null;
+    
+    // Try to get token from hash fragment
+    const tokenHashMatch = resetLink.match(/[#&]access_token=([^&]+)/);
+    if (tokenHashMatch && tokenHashMatch[1]) {
+      token = tokenHashMatch[1];
+    } 
+    // Or try to get it from URL params
+    else {
+      const urlParams = new URL(resetLink).searchParams;
+      token = urlParams.get('reset_token');
+    }
     
     if (!token) {
       console.error("Failed to extract token from reset link:", resetLink);
