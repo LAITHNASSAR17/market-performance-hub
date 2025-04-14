@@ -10,9 +10,9 @@ import { useLanguage } from './LanguageContext';
 interface User {
   id: string;
   email: string;
-  name?: string; // Optional because it might not be set
+  name?: string;
   isAdmin?: boolean;
-  isBlocked?: boolean; // Added isBlocked property
+  isBlocked?: boolean; // Ensure isBlocked property is included
   subscription_tier?: string;
   created_at?: string;
   updated_at?: string;
@@ -157,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (!error && data) {
         console.log("Profile data:", data);
-        // Since profiles table doesn't have is_admin field, default to false
+        // Since profiles table doesn't have role field, default to false
         setIsAdmin(false);
         
         // Update user data with profile info
