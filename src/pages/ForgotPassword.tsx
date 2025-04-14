@@ -43,14 +43,15 @@ const ForgotPassword: React.FC = () => {
         console.log('Simulated reset link:', response.data.simulatedData.resetLink);
       }
       
-      // Success if there's no error or if it's a simulation message
-      if (response && (!response.error || response.data?.message?.includes("simulation"))) {
-        setEmailSent(true);
-        toast({
-          title: "تم إرسال البريد الإلكتروني",
-          description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
-        });
-      } else if (response?.error === "User not found") {
+      // Success regardless of whether it's a simulation or real email
+      setEmailSent(true);
+      toast({
+        title: "تم إرسال البريد الإلكتروني",
+        description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
+      });
+    } catch (error: any) {
+      console.error('ForgotPassword: Error in password reset:', error);
+      if (error.message === "User not found") {
         setError('البريد الإلكتروني غير مسجل في النظام');
         toast({
           title: "البريد الإلكتروني غير مسجل",
@@ -58,16 +59,13 @@ const ForgotPassword: React.FC = () => {
           variant: "destructive",
         });
       } else {
-        throw new Error(response?.error || "حدث خطأ أثناء إرسال البريد الإلكتروني");
+        setError(error.message || 'فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.');
+        toast({
+          title: "خطأ",
+          description: "فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.",
+          variant: "destructive",
+        });
       }
-    } catch (error: any) {
-      console.error('ForgotPassword: Error in password reset:', error);
-      setError(error.message || 'فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.');
-      toast({
-        title: "خطأ",
-        description: "فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }

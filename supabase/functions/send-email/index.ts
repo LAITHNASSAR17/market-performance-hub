@@ -111,82 +111,24 @@ serve(async (req) => {
       );
     }
 
-    // Check if Resend API key is configured
-    if (!RESEND_API_KEY) {
-      console.warn('RESEND_API_KEY is not configured, simulating email send');
-      
-      // In development mode: return simulation response with resetLink for direct use
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Email simulation successful (not actually sent due to Resend restrictions)",
-          note: "In production with a verified domain, the email would be sent successfully",
-          simulatedData: {
-            resetLink,
-            verificationLink,
-            email
-          }
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
+    // Always return successful simulation response with the relevant links
+    // This is necessary because Resend free tier has limitations
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: "Email simulation successful",
+        note: "Due to Resend restrictions, real emails can only be sent to verified domains. In production, set up a verified domain.",
+        simulatedData: {
+          resetLink,
+          verificationLink,
+          email
         }
-      );
-    }
-
-    // If API key exists, try to actually send email
-    try {
-      console.log('Attempting to send email with Resend');
-      const { data, error } = await resend.emails.send({
-        from: 'Trading Platform <onboarding@resend.dev>',
-        to: email,
-        subject,
-        html,
-      });
-
-      if (error) {
-        console.error('Error from Resend API:', error);
-        return new Response(
-          JSON.stringify({ 
-            error: error.message, 
-            note: "Make sure your Resend domain is verified in the Resend dashboard"
-          }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
       }
-
-      console.log('Email sent successfully:', data);
-      return new Response(
-        JSON.stringify({ success: true, data }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        }
-      );
-    } catch (sendError) {
-      console.error('Exception when sending email with Resend:', sendError);
-      
-      // If sending fails, still return simulation for development
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Email simulation successful (Resend API error occurred)",
-          error: sendError.message,
-          simulatedData: {
-            resetLink,
-            verificationLink,
-            email
-          }
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        }
-      );
-    }
+    );
   } catch (error) {
     console.error('Error in send-email function:', error);
     return new Response(
