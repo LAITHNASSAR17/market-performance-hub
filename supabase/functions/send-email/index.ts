@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { Resend } from "npm:resend@2.0.0"
 import { renderAsync } from "npm:@react-email/render@0.0.12"
@@ -54,7 +53,7 @@ serve(async (req) => {
 
     let html = '';
     let subject = '';
-    const fromEmail = "noreply@yourdomain.com"; // تحديث: قم بتغيير yourdomain.com إلى نطاقك المتحقق منه في Resend
+    const fromEmail = "no-reply@your-verified-domain.com"; // قم بتغيير هذا إلى نطاقك المتحقق منه في Resend
 
     if (type === 'verification') {
       console.log('Rendering verification email for:', email);
@@ -112,7 +111,7 @@ serve(async (req) => {
       );
     }
 
-    // Send the email using Resend with the new verified domain
+    // Send the email using Resend with the verified domain
     try {
       const emailResponse = await resend.emails.send({
         from: fromEmail,
