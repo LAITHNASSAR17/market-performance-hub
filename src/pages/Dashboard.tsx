@@ -1,6 +1,7 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { useTrade, Trade } from '@/contexts/TradeContext';
+import { useTrade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
 import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

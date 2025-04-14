@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
@@ -239,7 +240,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       
       // Transform the Supabase data to match our Trade type
-      return data.map((item: any) => ({
+      return data.map((item: any): Trade => ({
         id: item.id,
         userId: item.user_id,
         account: item.account || 'Main Trading',
