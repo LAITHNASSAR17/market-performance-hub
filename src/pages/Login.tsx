@@ -22,11 +22,10 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showCredentials, setShowCredentials] = useState(false);
-  const { login, isAuthenticated, loading, forgotPassword, resetPassword } = useAuth();
+  const { login, isAuthenticated, loading, forgotPassword, resetPassword, sendPasswordResetEmail } = useAuth();
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
-  // Clear localStorage if URL has a clear param (for debugging purposes)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('clear')) {
@@ -37,7 +36,6 @@ const Login: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Check if there's a test admin user
     const users = localStorage.getItem('users');
     if (users && JSON.parse(users).length > 0) {
       const adminUser = JSON.parse(users).find((u: any) => u.isAdmin);
@@ -90,19 +88,27 @@ const Login: React.FC = () => {
     try {
       await login(email, password);
     } catch (err) {
-      // Error is handled in the login function with toast
       setError(t('login.error.credentials'));
     }
   };
 
   const onForgotPasswordSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
     try {
-      await forgotPassword(values.email);
-      setForgotPasswordOpen(false);
-      setResetPasswordOpen(true);
-      resetPasswordForm.setValue("email", values.email);
+      console.log("Login page: Starting forgot password flow for", values.email);
+      const response = await sendPasswordResetEmail(values.email);
+      console.log("Login page: Response from sendPasswordResetEmail:", response);
+      
+      if (response && !response.error) {
+        setForgotPasswordOpen(false);
+        setResetPasswordOpen(true);
+        resetPasswordForm.setValue("email", values.email);
+        toast({
+          title: "تم إرسال رابط إعادة التعيين",
+          description: "يرجى التحقق من بريدك الإلكتروني",
+        });
+      }
     } catch (error) {
-      // Error is handled in the auth context
+      console.error("Login page: Error in forgot password:", error);
     }
   };
 
@@ -111,7 +117,6 @@ const Login: React.FC = () => {
       await resetPassword(values.email, values.resetCode, values.newPassword);
       setResetPasswordOpen(false);
     } catch (error) {
-      // Error is handled in the auth context
     }
   };
 
@@ -233,7 +238,6 @@ const Login: React.FC = () => {
         </Card>
       </div>
 
-      {/* Forgot Password Dialog */}
       <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
         <DialogContent>
           <DialogHeader>
@@ -273,7 +277,6 @@ const Login: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Reset Password Dialog */}
       <Dialog open={resetPasswordOpen} onOpenChange={setResetPasswordOpen}>
         <DialogContent>
           <DialogHeader>

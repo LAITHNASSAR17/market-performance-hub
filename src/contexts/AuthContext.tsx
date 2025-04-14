@@ -462,6 +462,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const verificationLink = `${window.location.origin}/verify?email=${encodeURIComponent(email)}`;
       console.log(`Verification link: ${verificationLink}`);
       
+      console.log("Calling Supabase function with parameters:", {
+        type: 'verification',
+        email,
+        verificationLink
+      });
+      
       const response = await supabase.functions.invoke('send-email', {
         body: {
           type: 'verification',
@@ -498,8 +504,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending password reset email to ${email}`);
       
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
+        
+      if (userError || !userData) {
+        console.error('User not found:', userError);
+        toast({
+          title: "خطأ",
+          description: "البريد الإلكتروني غير مسجل في النظام",
+          variant: "destructive",
+        });
+        return { error: "User not found" };
+      }
+      
       const resetLink = `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}`;
       console.log(`Reset link: ${resetLink}`);
+      
+      console.log("Calling Supabase function with parameters:", {
+        type: 'reset-password',
+        email,
+        resetLink
+      });
       
       const response = await supabase.functions.invoke('send-email', {
         body: {
@@ -509,12 +537,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         },
       });
 
+      console.log('Password reset email response:', response);
+
       if (response.error) {
         console.error('Error from edge function:', response.error);
         throw new Error(response.error.message || 'Failed to send password reset email');
       }
-
-      console.log('Password reset email sent response:', response);
       
       toast({
         title: "تم إرسال البريد الإلكتروني",
