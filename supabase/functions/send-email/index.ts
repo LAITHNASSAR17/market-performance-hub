@@ -54,8 +54,7 @@ serve(async (req) => {
 
     let html = '';
     let subject = '';
-    // استخدم عنوان البريد الإلكتروني المتحقق منه
-    const fromEmail = "noreply@yourdomain.com"; // قم بتغيير هذا إلى نطاقك المتحقق منه
+    const fromEmail = "noreply@yourdomain.com"; // تحديث: قم بتغيير yourdomain.com إلى نطاقك المتحقق منه في Resend
 
     if (type === 'verification') {
       console.log('Rendering verification email for:', email);
@@ -113,7 +112,7 @@ serve(async (req) => {
       );
     }
 
-    // Send the email using Resend
+    // Send the email using Resend with the new verified domain
     try {
       const emailResponse = await resend.emails.send({
         from: fromEmail,
