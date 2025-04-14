@@ -1,4 +1,3 @@
-
 export const emailTranslations = {
   resetPassword: {
     ar: {
@@ -19,6 +18,18 @@ export const emailTranslations = {
       button: "Reset Password",
       ignore: "If you didn't request a password reset, you can ignore this email.",
       expires: "This link expires in 24 hours.",
+      greeting: "Hello",
+      footer: "Thank you",
+      signature: "The Team"
+    }
+  },
+  generic: {
+    ar: {
+      greeting: "مرحباً",
+      footer: "شكراً لك",
+      signature: "فريق العمل"
+    },
+    en: {
       greeting: "Hello",
       footer: "Thank you",
       signature: "The Team"
