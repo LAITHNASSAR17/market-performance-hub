@@ -128,7 +128,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           password: hashedPassword,
           role: 'user',
           is_blocked: false,
-          subscription_tier: 'free'
+          subscription_tier: 'free',
+          email_verified: false
         })
         .select()
         .single();
@@ -182,6 +183,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (comparePassword(password, data.password)) {
         if (data.is_blocked) {
           throw new Error('User is blocked');
+        }
+        
+        // Check if email is verified
+        if (!data.email_verified) {
+          toast({
+            title: "البريد الإلكتروني غير مفعل",
+            description: "يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك. تم إرسال رابط التفعيل إلى بريدك الإلكتروني.",
+            variant: "destructive",
+          });
+          
+          // Resend verification email
+          try {
+            await sendVerificationEmail(email);
+            console.log("Verification email resent successfully");
+          } catch (emailError) {
+            console.error("Error resending verification email:", emailError);
+          }
+          
+          throw new Error('البريد الإلكتروني غير مفعل');
         }
         
         setUser(data);
