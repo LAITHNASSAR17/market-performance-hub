@@ -44,6 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
     // إنشاء رابط إعادة التعيين الصحيح
     // استخدم نفس الدومين الذي جاء من الطلب
     const domain = req.headers.get("Origin") || new URL(req.url).origin;
+    // تأكد من أن الرابط يحتوي على reset-password ويمرر التوكن كمعلمة في ال URL بدلاً من hash
     const correctResetLink = `${domain}/reset-password?reset_token=${token}`;
     
     console.log("Original reset link:", resetLink);

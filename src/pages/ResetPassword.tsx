@@ -15,11 +15,26 @@ const ResetPassword: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [token, setToken] = useState<string | null>(null);
+  const [processingReset, setProcessingReset] = useState(false);
   const { resetPassword, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Prevent automatic redirection to dashboard when accessing this page
+    const preventAutoRedirect = async () => {
+      try {
+        // Sign out any existing session to prevent automatic redirection
+        await supabase.auth.signOut();
+      } catch (error) {
+        console.error("Error signing out:", error);
+      }
+    };
+    
+    preventAutoRedirect();
+  }, []);
 
   useEffect(() => {
     const extractToken = () => {
@@ -67,7 +82,7 @@ const ResetPassword: React.FC = () => {
       });
       navigate('/login');
     } else {
-      // تحقق من صلاحية الرمز
+      // تحقق من صلاحية الرمز بدون استخدام الرمز للتسجيل
       const verifyToken = async () => {
         try {
           const { error } = await supabase.auth.getUser(token);
@@ -92,14 +107,17 @@ const ResetPassword: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setProcessingReset(true);
 
     if (newPassword !== confirmPassword) {
       setError('كلمات المرور غير متطابقة');
+      setProcessingReset(false);
       return;
     }
 
     if (newPassword.length < 6) {
       setError('يجب أن تكون كلمة المرور 6 أحرف على الأقل');
+      setProcessingReset(false);
       return;
     }
 
@@ -120,11 +138,19 @@ const ResetPassword: React.FC = () => {
         description: "تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول باستخدام كلمة المرور الجديدة.",
       });
       
-      // ننتقل إلى صفحة تسجيل الدخول بعد إعادة تعيين كلمة المرور بنجاح
-      navigate('/login');
+      // تأكد من تسجيل خروج المستخدم بعد إعادة تعيين كلمة المرور
+      await supabase.auth.signOut();
+      
+      // انتظر قليلاً قبل التوجيه لضمان معالجة الخروج
+      setTimeout(() => {
+        // ننتقل إلى صفحة تسجيل الدخول بعد إعادة تعيين كلمة المرور بنجاح
+        navigate('/login');
+      }, 500);
     } catch (err: any) {
       console.error("Password reset error:", err);
       setError(err.message);
+    } finally {
+      setProcessingReset(false);
     }
   };
 
@@ -181,9 +207,9 @@ const ResetPassword: React.FC = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading}
+              disabled={loading || processingReset}
             >
-              {loading ? 'جارٍ إعادة التعيين...' : 'إعادة تعيين كلمة المرور'}
+              {processingReset ? 'جارٍ إعادة التعيين...' : 'إعادة تعيين كلمة المرور'}
             </Button>
           </form>
         </CardContent>
