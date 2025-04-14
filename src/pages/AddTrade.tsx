@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -13,15 +12,27 @@ import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CalendarIcon, PlusIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const AddTrade: React.FC = () => {
-  const { addTrade, accounts, allHashtags } = useTrade();
+  const { 
+    addTrade, 
+    accounts, 
+    allHashtags,
+    tradingAccounts,
+    createTradingAccount
+  } = useTrade();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     account: '',
-    date: new Date().toISOString().slice(0, 10),
+    date: new Date(),
     pair: '',
     type: 'Buy' as 'Buy' | 'Sell',
     entry: '',
@@ -42,6 +53,10 @@ const AddTrade: React.FC = () => {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isCalculating, setIsCalculating] = useState(false);
+  const [newAccountData, setNewAccountData] = useState({
+    name: '',
+    balance: 0
+  });
 
   useEffect(() => {
     if (isCalculating) return;
@@ -127,6 +142,33 @@ const AddTrade: React.FC = () => {
     navigate('/trades');
   };
 
+  const handleCreateAccount = async () => {
+    if (!newAccountData.name) {
+      toast({
+        title: "خطأ",
+        description: "الرجاء إدخال اسم الحساب",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const newAccount = await createTradingAccount(
+        newAccountData.name, 
+        newAccountData.balance
+      );
+      
+      setFormData(prev => ({
+        ...prev,
+        account: newAccount.name
+      }));
+      
+      setNewAccountData({ name: '', balance: 0 });
+    } catch (error) {
+      console.error('Failed to create account', error);
+    }
+  };
+
   return (
     <Layout>
       <div className="mb-6">
@@ -143,35 +185,96 @@ const AddTrade: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="account">Account</Label>
-                <Select
-                  value={formData.account}
-                  onValueChange={(value) => handleSelectChange('account', value)}
-                >
-                  <SelectTrigger className={errors.account ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {accounts.map((account) => (
-                        <SelectItem key={account} value={account}>
-                          {account}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center space-x-2">
+                  <Select
+                    value={formData.account}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, account: value }))}
+                  >
+                    <SelectTrigger className={errors.account ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {tradingAccounts.map((account) => (
+                          <SelectItem key={account.id} value={account.name}>
+                            {account.name} (Balance: ${account.balance.toFixed(2)})
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="icon">
+                        <PlusIcon className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>إنشاء حساب جديد</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>اسم الحساب</Label>
+                          <Input
+                            value={newAccountData.name}
+                            onChange={(e) => setNewAccountData(prev => ({ 
+                              ...prev, 
+                              name: e.target.value 
+                            }))}
+                            placeholder="مثال: الحساب الرئيسي"
+                          />
+                        </div>
+                        <div>
+                          <Label>الرصيد الأولي</Label>
+                          <Input
+                            type="number"
+                            value={newAccountData.balance}
+                            onChange={(e) => setNewAccountData(prev => ({ 
+                              ...prev, 
+                              balance: Number(e.target.value) 
+                            }))}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <Button onClick={handleCreateAccount}>إنشاء</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 {errors.account && <p className="text-red-500 text-sm mt-1">{errors.account}</p>}
               </div>
 
               <div>
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  name="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                />
+                <Label>Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.date && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.date ? (
+                        format(formData.date, "PPP")
+                      ) : (
+                        <span>اختر تاريخ</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formData.date}
+                      onSelect={(date) => setFormData(prev => ({ ...prev, date }))}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 

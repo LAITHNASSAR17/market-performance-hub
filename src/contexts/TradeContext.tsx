@@ -29,6 +29,15 @@ export type Trade = {
   instrumentType?: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other'; // Added instrument type
 };
 
+// Add new type for trading accounts
+export type TradingAccount = {
+  id: string;
+  userId: string;
+  name: string;
+  balance: number;
+  createdAt: string;
+};
+
 type TradeContextType = {
   trades: Trade[];
   addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => void;
@@ -44,6 +53,9 @@ type TradeContextType = {
   allHashtags: string[];
   addHashtag: (hashtag: string) => void;
   calculateProfitLoss: (entry: number, exit: number, lotSize: number, type: 'Buy' | 'Sell', instrumentType: string) => number;
+  tradingAccounts: TradingAccount[];
+  createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
+  fetchTradingAccounts: () => Promise<void>;
 };
 
 // Symbol type for the open and dynamic symbol list
@@ -240,6 +252,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   ]);
   const { toast } = useToast();
   const { user } = useAuth();
+  const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
 
   // Calculate profit/loss based on instrument type
   const calculateProfitLoss = (
@@ -565,6 +578,80 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // New method to fetch trading accounts
+  const fetchTradingAccounts = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('trading_accounts')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setTradingAccounts(data || []);
+    } catch (error) {
+      console.error('Error fetching trading accounts:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء جلب الحسابات",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // New method to create a trading account
+  const createTradingAccount = async (name: string, balance: number) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      const { data, error } = await supabase
+        .from('trading_accounts')
+        .insert({
+          user_id: user.id,
+          name,
+          balance
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newAccount: TradingAccount = {
+        id: data.id,
+        userId: data.user_id,
+        name: data.name,
+        balance: data.balance,
+        createdAt: data.created_at
+      };
+
+      setTradingAccounts(prev => [...prev, newAccount]);
+      
+      toast({
+        title: "حساب جديد",
+        description: `تم إنشاء الحساب ${name}`,
+      });
+
+      return newAccount;
+    } catch (error) {
+      console.error('Error creating trading account:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إنشاء الحساب",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  // Fetch trading accounts on user login
+  useEffect(() => {
+    if (user) {
+      fetchTradingAccounts();
+    }
+  }, [user]);
+
   return (
     <TradeContext.Provider value={{ 
       trades, 
@@ -580,7 +667,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addSymbol,
       allHashtags,
       addHashtag,
-      calculateProfitLoss
+      calculateProfitLoss,
+      tradingAccounts,
+      createTradingAccount,
+      fetchTradingAccounts,
     }}>
       {children}
     </TradeContext.Provider>
