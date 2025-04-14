@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 const Login = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -39,6 +40,15 @@ const Login = () => {
   });
 
   useEffect(() => {
+    // التحقق من حالة التحقق من البريد الإلكتروني
+    const verified = searchParams.get('verified');
+    if (verified === 'true') {
+      toast({
+        title: "تم التحقق بنجاح",
+        description: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
+      });
+    }
+
     // Check for email verification status
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
