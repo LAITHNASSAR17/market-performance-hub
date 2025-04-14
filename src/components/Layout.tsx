@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, X, UserCog, LineChart as LineChart3, BarChart2, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -120,8 +119,8 @@ const Layout: React.FC<LayoutProps> = ({
           {sidebarOpen && <div className="flex items-center gap-2 mt-4 w-full">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-left w-full justify-start px-2 py-1 h-auto">
-                    <div className="flex items-center gap-2 flex-1">
+                  <Button variant="ghost" className="text-left w-full justify-between px-2 py-1 h-auto hover:bg-sidebar-accent">
+                    <div className="flex items-center gap-2">
                       <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 overflow-hidden">
                         {user?.name?.charAt(0) || 'U'}
                       </div>
@@ -135,6 +134,7 @@ const Layout: React.FC<LayoutProps> = ({
                         </div>
                       )}
                     </div>
+                    <ChevronDown className="h-4 w-4 ms-2 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -185,43 +185,6 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 py-4 px-4">
-          {!sidebarOpen ? <div className="flex flex-col gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" asChild className="w-full flex items-center justify-center px-2">
-                    <Link to="/profile">
-                      <UserCog className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center">
-                  {language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}
-                </TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={handleLogout} className="w-full flex items-center justify-center px-2 text-red-500 hover:text-red-600">
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center">
-                  {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
-                </TooltipContent>
-              </Tooltip>
-            </div> : <div className="flex flex-col gap-2">
-              <Button variant="outline" size="sm" asChild className="w-full flex items-center justify-center">
-                <Link to="/profile">
-                  <UserCog className="h-4 w-4 mr-2" />
-                  <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
-                </Link>
-              </Button>
-
-              <Button variant="outline" size="sm" onClick={handleLogout} className="w-full flex items-center justify-center text-red-500 hover:text-red-600">
-                <LogOut className="h-4 w-4 mr-2" />
-                <span>{language === 'ar' ? 'تسجيل الخروج' : 'Logout'}</span>
-              </Button>
-            </div>}
         </div>
       </div>
 
