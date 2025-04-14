@@ -3,7 +3,7 @@ import React from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChartLine, Target, BookMarked, LineChart, Lightbulb } from 'lucide-react';
+import { ChartLine, Target, BookMarked, LineChart, Lightbulb, Hash } from 'lucide-react';
 
 // Import custom hooks
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
@@ -17,6 +17,7 @@ import TagsTab from '@/components/analytics/TagsTab';
 import PlaybookTab from '@/components/analytics/PlaybookTab';
 import ChartTab from '@/components/analytics/ChartTab';
 import TradingTips from '@/components/TradingTips';
+import HashtagsTab from '@/components/analytics/HashtagsTab';
 
 const Analytics: React.FC = () => {
   const { t, language } = useLanguage();
@@ -49,6 +50,10 @@ const Analytics: React.FC = () => {
               <Target className="h-4 w-4 mr-2" />
               {t('tags') || 'Tags'}
             </TabsTrigger>
+            <TabsTrigger value="hashtags" className="flex-1 md:flex-none">
+              <Hash className="h-4 w-4 mr-2" />
+              {t('hashtags') || 'Hashtags'}
+            </TabsTrigger>
             <TabsTrigger value="playbook" className="flex-1 md:flex-none">
               <BookMarked className="h-4 w-4 mr-2" />
               {t('playbook') || 'Playbook'}
@@ -78,6 +83,11 @@ const Analytics: React.FC = () => {
               habits={habits}
               setHabits={setHabits}
             />
+          </TabsContent>
+          
+          {/* Hashtags Analytics Tab */}
+          <TabsContent value="hashtags" className="mt-0">
+            <HashtagsTab />
           </TabsContent>
           
           {/* Playbook Tab */}
