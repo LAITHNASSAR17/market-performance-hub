@@ -1,17 +1,13 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Globe, Bell, Shield, Database, FileText } from 'lucide-react';
 import SiteSettings from '@/components/admin/SiteSettings';
 import SystemSettings from '@/components/admin/SystemSettings';
 import SystemSettingsExtended from '@/components/admin/SystemSettingsExtended';
-
 const AdminSettings: React.FC = () => {
   // Get site name from localStorage or default for page title
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
-
-  return (
-    <div>
+  return <div>
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
           System Settings
@@ -29,7 +25,7 @@ const AdminSettings: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="system" className="flex items-center">
             <Settings className="mr-2 h-4 w-4" />
-            <span>System Configuration</span>
+            
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center">
             <Shield className="mr-2 h-4 w-4" />
@@ -58,8 +54,6 @@ const AdminSettings: React.FC = () => {
           <SystemSettingsExtended />
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminSettings;
