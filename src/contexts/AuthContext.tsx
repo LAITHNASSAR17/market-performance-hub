@@ -203,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Directly create the user in our custom users table first
+      // Check if the email already exists in our custom users table
       const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('email')
@@ -216,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : 'Email already registered. Please use a different email or sign in.');
       }
       
-      // Register the user with Supabase Auth
+      // Register the user with Supabase Auth with email confirmation
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -224,7 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             name,
           },
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}`,
         },
       });
       
@@ -249,12 +249,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // We don't throw here as the auth user is already created
         }
       }
+
+      // Prepare and send verification email
+      try {
+        // Get verification URL from Supabase (this might be different depending on your Supabase setup)
+        const verificationLink = `${window.location.origin}?type=signup`;
+
+        // Call our custom verification email edge function
+        const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
+          body: {
+            email,
+            name,
+            verificationLink,
+            language: language || 'ar'
+          },
+        });
+
+        if (emailError) {
+          console.error('Error sending verification email:', emailError);
+        }
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // We don't throw here as the user is already created
+      }
       
       toast({
         title: language === 'ar' ? "تم التسجيل بنجاح" : "Registration Successful",
         description: language === 'ar' 
-          ? "تم إنشاء حسابك بنجاح. يمكنك الآن تسجيل الدخول." 
-          : "Your account has been created successfully. You can now sign in.",
+          ? "تم إنشاء حسابك بنجاح. يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك." 
+          : "Your account has been created successfully. Please check your email to verify your account.",
       });
       
       // Redirect to login instead of auto-login

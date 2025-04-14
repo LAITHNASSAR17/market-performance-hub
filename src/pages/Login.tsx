@@ -110,6 +110,15 @@ const Login = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {searchParams.get('verified') === 'true' && (
+              <Alert className="mb-4 bg-green-50 text-green-800 border-green-200">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  {t('login.emailVerified.description')}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleSubmit}>
               {error && (
                 <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-center gap-2">

@@ -70,12 +70,12 @@ const Register: React.FC = () => {
             <CardHeader>
               <CardTitle className="text-center">{t('register.success.title')}</CardTitle>
               <CardDescription className="text-center">
-                {t('register.success.description')}
+                {t('register.success.verifyEmail')}
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <p className="mb-4">
-                {t('register.success.loginNow')}
+                {t('register.success.checkEmail')}
               </p>
               <Button asChild>
                 <Link to="/login">{t('register.login')}</Link>
