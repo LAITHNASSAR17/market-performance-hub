@@ -11,6 +11,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import HashtagBadge from '@/components/HashtagBadge';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Trade } from '@/types/trade'; // Added import for Trade type
 
 const Journal: React.FC = () => {
   const { trades, allHashtags } = useTrade();
@@ -28,6 +29,11 @@ const Journal: React.FC = () => {
       setDateFilter(dateParam);
     }
   }, [location.search]);
+
+  // Added function to handle viewing a trade
+  const handleViewTrade = (id: string) => {
+    navigate(`/trades/${id}`);
+  };
 
   const filteredTrades = trades.filter(trade => {
     const matchesDate = dateFilter === 'all' || trade.date === dateFilter;
