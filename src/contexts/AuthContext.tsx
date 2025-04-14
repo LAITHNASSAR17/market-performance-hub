@@ -308,14 +308,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const resetLink = `${window.location.origin}/reset-password`;
       
-      await supabase.functions.invoke('send-reset-email', {
-        body: { 
-          email,
-          name: userData?.name || email,
-          resetLink,
-          language
-        },
-      });
+      try {
+        const { data, error: emailError } = await supabase.functions.invoke('send-reset-email', {
+          body: { 
+            email,
+            name: userData?.name || email,
+            resetLink,
+            language
+          },
+        });
+        
+        if (emailError) {
+          console.error('Error invoking send-reset-email function:', emailError);
+        }
+        
+        if (data && data.status === "domain_not_verified") {
+          toast({
+            title: language === 'ar' ? "تم إرسال رابط إعادة التعيين" : "Reset Link Sent",
+            description: data.message,
+          });
+          return;
+        }
+      } catch (emailErr) {
+        console.error('Failed to invoke send-reset-email function:', emailErr);
+      }
 
       toast({
         title: language === 'ar' ? "إعادة تعيين كلمة المرور" : "Reset Password",
