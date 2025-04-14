@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { Resend } from "npm:resend@2.0.0"
 import { renderAsync } from "npm:@react-email/render@0.0.12"
@@ -53,7 +54,7 @@ serve(async (req) => {
 
     let html = '';
     let subject = '';
-    const fromEmail = "no-reply@your-verified-domain.com"; // قم بتغيير هذا إلى نطاقك المتحقق منه في Resend
+    const fromEmail = "onboarding@resend.dev"; // استخدام النطاق الافتراضي من Resend الذي لا يحتاج إلى تحقق
 
     if (type === 'verification') {
       console.log('Rendering verification email for:', email);
