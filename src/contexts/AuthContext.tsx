@@ -33,8 +33,8 @@ interface AuthContextType {
   unblockUser: (user: User) => Promise<void>;
   changePassword: (email: string, newPassword: string) => Promise<void>;
   updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
-  sendVerificationEmail: (email: string) => Promise<void>;
-  sendPasswordResetEmail: (email: string) => Promise<void>;
+  sendVerificationEmail: (email: string) => Promise<any>;
+  sendPasswordResetEmail: (email: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
