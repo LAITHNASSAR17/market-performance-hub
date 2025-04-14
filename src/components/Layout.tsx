@@ -9,17 +9,22 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+
 interface LayoutProps {
   children: React.ReactNode;
 }
+
 const Layout: React.FC<LayoutProps> = ({
   children
 }) => {
   const {
     isAuthenticated,
     logout,
-    user
+    user,
+    isAdmin
   } = useAuth();
+  const { toast } = useToast();
   const {
     t,
     language
@@ -28,8 +33,8 @@ const Layout: React.FC<LayoutProps> = ({
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
-  // Get site name from localStorage or use default
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
+
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
@@ -37,9 +42,11 @@ const Layout: React.FC<LayoutProps> = ({
       setSidebarOpen(true);
     }
   }, [isMobile]);
+
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
+
   const navigation = [{
     name: t('nav.dashboard'),
     icon: Home,
@@ -77,9 +84,27 @@ const Layout: React.FC<LayoutProps> = ({
     icon: LineChart3,
     href: '/chart'
   }];
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: language === 'ar' ? "تم تسجيل الخروج" : "Logged Out",
+        description: language === 'ar' ? "تم تسجيل خروجك بنجاح" : "You have been logged out successfully"
+      });
+    } catch (error) {
+      toast({
+        title: language === 'ar' ? "خطأ" : "Error",
+        description: language === 'ar' ? "حدث خطأ أثناء تسجيل الخروج" : "An error occurred while logging out",
+        variant: "destructive"
+      });
+    }
+  };
+
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
+
   return <div className="flex h-screen bg-gray-50 dark:bg-gray-900" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <div className={cn("relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-64" : "w-16", language === 'ar' ? "border-l" : "border-r", "dark:bg-indigo-900/90 dark:border-indigo-800")}>
         <div className="flex flex-col items-center py-4 px-4">
@@ -106,7 +131,32 @@ const Layout: React.FC<LayoutProps> = ({
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center">
+                      <UserCog className="mr-2 h-4 w-4" />
+                      {language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}
+                    </Link>
+                  </DropdownMenuItem>
+                  
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center text-purple-600">
+                          <Shield className="mr-2 h-4 w-4" />
+                          {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-500">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
               </DropdownMenu>
             </div>}
         </div>
@@ -143,7 +193,7 @@ const Layout: React.FC<LayoutProps> = ({
                 </TooltipContent>
               </Tooltip>
               
-              {user?.isAdmin && <Tooltip>
+              {isAdmin && <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="sm" asChild className="w-full flex items-center justify-center px-2 bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700">
                       <Link to="/admin">
@@ -155,6 +205,17 @@ const Layout: React.FC<LayoutProps> = ({
                     {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
                   </TooltipContent>
                 </Tooltip>}
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={handleLogout} className="w-full flex items-center justify-center px-2 text-red-500 hover:text-red-600">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center">
+                  {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                </TooltipContent>
+              </Tooltip>
             </div> : <div className="flex flex-col gap-2">
               <Button variant="outline" size="sm" asChild className="w-full flex items-center justify-center">
                 <Link to="/profile">
@@ -163,7 +224,7 @@ const Layout: React.FC<LayoutProps> = ({
                 </Link>
               </Button>
               
-              {user?.isAdmin && <Button variant="outline" size="sm" asChild className="w-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700">
+              {isAdmin && <Button variant="outline" size="sm" asChild className="w-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700">
                   <Link to="/admin">
                     <Shield className="h-4 w-4 mr-2 text-purple-500" />
                     <span className="text-purple-700 dark:text-purple-300">
@@ -171,6 +232,11 @@ const Layout: React.FC<LayoutProps> = ({
                     </span>
                   </Link>
                 </Button>}
+
+              <Button variant="outline" size="sm" onClick={handleLogout} className="w-full flex items-center justify-center text-red-500 hover:text-red-600">
+                <LogOut className="h-4 w-4 mr-2" />
+                <span>{language === 'ar' ? 'تسجيل الخروج' : 'Logout'}</span>
+              </Button>
             </div>}
         </div>
       </div>
@@ -182,4 +248,5 @@ const Layout: React.FC<LayoutProps> = ({
       </main>
     </div>;
 };
+
 export default Layout;
