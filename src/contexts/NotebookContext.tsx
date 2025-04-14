@@ -1,8 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export type Note = {
   id: string;
@@ -17,9 +17,9 @@ export type Note = {
 
 type NotebookContextType = {
   notes: Note[];
-  addNote: (note: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => void;
-  updateNote: (id: string, note: Partial<Note>) => void;
-  deleteNote: (id: string) => void;
+  addNote: (note: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateNote: (id: string, note: Partial<Note>) => Promise<void>;
+  deleteNote: (id: string) => Promise<void>;
   getNote: (id: string) => Note | undefined;
   loading: boolean;
   noteTags: string[];
@@ -37,20 +37,25 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch notes from Supabase instead of localStorage
+  // Fetch notes from Supabase
   useEffect(() => {
     const fetchNotes = async () => {
       if (user) {
         setLoading(true);
         try {
+          console.log("Fetching notes for user:", user.id);
           const { data, error } = await supabase
             .from('notes')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
-          if (error) throw error;
+          if (error) {
+            console.error("Error fetching notes:", error);
+            throw error;
+          }
 
+          console.log("Notes fetched:", data);
           const formattedNotes: Note[] = data.map(note => ({
             id: note.id,
             userId: note.user_id,
@@ -95,6 +100,7 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user) return;
 
     try {
+      console.log("Adding note:", newNoteData);
       const { data, error } = await supabase
         .from('notes')
         .insert({
@@ -106,8 +112,12 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting note:", error);
+        throw error;
+      }
 
+      console.log("Note added:", data);
       const newNote: Note = {
         id: data.id,
         userId: data.user_id,
@@ -123,7 +133,7 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Update tags
       const newTags = newNote.tags.filter(tag => !noteTags.includes(tag));
       if (newTags.length > 0) {
-        setNoteTags([...noteTags, ...newTags]);
+        setNoteTags(prevTags => [...prevTags, ...newTags]);
       }
 
       toast({
@@ -145,6 +155,7 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user) return;
 
     try {
+      console.log("Updating note:", id, noteUpdate);
       const { error } = await supabase
         .from('notes')
         .update({
@@ -155,7 +166,10 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .eq('id', id)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating note:", error);
+        throw error;
+      }
 
       setNotes(prevNotes =>
         prevNotes.map(note =>
@@ -169,7 +183,7 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (noteUpdate.tags) {
         const newTags = noteUpdate.tags.filter(tag => !noteTags.includes(tag));
         if (newTags.length > 0) {
-          setNoteTags([...noteTags, ...newTags]);
+          setNoteTags(prevTags => [...prevTags, ...newTags]);
         }
       }
 
@@ -192,13 +206,17 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!user) return;
 
     try {
+      console.log("Deleting note:", id);
       const { error } = await supabase
         .from('notes')
         .delete()
         .eq('id', id)
         .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error deleting note:", error);
+        throw error;
+      }
 
       setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
 

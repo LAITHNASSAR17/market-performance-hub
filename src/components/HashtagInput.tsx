@@ -47,16 +47,22 @@ const HashtagInput: React.FC<HashtagInputProps> = ({
   };
 
   const addTag = (tag: string) => {
+    console.log("Adding tag:", tag);
     const normalizedTag = tag.trim().toLowerCase();
     if (normalizedTag && !value.includes(normalizedTag)) {
-      onChange([...value, normalizedTag]);
+      const newTags = [...value, normalizedTag];
+      console.log("New tags after adding:", newTags);
+      onChange(newTags);
       setInputValue('');
       setShowSuggestions(false);
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    onChange(value.filter(tag => tag !== tagToRemove));
+    console.log("Removing tag:", tagToRemove);
+    const newTags = value.filter(tag => tag !== tagToRemove);
+    console.log("New tags after removing:", newTags);
+    onChange(newTags);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {

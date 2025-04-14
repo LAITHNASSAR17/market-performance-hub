@@ -55,8 +55,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         setLoading(true);
         
+        // First set up the auth state listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
+          (event, session) => {
+            console.log("Auth state change:", event, session);
             setSession(session);
             
             if (session?.user) {
@@ -68,7 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               
               setUser(userData);
               setIsAuthenticated(true);
-              await checkUserRole(session.user.id);
+              
+              // Use setTimeout to avoid recursive auth calls
+              setTimeout(() => {
+                checkUserRole(session.user.id);
+              }, 0);
             } else {
               setUser(null);
               setIsAuthenticated(false);
@@ -77,7 +83,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         );
         
+        // Then check for existing session
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("Initial session check:", session);
         setSession(session);
         
         if (session?.user) {
@@ -169,13 +177,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) throw error;
       
+      console.log("Login successful:", data);
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
@@ -220,6 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       if (error) throw error;
+      console.log("Registration successful:", data);
 
       // Create the user in our custom users table
       if (data.user) {

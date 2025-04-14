@@ -16,7 +16,7 @@ import * as z from 'zod';
 import LanguageToggle from '@/components/LanguageToggle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 const Login = () => {
   const { t } = useLanguage();
@@ -25,7 +25,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, isAuthenticated, loading, forgotPassword, resetPassword } = useAuth();
+  const { login, isAuthenticated, loading, forgotPassword } = useAuth();
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
 
@@ -41,34 +41,15 @@ const Login = () => {
   });
 
   useEffect(() => {
-    // التحقق من حالة التحقق من البريد الإلكتروني
+    // Check for email verification status
     const verified = searchParams.get('verified');
     if (verified === 'true') {
       toast({
-        title: "تم التحقق بنجاح",
-        description: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
+        title: t('login.emailVerified.title'),
+        description: t('login.emailVerified.description'),
       });
     }
-
-    // Check for email verification status
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        const user = session?.user;
-        if (user && !user.email_confirmed_at) {
-          toast({
-            title: "Email Verification Needed",
-            description: "Please verify your email before logging in.",
-            variant: "destructive",
-          });
-          supabase.auth.signOut();
-        }
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  }, [searchParams, toast, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,8 +62,9 @@ const Login = () => {
     
     try {
       await login(email, password);
-    } catch (err) {
-      setError(t('login.error.credentials'));
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || t('login.error.credentials'));
     }
   };
 
@@ -91,11 +73,16 @@ const Login = () => {
       await forgotPassword(values.email);
       setForgotPasswordOpen(false);
       toast({
-        title: "تم إرسال رابط إعادة التعيين",
-        description: "تحقق من بريدك الإلكتروني للحصول على تعليمات إعادة تعيين كلمة المرور.",
+        title: t('forgotPassword.emailSent'),
+        description: t('forgotPassword.checkEmail'),
       });
-    } catch (error) {
-      // Error is handled in the auth context
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      toast({
+        title: t('forgotPassword.error'),
+        description: error.message || t('forgotPassword.errorGeneric'),
+        variant: "destructive",
+      });
     }
   };
 
