@@ -1,142 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Lightbulb, RefreshCw, ChevronRight, ChevronLeft } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { TradingTip, getAITradingTips, generateAIAdvice } from '@/services/aiService';
-import { useTrade } from '@/contexts/TradeContext';
+
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
+
 interface TradingTipsProps {
   className?: string;
 }
-const TradingTips: React.FC<TradingTipsProps> = ({
-  className = ''
-}) => {
-  const {
-    trades
-  } = useTrade();
-  const {
-    t,
-    language
-  } = useLanguage();
-  const stats = useAnalyticsStats();
-  const [tips, setTips] = useState<TradingTip[]>([]);
-  const [currentTip, setCurrentTip] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [aiAdvice, setAiAdvice] = useState<string>('');
-  const [loadingAdvice, setLoadingAdvice] = useState(false);
 
-  // تحميل النصائح عند تغير البيانات
-  useEffect(() => {
-    loadTips();
-  }, [trades, stats]);
-  const loadTips = async () => {
-    setLoading(true);
-    try {
-      const newTips = await getAITradingTips(trades, stats);
-      setTips(newTips);
-      if (newTips.length > 0) {
-        setCurrentTip(0);
-      }
-    } catch (error) {
-      console.error("Error loading tips:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  const loadAIAdvice = async () => {
-    setLoadingAdvice(true);
-    try {
-      const advice = await generateAIAdvice(trades, stats);
-      setAiAdvice(advice);
-    } catch (error) {
-      console.error("Error loading AI advice:", error);
-    } finally {
-      setLoadingAdvice(false);
-    }
-  };
-  const handleNext = () => {
-    if (currentTip < tips.length - 1) {
-      setCurrentTip(currentTip + 1);
-    } else {
-      setCurrentTip(0);
-    }
-  };
-  const handlePrevious = () => {
-    if (currentTip > 0) {
-      setCurrentTip(currentTip - 1);
-    } else {
-      setCurrentTip(tips.length - 1);
-    }
-  };
-  const refreshTips = () => {
-    loadTips();
-    loadAIAdvice();
-  };
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-      case 'low':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-      default:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-    }
-  };
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'performance':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
-      case 'risk':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
-      case 'psychology':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
-      case 'strategy':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-    }
-  };
-  const translateCategory = (category: string) => {
-    switch (category) {
-      case 'performance':
-        return language === 'ar' ? 'الأداء' : 'Performance';
-      case 'risk':
-        return language === 'ar' ? 'المخاطر' : 'Risk';
-      case 'psychology':
-        return language === 'ar' ? 'علم النفس' : 'Psychology';
-      case 'strategy':
-        return language === 'ar' ? 'الاستراتيجية' : 'Strategy';
-      default:
-        return category;
-    }
-  };
-  const translatePriority = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return language === 'ar' ? 'عالية' : 'High';
-      case 'medium':
-        return language === 'ar' ? 'متوسطة' : 'Medium';
-      case 'low':
-        return language === 'ar' ? 'منخفضة' : 'Low';
-      default:
-        return priority;
-    }
-  };
-  useEffect(() => {
-    // تحميل النصائح عند تحميل المكون لأول مرة
-    if (tips.length === 0 && !loading) {
-      loadTips();
-    }
-
-    // تحميل نصيحة AI
-    if (aiAdvice === '' && !loadingAdvice) {
-      loadAIAdvice();
-    }
-  }, []);
-  return;
+const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
+  const { language } = useLanguage();
+  
+  // Trading tips based on language
+  const tips = language === 'ar' ? [
+    'قم بتوثيق كل صفقة لتحسين أدائك',
+    'تتبع نتائج استراتيجياتك المختلفة',
+    'حدد نقاط القوة والضعف في تداولك',
+    'تعلم من أخطائك وحسن استراتيجيتك',
+  ] : [
+    'Document every trade to improve your performance',
+    'Track results of different strategies',
+    'Identify strengths and weaknesses in your trading',
+    'Learn from mistakes and refine your strategy',
+  ];
+  
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle>{language === 'ar' ? 'نصائح تداول' : 'Trading Tips'}</CardTitle>
+        <CardDescription>
+          {language === 'ar' ? 'نصائح لمساعدتك على تحسين أدائك في التداول' : 'Tips to help you improve your trading performance'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {tips.map((tip, index) => (
+            <li key={index} className="flex items-start">
+              <span className="text-blue-500 mr-2">•</span>
+              <span>{tip}</span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
 };
+
 export default TradingTips;
