@@ -1,148 +1,112 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  password?: string;
-  isAdmin?: boolean;
-  isBlocked?: boolean;
-  role?: string;
-  subscription_tier?: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   isAuthenticated: boolean;
   loading: boolean;
-  users: User[];
-  register: (name: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
-  updateUser: (updatedUser: User) => Promise<void>;
-  updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
-  getAllUsers: () => Promise<User[]>;
-  blockUser: (user: User) => Promise<void>;
-  unblockUser: (user: User) => Promise<void>;
-  changePassword: (email: string, newPassword: string) => Promise<void>;
-  updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<User[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Initialize the admin user in Supabase if it doesn't exist
   useEffect(() => {
-    const initializeAdminUser = async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', 'lnmr2001@gmail.com')
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        // User doesn't exist, create the admin
-        const adminEmail = 'lnmr2001@gmail.com';
-        const adminPassword = hashPassword('password123');
-        
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert({
-            name: 'Admin User',
-            email: adminEmail,
-            password: adminPassword,
-            role: 'admin',
-            is_blocked: false,
-            subscription_tier: 'premium'
-          });
-          
-        if (insertError) {
-          console.error('Error creating admin user:', insertError);
-        } else {
-          console.log('Test admin user created:', adminEmail);
-        }
-      }
-    };
-
-    initializeAdminUser();
-  }, []);
-
-  // Use Supabase auth state change listener
-  useEffect(() => {
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (data) {
-            setUser(data);
-            setIsAdmin(data.role === 'admin');
-            setIsAuthenticated(true);
-          }
-        } else {
-          setUser(null);
-          setIsAdmin(false);
-          setIsAuthenticated(false);
-        }
+        setUser(session?.user ?? null);
+        setIsAuthenticated(!!session?.user);
         setLoading(false);
+
+        if (session?.user) {
+          // Check if user is admin
+          const { data: userRole } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          
+          setIsAdmin(userRole?.role === 'admin');
+        }
       }
     );
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session?.user);
+      setLoading(false);
+    });
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
 
-  const register = async (name: string, email: string, password: string): Promise<void> => {
-    setLoading(true);
+  const register = async (name: string, email: string, password: string) => {
     try {
-      const hashedPassword = hashPassword(password);
+      setLoading(true);
       
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name,
-          email,
-          password: hashedPassword,
-          role: 'user',
-          is_blocked: false,
-          subscription_tier: 'free'
-        })
-        .select()
-        .single();
-      
-      if (error) throw new Error(error.message);
-      
-      // Auto login after registration
-      await login(email, password);
-    } catch (error) {
+      const { data: { user }, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name }
+        }
+      });
+
+      if (error) throw error;
+
+      if (user) {
+        // Create user profile in users table
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            name,
+            email,
+            role: 'user',
+            is_blocked: false
+          });
+
+        if (profileError) throw profileError;
+
+        // Create initial user preferences
+        await supabase
+          .from('user_preferences')
+          .insert({
+            user_id: user.id,
+            language: 'ar',
+            theme: 'light'
+          });
+
+        toast({
+          title: "Registration Successful",
+          description: "Your account has been created successfully.",
+        });
+      }
+    } catch (error: any) {
       console.error('Registration error:', error);
       toast({
         title: "Registration Failed",
-        description: (error as Error).message || "Could not register user",
+        description: error.message,
         variant: "destructive",
       });
       throw error;
@@ -151,43 +115,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Modify login method to ensure proper local storage
-  const login = async (email: string, password: string): Promise<void> => {
-    setLoading(true);
+  const login = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+      setLoading(true);
       
-      if (error || !data) throw new Error('Invalid credentials');
-      
-      console.log('Login attempt:', email);
-      console.log('Found user:', data ? 'Yes' : 'No');
-      
-      if (comparePassword(password, data.password)) {
-        if (data.is_blocked) {
-          throw new Error('User is blocked');
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      if (user) {
+        // Check if user is blocked
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_blocked, role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (userData?.is_blocked) {
+          await supabase.auth.signOut();
+          throw new Error('Your account has been blocked. Please contact support.');
         }
-        
-        setUser(data);
-        setIsAdmin(data.role === 'admin');
-        setIsAuthenticated(true);
-        
+
+        setIsAdmin(userData?.role === 'admin');
         navigate('/dashboard');
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${data.name}!`,
-        });
-      } else {
-        throw new Error('Invalid credentials');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
         title: "Login Failed",
-        description: (error as Error).message || "Invalid credentials",
+        description: error.message,
         variant: "destructive",
       });
       throw error;
@@ -196,262 +155,73 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAdmin(false);
-    setIsAuthenticated(false);
-    navigate('/login');
-  };
-
-  const forgotPassword = async (email: string): Promise<void> => {
-    console.log(`Forgot password requested for ${email}`);
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    localStorage.setItem(`resetCode_${email}`, resetCode);
-    console.log(`Reset code for ${email}: ${resetCode}`);
-    toast({
-      title: "Reset Code Generated",
-      description: "Check console for the reset code (would be emailed in a real app)"
-    });
-  };
-
-  const resetPassword = async (email: string, resetCode: string, newPassword: string): Promise<void> => {
-    const storedResetCode = localStorage.getItem(`resetCode_${email}`);
-    if (storedResetCode === resetCode) {
-      const hashedPassword = hashPassword(newPassword);
-      
-      const { error } = await supabase
-        .from('users')
-        .update({ password: hashedPassword })
-        .eq('email', email);
-      
-      if (error) throw new Error('Failed to reset password');
-      
-      localStorage.removeItem(`resetCode_${email}`);
-      toast({
-        title: "Success",
-        description: "Password reset successfully",
-      });
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
       navigate('/login');
-    } else {
-      throw new Error('Invalid reset code');
-    }
-  };
-
-  const updateUser = async (updatedUser: User): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          name: updatedUser.name,
-          email: updatedUser.email,
-          role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
-          is_blocked: updatedUser.isBlocked || false,
-          subscription_tier: updatedUser.subscription_tier || 'free'
-        })
-        .eq('id', updatedUser.id);
-      
-      if (error) throw error;
-      
-      // Refresh users list
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-      
-      // Update local user if it's the current user
-      if (user && user.id === updatedUser.id) {
-        const updatedCurrentUser = {
-          ...updatedUser,
-          role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user')
-        };
-        setUser(updatedCurrentUser);
-        setIsAdmin(updatedCurrentUser.role === 'admin' || updatedCurrentUser.isAdmin || false);
-      }
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-  };
-
-  // New method to update user profile
-  const updateProfile = async (name: string, email: string, currentPassword?: string, newPassword?: string): Promise<void> => {
-    try {
-      if (!user) throw new Error('No user logged in');
-      
-      // Prepare update data
-      const updateData: any = {
-        name,
-        email
-      };
-      
-      // If changing password, verify current password first
-      if (newPassword && currentPassword) {
-        const { data } = await supabase
-          .from('users')
-          .select('password')
-          .eq('id', user.id)
-          .single();
-          
-        if (!data || !comparePassword(currentPassword, data.password)) {
-          throw new Error('Current password is incorrect');
-        }
-        
-        updateData.password = hashPassword(newPassword);
-      }
-      
-      // Update the user
-      const { error } = await supabase
-        .from('users')
-        .update(updateData)
-        .eq('id', user.id);
-        
-      if (error) throw error;
-      
-      // Update local user
-      const updatedUser = {
-        ...user,
-        name,
-        email
-      };
-      
-      setUser(updatedUser);
-      
+    } catch (error: any) {
+      console.error('Logout error:', error);
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully"
+        title: "Logout Failed",
+        description: error.message,
+        variant: "destructive",
       });
-    } catch (error) {
-      console.error('Error updating profile:', error);
+    }
+  };
+
+  const forgotPassword = async (email: string) => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
       toast({
-        title: "Update Failed",
-        description: (error as Error).message || "Could not update profile",
+        title: "Reset Email Sent",
+        description: "Check your email for the password reset link.",
+      });
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast({
+        title: "Reset Failed",
+        description: error.message,
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getAllUsers = async (): Promise<User[]> => {
+  const resetPassword = async (email: string, resetCode: string, newPassword: string) => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*');
+      setLoading(true);
       
-      if (error) throw error;
-      
-      const formattedUsers = data.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isAdmin: user.role === 'admin',
-        isBlocked: user.is_blocked,
-        subscription_tier: user.subscription_tier || 'free'
-      }));
-      
-      setUsers(formattedUsers);
-      return formattedUsers;
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return [];
-    }
-  };
-
-  const blockUser = async (user: User): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_blocked: true })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      // Refresh users list
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-      
-      // Logout if blocked user is current user
-      if (user.id === user?.id) {
-        logout();
-      }
-    } catch (error) {
-      console.error('Error blocking user:', error);
-      throw error;
-    }
-  };
-
-  const unblockUser = async (user: User): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_blocked: false })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      // Refresh users list
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-    } catch (error) {
-      console.error('Error unblocking user:', error);
-      throw error;
-    }
-  };
-
-  const changePassword = async (email: string, newPassword: string): Promise<void> => {
-    try {
-      const hashedPassword = hashPassword(newPassword);
-      
-      const { error } = await supabase
-        .from('users')
-        .update({ password: hashedPassword })
-        .eq('email', email);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success", 
-        description: "Password changed successfully"
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
       });
-    } catch (error) {
-      console.error('Error changing password:', error);
-      throw error;
-    }
-  };
 
-  // New method to update subscription tier
-  const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ subscription_tier: tier })
-        .eq('id', userId);
-        
       if (error) throw error;
-      
-      // Update local state if it's the current user
-      if (user && user.id === userId) {
-        const updatedUser = {
-          ...user,
-          subscription_tier: tier
-        };
-        
-        setUser(updatedUser);
-      }
-      
-      // Refresh users list
-      await getAllUsers();
-      
+
       toast({
-        title: "Subscription Updated",
-        description: `Subscription tier updated to ${tier}`
+        title: "Password Reset Successful",
+        description: "Your password has been updated.",
       });
-    } catch (error) {
-      console.error('Error updating subscription tier:', error);
+      
+      navigate('/login');
+    } catch (error: any) {
+      console.error('Password update error:', error);
       toast({
-        title: "Update Failed",
-        description: (error as Error).message || "Could not update subscription",
+        title: "Reset Failed",
+        description: error.message,
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -460,19 +230,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAdmin,
     isAuthenticated,
     loading,
-    users,
-    register,
     login,
+    register,
     logout,
     forgotPassword,
     resetPassword,
-    updateUser,
-    updateProfile,
-    getAllUsers,
-    blockUser,
-    unblockUser,
-    changePassword,
-    updateSubscriptionTier,
   };
 
   return (
