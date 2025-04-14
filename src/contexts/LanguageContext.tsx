@@ -1,274 +1,188 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from './AuthContext';
 
+// Define language type as only English now
 type Language = 'en';
 
-type TranslationsType = {
-  [key: string]: {
-    [key: string]: string;
-  };
+// English translations only
+const translations = {
+  en: {
+    // Navigation
+    'nav.dashboard': 'Dashboard',
+    'nav.myProfile': 'My Profile',
+    'nav.settings': 'Settings',
+    'nav.insights': 'Insights',
+    'nav.logout': 'Logout',
+    'nav.login': 'Login',
+    'nav.register': 'Register',
+    'nav.adminDashboard': 'Admin Dashboard',
+    
+    // Dashboard
+    'dashboard.greeting': 'Hello',
+    'dashboard.welcome': 'Welcome back to your trading dashboard',
+    'dashboard.recentTrades': 'Recent Trades',
+    'dashboard.noTrades': 'No trades yet. Add your first trade to get started!',
+    'dashboard.viewAll': 'View All Trades',
+    'dashboard.addTrade': 'Add Trade',
+    'dashboard.editTrade': 'Edit Trade',
+    'dashboard.delete': 'Delete',
+    'dashboard.edit': 'Edit',
+    'dashboard.confirmDelete': 'Are you sure you want to delete this trade? This action cannot be undone.',
+    'dashboard.todayOverview': 'Today\'s Overview',
+    'dashboard.performance': 'Performance',
+    'dashboard.statistics': 'Statistics',
+    'dashboard.date': 'Date',
+    'dashboard.pair': 'Pair',
+    'dashboard.entry': 'Entry',
+    'dashboard.exit': 'Exit',
+    'dashboard.type': 'Type',
+    'dashboard.result': 'Result',
+    'dashboard.notes': 'Notes',
+    'dashboard.tradeSuccessTitle': 'Trade Added Successfully',
+    'dashboard.tradeSuccessMsg': 'Your trade has been recorded and is now visible in your dashboard.',
+    'dashboard.tradeUpdateTitle': 'Trade Updated Successfully',
+    'dashboard.tradeUpdateMsg': 'Your trade has been updated and the changes are now reflected in your dashboard.',
+    'dashboard.tradeDeleteTitle': 'Trade Deleted',
+    'dashboard.tradeDeleteMsg': 'Your trade has been permanently deleted.',
+    'dashboard.buy': 'Buy',
+    'dashboard.sell': 'Sell',
+    'dashboard.profitLoss': 'Profit/Loss',
+    'dashboard.hashtags': 'Hashtags',
+    'dashboard.addHashtags': 'Add hashtags',
+    
+    // Login
+    'login.title': 'Welcome Back',
+    'login.description': 'Sign in to access your trading dashboard',
+    'login.email': 'Email',
+    'login.password': 'Password',
+    'login.forgotPassword': 'Forgot password?',
+    'login.loginButton': 'Sign In',
+    'login.loggingIn': 'Signing in...',
+    'login.noAccount': 'Don\'t have an account?',
+    'login.register': 'Create an account',
+    'login.error.emptyFields': 'Email and password are required',
+    'login.error.credentials': 'Invalid email or password',
+    'login.error.invalidEmail': 'Please enter a valid email address',
+    
+    // Register
+    'register.title': 'Create an Account',
+    'register.description': 'Sign up to start tracking your trades',
+    'register.fullName': 'Full Name',
+    'register.email': 'Email',
+    'register.password': 'Password',
+    'register.confirmPassword': 'Confirm Password',
+    'register.createAccount': 'Create Account',
+    'register.registering': 'Creating account...',
+    'register.haveAccount': 'Already have an account?',
+    'register.login': 'Sign in',
+    'register.error.fillAll': 'Please fill all fields',
+    'register.error.passwordMismatch': 'Passwords do not match',
+    'register.error.passwordLength': 'Password must be at least 6 characters',
+    'register.error.failed': 'Registration failed. Please try again.',
+    
+    // Forgot/Reset Password
+    'forgotPassword.title': 'Forgot Password',
+    'forgotPassword.description': 'Enter your email address to receive a password reset code',
+    'forgotPassword.button': 'Send Reset Code',
+    'forgotPassword.sending': 'Sending...',
+    'forgotPassword.cancel': 'Cancel',
+    'resetPassword.title': 'Reset Password',
+    'resetPassword.description': 'Enter the reset code sent to your email along with your new password',
+    'resetPassword.code': 'Reset Code',
+    'resetPassword.newPassword': 'New Password',
+    'resetPassword.confirmPassword': 'Confirm New Password',
+    'resetPassword.button': 'Reset Password',
+    'resetPassword.resetting': 'Resetting...',
+    'resetPassword.error.codeLength': 'Please enter a valid reset code',
+    'resetPassword.error.passwordLength': 'Password must be at least 6 characters',
+    'resetPassword.error.passwordMismatch': 'Passwords do not match',
+    
+    // Profile/Settings
+    'profile.title': 'My Profile',
+    'profile.personalInfo': 'Personal Information',
+    'profile.accountSettings': 'Account Settings',
+    'profile.preferences': 'Preferences',
+    'profile.security': 'Security',
+    'profile.notifications': 'Notifications',
+    'settings.title': 'Settings',
+    'settings.language': 'Language',
+    'settings.theme': 'Theme',
+    'settings.save': 'Save Changes',
+    'settings.saving': 'Saving...',
+    'settings.success': 'Settings saved successfully',
+    
+    // Theme toggle
+    'theme.toggle': 'Toggle theme',
+    'theme.lightMode': 'Light mode',
+    'theme.darkMode': 'Dark mode',
+  }
 };
 
 interface LanguageContextType {
   language: Language;
-  setLanguage: (lang: Language) => void;
+  setLanguage: (language: Language) => void;
   t: (key: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export const translations: TranslationsType = {
-  // Login page
-  'login.title': {
-    en: 'Trading Performance Platform',
-  },
-  'login.description': {
-    en: 'Sign in to access your dashboard',
-  },
-  'login.email': {
-    en: 'Email',
-  },
-  'login.password': {
-    en: 'Password',
-  },
-  'login.forgotPassword': {
-    en: 'Forgot password?',
-  },
-  'login.loginButton': {
-    en: 'Sign in',
-  },
-  'login.loggingIn': {
-    en: 'Signing in...',
-  },
-  'login.noAccount': {
-    en: 'Don\'t have an account?',
-  },
-  'login.register': {
-    en: 'Register',
-  },
-  'login.error.credentials': {
-    en: 'Login failed. Please check your credentials.',
-  },
-  'login.error.emptyFields': {
-    en: 'Please enter email and password',
-  },
-  
-  // Forgot Password
-  'forgotPassword.title': {
-    en: 'Forgot Password',
-  },
-  'forgotPassword.description': {
-    en: 'Enter your email address and we will send you a reset code.',
-  },
-  'forgotPassword.button': {
-    en: 'Send Reset Code',
-  },
-  'forgotPassword.sending': {
-    en: 'Sending...',
-  },
-  'forgotPassword.cancel': {
-    en: 'Cancel',
-  },
-  
-  // Reset Password
-  'resetPassword.title': {
-    en: 'Reset Password',
-  },
-  'resetPassword.description': {
-    en: 'Enter the code sent to your email and create a new password.',
-  },
-  'resetPassword.code': {
-    en: 'Reset Code',
-  },
-  'resetPassword.newPassword': {
-    en: 'New Password',
-  },
-  'resetPassword.confirmPassword': {
-    en: 'Confirm Password',
-  },
-  'resetPassword.button': {
-    en: 'Reset Password',
-  },
-  'resetPassword.resetting': {
-    en: 'Resetting...',
-  },
-  
-  // Register page
-  'register.title': {
-    en: 'Create an Account',
-  },
-  'register.description': {
-    en: 'Register to start tracking your trading performance',
-  },
-  'register.fullName': {
-    en: 'Full Name',
-  },
-  'register.email': {
-    en: 'Email',
-  },
-  'register.password': {
-    en: 'Password',
-  },
-  'register.confirmPassword': {
-    en: 'Confirm Password',
-  },
-  'register.createAccount': {
-    en: 'Create Account',
-  },
-  'register.registering': {
-    en: 'Registering...',
-  },
-  'register.haveAccount': {
-    en: 'Already have an account?',
-  },
-  'register.login': {
-    en: 'Log in',
-  },
-  
-  // Dashboard and navigation
-  'nav.dashboard': {
-    en: 'Dashboard',
-  },
-  'nav.addTrade': {
-    en: 'Add Trade',
-  },
-  'nav.trades': {
-    en: 'Trades',
-  },
-  'nav.journal': {
-    en: 'Daily Journal',
-  },
-  'nav.notebook': {
-    en: 'Notebook',
-  },
-  'nav.reports': {
-    en: 'Reports',
-  },
-  'nav.insights': {
-    en: 'Insights',
-  },
-  'nav.adminPanel': {
-    en: 'Admin Panel',
-  },
-  'nav.loggedInAs': {
-    en: 'Logged in as',
-  },
-  'nav.logout': {
-    en: 'Log out',
-  },
-  'nav.platform': {
-    en: 'Trading Platform',
-  },
-  'nav.admin': {
-    en: 'Admin',
-  },
-  // Chart page translations
-  'chart.title': {
-    en: 'Chart',
-  },
-  'chart.tradingViewChart': {
-    en: 'Trading View Chart',
-  },
-  'chart.description': {
-    en: 'Use TradingView chart for technical analysis and tracking financial markets',
-  },
-  'chart.forex': {
-    en: 'Forex',
-  },
-  'chart.crypto': {
-    en: 'Crypto',
-  },
-  'chart.stocks': {
-    en: 'Stocks',
-  },
-  'chart.indices': {
-    en: 'Indices',
-  },
-  // Theme translations
-  'theme.toggle': {
-    en: 'Toggle theme',
-  },
-  'theme.darkMode': {
-    en: 'Dark mode',
-  },
-  'theme.lightMode': {
-    en: 'Light mode',
-  },
-};
-
-export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>('en');
-  const { user } = useAuth();
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [language, setLanguage] = useState<Language>('en');
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Load language preference from Supabase when user logs in
+  // Load language preference from localStorage or default to 'en'
   useEffect(() => {
-    const loadLanguagePreference = async () => {
+    // Just set to English since we only support English now
+    setLanguage('en');
+  }, []);
+
+  // Save language preference to Supabase if user is logged in
+  useEffect(() => {
+    const saveLanguagePreference = async () => {
       if (user) {
         try {
-          const { data, error } = await supabase
+          const { data: existingRecord } = await supabase
             .from('user_preferences')
-            .select('language')
+            .select('user_id')
             .eq('user_id', user.id)
             .maybeSingle();
 
-          if (error) throw error;
-          
-          if (!data?.language) {
-            // Create initial preference if it doesn't exist
+          if (existingRecord) {
+            // Update the existing record
             await supabase
               .from('user_preferences')
-              .insert({ user_id: user.id, language });
+              .update({
+                language,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', user.id);
+          } else {
+            // Insert a new record
+            await supabase
+              .from('user_preferences')
+              .insert({
+                user_id: user.id,
+                language,
+                updated_at: new Date().toISOString()
+              });
           }
         } catch (error) {
-          console.error('Error loading language preference:', error);
+          console.error('Error saving language preference:', error);
         }
       }
     };
 
-    loadLanguagePreference();
-  }, [user]);
+    saveLanguagePreference();
+  }, [language, user]);
 
-  // Update language in Supabase when it changes
-  const setLanguage = async (lang: Language) => {
-    setLanguageState(lang);
-    
-    if (user) {
-      try {
-        const { error } = await supabase
-          .from('user_preferences')
-          .upsert({
-            user_id: user.id,
-            language: lang,
-            updated_at: new Date().toISOString()
-          });
-
-        if (error) throw error;
-
-        document.documentElement.dir = 'ltr';
-        document.documentElement.lang = 'en';
-      } catch (error) {
-        console.error('Error updating language preference:', error);
-        toast({
-          title: "Error",
-          description: "Failed to save language preference",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  // Set initial document direction
-  useEffect(() => {
-    document.documentElement.dir = 'ltr';
-    document.documentElement.lang = 'en';
-  }, []);
-
+  // Translation function
   const t = (key: string): string => {
-    return translations[key]?.['en'] || key;
+    const langTranslations = translations[language];
+    return langTranslations[key as keyof typeof langTranslations] || key;
   };
 
   return (
@@ -276,12 +190,12 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       {children}
     </LanguageContext.Provider>
   );
-};
+}
 
-export const useLanguage = (): LanguageContextType => {
+export function useLanguage() {
   const context = useContext(LanguageContext);
   if (context === undefined) {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
-};
+}

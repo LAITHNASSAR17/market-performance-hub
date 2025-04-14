@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, AlertCircle, Mail, Lock, User } from 'lucide-react';
-import LanguageToggle from '@/components/LanguageToggle';
 import { useToast } from '@/hooks/use-toast';
 
 const Register: React.FC = () => {
@@ -66,9 +65,6 @@ const Register: React.FC = () => {
         <div className="flex justify-center mb-8 relative">
           <div className="bg-blue-500 p-3 rounded-full">
             <LineChart className="h-8 w-8 text-white" />
-          </div>
-          <div className="absolute top-0 right-0">
-            <LanguageToggle />
           </div>
         </div>
         

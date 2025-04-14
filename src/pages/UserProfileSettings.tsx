@@ -542,26 +542,26 @@ const UserProfileSettings: React.FC = () => {
     <Layout>
       <div className="container max-w-4xl py-10">
         <h1 className="text-3xl font-bold mb-6 dark:text-white">
-          {language === 'ar' ? 'إعدادات الحساب' : 'Account Settings'}
+          Account Settings
         </h1>
         
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              {language === 'ar' ? 'المعلومات الشخصية' : 'Profile'}
+              Profile
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
-              {language === 'ar' ? 'الأمان' : 'Security'}
+              Security
             </TabsTrigger>
             <TabsTrigger value="subscription" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
-              {language === 'ar' ? 'الاشتراك' : 'Subscription'}
+              Subscription
             </TabsTrigger>
             <TabsTrigger value="account" className="flex items-center gap-2">
               <UserCog className="h-4 w-4" />
-              {language === 'ar' ? 'إدارة الحساب' : 'Account'}
+              Account
             </TabsTrigger>
           </TabsList>
           
@@ -570,12 +570,10 @@ const UserProfileSettings: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'المعلومات الشخصية' : 'Profile Information'}
+                  Profile Information
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تحديث معلومات ملفك الشخصي وتفضيلاتك.' 
-                    : 'Update your account information and preferences.'}
+                  Update your account information and preferences.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -612,12 +610,10 @@ const UserProfileSettings: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-medium dark:text-white mb-1">
-                          {language === 'ar' ? 'صورة الملف الشخصي' : 'Profile Picture'}
+                          Profile Picture
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                          {language === 'ar' 
-                            ? 'قم بتحميل صورة بحجم 1:1 وبدقة عالية.' 
-                            : 'Upload a 1:1 aspect ratio image with high resolution.'}
+                          Upload a 1:1 aspect ratio image with high resolution.
                         </p>
                         <div className="flex gap-2">
                           <Button 
@@ -627,9 +623,7 @@ const UserProfileSettings: React.FC = () => {
                             onClick={triggerFileSelect}
                             disabled={uploading}
                           >
-                            {uploading 
-                              ? (language === 'ar' ? 'جارٍ التحميل...' : 'Uploading...') 
-                              : (language === 'ar' ? 'تحميل صورة' : 'Upload Image')}
+                            {uploading ? 'Uploading...' : 'Upload Image'}
                           </Button>
                           <Button 
                             type="button" 
@@ -637,7 +631,7 @@ const UserProfileSettings: React.FC = () => {
                             size="sm" 
                             onClick={() => setProfilePicture('/placeholder.svg')}
                           >
-                            {language === 'ar' ? 'إزالة' : 'Remove'}
+                            Remove
                           </Button>
                         </div>
                       </div>
@@ -645,62 +639,44 @@ const UserProfileSettings: React.FC = () => {
                     
                     <div className="grid gap-3">
                       <Label htmlFor="name">
-                        {language === 'ar' ? 'الاسم الكامل' : 'Full Name'}
+                        Full Name
                       </Label>
                       <Input 
                         id="name" 
                         value={name} 
                         onChange={(e) => setName(e.target.value)} 
-                        placeholder={language === 'ar' ? 'أدخل اسمك الكامل' : 'Enter your full name'}
+                        placeholder="Enter your full name"
                       />
                     </div>
                     
                     <div className="grid gap-3">
                       <Label htmlFor="username">
-                        {language === 'ar' ? 'اسم المستخدم' : 'Username'}
+                        Username
                       </Label>
                       <Input 
                         id="username" 
                         value={username} 
                         onChange={(e) => setUsername(e.target.value)} 
-                        placeholder={language === 'ar' ? 'أدخل اسم المستخدم' : 'Enter your username'}
+                        placeholder="Enter your username"
                       />
                     </div>
                     
                     <div className="grid gap-3">
                       <Label htmlFor="email">
-                        {language === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}
+                        Email Address
                       </Label>
                       <Input 
                         id="email" 
                         type="email" 
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)} 
-                        placeholder={language === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email address'}
+                        placeholder="Enter your email address"
                       />
                     </div>
                     
                     <div className="grid gap-3">
-                      <Label htmlFor="language">
-                        {language === 'ar' ? 'اللغة المفضلة' : 'Preferred Language'}
-                      </Label>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center space-x-2">
-                          <Switch 
-                            id="language-toggle" 
-                            checked={language === 'ar'} 
-                            onCheckedChange={(checked) => setLanguage(checked ? 'ar' : 'en')}
-                          />
-                          <Label htmlFor="language-toggle">
-                            {language === 'ar' ? 'العربية' : 'English'} / {language === 'ar' ? 'English' : 'العربية'}
-                          </Label>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="grid gap-3">
                       <Label htmlFor="country">
-                        {language === 'ar' ? 'الدولة' : 'Country'}
+                        Country
                       </Label>
                       <Popover open={countryOpen} onOpenChange={setCountryOpen}>
                         <PopoverTrigger asChild>
@@ -712,18 +688,18 @@ const UserProfileSettings: React.FC = () => {
                           >
                             {country
                               ? countries.find((c) => c.value === country)?.label
-                              : language === 'ar' ? 'اختر الدولة' : 'Select country'}
+                              : 'Select country'}
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-full p-0" align="start">
                           <Command>
                             <CommandInput 
-                              placeholder={language === 'ar' ? 'ابحث عن دولة...' : 'Search country...'} 
+                              placeholder="Search country..." 
                               className="h-9"
                             />
                             <CommandEmpty>
-                              {language === 'ar' ? 'لم يتم العثور على نتائج' : 'No results found'}
+                              No results found
                             </CommandEmpty>
                             <CommandGroup className="max-h-[300px] overflow-auto">
                               {countries.map((c) => (
@@ -757,12 +733,10 @@ const UserProfileSettings: React.FC = () => {
                         disabled={isUpdating}
                         className="flex items-center gap-2"
                       >
-                        {isUpdating ? (
-                          language === 'ar' ? 'جارٍ التحديث...' : 'Updating...'
-                        ) : (
+                        {isUpdating ? 'Updating...' : (
                           <>
                             <Save className="h-4 w-4" />
-                            {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+                            Save Changes
                           </>
                         )}
                       </Button>
@@ -778,12 +752,10 @@ const UserProfileSettings: React.FC = () => {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+                  Change Password
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'تحديث كلمة المرور للحفاظ على أمان حسابك.' 
-                    : 'Update your password to maintain account security.'}
+                  Update your password to maintain account security.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -797,14 +769,14 @@ const UserProfileSettings: React.FC = () => {
                   <div className="grid gap-6">
                     <div className="grid gap-3">
                       <Label htmlFor="currentPassword">
-                        {language === 'ar' ? 'كلمة المرور الحالية' : 'Current Password'}
+                        Current Password
                       </Label>
                       <Input 
                         id="currentPassword" 
                         type="password" 
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder={language === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Enter your current password'}
+                        placeholder="Enter your current password"
                       />
                     </div>
                     
@@ -812,27 +784,27 @@ const UserProfileSettings: React.FC = () => {
                     
                     <div className="grid gap-3">
                       <Label htmlFor="newPassword">
-                        {language === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
+                        New Password
                       </Label>
                       <Input 
                         id="newPassword" 
                         type="password" 
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder={language === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter your new password'}
+                        placeholder="Enter your new password"
                       />
                     </div>
                     
                     <div className="grid gap-3">
                       <Label htmlFor="confirmPassword">
-                        {language === 'ar' ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
+                        Confirm New Password
                       </Label>
                       <Input 
                         id="confirmPassword" 
                         type="password" 
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder={language === 'ar' ? 'أكد كلمة المرور الجديدة' : 'Confirm your new password'}
+                        placeholder="Confirm your new password"
                       />
                     </div>
                     
@@ -842,12 +814,10 @@ const UserProfileSettings: React.FC = () => {
                         disabled={isChangingPassword}
                         className="flex items-center gap-2"
                       >
-                        {isChangingPassword ? (
-                          language === 'ar' ? 'جارٍ التحديث...' : 'Updating...'
-                        ) : (
+                        {isChangingPassword ? 'Updating...' : (
                           <>
                             <Lock className="h-4 w-4" />
-                            {language === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+                            Change Password
                           </>
                         )}
                       </Button>
@@ -863,46 +833,42 @@ const UserProfileSettings: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'خطة الاشتراك' : 'Subscription Plan'}
+                  Subscription Plan
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'إدارة اشتراكك وترقية خطتك.' 
-                    : 'Manage your subscription and upgrade your plan.'}
+                  Manage your subscription and upgrade your plan.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                     <h3 className="font-semibold text-lg mb-2 dark:text-white">
-                      {language === 'ar' ? 'الخطة الحالية: المجانية' : 'Current Plan: Free'}
+                      Current Plan: Free
                     </h3>
                     <p className="text-gray-500 dark:text-gray-400 mb-4">
-                      {language === 'ar' 
-                        ? 'أنت حاليًا على الخطة المجانية. ترقية لفتح المزيد من الميزات.' 
-                        : 'You are currently on the free plan. Upgrade to unlock more features.'}
+                      You are currently on the free plan. Upgrade to unlock more features.
                     </p>
                     <Button onClick={handleUpgradePlan}>
-                      {language === 'ar' ? 'ترقية الخطة' : 'Upgrade Plan'}
+                      Upgrade Plan
                     </Button>
                   </div>
                   
                   <div className="grid gap-4">
                     <h3 className="font-semibold text-base dark:text-white">
-                      {language === 'ar' ? 'مقارنة الخطط' : 'Plan Comparison'}
+                      Plan Comparison
                     </h3>
                     <div className="grid gap-2">
                       <div className="flex justify-between py-2 border-b">
-                        <span className="font-medium">{language === 'ar' ? 'الخطة المجانية' : 'Free Plan'}</span>
-                        <span className="text-gray-500">$0 / {language === 'ar' ? 'شهر' : 'month'}</span>
+                        <span className="font-medium">Free Plan</span>
+                        <span className="text-gray-500">$0 / month</span>
                       </div>
                       <div className="flex justify-between py-2 border-b">
-                        <span className="font-medium">{language === 'ar' ? 'الخطة المهنية' : 'Pro Plan'}</span>
-                        <span className="text-gray-500">$9.99 / {language === 'ar' ? 'شهر' : 'month'}</span>
+                        <span className="font-medium">Pro Plan</span>
+                        <span className="text-gray-500">$9.99 / month</span>
                       </div>
                       <div className="flex justify-between py-2 border-b">
-                        <span className="font-medium">{language === 'ar' ? 'خطة المؤسسات' : 'Enterprise Plan'}</span>
-                        <span className="text-gray-500">{language === 'ar' ? 'اتصل بنا' : 'Contact us'}</span>
+                        <span className="font-medium">Enterprise Plan</span>
+                        <span className="text-gray-500">Contact us</span>
                       </div>
                     </div>
                   </div>
@@ -916,12 +882,10 @@ const UserProfileSettings: React.FC = () => {
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle className="dark:text-white">
-                  {language === 'ar' ? 'الجلسات النشطة' : 'Active Sessions'}
+                  Active Sessions
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'إدارة الأجهزة المتصلة بحسابك.' 
-                    : 'Manage devices connected to your account.'}
+                  Manage devices connected to your account.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -929,10 +893,10 @@ const UserProfileSettings: React.FC = () => {
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                     <div>
                       <h3 className="font-medium dark:text-white">
-                        {language === 'ar' ? 'هذا الجهاز' : 'This Device'}
+                        This Device
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {language === 'ar' ? 'آخر تسجيل دخول: الآن' : 'Last login: Now'}
+                        Last login: Now
                       </p>
                     </div>
                     <Button 
@@ -942,7 +906,7 @@ const UserProfileSettings: React.FC = () => {
                       className="text-red-600 dark:text-red-400"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
-                      {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                      Logout
                     </Button>
                   </div>
                   
@@ -953,7 +917,7 @@ const UserProfileSettings: React.FC = () => {
                       onClick={handleLogoutAllDevices}
                     >
                       <LogOut className="h-4 w-4 mr-2" />
-                      {language === 'ar' ? 'تسجيل الخروج من كافة الأجهزة' : 'Logout from All Devices'}
+                      Logout from All Devices
                     </Button>
                   </div>
                 </div>
@@ -963,12 +927,10 @@ const UserProfileSettings: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-red-600 dark:text-red-400">
-                  {language === 'ar' ? 'حذف الحساب' : 'Delete Account'}
+                  Delete Account
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'هذا إجراء دائم ولا يمكن التراجع عنه.' 
-                    : 'This action is permanent and cannot be undone.'}
+                  This action is permanent and cannot be undone.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -976,18 +938,16 @@ const UserProfileSettings: React.FC = () => {
                   <DialogTrigger asChild>
                     <Button variant="destructive">
                       <Trash2 className="h-4 w-4 mr-2" />
-                      {language === 'ar' ? 'حذف الحساب' : 'Delete Account'}
+                      Delete Account
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle className="text-red-600">
-                        {language === 'ar' ? 'حذف الحساب نهائيًا' : 'Delete Account Permanently'}
+                        Delete Account Permanently
                       </DialogTitle>
                       <DialogDescription>
-                        {language === 'ar' 
-                          ? 'هذا الإجراء دائم ولا يمكن التراجع عنه. سيتم حذف جميع بياناتك.' 
-                          : 'This action is permanent and cannot be undone. All your data will be deleted.'}
+                        This action is permanent and cannot be undone. All your data will be deleted.
                       </DialogDescription>
                     </DialogHeader>
                     
@@ -995,15 +955,13 @@ const UserProfileSettings: React.FC = () => {
                       <div className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded-md flex items-start gap-2">
                         <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                         <p className="text-sm">
-                          {language === 'ar' 
-                            ? 'هذا سيحذف حسابك بشكل دائم وجميع البيانات المرتبطة به. لا يمكن التراجع عن هذا الإجراء.' 
-                            : 'This will permanently delete your account and all associated data. This action cannot be undone.'}
+                          This will permanently delete your account and all associated data. This action cannot be undone.
                         </p>
                       </div>
                       
                       <div className="grid gap-2">
                         <Label htmlFor="delete-confirm">
-                          {language === 'ar' ? 'اكتب "DELETE" للتأكيد' : 'Type "DELETE" to confirm'}
+                          Type "DELETE" to confirm
                         </Label>
                         <Input 
                           id="delete-confirm"
@@ -1016,14 +974,14 @@ const UserProfileSettings: React.FC = () => {
                     
                     <DialogFooter>
                       <Button variant="ghost" onClick={() => setDeleteConfirmOpen(false)}>
-                        {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                        Cancel
                       </Button>
                       <Button 
                         variant="destructive" 
                         onClick={handleDeleteAccount}
                         disabled={deleteConfirmText !== 'DELETE'}
                       >
-                        {language === 'ar' ? 'نعم، احذف حسابي' : 'Yes, Delete My Account'}
+                        Yes, Delete My Account
                       </Button>
                     </DialogFooter>
                   </DialogContent>

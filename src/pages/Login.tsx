@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +12,6 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import LanguageToggle from '@/components/LanguageToggle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
@@ -136,9 +134,6 @@ const Login: React.FC = () => {
         <div className="flex justify-center mb-8 relative">
           <div className="bg-blue-500 p-3 rounded-full">
             <LineChart className="h-8 w-8 text-white" />
-          </div>
-          <div className="absolute top-0 right-0">
-            <LanguageToggle />
           </div>
         </div>
         

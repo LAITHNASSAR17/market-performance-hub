@@ -57,31 +57,31 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
   return (
     <Layout>
       <div className="container mx-auto py-4 md:py-8">
-        <h1 className="text-3xl font-bold mb-4 dark:text-white">{language === 'ar' ? 'رؤى التداول' : 'Trading Insights'}</h1>
+        <h1 className="text-3xl font-bold mb-4 dark:text-white">Trading Insights</h1>
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
           <StatCard
-            title={language === 'ar' ? 'إجمالي الربح/الخسارة' : 'Total Profit/Loss'}
+            title="Total Profit/Loss"
             value={`$${totalProfitLoss.toFixed(2)}`}
             trend={totalProfitLoss > 0 ? 'up' : totalProfitLoss < 0 ? 'down' : 'neutral'}
             icon={<DollarSign className="h-5 w-5" />}
             color={totalProfitLoss > 0 ? 'green' : totalProfitLoss < 0 ? 'red' : 'default'}
-            description={`${language === 'ar' ? 'إجمالي الصفقات: ' : 'Trades in total: '}${totalTrades}`}
+            description={`Trades in total: ${totalTrades}`}
           />
           <StatCard
-            title={language === 'ar' ? 'معدل الربح' : 'Win Rate'}
+            title="Win Rate"
             value={`${winRate.toFixed(1)}%`}
-            description={`${winningTrades}/${totalTrades} ${language === 'ar' ? 'صفقات' : 'trades'}`}
+            description={`${winningTrades}/${totalTrades} trades`}
             icon={<PercentIcon className="h-5 w-5" />}
           />
           <StatCard
-            title={language === 'ar' ? 'إجمالي الصفقات' : 'Total Trades'}
+            title="Total Trades"
             value={totalTrades}
             icon={<BarChart className="h-5 w-5" />}
           />
           <StatCard
-            title={language === 'ar' ? 'متوسط المدة' : 'Average Duration'}
+            title="Average Duration"
             value="N/A"
             icon={<Clock className="h-5 w-5" />}
           />
@@ -89,7 +89,7 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
 
         {/* Hashtag Filters */}
         <div className="mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold mb-2 dark:text-white">{language === 'ar' ? 'تصفية حسب الهاشتاغ' : 'Filter by Hashtags'}</h2>
+          <h2 className="text-xl font-semibold mb-2 dark:text-white">Filter by Hashtags</h2>
           <div className="flex flex-wrap gap-2 mb-3">
             {allHashtags.map(tag => (
               <button
@@ -109,7 +109,7 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
           <div className="flex items-center mt-3">
             <Input
               type="text"
-              placeholder={language === 'ar' ? 'إضافة هاشتاغ جديد' : 'Add new hashtag'}
+              placeholder="Add new hashtag"
               value={newHashtag}
               onChange={e => setNewHashtag(e.target.value)}
               className="border rounded-l px-2 py-1 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -118,7 +118,7 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
               onClick={handleAddHashtag}
               className="bg-green-500 hover:bg-green-600 text-white rounded-r px-3 py-1 text-sm"
             >
-              {language === 'ar' ? 'إضافة' : 'Add'}
+              Add
             </Button>
           </div>
         </div>
@@ -131,20 +131,18 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
         {/* Detailed Trade Analysis */}
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="overview">{language === 'ar' ? 'نظرة عامة' : 'Overview'}</TabsTrigger>
-            <TabsTrigger value="performance">{language === 'ar' ? 'الأداء' : 'Performance'}</TabsTrigger>
-            <TabsTrigger value="trades">{language === 'ar' ? 'الصفقات' : 'Trades'}</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="trades">Trades</TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg dark:text-white">{language === 'ar' ? 'نظرة عامة' : 'Overview'}</CardTitle>
+                <CardTitle className="text-lg dark:text-white">Overview</CardTitle>
               </CardHeader>
               <CardContent className="dark:text-gray-300">
                 <p>
-                  {language === 'ar' 
-                    ? 'عرض ملخص للمقاييس والرؤى الرئيسية بناءً على الصفقات المصفاة.'
-                    : 'Display a summary of key metrics and insights based on the filtered trades.'}
+                  Display a summary of key metrics and insights based on the filtered trades.
                 </p>
               </CardContent>
             </Card>
@@ -152,13 +150,11 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
           <TabsContent value="performance" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg dark:text-white">{language === 'ar' ? 'تحليل الأداء' : 'Performance Analysis'}</CardTitle>
+                <CardTitle className="text-lg dark:text-white">Performance Analysis</CardTitle>
               </CardHeader>
               <CardContent className="dark:text-gray-300">
                 <p>
-                  {language === 'ar' 
-                    ? 'تصور مقاييس الأداء بمرور الوقت، مثل الربح/الخسارة، ومعدل الفوز، ومتوسط مدة التداول.'
-                    : 'Visualize performance metrics over time, such as profit/loss, win rate, and average trade duration.'}
+                  Visualize performance metrics over time, such as profit/loss, win rate, and average trade duration.
                 </p>
               </CardContent>
             </Card>
@@ -166,13 +162,11 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
           <TabsContent value="trades" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg dark:text-white">{language === 'ar' ? 'قائمة الصفقات' : 'Trade List'}</CardTitle>
+                <CardTitle className="text-lg dark:text-white">Trade List</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="mb-4 dark:text-gray-300">
-                  {language === 'ar' 
-                    ? 'قائمة بجميع الصفقات التي تتطابق مع الهاشتاغات المحددة، مع تفاصيل مثل التاريخ والزوج والربح/الخسارة والمدة.'
-                    : 'List all trades that match the selected hashtags, with details such as date, pair, profit/loss, and duration.'}
+                  List all trades that match the selected hashtags, with details such as date, pair, profit/loss, and duration.
                 </p>
                 <ul className="list-disc pl-5 dark:text-white">
                   {filteredTrades.map(trade => (
