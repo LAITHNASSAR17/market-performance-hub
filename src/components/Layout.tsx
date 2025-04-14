@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -128,6 +129,11 @@ const Layout: React.FC<LayoutProps> = ({
                         <span className="text-sm font-medium dark:text-white truncate">{user?.name || 'User'}</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email || 'user@example.com'}</span>
                       </div>
+                      {isAdmin && (
+                        <div className="flex-shrink-0 ms-1">
+                          <Shield className="h-4 w-4 text-purple-500" />
+                        </div>
+                      )}
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
@@ -192,19 +198,6 @@ const Layout: React.FC<LayoutProps> = ({
                   {language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}
                 </TooltipContent>
               </Tooltip>
-              
-              {isAdmin && <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm" asChild className="w-full flex items-center justify-center px-2 bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-700">
-                      <Link to="/admin">
-                        <Shield className="h-4 w-4 text-purple-500" />
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side={language === 'ar' ? 'left' : 'right'} align="center">
-                    {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-                  </TooltipContent>
-                </Tooltip>}
 
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -223,15 +216,6 @@ const Layout: React.FC<LayoutProps> = ({
                   <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
                 </Link>
               </Button>
-              
-              {isAdmin && <Button variant="outline" size="sm" asChild className="w-full flex items-center justify-center bg-purple-100 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700">
-                  <Link to="/admin">
-                    <Shield className="h-4 w-4 mr-2 text-purple-500" />
-                    <span className="text-purple-700 dark:text-purple-300">
-                      {language === 'ar' ? 'لوحة الإدارة' : 'Admin Dashboard'}
-                    </span>
-                  </Link>
-                </Button>}
 
               <Button variant="outline" size="sm" onClick={handleLogout} className="w-full flex items-center justify-center text-red-500 hover:text-red-600">
                 <LogOut className="h-4 w-4 mr-2" />

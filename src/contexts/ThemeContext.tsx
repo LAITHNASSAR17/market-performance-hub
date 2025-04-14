@@ -55,32 +55,52 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     loadThemePreference();
   }, [user]);
 
-  // Update theme in Supabase when it changes
+  // Update theme in Supabase when it changes - with better error handling
   useEffect(() => {
     const updateThemePreference = async () => {
-      if (user) {
-        try {
+      if (!user) return; // Don't proceed if no user
+
+      try {
+        // Check if record exists first
+        const { data: existingRecord } = await supabase
+          .from('user_preferences')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existingRecord) {
+          // Update the existing record
           const { error } = await supabase
             .from('user_preferences')
-            .upsert({
+            .update({
+              theme,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+        } else {
+          // Insert a new record
+          const { error } = await supabase
+            .from('user_preferences')
+            .insert({
               user_id: user.id,
               theme,
               updated_at: new Date().toISOString()
             });
 
           if (error) throw error;
-        } catch (error) {
-          console.error('Error updating theme preference:', error);
-          toast({
-            title: "Error",
-            description: "Failed to save theme preference",
-            variant: "destructive",
-          });
         }
+      } catch (error) {
+        console.error('Error updating theme preference:', error);
+        // Silent error, don't show toast to avoid repeated error notifications
       }
     };
 
-    updateThemePreference();
+    // Only run after initial user load
+    if (user) {
+      updateThemePreference();
+    }
   }, [theme, user]);
 
   // Update the DOM when theme changes
