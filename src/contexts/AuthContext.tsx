@@ -59,20 +59,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
 
         if (currentUser) {
-          const { data: userRole } = await supabase
-            .from('users')
-            .select('role, name')
-            .eq('id', currentUser.id)
-            .maybeSingle();
-          
-          if (userRole) {
-            setUser(prev => ({
-              ...(prev as ExtendedUser),
-              name: userRole.name,
-              role: userRole.role,
-              isAdmin: userRole.role === 'admin'
-            }));
-            setIsAdmin(userRole.role === 'admin');
+          // Load user role and check if admin
+          try {
+            const { data: userData, error } = await supabase
+              .from('users')
+              .select('role, name')
+              .eq('id', currentUser.id)
+              .maybeSingle();
+            
+            if (error) {
+              console.error('Error fetching user role:', error);
+              return;
+            }
+            
+            if (userData) {
+              const isUserAdmin = userData.role === 'admin';
+              console.log('User data loaded:', userData, 'Is admin:', isUserAdmin);
+              
+              setUser(prev => ({
+                ...(prev as ExtendedUser),
+                name: userData.name,
+                role: userData.role,
+                isAdmin: isUserAdmin
+              }));
+              setIsAdmin(isUserAdmin);
+            }
+          } catch (error) {
+            console.error('Error checking admin status:', error);
           }
 
           loadUserPreferences(currentUser.id);
@@ -87,20 +100,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(!!currentUser);
 
       if (currentUser) {
-        const { data: userRole } = await supabase
-          .from('users')
-          .select('role, name')
-          .eq('id', currentUser.id)
-          .maybeSingle();
-        
-        if (userRole) {
-          setUser(prev => ({
-            ...(prev as ExtendedUser),
-            name: userRole.name,
-            role: userRole.role,
-            isAdmin: userRole.role === 'admin'
-          }));
-          setIsAdmin(userRole.role === 'admin');
+        // Load user role and check if admin
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('role, name')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error fetching user role:', error);
+            return;
+          }
+          
+          if (userData) {
+            const isUserAdmin = userData.role === 'admin';
+            console.log('User data loaded:', userData, 'Is admin:', isUserAdmin);
+            
+            setUser(prev => ({
+              ...(prev as ExtendedUser),
+              name: userData.name,
+              role: userData.role,
+              isAdmin: isUserAdmin
+            }));
+            setIsAdmin(isUserAdmin);
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
         }
 
         loadUserPreferences(currentUser.id);
@@ -454,8 +480,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       if (usersData) {
-        setUsers(usersData);
-        return usersData;
+        // Transform data to ensure isAdmin property is set correctly
+        const transformedUsers = usersData.map(userData => ({
+          ...userData,
+          isAdmin: userData.role === 'admin'
+        }));
+        
+        setUsers(transformedUsers);
+        return transformedUsers;
       }
       
       return [];
@@ -562,7 +594,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .update({
           name: updatedUser.name,
           email: updatedUser.email,
-          role: updatedUser.role,
+          role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user'),
           is_blocked: updatedUser.isBlocked
         })
         .eq('id', updatedUser.id);
@@ -570,6 +602,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
       
       await getAllUsers();
+      
+      // If the updated user is the current user, update the local state
+      if (user && user.id === updatedUser.id) {
+        const isUserAdmin = updatedUser.role === 'admin' || updatedUser.isAdmin;
+        setUser(prev => ({
+          ...(prev as ExtendedUser),
+          name: updatedUser.name,
+          role: updatedUser.role || (isUserAdmin ? 'admin' : 'user'),
+          isAdmin: isUserAdmin
+        }));
+        setIsAdmin(isUserAdmin);
+      }
       
       toast({
         title: "User Updated",

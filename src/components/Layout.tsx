@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,8 +30,13 @@ const Layout: React.FC<LayoutProps> = ({
   const {
     isAuthenticated,
     logout,
-    user
+    user,
+    isAdmin
   } = useAuth();
+  
+  console.log('User in Layout:', user);
+  console.log('Is admin in Layout:', isAdmin);
+  
   const {
     t,
     language
@@ -41,7 +45,6 @@ const Layout: React.FC<LayoutProps> = ({
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
 
-  // Get site name from localStorage or use default
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
   useEffect(() => {
@@ -145,7 +148,7 @@ const Layout: React.FC<LayoutProps> = ({
                       <span>{language === 'ar' ? 'إعدادات الحساب' : 'Profile Settings'}</span>
                     </Link>
                   </DropdownMenuItem>
-                  {user?.isAdmin && (
+                  {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin" className="flex items-center gap-2">
                         <Shield className="h-4 w-4 text-purple-500" />
