@@ -590,7 +590,15 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       if (error) throw error;
 
-      setTradingAccounts(data || []);
+      const formattedAccounts: TradingAccount[] = (data || []).map(account => ({
+        id: account.id,
+        userId: account.user_id,
+        name: account.name,
+        balance: Number(account.balance),
+        createdAt: account.created_at
+      }));
+
+      setTradingAccounts(formattedAccounts);
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
       toast({

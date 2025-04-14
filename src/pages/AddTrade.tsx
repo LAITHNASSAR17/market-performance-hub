@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -52,42 +52,10 @@ const AddTrade: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isCalculating, setIsCalculating] = useState(false);
   const [newAccountData, setNewAccountData] = useState({
     name: '',
     balance: 0
   });
-
-  useEffect(() => {
-    if (isCalculating) return;
-
-    const { entry, exit, lotSize, type } = formData;
-    
-    if (entry && exit && lotSize) {
-      const entryValue = parseFloat(entry);
-      const exitValue = parseFloat(exit);
-      const lotSizeValue = parseFloat(lotSize);
-      
-      if (!isNaN(entryValue) && !isNaN(exitValue) && !isNaN(lotSizeValue)) {
-        const pipsValue = type === 'Buy' 
-          ? (exitValue - entryValue) * 10000 
-          : (entryValue - exitValue) * 10000;
-          
-        const pipsPerLot = 10;
-        const calculatedPL = pipsValue * pipsPerLot * lotSizeValue;
-        
-        const returnPercentage = ((calculatedPL / 1000) * 100).toFixed(2);
-        
-        setIsCalculating(true);
-        setFormData(prev => ({
-          ...prev,
-          profitLoss: calculatedPL.toFixed(2),
-          returnPercentage
-        }));
-        setTimeout(() => setIsCalculating(false), 100);
-      }
-    }
-  }, [formData.entry, formData.exit, formData.lotSize, formData.type]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -115,6 +83,7 @@ const AddTrade: React.FC = () => {
     if (!formData.entry) newErrors.entry = 'Entry price is required';
     if (!formData.exit) newErrors.exit = 'Exit price is required';
     if (!formData.lotSize) newErrors.lotSize = 'Lot size is required';
+    if (!formData.profitLoss) newErrors.profitLoss = 'Profit/Loss is required';
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -130,8 +99,9 @@ const AddTrade: React.FC = () => {
       takeProfit: formData.takeProfit ? parseFloat(formData.takeProfit) : null,
       riskPercentage: formData.riskPercentage ? parseFloat(formData.riskPercentage) : 0,
       returnPercentage: formData.returnPercentage ? parseFloat(formData.returnPercentage) : 0,
-      profitLoss: parseFloat(formData.profitLoss || '0'),
+      profitLoss: parseFloat(formData.profitLoss),
       durationMinutes: formData.durationMinutes ? parseInt(formData.durationMinutes) : 0,
+      date: formData.date.toISOString().split('T')[0]
     };
     
     addTrade(tradeData);
