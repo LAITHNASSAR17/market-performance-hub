@@ -1,5 +1,4 @@
-
-import { Trade as DBTrade } from '@/services/tradeService';
+import { ITrade } from '@/services/tradeService';
 
 export interface Trade {
   id: string;
@@ -26,7 +25,7 @@ export interface Trade {
 }
 
 // Convert database trade to UI trade
-export const mapDBTradeToTrade = (dbTrade: DBTrade): Trade => ({
+export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   id: dbTrade.id,
   userId: dbTrade.userId,
   pair: dbTrade.symbol,
@@ -51,7 +50,7 @@ export const mapDBTradeToTrade = (dbTrade: DBTrade): Trade => ({
 });
 
 // Convert UI trade to database trade
-export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<DBTrade, 'id' | 'createdAt' | 'updatedAt'> => ({
+export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => ({
   userId: '', // Will be set by the service
   symbol: trade.pair,
   entryPrice: trade.entry,

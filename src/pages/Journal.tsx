@@ -1,20 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { useTrade, Trade } from '@/contexts/TradeContext';
+import { useTrade } from '@/contexts/TradeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { CalendarIcon, ChevronDown, ChevronUp, Eye, Tags, X } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import HashtagBadge from '@/components/HashtagBadge';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const Journal: React.FC = () => {
-  const { trades, pairs } = useTrade();
+  const { trades, allHashtags } = useTrade();
   const [dateFilter, setDateFilter] = useState('all');
   const [pairFilter, setPairFilter] = useState('all');
+  const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -30,8 +32,29 @@ const Journal: React.FC = () => {
   const filteredTrades = trades.filter(trade => {
     const matchesDate = dateFilter === 'all' || trade.date === dateFilter;
     const matchesPair = pairFilter === 'all' || trade.pair === pairFilter;
-    return matchesDate && matchesPair;
+    const matchesHashtags = selectedHashtags.length === 0 || 
+      selectedHashtags.every(tag => trade.hashtags.includes(tag));
+    return matchesDate && matchesPair && matchesHashtags;
   });
+
+  // Get unique pairs from trades
+  const pairs = Array.from(new Set(trades.map(trade => trade.pair)));
+
+  // Clear all filters
+  const clearFilters = () => {
+    setDateFilter('all');
+    setPairFilter('all');
+    setSelectedHashtags([]);
+  };
+
+  // Toggle hashtag selection
+  const toggleHashtag = (tag: string) => {
+    setSelectedHashtags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
 
   // Group trades by date
   type TradesByDate = Record<string, {
@@ -51,15 +74,10 @@ const Journal: React.FC = () => {
     return acc;
   }, {});
 
-  // Sort dates in descending order (newest first)
+  // Sort dates in descending order
   const sortedDates = Object.keys(tradesByDate).sort((a, b) => 
     new Date(b).getTime() - new Date(a).getTime()
   );
-
-  // Navigate to individual trade view
-  const handleViewTrade = (tradeId: string) => {
-    navigate(`/tracking/${tradeId}`);
-  };
 
   return (
     <Layout>
@@ -69,36 +87,61 @@ const Journal: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            type="date"
-            value={dateFilter !== 'all' ? dateFilter : ''}
-            onChange={(e) => setDateFilter(e.target.value || 'all')}
-            className="pl-9"
-          />
+      <div className="space-y-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-3">
+          <div className="relative flex-1">
+            <CalendarIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="date"
+              value={dateFilter !== 'all' ? dateFilter : ''}
+              onChange={(e) => setDateFilter(e.target.value || 'all')}
+              className="pl-9"
+            />
+          </div>
+          <Select value={pairFilter} onValueChange={setPairFilter}>
+            <SelectTrigger className="min-w-[150px]">
+              <SelectValue placeholder="All pairs" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All pairs</SelectItem>
+              {pairs.map(pair => (
+                <SelectItem key={pair} value={pair}>{pair}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            variant="outline" 
+            onClick={clearFilters}
+          >
+            Clear Filters
+          </Button>
         </div>
-        <Select value={pairFilter} onValueChange={setPairFilter}>
-          <SelectTrigger className="min-w-[150px]">
-            <SelectValue placeholder="All pairs" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All pairs</SelectItem>
-            {pairs.map(pair => (
-              <SelectItem key={pair} value={pair}>{pair}</SelectItem>
+
+        {/* Hashtag filters */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Tags className="h-4 w-4" />
+            <span>Filter by hashtags:</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {allHashtags.map(tag => (
+              <Badge
+                key={tag}
+                variant={selectedHashtags.includes(tag) ? "default" : "outline"}
+                className={cn(
+                  "cursor-pointer hover:bg-muted",
+                  selectedHashtags.includes(tag) && "bg-primary text-primary-foreground"
+                )}
+                onClick={() => toggleHashtag(tag)}
+              >
+                #{tag}
+                {selectedHashtags.includes(tag) && (
+                  <X className="ml-1 h-3 w-3" />
+                )}
+              </Badge>
             ))}
-          </SelectContent>
-        </Select>
-        <Button 
-          variant="outline" 
-          onClick={() => {
-            setDateFilter('all');
-            setPairFilter('all');
-          }}
-        >
-          Clear Filters
-        </Button>
+          </div>
+        </div>
       </div>
 
       {/* Daily Entries */}
