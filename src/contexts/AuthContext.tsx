@@ -504,13 +504,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending password reset email to ${email}`);
       
-      // First check if the user exists
+      // 먼저 사용자 존재 여부 확인
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
         .single();
-        
+      
       if (userError || !userData) {
         console.error('User not found:', userError);
         toast({
@@ -518,18 +518,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           description: "البريد الإلكتروني غير مسجل في النظام",
           variant: "destructive",
         });
-        return { error: "User not found" };
+        throw new Error("User not found");
       }
       
+      // 안전한 비밀번호 재설정 링크 생성
       const resetLink = `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}`;
-      console.log(`Reset link: ${resetLink}`);
       
-      console.log("Calling Supabase function with parameters:", {
-        type: 'reset-password',
-        email,
-        resetLink
-      });
-      
+      console.log("Calling Supabase function for password reset email");
       const response = await supabase.functions.invoke('send-email', {
         body: {
           type: 'reset-password',
@@ -541,16 +536,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Password reset email response:', response);
 
       if (response.error) {
-        console.error('Error from edge function:', response.error);
+        console.error('Email sending error:', response.error);
         throw new Error(response.error.message || 'Failed to send password reset email');
       }
       
       return response;
     } catch (error) {
-      console.error('Error sending password reset email:', error);
+      console.error('Password reset email error:', error);
       toast({
         title: "خطأ",
-        description: "فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.",
+        description: "فشل في إرسال بريد إعادة تعيين كلمة المرور",
         variant: "destructive",
       });
       throw error;
