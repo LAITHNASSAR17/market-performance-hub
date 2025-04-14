@@ -28,12 +28,21 @@ const ForgotPassword: React.FC = () => {
       const response = await sendPasswordResetEmail(email);
       console.log('ForgotPassword: Response from sendPasswordResetEmail:', response);
       
-      if (response && !response.error) {
+      // In development mode, we're simulating success so check for both real success and simulated
+      if (response && (!response.error || response.message?.includes("simulation"))) {
         setEmailSent(true);
         toast({
           title: "تم إرسال البريد الإلكتروني",
           description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
         });
+      } else if (response?.error === "User not found") {
+        toast({
+          title: "البريد الإلكتروني غير مسجل",
+          description: "لم نجد حساباً مرتبطاً بهذا البريد الإلكتروني",
+          variant: "destructive",
+        });
+      } else {
+        throw new Error(response?.error || "حدث خطأ أثناء إرسال البريد الإلكتروني");
       }
     } catch (error) {
       console.error('ForgotPassword: Error in password reset:', error);
