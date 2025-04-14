@@ -56,6 +56,7 @@ const AddTrade: React.FC = () => {
     name: '',
     balance: 0
   });
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -122,10 +123,12 @@ const AddTrade: React.FC = () => {
       return;
     }
 
+    setIsCreatingAccount(true);
+
     try {
       const newAccount = await createTradingAccount(
         newAccountData.name, 
-        newAccountData.balance
+        Number(newAccountData.balance)
       );
       
       setFormData(prev => ({
@@ -134,8 +137,19 @@ const AddTrade: React.FC = () => {
       }));
       
       setNewAccountData({ name: '', balance: 0 });
+      toast({
+        title: "تم بنجاح",
+        description: `تم إنشاء حساب ${newAccountData.name} بنجاح`,
+      });
     } catch (error) {
       console.error('Failed to create account', error);
+      toast({
+        title: "خطأ",
+        description: "فشل إنشاء الحساب، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingAccount(false);
     }
   };
 
@@ -208,7 +222,12 @@ const AddTrade: React.FC = () => {
                             placeholder="0.00"
                           />
                         </div>
-                        <Button onClick={handleCreateAccount}>إنشاء</Button>
+                        <Button 
+                          onClick={handleCreateAccount} 
+                          disabled={isCreatingAccount}
+                        >
+                          {isCreatingAccount ? 'جاري الإنشاء...' : 'إنشاء'}
+                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
