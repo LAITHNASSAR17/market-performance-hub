@@ -1,11 +1,9 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
-// Create an extended user type that includes additional properties our app needs
 interface ExtendedUser extends User {
   name?: string;
   isAdmin?: boolean;
@@ -24,7 +22,6 @@ interface AuthContextType {
   logout: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
-  // Add missing methods
   updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
   getAllUsers: () => Promise<any[]>;
   blockUser: (user: any) => Promise<void>;
@@ -47,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         const currentUser = session?.user ?? null;
@@ -57,7 +53,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
 
         if (currentUser) {
-          // Check if user is admin
           const { data: userRole } = await supabase
             .from('users')
             .select('role, name')
@@ -65,7 +60,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .maybeSingle();
           
           if (userRole) {
-            // Update user with additional properties
             setUser(prev => ({
               ...(prev as ExtendedUser),
               name: userRole.name,
@@ -75,13 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setIsAdmin(userRole.role === 'admin');
           }
 
-          // Load user preferences
           loadUserPreferences(currentUser.id);
         }
       }
     );
 
-    // Check initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser as ExtendedUser | null);
@@ -89,7 +81,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthenticated(!!currentUser);
 
       if (currentUser) {
-        // Check if user is admin
         const { data: userRole } = await supabase
           .from('users')
           .select('role, name')
@@ -97,7 +88,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .maybeSingle();
         
         if (userRole) {
-          // Update user with additional properties
           setUser(prev => ({
             ...(prev as ExtendedUser),
             name: userRole.name,
@@ -107,7 +97,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdmin(userRole.role === 'admin');
         }
 
-        // Load user preferences
         loadUserPreferences(currentUser.id);
       }
       
@@ -128,7 +117,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (preferences) {
-        // User preferences are loaded in the ThemeContext and LanguageContext
         console.log('User preferences loaded:', preferences);
       }
     } catch (error) {
@@ -142,27 +130,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const { data: { user: newUser }, error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          data: {
+            name,
+          }
+        }
       });
 
       if (error) throw error;
 
       if (newUser) {
-        // Create user profile in users table
         const { error: profileError } = await supabase
           .from('users')
           .insert({
             id: newUser.id,
             name,
             email,
-            password: 'hashed_in_supabase', // We don't store actual passwords
             role: 'user',
             is_blocked: false
           });
 
         if (profileError) throw profileError;
 
-        // Create initial user preferences
         await supabase
           .from('user_preferences')
           .insert({
@@ -173,8 +163,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         toast({
           title: "Registration Successful",
-          description: "Your account has been created successfully.",
+          description: "Please check your email to verify your account.",
         });
+
+        navigate('/login');
       }
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -201,7 +193,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (loggedInUser) {
-        // Check if user is blocked
         const { data: userData } = await supabase
           .from('users')
           .select('is_blocked, role, name, subscription_tier')
@@ -213,7 +204,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error('Your account has been blocked. Please contact support.');
         }
 
-        // Update user with additional properties
         setUser({
           ...loggedInUser,
           name: userData?.name,
@@ -313,14 +303,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Add missing methods
   const updateProfile = async (name: string, email: string, currentPassword?: string, newPassword?: string) => {
     try {
       setLoading(true);
       
-      // Update email/password in auth if needed
       if (newPassword && currentPassword) {
-        // First verify current password
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email: user?.email || '',
           password: currentPassword
@@ -328,7 +315,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (signInError) throw new Error('Current password is incorrect');
         
-        // Then update password
         const { error: updateError } = await supabase.auth.updateUser({
           password: newPassword
         });
@@ -336,7 +322,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (updateError) throw updateError;
       }
       
-      // Update user profile in users table
       if (user) {
         const { error: profileError } = await supabase
           .from('users')
@@ -348,7 +333,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (profileError) throw profileError;
         
-        // Update local user state
         setUser(prev => ({
           ...(prev as ExtendedUser),
           name
@@ -410,7 +394,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) throw error;
       
-      // Refresh users list
       await getAllUsers();
       
       toast({
@@ -439,7 +422,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) throw error;
       
-      // Refresh users list
       await getAllUsers();
       
       toast({
@@ -461,7 +443,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const changePassword = async (userId: string, newPassword: string) => {
     try {
       setLoading(true);
-      // For admin changing user's password - in a real app, this would call an admin API
       const { error } = await supabase
         .from('users')
         .update({ password: 'updated_by_admin' })
@@ -500,7 +481,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) throw error;
       
-      // Refresh users list
       await getAllUsers();
       
       toast({
@@ -529,7 +509,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) throw error;
       
-      // If the current user's subscription is being updated, update local state
       if (user && user.id === userId) {
         setUser(prev => ({
           ...(prev as ExtendedUser),
@@ -542,7 +521,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `Subscription has been updated to ${tier}`,
       });
       
-      // Refresh users list
       await getAllUsers();
     } catch (error: any) {
       console.error('Error updating subscription:', error);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -15,6 +15,7 @@ import * as z from 'zod';
 import LanguageToggle from '@/components/LanguageToggle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Login = () => {
   const { t } = useLanguage();
@@ -36,6 +37,27 @@ const Login = () => {
       email: "",
     },
   });
+
+  useEffect(() => {
+    // Check for email verification status
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        const user = session?.user;
+        if (user && !user.email_confirmed_at) {
+          toast({
+            title: "Email Verification Needed",
+            description: "Please verify your email before logging in.",
+            variant: "destructive",
+          });
+          supabase.auth.signOut();
+        }
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
