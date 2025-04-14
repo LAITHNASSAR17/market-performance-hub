@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,14 +7,19 @@ import { TradingTip, getAITradingTips, generateAIAdvice } from '@/services/aiSer
 import { useTrade } from '@/contexts/TradeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
-
 interface TradingTipsProps {
   className?: string;
 }
-
-const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
-  const { trades } = useTrade();
-  const { t, language } = useLanguage();
+const TradingTips: React.FC<TradingTipsProps> = ({
+  className = ''
+}) => {
+  const {
+    trades
+  } = useTrade();
+  const {
+    t,
+    language
+  } = useLanguage();
   const stats = useAnalyticsStats();
   const [tips, setTips] = useState<TradingTip[]>([]);
   const [currentTip, setCurrentTip] = useState(0);
@@ -27,7 +31,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   useEffect(() => {
     loadTips();
   }, [trades, stats]);
-
   const loadTips = async () => {
     setLoading(true);
     try {
@@ -42,7 +45,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
       setLoading(false);
     }
   };
-
   const loadAIAdvice = async () => {
     setLoadingAdvice(true);
     try {
@@ -54,7 +56,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
       setLoadingAdvice(false);
     }
   };
-
   const handleNext = () => {
     if (currentTip < tips.length - 1) {
       setCurrentTip(currentTip + 1);
@@ -62,7 +63,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
       setCurrentTip(0);
     }
   };
-
   const handlePrevious = () => {
     if (currentTip > 0) {
       setCurrentTip(currentTip - 1);
@@ -70,12 +70,10 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
       setCurrentTip(tips.length - 1);
     }
   };
-
   const refreshTips = () => {
     loadTips();
     loadAIAdvice();
   };
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -88,7 +86,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
     }
   };
-
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'performance':
@@ -103,7 +100,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
-
   const translateCategory = (category: string) => {
     switch (category) {
       case 'performance':
@@ -118,7 +114,6 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
         return category;
     }
   };
-
   const translatePriority = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -131,101 +126,17 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
         return priority;
     }
   };
-
   useEffect(() => {
     // تحميل النصائح عند تحميل المكون لأول مرة
     if (tips.length === 0 && !loading) {
       loadTips();
     }
-    
+
     // تحميل نصيحة AI
     if (aiAdvice === '' && !loadingAdvice) {
       loadAIAdvice();
     }
   }, []);
-
-  return (
-    <div className={`space-y-4 ${className}`}>
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-lg flex items-center">
-              <Lightbulb className="h-5 w-5 mr-2" />
-              {language === 'ar' ? 'نصائح ذكية' : 'AI Trading Tips'}
-            </CardTitle>
-            <div className="flex space-x-2">
-              <Button variant="ghost" size="sm" onClick={refreshTips} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          </div>
-          <CardDescription>
-            {language === 'ar' 
-              ? 'نصائح مخصصة بناءً على أنماط التداول الخاصة بك' 
-              : 'Personalized tips based on your trading patterns'}
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent>
-          {tips.length > 0 ? (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <Badge className={getCategoryColor(tips[currentTip].category)}>
-                  {translateCategory(tips[currentTip].category)}
-                </Badge>
-                <Badge className={getPriorityColor(tips[currentTip].priority)}>
-                  {translatePriority(tips[currentTip].priority)}
-                </Badge>
-              </div>
-              
-              <h3 className="text-xl font-medium">{tips[currentTip].title}</h3>
-              <p className="text-muted-foreground">{tips[currentTip].content}</p>
-            </div>
-          ) : loading ? (
-            <div className="text-center py-4">
-              <div className="animate-pulse">
-                {language === 'ar' ? 'جاري تحليل البيانات...' : 'Analyzing your data...'}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              {language === 'ar' 
-                ? 'أضف المزيد من الصفقات للحصول على نصائح مخصصة' 
-                : 'Add more trades to receive personalized tips'}
-            </div>
-          )}
-        </CardContent>
-        
-        {tips.length > 1 && (
-          <CardFooter className="flex justify-between pt-0">
-            <Button variant="ghost" size="sm" onClick={handlePrevious}>
-              {language === 'ar' ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
-            <span className="text-xs text-muted-foreground">
-              {currentTip + 1} / {tips.length}
-            </span>
-            <Button variant="ghost" size="sm" onClick={handleNext}>
-              {language === 'ar' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </Button>
-          </CardFooter>
-        )}
-      </Card>
-      
-      {/* نصيحة التداول المفصلة */}
-      {aiAdvice && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">
-              {language === 'ar' ? 'تحليل AI المخصص' : 'AI Custom Analysis'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{aiAdvice}</p>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+  return;
 };
-
 export default TradingTips;
