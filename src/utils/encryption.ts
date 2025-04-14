@@ -1,25 +1,27 @@
 
-import CryptoJS from 'crypto-js';
+import crypto from 'crypto';
 
-// The secret key should ideally be stored in a secure environment variable
-// For this demo, we'll use a fixed key
-const SECRET_KEY = "trading-platform-secure-key-2025";
-
-export const encryptData = (data: string): string => {
-  return CryptoJS.AES.encrypt(data, SECRET_KEY).toString();
-};
-
-export const decryptData = (encryptedData: string): string => {
-  const bytes = CryptoJS.AES.decrypt(encryptedData, SECRET_KEY);
-  return bytes.toString(CryptoJS.enc.Utf8);
-};
-
+/**
+ * Hash a password using a secure one-way hashing algorithm
+ * @param password The plain text password to hash
+ * @returns The hashed password
+ */
 export const hashPassword = (password: string): string => {
-  return CryptoJS.SHA256(password).toString();
+  // In a real production app, you would use a proper bcrypt or Argon2 implementation
+  // This is a simple SHA-256 hash for demonstration purposes
+  return crypto
+    .createHash('sha256')
+    .update(password)
+    .digest('hex');
 };
 
-// Function to compare password with stored hash
-export const comparePassword = (password: string, hashedPassword: string): boolean => {
-  const hashedInput = CryptoJS.SHA256(password).toString();
+/**
+ * Compare a plain text password with a hashed password
+ * @param plainPassword The plain text password to check
+ * @param hashedPassword The hashed password to compare against
+ * @returns Boolean indicating if the passwords match
+ */
+export const comparePassword = (plainPassword: string, hashedPassword: string): boolean => {
+  const hashedInput = hashPassword(plainPassword);
   return hashedInput === hashedPassword;
 };

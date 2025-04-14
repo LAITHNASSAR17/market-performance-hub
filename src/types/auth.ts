@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -31,4 +30,23 @@ export interface AuthContextType extends AuthState {
   unblockUser: (user: User) => Promise<void>;
   changePassword: (email: string, newPassword: string) => Promise<void>;
   updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
+}
+
+export interface ExtendedTrade extends Trade {
+  // UI specific fields
+  account?: string;
+  pair?: string;
+  type?: 'Buy' | 'Sell';
+  entry?: number;
+  exit?: number;
+  lotSize?: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  riskPercentage?: number;
+  returnPercentage?: number;
+  durationMinutes?: number;
+  date?: string;
+  hashtags?: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }

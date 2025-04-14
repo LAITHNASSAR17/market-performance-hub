@@ -13,9 +13,10 @@ import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
+import { ExtendedTrade } from '@/contexts/TradeContext';
 
 const AddTrade: React.FC = () => {
-  const { addTrade, accounts, allHashtags } = useTrade();
+  const { addTrade, accounts = [], allHashtags = [] } = useTrade();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -106,20 +107,28 @@ const AddTrade: React.FC = () => {
       return;
     }
     
-    const tradeData = {
+    const tradeData: Partial<ExtendedTrade> = {
       ...formData,
       entry: parseFloat(formData.entry),
       exit: parseFloat(formData.exit),
       lotSize: parseFloat(formData.lotSize),
-      stopLoss: formData.stopLoss ? parseFloat(formData.stopLoss) : null,
-      takeProfit: formData.takeProfit ? parseFloat(formData.takeProfit) : null,
+      stopLoss: formData.stopLoss ? parseFloat(formData.stopLoss) : undefined,
+      takeProfit: formData.takeProfit ? parseFloat(formData.takeProfit) : undefined,
       riskPercentage: formData.riskPercentage ? parseFloat(formData.riskPercentage) : 0,
       returnPercentage: formData.returnPercentage ? parseFloat(formData.returnPercentage) : 0,
       profitLoss: parseFloat(formData.profitLoss || '0'),
       durationMinutes: formData.durationMinutes ? parseInt(formData.durationMinutes) : 0,
+      // Map to the database fields that addTrade expects
+      symbol: formData.pair,
+      entryPrice: parseFloat(formData.entry),
+      exitPrice: parseFloat(formData.exit),
+      quantity: parseFloat(formData.lotSize),
+      direction: formData.type === 'Buy' ? 'long' : 'short',
+      entryDate: new Date(formData.date),
+      tags: formData.hashtags,
     };
     
-    addTrade(tradeData);
+    addTrade(tradeData as Omit<ExtendedTrade, 'id' | 'userId'>);
     toast({
       title: "Trade Added",
       description: "Your trade has been added successfully",

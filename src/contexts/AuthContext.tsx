@@ -1,8 +1,11 @@
+
 import React, { createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { authService } from '@/services/authService';
 import { useAuthState, useAuthStateSetters } from '@/hooks/useAuthState';
+import { supabase } from '@/lib/supabase';
+import { hashPassword, comparePassword } from '@/utils/encryption';
 import type { AuthContextType, User } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -225,7 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     newPassword?: string
   ) => {
     try {
-      if (!user) throw new Error('No user logged in');
+      if (!state.user) throw new Error('No user logged in');
       
       const updateData: any = {
         name,
@@ -236,7 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data } = await supabase
           .from('users')
           .select('password')
-          .eq('id', user.id)
+          .eq('id', state.user.id)
           .single();
           
         if (!data || !comparePassword(currentPassword, data.password)) {
@@ -249,12 +252,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase
         .from('users')
         .update(updateData)
-        .eq('id', user.id);
+        .eq('id', state.user.id);
         
       if (error) throw error;
       
       const updatedUser = {
-        ...user,
+        ...state.user,
         name,
         email
       };

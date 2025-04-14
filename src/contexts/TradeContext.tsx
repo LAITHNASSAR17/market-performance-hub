@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/lib/supabase';
+import { ExtendedTrade } from '@/types/auth';
 
 export interface Trade {
   id: string;
@@ -20,18 +21,25 @@ export interface Trade {
   tags: string[];
 }
 
+// For backward compatibility
+export type { ExtendedTrade };
+
 type TradeContextType = {
-  trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'userId'>) => void;
-  updateTrade: (id: string, trade: Partial<Trade>) => void;
+  trades: ExtendedTrade[];
+  addTrade: (trade: Omit<ExtendedTrade, 'id' | 'userId'>) => void;
+  updateTrade: (id: string, trade: Partial<ExtendedTrade>) => void;
   deleteTrade: (id: string) => void;
-  getTrade: (id: string) => Trade | undefined;
+  getTrade: (id: string) => ExtendedTrade | undefined;
+  accounts?: string[];
+  allHashtags?: string[];
 };
 
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
 
 export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [trades, setTrades] = useState<Trade[]>([]);
+  const [trades, setTrades] = useState<ExtendedTrade[]>([]);
+  const [accounts, setAccounts] = useState<string[]>(['Demo', 'Real', 'Practice']);
+  const [allHashtags, setAllHashtags] = useState<string[]>(['trend', 'breakout', 'support', 'resistance', 'momentum']);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -50,7 +58,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         if (error) throw error;
 
-        const formattedTrades: Trade[] = data.map(trade => ({
+        const formattedTrades: ExtendedTrade[] = data.map(trade => ({
           id: trade.id,
           userId: trade.user_id,
           symbol: trade.symbol,
@@ -63,7 +71,18 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           profitLoss: trade.profit_loss,
           fees: trade.fees,
           notes: trade.notes,
-          tags: trade.tags || []
+          tags: trade.tags || [],
+          // Map to UI-specific fields for compatibility
+          pair: trade.symbol,
+          type: trade.direction === 'long' ? 'Buy' : 'Sell',
+          entry: trade.entry_price,
+          exit: trade.exit_price,
+          lotSize: trade.quantity,
+          date: new Date(trade.entry_date).toISOString().split('T')[0],
+          account: 'Demo', // Default account
+          hashtags: trade.tags || [],
+          createdAt: new Date(trade.created_at),
+          updatedAt: new Date(trade.updated_at)
         }));
 
         setTrades(formattedTrades);
@@ -80,32 +99,36 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     fetchTrades();
   }, [user, toast]);
 
-  const addTrade = async (tradeData: Omit<Trade, 'id' | 'userId'>) => {
+  const addTrade = async (tradeData: Omit<ExtendedTrade, 'id' | 'userId'>) => {
     if (!user) return;
 
     try {
+      // Map UI fields to database fields
+      const dbTradeData = {
+        user_id: user.id,
+        symbol: tradeData.symbol || tradeData.pair,
+        entry_price: tradeData.entryPrice || tradeData.entry,
+        exit_price: tradeData.exitPrice || tradeData.exit,
+        quantity: tradeData.quantity || tradeData.lotSize,
+        direction: tradeData.direction || (tradeData.type === 'Buy' ? 'long' : 'short'),
+        entry_date: tradeData.entryDate ? tradeData.entryDate.toISOString() : 
+                   tradeData.date ? new Date(tradeData.date).toISOString() : new Date().toISOString(),
+        exit_date: tradeData.exitDate?.toISOString(),
+        profit_loss: tradeData.profitLoss,
+        fees: tradeData.fees,
+        notes: tradeData.notes,
+        tags: tradeData.tags || tradeData.hashtags || []
+      };
+
       const { data, error } = await supabase
         .from('trades')
-        .insert({
-          user_id: user.id,
-          symbol: tradeData.symbol,
-          entry_price: tradeData.entryPrice,
-          exit_price: tradeData.exitPrice,
-          quantity: tradeData.quantity,
-          direction: tradeData.direction,
-          entry_date: tradeData.entryDate.toISOString(),
-          exit_date: tradeData.exitDate?.toISOString(),
-          profit_loss: tradeData.profitLoss,
-          fees: tradeData.fees,
-          notes: tradeData.notes,
-          tags: tradeData.tags
-        })
+        .insert(dbTradeData)
         .select()
         .single();
 
       if (error) throw error;
 
-      const newTrade: Trade = {
+      const newTrade: ExtendedTrade = {
         id: data.id,
         userId: data.user_id,
         symbol: data.symbol,
@@ -118,7 +141,18 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         profitLoss: data.profit_loss,
         fees: data.fees,
         notes: data.notes,
-        tags: data.tags || []
+        tags: data.tags || [],
+        // UI fields
+        pair: data.symbol,
+        type: data.direction === 'long' ? 'Buy' : 'Sell',
+        entry: data.entry_price,
+        exit: data.exit_price,
+        lotSize: data.quantity,
+        date: new Date(data.entry_date).toISOString().split('T')[0],
+        account: tradeData.account || 'Demo',
+        hashtags: data.tags || [],
+        createdAt: new Date(data.created_at),
+        updatedAt: new Date(data.updated_at)
       };
 
       setTrades(prev => [...prev, newTrade]);
@@ -222,7 +256,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       addTrade,
       updateTrade,
       deleteTrade,
-      getTrade
+      getTrade,
+      accounts,
+      allHashtags
     }}>
       {children}
     </TradeContext.Provider>
