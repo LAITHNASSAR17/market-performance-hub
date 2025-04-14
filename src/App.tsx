@@ -30,6 +30,8 @@ import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 import UserProfileSettings from "./pages/UserProfileSettings";
 import Subscriptions from "./pages/Subscriptions";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // Admin Components
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -60,6 +62,8 @@ const App = () => (
                     {/* User Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/" element={<Homepage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/add-trade" element={<AddTrade />} />
