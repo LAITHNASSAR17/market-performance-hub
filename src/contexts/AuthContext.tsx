@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -141,6 +142,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (newUser) {
+        // Call the Edge Function to send a verification email
+        const verificationLink = `${window.location.origin}/login?verified=true`;
+        
+        try {
+          const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
+            body: { 
+              email, 
+              name, 
+              verificationLink 
+            },
+          });
+          
+          if (emailError) {
+            console.error('Error sending verification email:', emailError);
+          }
+        } catch (emailErr) {
+          console.error('Failed to invoke send-verification-email function:', emailErr);
+        }
+
+        // Fix: Include a dummy password field for database schema compatibility
+        // This doesn't store the actual user password - auth is handled by Supabase Auth
         const { error: profileError } = await supabase
           .from('users')
           .insert({
@@ -148,7 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name,
             email,
             role: 'user',
-            is_blocked: false
+            is_blocked: false,
+            password: 'stored_in_auth' // Add this dummy password value to satisfy the table schema
           });
 
         if (profileError) throw profileError;
