@@ -1,7 +1,6 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
+import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
@@ -87,25 +86,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAdminUser();
   }, []);
 
-  // Improved local storage management
+  // Use Supabase auth state change listener
   useEffect(() => {
-    const loadUserFromStorage = () => {
-      try {
-        const storedUserData = localStorage.getItem('user');
-        if (storedUserData) {
-          const decryptedUser = JSON.parse(decryptData(storedUserData));
-          setUser(decryptedUser);
-          setIsAuthenticated(!!decryptedUser);
-          setIsAdmin(decryptedUser.role === 'admin');
-        }
-      } catch (error) {
-        console.error('Error loading user from storage:', error);
-        localStorage.removeItem('user');
-      }
-      setLoading(false);
-    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
 
-    loadUserFromStorage();
+          if (data) {
+            setUser(data);
+            setIsAdmin(data.role === 'admin');
+            setIsAuthenticated(true);
+          }
+        } else {
+          setUser(null);
+          setIsAdmin(false);
+          setIsAuthenticated(false);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const register = async (name: string, email: string, password: string): Promise<void> => {
@@ -163,26 +171,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw new Error('User is blocked');
         }
         
-        const userToStore = { 
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          isAdmin: data.role === 'admin',
-          subscription_tier: data.subscription_tier || 'free'
-        };
-      
-        // Ensure robust local storage
-        localStorage.setItem('user', encryptData(JSON.stringify(userToStore)));
-        
-        setUser(userToStore);
+        setUser(data);
         setIsAdmin(data.role === 'admin');
         setIsAuthenticated(true);
         
         navigate('/dashboard');
         toast({
           title: "Login Successful",
-          description: `Welcome back, ${userToStore.name}!`,
+          description: `Welcome back, ${data.name}!`,
         });
       } else {
         throw new Error('Invalid credentials');
@@ -201,7 +197,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
     setUser(null);
     setIsAdmin(false);
     setIsAuthenticated(false);
@@ -267,7 +262,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ...updatedUser,
           role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user')
         };
-        localStorage.setItem('user', encryptData(JSON.stringify(updatedCurrentUser)));
         setUser(updatedCurrentUser);
         setIsAdmin(updatedCurrentUser.role === 'admin' || updatedCurrentUser.isAdmin || false);
       }
@@ -318,7 +312,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email
       };
       
-      localStorage.setItem('user', encryptData(JSON.stringify(updatedUser)));
       setUser(updatedUser);
       
       toast({
@@ -441,7 +434,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           subscription_tier: tier
         };
         
-        localStorage.setItem('user', encryptData(JSON.stringify(updatedUser)));
         setUser(updatedUser);
       }
       

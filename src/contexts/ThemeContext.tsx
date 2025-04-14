@@ -1,6 +1,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useLanguage } from './LanguageContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 type Theme = 'light' | 'dark';
 
@@ -14,28 +17,82 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Check for saved theme preference in localStorage
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    // Check for system preference if no saved preference
-    const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    return savedTheme || systemPreference;
+    // Check for system preference as default
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // Update the data-theme attribute and localStorage when theme changes
+  // Load theme preference from Supabase when user logs in
+  useEffect(() => {
+    const loadThemePreference = async () => {
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from('user_preferences')
+            .select('theme')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (error) throw error;
+          
+          if (data?.theme) {
+            setTheme(data.theme as Theme);
+          } else {
+            // Create initial preference if it doesn't exist
+            await supabase
+              .from('user_preferences')
+              .insert({ user_id: user.id, theme });
+          }
+        } catch (error) {
+          console.error('Error loading theme preference:', error);
+        }
+      }
+    };
+
+    loadThemePreference();
+  }, [user]);
+
+  // Update theme in Supabase when it changes
+  useEffect(() => {
+    const updateThemePreference = async () => {
+      if (user) {
+        try {
+          const { error } = await supabase
+            .from('user_preferences')
+            .upsert({
+              user_id: user.id,
+              theme,
+              updated_at: new Date().toISOString()
+            });
+
+          if (error) throw error;
+        } catch (error) {
+          console.error('Error updating theme preference:', error);
+          toast({
+            title: "Error",
+            description: "Failed to save theme preference",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    updateThemePreference();
+  }, [theme, user]);
+
+  // Update the DOM when theme changes
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-    localStorage.setItem('theme', theme);
   }, [theme]);
 
-  // Apply any language-specific theme adjustments
+  // Apply RTL/LTR based on language
   useEffect(() => {
     const root = window.document.documentElement;
-    
-    // Make sure RTL is set correctly based on language
     if (language === 'ar') {
       root.dir = 'rtl';
       root.lang = 'ar';

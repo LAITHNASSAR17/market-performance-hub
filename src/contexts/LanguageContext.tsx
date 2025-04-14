@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 type Language = 'ar' | 'en';
 
@@ -238,28 +241,76 @@ export const translations: TranslationsType = {
 };
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    // استعادة اللغة المخزنة أو استخدام عربي كافتراضي
-    const storedLanguage = localStorage.getItem('language');
-    return (storedLanguage as Language) || 'ar';
-  });
+  const [language, setLanguageState] = useState<Language>('ar');
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  // تحديث اللغة وحفظها في التخزين المحلي
-  const setLanguage = (lang: Language) => {
+  // Load language preference from Supabase when user logs in
+  useEffect(() => {
+    const loadLanguagePreference = async () => {
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from('user_preferences')
+            .select('language')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (error) throw error;
+          
+          if (data?.language) {
+            setLanguageState(data.language as Language);
+          } else {
+            // Create initial preference if it doesn't exist
+            await supabase
+              .from('user_preferences')
+              .insert({ user_id: user.id, language });
+          }
+        } catch (error) {
+          console.error('Error loading language preference:', error);
+        }
+      }
+    };
+
+    loadLanguagePreference();
+  }, [user]);
+
+  // Update language in Supabase when it changes
+  const setLanguage = async (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('language', lang);
-    // تعيين اتجاه المستند بناءً على اللغة
-    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang;
+    
+    if (user) {
+      try {
+        const { error } = await supabase
+          .from('user_preferences')
+          .upsert({
+            user_id: user.id,
+            language: lang,
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+
+        // Update document direction
+        document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = lang;
+      } catch (error) {
+        console.error('Error updating language preference:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save language preference",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
-  // تعيين اتجاه المستند عند التحميل الأولي
+  // Set initial document direction
   useEffect(() => {
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
-  }, [language]);
+  }, []);
 
-  // وظيفة الترجمة
   const t = (key: string): string => {
     return translations[key]?.[language] || key;
   };
