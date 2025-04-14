@@ -41,15 +41,17 @@ const Register: React.FC = () => {
     
     try {
       await register(name, email, password);
+      await sendVerificationEmail(email);
+      
       toast({
-        title: "Registration Successful",
-        description: "Your account has been created successfully.",
+        title: t('register.success.title'),
+        description: t('register.success.checkEmail'),
       });
     } catch (err) {
       setError(t('register.error.failed'));
       toast({
-        title: "Registration Failed",
-        description: "There was an error creating your account.",
+        title: t('register.error.title'),
+        description: t('register.error.description'),
         variant: "destructive",
       });
     }

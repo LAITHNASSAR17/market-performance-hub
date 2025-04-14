@@ -33,6 +33,8 @@ interface AuthContextType {
   unblockUser: (user: User) => Promise<void>;
   changePassword: (email: string, newPassword: string) => Promise<void>;
   updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
+  sendVerificationEmail: (email: string) => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,7 +52,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Initialize the admin user in Supabase if it doesn't exist
   useEffect(() => {
     const initializeAdminUser = async () => {
       const { data, error } = await supabase
@@ -60,7 +61,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .single();
 
       if (error && error.code === 'PGRST116') {
-        // User doesn't exist, create the admin
         const adminEmail = 'lnmr2001@gmail.com';
         const adminPassword = hashPassword('password123');
         
@@ -86,7 +86,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAdminUser();
   }, []);
 
-  // Use Supabase auth state change listener
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -136,7 +135,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw new Error(error.message);
       
-      // Auto login after registration
       await login(email, password);
     } catch (error) {
       console.error('Registration error:', error);
@@ -151,7 +149,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Modify login method to ensure proper local storage
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     try {
@@ -252,11 +249,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw error;
       
-      // Refresh users list
       const allUsers = await getAllUsers();
       setUsers(allUsers);
       
-      // Update local user if it's the current user
       if (user && user.id === updatedUser.id) {
         const updatedCurrentUser = {
           ...updatedUser,
@@ -271,18 +266,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // New method to update user profile
   const updateProfile = async (name: string, email: string, currentPassword?: string, newPassword?: string): Promise<void> => {
     try {
       if (!user) throw new Error('No user logged in');
       
-      // Prepare update data
       const updateData: any = {
         name,
         email
       };
       
-      // If changing password, verify current password first
       if (newPassword && currentPassword) {
         const { data } = await supabase
           .from('users')
@@ -297,7 +289,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updateData.password = hashPassword(newPassword);
       }
       
-      // Update the user
       const { error } = await supabase
         .from('users')
         .update(updateData)
@@ -305,7 +296,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
       if (error) throw error;
       
-      // Update local user
       const updatedUser = {
         ...user,
         name,
@@ -364,11 +354,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw error;
       
-      // Refresh users list
       const allUsers = await getAllUsers();
       setUsers(allUsers);
       
-      // Logout if blocked user is current user
       if (user.id === user?.id) {
         logout();
       }
@@ -387,7 +375,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw error;
       
-      // Refresh users list
       const allUsers = await getAllUsers();
       setUsers(allUsers);
     } catch (error) {
@@ -417,7 +404,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // New method to update subscription tier
   const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
     try {
       const { error } = await supabase
@@ -427,7 +413,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
       if (error) throw error;
       
-      // Update local state if it's the current user
       if (user && user.id === userId) {
         const updatedUser = {
           ...user,
@@ -437,7 +422,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(updatedUser);
       }
       
-      // Refresh users list
       await getAllUsers();
       
       toast({
@@ -449,6 +433,79 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       toast({
         title: "Update Failed",
         description: (error as Error).message || "Could not update subscription",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const sendVerificationEmail = async (email: string) => {
+    try {
+      const { error: authError } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin + '/verify',
+        },
+      });
+
+      if (authError) throw authError;
+
+      const verificationLink = `${window.location.origin}/verify?email=${email}`;
+      
+      const { error } = await supabase.functions.invoke('send-email', {
+        body: {
+          type: 'verification',
+          email,
+          verificationLink,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "تم إرسال البريد الإلكتروني",
+        description: "تم إرسال رابط التحقق إلى بريدك الإلكتروني",
+      });
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إرسال بريد التحقق. حاول مرة أخرى.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const sendPasswordResetEmail = async (email: string) => {
+    try {
+      const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+
+      if (authError) throw authError;
+
+      const resetLink = `${window.location.origin}/reset-password?email=${email}`;
+      
+      const { error } = await supabase.functions.invoke('send-email', {
+        body: {
+          type: 'reset-password',
+          email,
+          resetLink,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "تم إرسال البريد الإلكتروني",
+        description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
+      });
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.",
         variant: "destructive",
       });
       throw error;
@@ -473,6 +530,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     unblockUser,
     changePassword,
     updateSubscriptionTier,
+    sendVerificationEmail,
+    sendPasswordResetEmail,
   };
 
   return (
