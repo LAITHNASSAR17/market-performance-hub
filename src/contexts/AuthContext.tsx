@@ -1,57 +1,26 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  password?: string;
-  isAdmin?: boolean;
-  isBlocked?: boolean;
-  role?: string;
-  subscription_tier?: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAdmin: boolean;
-  isAuthenticated: boolean;
-  loading: boolean;
-  users: User[];
-  register: (name: string, email: string, password: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
-  updateUser: (updatedUser: User) => Promise<void>;
-  updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
-  getAllUsers: () => Promise<User[]>;
-  blockUser: (user: User) => Promise<void>;
-  unblockUser: (user: User) => Promise<void>;
-  changePassword: (email: string, newPassword: string) => Promise<void>;
-  updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
-}
+import { authService } from '@/services/authService';
+import { useAuthState, useAuthStateSetters } from '@/hooks/useAuthState';
+import type { AuthContextType, User } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<User[]>([]);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const state = useAuthState();
+  const {
+    setUser,
+    setIsAdmin,
+    setIsAuthenticated,
+    setLoading,
+    setUsers
+  } = useAuthStateSetters();
 
-  // Initialize the admin user in Supabase if it doesn't exist
-  useEffect(() => {
+  // Initialize admin user in Supabase if it doesn't exist
+  React.useEffect(() => {
     const initializeAdminUser = async () => {
       const { data, error } = await supabase
         .from('users')
@@ -85,7 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   // Check session on mount
-  useEffect(() => {
+  React.useEffect(() => {
     const checkSession = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       
@@ -126,27 +95,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkSession();
   }, []);
 
-  const register = async (name: string, email: string, password: string): Promise<void> => {
+  const register = async (name: string, email: string, password: string) => {
     setLoading(true);
     try {
-      const hashedPassword = hashPassword(password);
-      
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name,
-          email,
-          password: hashedPassword,
-          role: 'user',
-          is_blocked: false,
-          subscription_tier: 'free'
-        })
-        .select()
-        .single();
-      
-      if (error) throw new Error(error.message);
-      
-      // Auto login after registration
+      const userData = await authService.register(name, email, password);
       await login(email, password);
     } catch (error) {
       console.error('Registration error:', error);
@@ -161,47 +113,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Modify login method to ensure proper local storage
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+      const userData = await authService.login(email, password);
       
-      if (error || !data) throw new Error('Invalid credentials');
+      const userToStore = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        isAdmin: userData.role === 'admin',
+        subscription_tier: userData.subscription_tier || 'free'
+      };
+
+      setUser(userToStore);
+      setIsAdmin(userData.role === 'admin');
+      setIsAuthenticated(true);
       
-      console.log('Login attempt:', email);
-      console.log('Found user:', data ? 'Yes' : 'No');
-      
-      if (comparePassword(password, data.password)) {
-        if (data.is_blocked) {
-          throw new Error('User is blocked');
-        }
-        
-        const userToStore = { 
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          isAdmin: data.role === 'admin',
-          subscription_tier: data.subscription_tier || 'free'
-        };
-      
-        setUser(userToStore);
-        setIsAdmin(data.role === 'admin');
-        setIsAuthenticated(true);
-        
-        navigate('/dashboard');
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${userToStore.name}!`,
-        });
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      navigate('/dashboard');
+      toast({
+        title: "Login Successful",
+        description: `Welcome back, ${userToStore.name}!`,
+      });
     } catch (error) {
       console.error('Login error:', error);
       toast({
@@ -223,7 +157,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     navigate('/login');
   };
 
-  const forgotPassword = async (email: string): Promise<void> => {
+  const forgotPassword = async (email: string) => {
     console.log(`Forgot password requested for ${email}`);
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
     localStorage.setItem(`resetCode_${email}`, resetCode);
@@ -234,7 +168,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
-  const resetPassword = async (email: string, resetCode: string, newPassword: string): Promise<void> => {
+  const resetPassword = async (email: string, resetCode: string, newPassword: string) => {
     const storedResetCode = localStorage.getItem(`resetCode_${email}`);
     if (storedResetCode === resetCode) {
       const hashedPassword = hashPassword(newPassword);
@@ -257,27 +191,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const updateUser = async (updatedUser: User): Promise<void> => {
+  const updateUser = async (updatedUser: User) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({
-          name: updatedUser.name,
-          email: updatedUser.email,
-          role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
-          is_blocked: updatedUser.isBlocked || false,
-          subscription_tier: updatedUser.subscription_tier || 'free'
-        })
-        .eq('id', updatedUser.id);
+      await authService.updateUser(updatedUser.id, {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
+        is_blocked: updatedUser.isBlocked || false,
+        subscription_tier: updatedUser.subscription_tier || 'free'
+      });
       
-      if (error) throw error;
-      
-      // Refresh users list
       const allUsers = await getAllUsers();
       setUsers(allUsers);
       
-      // Update local user if it's the current user
-      if (user && user.id === updatedUser.id) {
+      if (state.user && state.user.id === updatedUser.id) {
         const updatedCurrentUser = {
           ...updatedUser,
           role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user')
@@ -291,18 +218,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // New method to update user profile
-  const updateProfile = async (name: string, email: string, currentPassword?: string, newPassword?: string): Promise<void> => {
+  const updateProfile = async (
+    name: string, 
+    email: string, 
+    currentPassword?: string, 
+    newPassword?: string
+  ) => {
     try {
       if (!user) throw new Error('No user logged in');
       
-      // Prepare update data
       const updateData: any = {
         name,
         email
       };
       
-      // If changing password, verify current password first
       if (newPassword && currentPassword) {
         const { data } = await supabase
           .from('users')
@@ -317,7 +246,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updateData.password = hashPassword(newPassword);
       }
       
-      // Update the user
       const { error } = await supabase
         .from('users')
         .update(updateData)
@@ -325,7 +253,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
       if (error) throw error;
       
-      // Update local user
       const updatedUser = {
         ...user,
         name,
@@ -349,15 +276,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const getAllUsers = async (): Promise<User[]> => {
+  const getAllUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*');
-      
-      if (error) throw error;
-      
-      const formattedUsers = data.map(user => ({
+      const users = await authService.getAllUsers();
+      const formattedUsers = users.map(user => ({
         id: user.id,
         name: user.name,
         email: user.email,
@@ -375,7 +297,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const blockUser = async (user: User): Promise<void> => {
+  const blockUser = async (user: User) => {
     try {
       const { error } = await supabase
         .from('users')
@@ -384,11 +306,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw error;
       
-      // Refresh users list
       const allUsers = await getAllUsers();
       setUsers(allUsers);
       
-      // Logout if blocked user is current user
       if (user.id === user?.id) {
         logout();
       }
@@ -398,7 +318,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const unblockUser = async (user: User): Promise<void> => {
+  const unblockUser = async (user: User) => {
     try {
       const { error } = await supabase
         .from('users')
@@ -407,7 +327,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw error;
       
-      // Refresh users list
       const allUsers = await getAllUsers();
       setUsers(allUsers);
     } catch (error) {
@@ -416,7 +335,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const changePassword = async (email: string, newPassword: string): Promise<void> => {
+  const changePassword = async (email: string, newPassword: string) => {
     try {
       const hashedPassword = hashPassword(newPassword);
       
@@ -437,27 +356,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // New method to update subscription tier
-  const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
+  const updateSubscriptionTier = async (userId: string, tier: string) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .update({ subscription_tier: tier })
-        .eq('id', userId);
-        
-      if (error) throw error;
+      await authService.updateSubscriptionTier(userId, tier);
       
-      // Update local state if it's the current user
-      if (user && user.id === userId) {
-        const updatedUser = {
-          ...user,
+      if (state.user && state.user.id === userId) {
+        setUser({
+          ...state.user,
           subscription_tier: tier
-        };
-        
-        setUser(updatedUser);
+        });
       }
       
-      // Refresh users list
       await getAllUsers();
       
       toast({
@@ -476,11 +385,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const value = {
-    user,
-    isAdmin,
-    isAuthenticated,
-    loading,
-    users,
+    ...state,
     register,
     login,
     logout,
@@ -497,7 +402,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {!state.loading && children}
     </AuthContext.Provider>
   );
 };
