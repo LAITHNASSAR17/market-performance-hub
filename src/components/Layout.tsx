@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -58,6 +59,15 @@ const Layout: React.FC<LayoutProps> = ({
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
+  
+  // تعديل وظيفة تسجيل الخروج
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   const navigation = [{
     name: t('nav.dashboard'),
@@ -157,7 +167,7 @@ const Layout: React.FC<LayoutProps> = ({
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-600 dark:text-red-400">
                     <LogOut className="h-4 w-4" />
                     <span>{t('auth.logout') || 'Logout'}</span>
                   </DropdownMenuItem>
@@ -242,6 +252,25 @@ const Layout: React.FC<LayoutProps> = ({
                   </TooltipContent>
                 </Tooltip>
               )}
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center px-2 bg-red-100 dark:bg-red-900/30 border-red-200 dark:border-red-700"
+                  >
+                    <LogOut className="h-4 w-4 text-red-500" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent 
+                  side={language === 'ar' ? 'left' : 'right'} 
+                  align="center"
+                >
+                  {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                </TooltipContent>
+              </Tooltip>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
@@ -272,6 +301,18 @@ const Layout: React.FC<LayoutProps> = ({
                   </Link>
                 </Button>
               )}
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center bg-red-100 dark:bg-red-900/20 border-red-200 dark:border-red-700"
+              >
+                <LogOut className="h-4 w-4 mr-2 text-red-500" />
+                <span className="text-red-700 dark:text-red-300">
+                  {language === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+                </span>
+              </Button>
             </div>
           )}
         </div>
