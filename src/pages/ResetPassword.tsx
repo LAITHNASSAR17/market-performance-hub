@@ -17,6 +17,7 @@ const ResetPassword: React.FC = () => {
   const [token, setToken] = useState<string | null>(null);
   const [processingReset, setProcessingReset] = useState(false);
   const [tokenProcessed, setTokenProcessed] = useState(false);
+  const [initialSignOutDone, setInitialSignOutDone] = useState(false);
   const { resetPassword, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,21 +27,24 @@ const ResetPassword: React.FC = () => {
   // Force sign out when accessing this page to prevent automatic redirects
   useEffect(() => {
     const preventAutoRedirect = async () => {
+      if (initialSignOutDone) return;
+      
       try {
         await supabase.auth.signOut();
         console.log("Signed out user to prevent automatic redirect");
+        setInitialSignOutDone(true);
       } catch (error) {
         console.error("Error signing out:", error);
       }
     };
     
     preventAutoRedirect();
-  }, []);
+  }, [initialSignOutDone]);
 
   useEffect(() => {
-    if (tokenProcessed) return; // Only process token once
+    if (tokenProcessed || !initialSignOutDone) return; // Only process token once and after initial signout
     
-    const extractToken = () => {
+    const extractToken = async () => {
       // First try to get token from URL search params
       const resetToken = searchParams.get('reset_token');
       if (resetToken) {
@@ -73,24 +77,29 @@ const ResetPassword: React.FC = () => {
         }
       }
       
+      // If there's any hash, log it for debugging
+      if (location.hash) {
+        console.log("Hash present but no token found:", location.hash);
+      }
+      
       return false;
     };
 
     // Only run token extraction if we haven't processed it yet
-    if (!tokenProcessed) {
-      const hasToken = extractToken();
-      
-      if (!hasToken) {
-        console.error("No reset token found in URL or hash");
-        toast({
-          title: "خطأ في الرابط",
-          description: "رابط إعادة التعيين غير صالح أو منتهي الصلاحية.",
-          variant: "destructive",
-        });
-        navigate('/login');
-      } else {
-        // Verify token without logging in
-        const verifyToken = async () => {
+    if (!tokenProcessed && initialSignOutDone) {
+      const attemptExtraction = async () => {
+        const hasToken = await extractToken();
+        
+        if (!hasToken) {
+          console.error("No reset token found in URL or hash");
+          toast({
+            title: "خطأ في الرابط",
+            description: "رابط إعادة التعيين غير صالح أو منتهي الصلاحية.",
+            variant: "destructive",
+          });
+          navigate('/login');
+        } else {
+          // Verify token without logging in
           try {
             const { error } = await supabase.auth.getUser(token);
             if (error) {
@@ -105,12 +114,12 @@ const ResetPassword: React.FC = () => {
           } catch (err) {
             console.error("Error verifying token:", err);
           }
-        };
-        
-        verifyToken();
-      }
+        }
+      };
+      
+      attemptExtraction();
     }
-  }, [location, navigate, searchParams, toast, tokenProcessed]);
+  }, [location, navigate, searchParams, toast, tokenProcessed, initialSignOutDone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
