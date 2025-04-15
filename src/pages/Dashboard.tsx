@@ -295,7 +295,6 @@ const DashboardContent: React.FC = () => {
         <div className="h-full pt-2">
           <CumulativePLChart 
             trades={filteredTrades}
-            height={250}
           />
         </div>
       )

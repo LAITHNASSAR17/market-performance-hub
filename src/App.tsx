@@ -51,14 +51,14 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
         <AuthProvider>
-          <LanguageProvider>
-            <TradeProvider>
-              <NotebookProvider>
-                <DashboardProvider>
-                  <BrowserRouter>
+          <ThemeProvider>
+            <LanguageProvider>
+              <TradeProvider>
+                <NotebookProvider>
+                  <DashboardProvider>
                     <div className="min-h-screen bg-background dark:bg-gray-900 text-foreground font-sans antialiased">
                       <Routes>
                         {/* User Routes */}
@@ -100,14 +100,14 @@ function App() {
                       </Routes>
                     </div>
                     <Toaster />
-                  </BrowserRouter>
-                </DashboardProvider>
-              </NotebookProvider>
-            </TradeProvider>
-          </LanguageProvider>
+                  </DashboardProvider>
+                </NotebookProvider>
+              </TradeProvider>
+            </LanguageProvider>
+          </ThemeProvider>
         </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

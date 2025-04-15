@@ -17,10 +17,15 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     // Check for system preference as default
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
   });
 
-  const { user } = useAuth();
+  // Use optional chaining to prevent errors if auth is not ready
+  const auth = useAuth?.() || { user: null };
+  const { user } = auth;
   const { toast } = useToast();
 
   // Load theme preference from Supabase when user logs in
@@ -103,13 +108,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Update the DOM when theme changes
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    
-    // Set document direction to LTR (left-to-right)
-    root.dir = 'ltr';
-    root.lang = 'en';
+    if (typeof window !== 'undefined') {
+      const root = window.document.documentElement;
+      root.classList.remove('light', 'dark');
+      root.classList.add(theme);
+      
+      // Set document direction and language
+      root.setAttribute('dir', 'ltr');
+      root.setAttribute('lang', 'en');
+    }
   }, [theme]);
 
   const toggleTheme = () => {
