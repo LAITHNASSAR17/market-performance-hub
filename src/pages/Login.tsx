@@ -33,7 +33,7 @@ const Login: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -51,10 +51,12 @@ const Login: React.FC = () => {
     try {
       console.log('Login page: Starting login for', email);
       await login(email, password);
+      
       toast({
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحبًا بعودتك!",
       });
+      
       console.log('Login successful, redirecting to dashboard');
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
