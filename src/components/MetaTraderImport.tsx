@@ -21,7 +21,7 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
     
     return Array.from(orders).map(order => ({
       pair: order.getAttribute('symbol') || '',
-      type: (order.getAttribute('type') || '').toLowerCase().includes('buy') ? 'Buy' : 'Sell',
+      type: (order.getAttribute('type') || '').toLowerCase().includes('buy') ? 'Buy' as const : 'Sell' as const,
       entry: parseFloat(order.getAttribute('open_price') || '0'),
       exit: parseFloat(order.getAttribute('close_price') || '0'),
       lotSize: parseFloat(order.getAttribute('lots') || '0'),
@@ -57,7 +57,7 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
 
       return {
         pair: symbol,
-        type: (type || '').toLowerCase().includes('buy') ? 'Buy' : 'Sell',
+        type: (type || '').toLowerCase().includes('buy') ? 'Buy' as const : 'Sell' as const,
         entry: parseFloat(openPrice || '0'),
         exit: parseFloat(closePrice || '0'),
         lotSize: parseFloat(size || '0'),
@@ -95,7 +95,7 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
             
             return {
               pair: symbol,
-              type: type.toLowerCase().includes('buy') ? 'Buy' : 'Sell',
+              type: type.toLowerCase().includes('buy') ? 'Buy' as const : 'Sell' as const,
               entry: parseFloat(openPrice),
               exit: parseFloat(closePrice),
               lotSize: parseFloat(size),
