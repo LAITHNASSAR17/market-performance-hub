@@ -479,11 +479,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending verification email to ${email}`);
       
-      // Use current application URL to support both development and production
-      const appUrl = window.location.origin;
-      console.log(`Application URL: ${appUrl}`);
-      
-      const verificationLink = `${appUrl}/verify?email=${encodeURIComponent(email)}`;
+      // Use trackmind.vip domain
+      const verificationLink = `https://trackmind.vip/verify?email=${encodeURIComponent(email)}`;
       console.log(`Verification link: ${verificationLink}`);
       
       console.log("Calling Supabase function with parameters:", {
@@ -544,11 +541,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error("User not found");
       }
       
-      // Use current application URL to support both development and production
-      const appUrl = window.location.origin;
-      console.log(`Application URL: ${appUrl}`);
-      
-      const resetLink = `${appUrl}/reset-password?email=${encodeURIComponent(email)}`;
+      // Use trackmind.vip domain
+      const resetLink = `https://trackmind.vip/reset-password?email=${encodeURIComponent(email)}`;
       console.log(`Reset password link: ${resetLink}`);
       
       console.log("Calling Supabase function for password reset email");
