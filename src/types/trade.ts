@@ -23,6 +23,7 @@ export interface Trade {
   hashtags: string[];
   createdAt: string;
   commission: number;
+  rating: number;
 }
 
 // Convert database trade to UI trade

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import StarRating from '@/components/StarRating';
 
 const EMOTIONS = [
   "Confident",
@@ -31,28 +31,6 @@ const EMOTIONS = [
   "Hesitant",
   "Overconfident",
   "Neutral",
-  "Other"
-] as const;
-
-const OUTCOME_REASONS = [
-  "Followed my trading plan",
-  "Didn't follow trading plan",
-  "Emotional decision",
-  "Market volatility",
-  "Overtraded",
-  "Poor risk management",
-  "Late entry",
-  "Early exit",
-  "Missed confirmation",
-  "News impact",
-  "Technical setup worked perfectly",
-  "TP hit / SL hit as expected",
-  "Reversal not anticipated",
-  "Chased the market",
-  "FOMO (Fear of Missing Out)",
-  "Misread the trend",
-  "Overleveraged",
-  "Took partials too early",
   "Other"
 ] as const;
 
@@ -88,8 +66,7 @@ const AddTrade: React.FC = () => {
     commission: '',
     emotion: '',
     otherEmotion: '',
-    outcomeReasons: [] as string[],
-    otherOutcomeReason: ''
+    rating: 0
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -139,7 +116,8 @@ const AddTrade: React.FC = () => {
       profitLoss: parseFloat(formData.profitLoss),
       durationMinutes: formData.durationMinutes ? parseInt(formData.durationMinutes) : 0,
       date: formData.date.toISOString().split('T')[0],
-      commission: formData.commission ? parseFloat(formData.commission) : 0
+      commission: formData.commission ? parseFloat(formData.commission) : 0,
+      rating: formData.rating
     };
     
     addTrade(tradeData);
@@ -158,11 +136,11 @@ const AddTrade: React.FC = () => {
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <CardHeader>
             <CardTitle>Trade Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="account">Account</Label>
@@ -378,6 +356,15 @@ const AddTrade: React.FC = () => {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label>Trade Rating</Label>
+              <StarRating
+                value={formData.rating}
+                onChange={(rating) => setFormData(prev => ({ ...prev, rating }))}
+                className="mt-1"
+              />
+            </div>
+
             <div>
               <Label htmlFor="notes">Notes</Label>
               <Textarea
@@ -401,40 +388,42 @@ const AddTrade: React.FC = () => {
               />
             </div>
 
-            <Separator className="my-6" />
+            <Separator className="my-4" />
             
-            <h3 className="text-lg font-medium">Trade Images</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="beforeImage">Before Trade Image</Label>
-                <p className="text-sm text-gray-500 mb-2">Upload an image of the chart before your entry</p>
-                <ImageUpload
-                  value={formData.beforeImageUrl}
-                  onChange={(imageUrl) => setFormData({ ...formData, beforeImageUrl: imageUrl })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="afterImage">After Trade Image</Label>
-                <p className="text-sm text-gray-500 mb-2">Upload an image of the chart after your exit</p>
-                <ImageUpload
-                  value={formData.afterImageUrl}
-                  onChange={(imageUrl) => setFormData({ ...formData, afterImageUrl: imageUrl })}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="image">Additional Chart Image (Optional)</Label>
-              <p className="text-sm text-gray-500 mb-2">Upload any other relevant chart image</p>
-              <ImageUpload
-                value={formData.imageUrl}
-                onChange={(imageUrl) => setFormData({ ...formData, imageUrl })}
-              />
-            </div>
-
             <div className="space-y-4">
+              <h3 className="text-lg font-medium">Trade Images</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="beforeImage">Before Trade Image</Label>
+                  <p className="text-sm text-gray-500 mb-2">Upload an image of the chart before your entry</p>
+                  <ImageUpload
+                    value={formData.beforeImageUrl}
+                    onChange={(imageUrl) => setFormData({ ...formData, beforeImageUrl: imageUrl })}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="afterImage">After Trade Image</Label>
+                  <p className="text-sm text-gray-500 mb-2">Upload an image of the chart after your exit</p>
+                  <ImageUpload
+                    value={formData.afterImageUrl}
+                    onChange={(imageUrl) => setFormData({ ...formData, afterImageUrl: imageUrl })}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="image">Additional Chart Image (Optional)</Label>
+                <p className="text-sm text-gray-500 mb-2">Upload any other relevant chart image</p>
+                <ImageUpload
+                  value={formData.imageUrl}
+                  onChange={(imageUrl) => setFormData({ ...formData, imageUrl })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="emotion">How did you feel during this trade?</Label>
               <Select
                 value={formData.emotion}
@@ -468,40 +457,7 @@ const AddTrade: React.FC = () => {
                     ...prev,
                     otherEmotion: e.target.value
                   }))}
-                />
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <Label>Reason for Profit or Loss</Label>
-              <div className="flex flex-wrap gap-2">
-                {OUTCOME_REASONS.map((reason) => (
-                  <Badge
-                    key={reason}
-                    variant={formData.outcomeReasons.includes(reason) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => {
-                      setFormData(prev => ({
-                        ...prev,
-                        outcomeReasons: prev.outcomeReasons.includes(reason)
-                          ? prev.outcomeReasons.filter(r => r !== reason)
-                          : [...prev.outcomeReasons, reason]
-                      }))
-                    }}
-                  >
-                    {reason}
-                  </Badge>
-                ))}
-              </div>
-
-              {formData.outcomeReasons.includes('Other') && (
-                <Input
-                  placeholder="Specify other reason"
-                  value={formData.otherOutcomeReason}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    otherOutcomeReason: e.target.value
-                  }))}
+                  className="mt-2"
                 />
               )}
             </div>
