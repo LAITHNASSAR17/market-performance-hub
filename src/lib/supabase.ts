@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Using the values directly to avoid environment variable issues
@@ -26,8 +25,7 @@ export const getSiteSettings = async () => {
 export const updateSiteSettings = async (settings: any) => {
   const { data, error } = await supabase
     .from('site_settings')
-    .update(settings)
-    .eq('site_name', settings.site_name)
+    .upsert(settings)
     .select();
     
   if (error) {

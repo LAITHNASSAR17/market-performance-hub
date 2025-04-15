@@ -1,10 +1,12 @@
 
 import React from 'react';
-import { Bell, Lock, FileUp } from 'lucide-react';
+import { Bell, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 import {
   Card,
   CardContent,
@@ -15,89 +17,80 @@ import {
 } from '@/components/ui/card';
 
 const SystemSettings: React.FC = () => {
+  const { toast } = useToast();
+  const [siteName, setSiteName] = React.useState(localStorage.getItem('siteName') || 'TradeTracker');
+  
+  const handleSaveSettings = async () => {
+    try {
+      // Update site_settings table
+      const { error } = await supabase
+        .from('site_settings')
+        .upsert({ 
+          site_name: siteName
+        });
+
+      if (error) throw error;
+
+      // Update localStorage
+      localStorage.setItem('siteName', siteName);
+      
+      // Update document title
+      document.title = siteName;
+
+      toast({
+        title: "Settings Saved",
+        description: "Site settings have been updated successfully"
+      });
+
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid gap-6">
       <Card className="bg-white shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle>General Settings</CardTitle>
-          <CardDescription>Manage general system settings</CardDescription>
+          <CardTitle>Site Settings</CardTitle>
+          <CardDescription>Configure global site settings</CardDescription>
         </CardHeader>
         
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="siteName">Site Name</Label>
-            <Input id="siteName" defaultValue="Trading Journal Platform" />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Site Description</Label>
-            <Input id="description" defaultValue="Track your trading journey and improve your performance" />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="allowRegistration">Allow User Registration</Label>
-              <p className="text-sm text-gray-500">Enable or disable new user registration</p>
-            </div>
-            <Switch id="allowRegistration" defaultChecked />
+            <Input 
+              id="siteName" 
+              value={siteName}
+              onChange={(e) => setSiteName(e.target.value)}
+              placeholder="Enter site name"
+            />
+            <p className="text-sm text-gray-500">
+              This name will be used across the entire platform
+            </p>
           </div>
           
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="maintenanceMode">Maintenance Mode</Label>
+              <Label htmlFor="maintenance">Maintenance Mode</Label>
               <p className="text-sm text-gray-500">Put the site in maintenance mode</p>
             </div>
-            <Switch id="maintenanceMode" />
+            <Switch id="maintenance" />
           </div>
         </CardContent>
         
         <CardFooter>
-          <Button className="w-full">Save Settings</Button>
+          <Button onClick={handleSaveSettings} className="w-full">
+            Save Settings
+          </Button>
         </CardFooter>
       </Card>
-      
+
       <Card className="bg-white shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle>Notification Settings</CardTitle>
-          <CardDescription>Configure the notification system</CardDescription>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="emailNotifications">Email Notifications</Label>
-              <p className="text-sm text-gray-500">Send notifications via email</p>
-            </div>
-            <Switch id="emailNotifications" defaultChecked />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="inAppNotifications">In-App Notifications</Label>
-              <p className="text-sm text-gray-500">Display notifications within the app</p>
-            </div>
-            <Switch id="inAppNotifications" defaultChecked />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="welcomeMessage">Welcome Message</Label>
-            <Input id="welcomeMessage" defaultValue="Welcome to the Trading Journal Platform!" />
-          </div>
-          
-          <div className="space-y-2">
-            <Button variant="outline" className="w-full flex items-center justify-center">
-              <Bell className="mr-2 h-4 w-4" />
-              Send Test Notification
-            </Button>
-          </div>
-        </CardContent>
-        
-        <CardFooter>
-          <Button className="w-full">Save Notification Settings</Button>
-        </CardFooter>
-      </Card>
-      
-      <Card className="bg-white shadow-sm md:col-span-2">
         <CardHeader className="pb-2">
           <CardTitle>Backup and Export</CardTitle>
           <CardDescription>Create and manage system backups</CardDescription>
@@ -116,12 +109,6 @@ const SystemSettings: React.FC = () => {
             <Button variant="outline" className="flex items-center justify-center">
               <FileUp className="mr-2 h-4 w-4" />
               Export All Notes
-            </Button>
-          </div>
-          
-          <div className="pt-4">
-            <Button className="w-full md:w-auto" variant="default">
-              Create Full System Backup
             </Button>
           </div>
         </CardContent>

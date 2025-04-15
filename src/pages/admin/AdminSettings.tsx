@@ -1,13 +1,11 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Globe, Bell, Shield, Database, FileText } from 'lucide-react';
+import { Settings, Globe, Shield, Database } from 'lucide-react';
 import SiteSettings from '@/components/admin/SiteSettings';
 import SystemSettings from '@/components/admin/SystemSettings';
-import SystemSettingsExtended from '@/components/admin/SystemSettingsExtended';
 
 const AdminSettings: React.FC = () => {
-  // Get site name from localStorage or default for page title
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
   return (
@@ -29,33 +27,27 @@ const AdminSettings: React.FC = () => {
           </TabsTrigger>
           <TabsTrigger value="system" className="flex items-center">
             <Settings className="mr-2 h-4 w-4" />
-            <span>System Configuration</span>
+            <span>System Settings</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center">
             <Shield className="mr-2 h-4 w-4" />
-            <span>Security & Privacy</span>
-          </TabsTrigger>
-          <TabsTrigger value="integrations" className="flex items-center">
-            <FileText className="mr-2 h-4 w-4" />
-            <span>Integrations</span>
+            <span>Security</span>
           </TabsTrigger>
         </TabsList>
         
         <TabsContent value="site" className="space-y-6">
-          <SiteSettings />
+          <SystemSettings />
         </TabsContent>
         
         <TabsContent value="system" className="space-y-6">
-          <SystemSettings />
-          <SystemSettingsExtended />
+          <SiteSettings />
         </TabsContent>
         
         <TabsContent value="security" className="space-y-6">
-          <SystemSettingsExtended />
-        </TabsContent>
-        
-        <TabsContent value="integrations" className="space-y-6">
-          <SystemSettingsExtended />
+          {/* Security settings component will be added later */}
+          <div className="text-center py-8 text-gray-500">
+            Security settings coming soon
+          </div>
         </TabsContent>
       </Tabs>
     </div>

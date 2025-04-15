@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -59,15 +58,12 @@ const Homepage: React.FC = () => {
   const [content, setContent] = useState<HomeContent>(defaultContent);
   const [loading, setLoading] = useState(true);
   
-  // Fetch site name from localStorage for document title
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
   
-  // Set document title
   useEffect(() => {
     document.title = siteName;
   }, [siteName]);
   
-  // Fetch homepage content from database
   useEffect(() => {
     const fetchHomepageContent = async () => {
       try {
@@ -77,11 +73,9 @@ const Homepage: React.FC = () => {
           .single();
           
         if (error) {
-          // If no content exists, we'll use the default
           console.error('Error fetching homepage content:', error);
           setContent(defaultContent);
         } else if (data) {
-          // Parse the features array which might be stored as JSON string
           const parsedData = {
             ...data,
             features: typeof data.features === 'string' 
@@ -110,7 +104,6 @@ const Homepage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-indigo-950 to-indigo-900 text-white">
-      {/* Navigation */}
       <header className="container mx-auto px-4 py-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
@@ -147,7 +140,6 @@ const Homepage: React.FC = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="flex-1 flex flex-col justify-center items-center text-center px-4 py-16 md:py-24">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">{content.title}</h1>
@@ -167,7 +159,6 @@ const Homepage: React.FC = () => {
         </div>
       </section>
       
-      {/* App Screenshot */}
       <section className="container mx-auto px-4 pb-16">
         <div className="relative">
           <div className="bg-black/30 backdrop-blur-sm p-4 rounded-xl overflow-hidden shadow-2xl">
@@ -180,7 +171,6 @@ const Homepage: React.FC = () => {
         </div>
       </section>
       
-      {/* Features Section */}
       <section className="bg-indigo-900/50 py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
@@ -197,7 +187,6 @@ const Homepage: React.FC = () => {
         </div>
       </section>
       
-      {/* Footer */}
       <footer className="bg-indigo-950 py-8">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
