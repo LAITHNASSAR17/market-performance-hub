@@ -4,7 +4,6 @@ import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
 import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { 
@@ -237,6 +236,77 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Calendar moved to top */}
+      <Card className="mb-6">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
+          <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => navigate('/journal')}>
+            <Calendar className="h-4 w-4 mr-2" />
+            Journal View
+          </Button>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <div className="min-w-[768px] md:min-w-0">
+            <div className="grid grid-cols-7 gap-1">
+              <div className="text-sm font-medium text-center p-2">Sun</div>
+              <div className="text-sm font-medium text-center p-2">Mon</div>
+              <div className="text-sm font-medium text-center p-2">Tue</div>
+              <div className="text-sm font-medium text-center p-2">Wed</div>
+              <div className="text-sm font-medium text-center p-2">Thu</div>
+              <div className="text-sm font-medium text-center p-2">Fri</div>
+              <div className="text-sm font-medium text-center p-2">Sat</div>
+              
+              {getCalendarData().map((week, weekIndex) => (
+                <React.Fragment key={`week-${weekIndex}`}>
+                  {week.days.map((day, dayIndex) => 
+                    day === null ? (
+                      <div key={`empty-${weekIndex}-${dayIndex}`} className="p-2"></div>
+                    ) : (
+                      <div 
+                        key={`day-${day.day}`} 
+                        className={cn(
+                          "border rounded p-2 text-center min-h-[70px] sm:min-h-[80px] cursor-pointer transition-colors",
+                          day.profit > 0 ? "bg-green-50 border-green-200 hover:bg-green-100" : 
+                          day.profit < 0 ? "bg-red-50 border-red-200 hover:bg-red-100" : 
+                          "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                        )}
+                        onClick={() => handleDayClick(day.date)}
+                      >
+                        <div className="text-sm">{day.day}</div>
+                        {day.trades > 0 && (
+                          <>
+                            <div className={cn(
+                              "text-base sm:text-lg font-bold mt-1",
+                              day.profit > 0 ? "text-emerald-500" : "text-red-500"
+                            )}>
+                              {day.profit > 0 ? '+' : ''}{day.profit.toFixed(0)}
+                            </div>
+                            <div className="text-xs text-gray-500">{day.trades} {day.trades === 1 ? 'trade' : 'trades'}</div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="mt-1 text-xs h-6 px-2 flex items-center"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigateToJournal(day.date);
+                              }}
+                            >
+                              View
+                              <ExternalLink className="ml-1 h-3 w-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <StatCard
           title="Total P&L"
@@ -266,6 +336,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Charts and analysis section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <Card className="col-span-1">
           <CardHeader className="pb-2">
@@ -354,6 +425,7 @@ const Dashboard: React.FC = () => {
         </Card>
       </div>
 
+      {/* Calendar moved to bottom */}
       <Card className="mb-6">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
           <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
