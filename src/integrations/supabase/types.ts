@@ -178,6 +178,7 @@ export type Database = {
           notes: string | null
           profit_loss: number | null
           quantity: number
+          rating: number | null
           symbol: string
           tags: string[]
           updated_at: string
@@ -195,6 +196,7 @@ export type Database = {
           notes?: string | null
           profit_loss?: number | null
           quantity: number
+          rating?: number | null
           symbol: string
           tags?: string[]
           updated_at?: string
@@ -212,6 +214,7 @@ export type Database = {
           notes?: string | null
           profit_loss?: number | null
           quantity?: number
+          rating?: number | null
           symbol?: string
           tags?: string[]
           updated_at?: string

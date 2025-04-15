@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -107,7 +106,8 @@ const sampleTrades: Trade[] = [
     afterImageUrl: null,
     hashtags: ['momentum', 'news'],
     createdAt: '2025-04-10T15:30:00Z',
-    commission: 15
+    commission: 15,
+    rating: 4
   },
   {
     id: '2',
@@ -131,7 +131,8 @@ const sampleTrades: Trade[] = [
     afterImageUrl: null,
     hashtags: ['breakout', 'technical'],
     createdAt: '2025-04-09T12:15:00Z',
-    commission: 10
+    commission: 10,
+    rating: 3
   },
   {
     id: '3',
@@ -155,7 +156,8 @@ const sampleTrades: Trade[] = [
     afterImageUrl: null,
     hashtags: ['mistake', 'fakeout'],
     createdAt: '2025-04-08T09:45:00Z',
-    commission: 15
+    commission: 15,
+    rating: 2
   },
   {
     id: '4',
@@ -179,7 +181,8 @@ const sampleTrades: Trade[] = [
     afterImageUrl: null,
     hashtags: ['retracement', 'setup'],
     createdAt: '2025-04-07T14:20:00Z',
-    commission: 12
+    commission: 12,
+    rating: 5
   },
   {
     id: '5',
@@ -203,7 +206,8 @@ const sampleTrades: Trade[] = [
     afterImageUrl: null,
     hashtags: ['mistake', 'patience'],
     createdAt: '2025-04-06T10:30:00Z',
-    commission: 10
+    commission: 10,
+    rating: 1
   }
 ];
 
@@ -343,7 +347,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             afterImageUrl: null,
             hashtags: trade.tags || [],
             createdAt: trade.created_at,
-            commission: trade.fees || 0
+            commission: trade.fees || 0,
+            rating: trade.rating || 0
           }));
 
           setTrades(formattedTrades);
@@ -392,7 +397,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           profit_loss: newTradeData.profitLoss,
           fees: 0,
           notes: newTradeData.notes,
-          tags: newTradeData.hashtags
+          tags: newTradeData.hashtags,
+          rating: newTradeData.rating || 0
         })
         .select()
         .single();
@@ -404,6 +410,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         id: data.id,
         userId: user.id,
         createdAt: data.created_at,
+        rating: data.rating || 0
       };
 
       setTrades(prevTrades => [newTrade, ...prevTrades]);
@@ -440,6 +447,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (tradeUpdate.profitLoss !== undefined) updateData.profit_loss = tradeUpdate.profitLoss;
       if (tradeUpdate.notes !== undefined) updateData.notes = tradeUpdate.notes;
       if (tradeUpdate.hashtags) updateData.tags = tradeUpdate.hashtags;
+      if (tradeUpdate.rating !== undefined) updateData.rating = tradeUpdate.rating;
 
       const { error } = await supabase
         .from('trades')

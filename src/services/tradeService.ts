@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -17,6 +16,7 @@ export interface ITrade {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
+  rating: number;
 }
 
 export const tradeService = {
@@ -115,6 +115,7 @@ function formatTrade(data: any): ITrade {
     notes: data.notes || '',
     tags: data.tags || [],
     createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at)
+    updatedAt: new Date(data.updated_at),
+    rating: data.rating || 0
   };
 }

@@ -1,3 +1,4 @@
+
 import { ITrade } from '@/services/tradeService';
 
 export interface Trade {
@@ -23,10 +24,10 @@ export interface Trade {
   hashtags: string[];
   createdAt: string;
   commission: number;
-  rating: number;
+  rating: number; // Added rating field
 }
 
-// Convert database trade to UI trade
+// Update mapDBTradeToTrade to include rating
 export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   id: dbTrade.id,
   userId: dbTrade.userId,
@@ -49,10 +50,11 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   afterImageUrl: null,
   hashtags: dbTrade.tags || [],
   createdAt: dbTrade.createdAt.toISOString(),
-  commission: dbTrade.fees || 0
+  commission: dbTrade.fees || 0,
+  rating: 0 // Default rating
 });
 
-// Convert UI trade to database trade
+// Update mapTradeToDBTrade to include rating
 export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => ({
   userId: '', // Will be set by the service
   symbol: trade.pair,
