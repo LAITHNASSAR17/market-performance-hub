@@ -236,7 +236,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         detectedType = 'forex';
       } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
         detectedType = 'crypto';
-      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
+      } else if (/^(sr|sa)$/i.test(instrumentType)) {
         detectedType = 'stock';
       } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
         detectedType = 'index';
@@ -608,4 +608,4 @@ export const useTrade = () => {
   return context;
 };
 
-export { Trade } from '@/types/trade';
+export type { Trade } from '@/types/trade';
