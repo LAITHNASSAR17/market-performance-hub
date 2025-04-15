@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,14 +9,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Save, Image } from 'lucide-react';
 import FaviconUpload from '@/components/FaviconUpload';
-import { supabase } from '@/lib/supabase';
 
 const SystemSettings: React.FC = () => {
   const { toast } = useToast();
   const { settings, updateSettings, isUpdating } = useSiteSettings();
-  const [siteName, setSiteName] = React.useState(settings?.site_name || 'TradeTracker');
-  const [maintenanceMode, setMaintenanceMode] = React.useState(false);
-  const [showFaviconUpload, setShowFaviconUpload] = React.useState(false);
+  const [siteName, setSiteName] = useState('');
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [showFaviconUpload, setShowFaviconUpload] = useState(false);
   
   useEffect(() => {
     if (settings?.site_name) {
@@ -26,51 +25,16 @@ const SystemSettings: React.FC = () => {
 
   const handleSaveSettings = async () => {
     try {
-      // Direct update to the database, bypassing the updateSettings function
-      const { data, error } = await supabase
-        .from('site_settings')
-        .update({ site_name: siteName })
-        .eq('site_name', settings?.site_name || 'TradeTracker')
-        .select();
-
-      if (error) {
-        console.error('Error saving settings:', error);
-        throw error;
-      }
-
-      if (data && data.length > 0) {
-        // Update localStorage and document title
-        localStorage.setItem('siteName', siteName);
-        document.title = siteName;
-        
-        toast({
-          title: "Settings Saved",
-          description: "Site settings have been updated successfully"
-        });
-      } else if (!data || data.length === 0) {
-        // If no rows were updated, it means the record doesn't exist, so create it
-        const { data: insertData, error: insertError } = await supabase
-          .from('site_settings')
-          .insert([{ 
-            site_name: siteName,
-            company_email: settings?.company_email || 'support@tradetracker.com' 
-          }])
-          .select();
-
-        if (insertError) {
-          console.error('Error creating settings:', insertError);
-          throw insertError;
-        }
-
-        // Update localStorage and document title
-        localStorage.setItem('siteName', siteName);
-        document.title = siteName;
-        
-        toast({
-          title: "Settings Created",
-          description: "Site settings have been created successfully"
-        });
-      }
+      console.log('Saving site name:', siteName);
+      // Use the updateSettings function from the hook
+      updateSettings({ 
+        site_name: siteName 
+      });
+      
+      toast({
+        title: "Settings Saved",
+        description: "Site settings have been updated successfully"
+      });
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({

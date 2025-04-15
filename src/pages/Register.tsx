@@ -17,6 +17,7 @@ import {
 import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
+import { supabase } from '@/lib/supabase';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
@@ -49,9 +50,25 @@ const Register: React.FC = () => {
     }
     
     try {
-      console.log('Registering user with email:', email);
-      // Pass the country along with other registration data
-      await register(name, email, password, country);
+      console.log('Registering user with email:', email, 'and country:', country);
+      
+      // First register the user
+      const user = await register(name, email, password, country);
+      
+      // Then save the country to their profile
+      if (user && user.id) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            country: country,
+            updated_at: new Date().toISOString()
+          });
+          
+        if (profileError) {
+          console.error('Error saving profile:', profileError);
+        }
+      }
       
       toast({
         title: t('register.success.title'),

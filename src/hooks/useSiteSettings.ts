@@ -21,17 +21,19 @@ export const useSiteSettings = () => {
           .from('site_settings')
           .select('*')
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (error) {
-          if (error.code === 'PGRST116') {
-            // No records found, return default values
-            return {
-              site_name: 'TradeTracker',
-              company_email: 'support@tradetracker.com'
-            } as SiteSettings;
-          }
+          console.error('Error fetching site settings:', error);
           throw error;
+        }
+        
+        if (!data) {
+          // No records found, return default values
+          return {
+            site_name: 'TradeTracker',
+            company_email: 'support@tradetracker.com'
+          } as SiteSettings;
         }
         
         return data as SiteSettings;
@@ -62,45 +64,63 @@ export const useSiteSettings = () => {
 
   const updateSettings = useMutation({
     mutationFn: async (newSettings: Partial<SiteSettings>) => {
-      // Try to update existing record
-      let { data, error } = await supabase
+      console.log('Updating settings with:', newSettings);
+      
+      // Check if a record already exists
+      const { data: existingSettings } = await supabase
         .from('site_settings')
-        .update(newSettings)
-        .eq('site_name', settings?.site_name || 'TradeTracker')
-        .select();
-
-      if (error) {
-        console.error('Error updating settings:', error);
-        throw error;
-      }
-
-      // If no rows were updated, insert a new record
-      if (!data || data.length === 0) {
-        const { data: insertData, error: insertError } = await supabase
+        .select('*')
+        .limit(1)
+        .maybeSingle();
+      
+      if (existingSettings) {
+        console.log('Existing settings found, updating...');
+        // Update existing record
+        const { data, error } = await supabase
           .from('site_settings')
-          .insert([{ 
-            ...newSettings,
-            company_email: newSettings.company_email || settings?.company_email || 'support@tradetracker.com'
-          }])
+          .update(newSettings)
+          .eq('site_name', existingSettings.site_name)
           .select();
 
-        if (insertError) {
-          console.error('Error creating settings:', insertError);
-          throw insertError;
+        if (error) {
+          console.error('Error updating settings:', error);
+          throw error;
+        }
+        
+        return data?.[0] || existingSettings;
+      } else {
+        console.log('No existing settings found, creating new record...');
+        // Insert a new record
+        const fullSettings = {
+          site_name: newSettings.site_name || 'TradeTracker',
+          company_email: newSettings.company_email || 'support@tradetracker.com',
+          ...newSettings
+        };
+        
+        const { data, error } = await supabase
+          .from('site_settings')
+          .insert([fullSettings])
+          .select();
+
+        if (error) {
+          console.error('Error creating settings:', error);
+          throw error;
         }
 
-        return insertData[0];
+        return data?.[0] || fullSettings;
       }
-
-      return data[0];
     },
     onSuccess: (data) => {
+      console.log('Settings updated successfully:', data);
       // Update localStorage and document title when settings are updated
       if (data?.site_name) {
         localStorage.setItem('siteName', data.site_name);
         document.title = data.site_name;
       }
       queryClient.invalidateQueries({ queryKey: ['siteSettings'] });
+    },
+    onError: (error) => {
+      console.error('Error in updateSettings mutation:', error);
     }
   });
 

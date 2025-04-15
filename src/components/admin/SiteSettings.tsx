@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,93 +9,29 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Pencil, Save, Globe } from 'lucide-react';
 
-interface SiteSettings {
-  site_name: string;
-  company_email: string;
-  support_phone: string;
-  copyright_text: string;
-}
-
 const SiteSettings: React.FC = () => {
   const { toast } = useToast();
-  const [settings, setSettings] = useState<SiteSettings>({
-    site_name: 'Trading Platform',
-    company_email: 'support@tradingplatform.com',
-    support_phone: '+1 (123) 456-7890',
-    copyright_text: '© 2025 Trading Platform. All rights reserved.'
-  });
+  const { settings, updateSettings, isUpdating } = useSiteSettings();
   
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [formValues, setFormValues] = useState<SiteSettings>(settings);
+  const [formValues, setFormValues] = useState({
+    site_name: '',
+    company_email: '',
+    support_phone: '',
+    copyright_text: ''
+  });
   
   // Load settings on mount
   useEffect(() => {
-    loadSettings();
-  }, []);
-  
-  const loadSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .select('*')
-        .limit(1)
-        .single();
-        
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // No records found, initialize settings
-          await initializeSettings();
-          return;
-        }
-        throw error;
-      }
-      
-      if (data) {
-        setSettings(data);
-        setFormValues(data);
-        
-        // Update document title
-        document.title = data.site_name;
-        localStorage.setItem('siteName', data.site_name);
-      }
-    } catch (error) {
-      console.error('Error loading site settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load site settings",
-        variant: "destructive"
+    if (settings) {
+      setFormValues({
+        site_name: settings.site_name || 'Trading Platform',
+        company_email: settings.company_email || 'support@tradingplatform.com',
+        support_phone: settings.support_phone || '+1 (123) 456-7890',
+        copyright_text: settings.copyright_text || '© 2025 Trading Platform. All rights reserved.'
       });
     }
-  };
-  
-  const initializeSettings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .insert([settings])
-        .select();
-        
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setSettings(data[0]);
-        setFormValues(data[0]);
-      }
-      
-      toast({
-        title: "Settings Initialized",
-        description: "Default site settings have been created"
-      });
-    } catch (error) {
-      console.error('Error initializing site settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to initialize site settings",
-        variant: "destructive"
-      });
-    }
-  };
+  }, [settings]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -106,31 +42,16 @@ const SiteSettings: React.FC = () => {
   };
   
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      const { data, error } = await supabase
-        .from('site_settings')
-        .update(formValues)
-        .eq('site_name', settings.site_name)
-        .select();
+      console.log('Saving site settings:', formValues);
+      updateSettings(formValues);
       
-      if (error) throw error;
+      setIsEditing(false);
       
-      if (data && data.length > 0) {
-        setSettings(data[0]);
-        setIsEditing(false);
-        
-        // Update document title if site name changed
-        if (formValues.site_name !== settings.site_name) {
-          document.title = formValues.site_name;
-          localStorage.setItem('siteName', formValues.site_name);
-        }
-        
-        toast({
-          title: "Settings Saved",
-          description: "Site settings have been updated successfully"
-        });
-      }
+      toast({
+        title: "Settings Saved",
+        description: "Site settings have been updated successfully"
+      });
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({
@@ -138,13 +59,18 @@ const SiteSettings: React.FC = () => {
         description: "Failed to save site settings",
         variant: "destructive"
       });
-    } finally {
-      setIsSaving(false);
     }
   };
   
   const handleCancel = () => {
-    setFormValues(settings);
+    if (settings) {
+      setFormValues({
+        site_name: settings.site_name || 'Trading Platform',
+        company_email: settings.company_email || 'support@tradingplatform.com',
+        support_phone: settings.support_phone || '+1 (123) 456-7890',
+        copyright_text: settings.copyright_text || '© 2025 Trading Platform. All rights reserved.'
+      });
+    }
     setIsEditing(false);
   };
   
@@ -185,7 +111,7 @@ const SiteSettings: React.FC = () => {
                 placeholder="Enter site name"
               />
             ) : (
-              <div className="text-lg font-medium">{settings.site_name}</div>
+              <div className="text-lg font-medium">{formValues.site_name}</div>
             )}
           </div>
           
@@ -203,7 +129,7 @@ const SiteSettings: React.FC = () => {
                 placeholder="Enter company email"
               />
             ) : (
-              <div>{settings.company_email}</div>
+              <div>{formValues.company_email}</div>
             )}
           </div>
           
@@ -218,7 +144,7 @@ const SiteSettings: React.FC = () => {
                 placeholder="Enter support phone number"
               />
             ) : (
-              <div>{settings.support_phone}</div>
+              <div>{formValues.support_phone}</div>
             )}
           </div>
           
@@ -233,7 +159,7 @@ const SiteSettings: React.FC = () => {
                 placeholder="Enter copyright text"
               />
             ) : (
-              <div className="text-sm text-gray-500">{settings.copyright_text}</div>
+              <div className="text-sm text-gray-500">{formValues.copyright_text}</div>
             )}
           </div>
           
@@ -244,11 +170,11 @@ const SiteSettings: React.FC = () => {
               </Button>
               <Button 
                 onClick={handleSave} 
-                disabled={isSaving}
+                disabled={isUpdating}
                 className="flex items-center gap-1"
               >
                 <Save className="h-4 w-4" />
-                {isSaving ? "Saving..." : "Save Changes"}
+                {isUpdating ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           )}
