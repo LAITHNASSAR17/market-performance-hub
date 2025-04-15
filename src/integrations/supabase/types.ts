@@ -9,31 +9,112 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      note_folders: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      note_templates: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          is_favorite: boolean | null
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          is_favorite?: boolean | null
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          is_favorite?: boolean | null
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           content: string
           created_at: string
+          deleted_at: string | null
+          folder_id: string | null
           id: string
+          is_favorite: boolean | null
           tags: string[]
+          template_id: string | null
           title: string
+          trade_data: Json | null
           updated_at: string
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
+          deleted_at?: string | null
+          folder_id?: string | null
           id?: string
+          is_favorite?: boolean | null
           tags?: string[]
+          template_id?: string | null
           title: string
+          trade_data?: Json | null
           updated_at?: string
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          deleted_at?: string | null
+          folder_id?: string | null
           id?: string
+          is_favorite?: boolean | null
           tags?: string[]
+          template_id?: string | null
           title?: string
+          trade_data?: Json | null
           updated_at?: string
           user_id?: string
         }
