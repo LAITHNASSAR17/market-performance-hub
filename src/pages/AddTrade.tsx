@@ -18,6 +18,43 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+
+const EMOTIONS = [
+  "Confident",
+  "Nervous",
+  "Fearful",
+  "Excited",
+  "Angry",
+  "Calm",
+  "Anxious",
+  "Hesitant",
+  "Overconfident",
+  "Neutral",
+  "Other"
+] as const;
+
+const OUTCOME_REASONS = [
+  "Followed my trading plan",
+  "Didn't follow trading plan",
+  "Emotional decision",
+  "Market volatility",
+  "Overtraded",
+  "Poor risk management",
+  "Late entry",
+  "Early exit",
+  "Missed confirmation",
+  "News impact",
+  "Technical setup worked perfectly",
+  "TP hit / SL hit as expected",
+  "Reversal not anticipated",
+  "Chased the market",
+  "FOMO (Fear of Missing Out)",
+  "Misread the trend",
+  "Overleveraged",
+  "Took partials too early",
+  "Other"
+] as const;
 
 const AddTrade: React.FC = () => {
   const { 
@@ -48,7 +85,11 @@ const AddTrade: React.FC = () => {
     beforeImageUrl: null as string | null,
     afterImageUrl: null as string | null,
     hashtags: [] as string[],
-    commission: ''
+    commission: '',
+    emotion: '',
+    otherEmotion: '',
+    outcomeReasons: [] as string[],
+    otherOutcomeReason: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -391,6 +432,78 @@ const AddTrade: React.FC = () => {
                 value={formData.imageUrl}
                 onChange={(imageUrl) => setFormData({ ...formData, imageUrl })}
               />
+            </div>
+
+            <div className="space-y-4">
+              <Label htmlFor="emotion">How did you feel during this trade?</Label>
+              <Select
+                value={formData.emotion}
+                onValueChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    emotion: value,
+                    otherEmotion: value !== 'Other' ? '' : prev.otherEmotion
+                  }))
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select emotion" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {EMOTIONS.map((emotion) => (
+                      <SelectItem key={emotion} value={emotion}>
+                        {emotion}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+
+              {formData.emotion === 'Other' && (
+                <Input
+                  placeholder="Specify other emotion"
+                  value={formData.otherEmotion}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    otherEmotion: e.target.value
+                  }))}
+                />
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <Label>Reason for Profit or Loss</Label>
+              <div className="flex flex-wrap gap-2">
+                {OUTCOME_REASONS.map((reason) => (
+                  <Badge
+                    key={reason}
+                    variant={formData.outcomeReasons.includes(reason) ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        outcomeReasons: prev.outcomeReasons.includes(reason)
+                          ? prev.outcomeReasons.filter(r => r !== reason)
+                          : [...prev.outcomeReasons, reason]
+                      }))
+                    }}
+                  >
+                    {reason}
+                  </Badge>
+                ))}
+              </div>
+
+              {formData.outcomeReasons.includes('Other') && (
+                <Input
+                  placeholder="Specify other reason"
+                  value={formData.otherOutcomeReason}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    otherOutcomeReason: e.target.value
+                  }))}
+                />
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex justify-between">
