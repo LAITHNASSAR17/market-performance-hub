@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -23,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import TradeDetailsDialog from '@/components/TradeDetailsDialog';
 import CumulativePLChart from '@/components/CumulativePLChart';
-import DailyPLBarChart from '@/components/DailyPLChart';
+import DailyPLBarChart from '@/components/DailyPLBarChart';
 import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO, isMonday, isSunday, getWeek } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
