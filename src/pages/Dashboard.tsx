@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import TradeDetailsDialog from '@/components/TradeDetailsDialog';
 import CumulativePLChart from '@/components/CumulativePLChart';
-import DailyPLBarChart from '@/components/DailyPLBarChart';
+import DailyPLBarChart from '@/components/DailyPLChart';
 import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO, isMonday, isSunday, getWeek } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
@@ -236,6 +236,36 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Stats cards moved to top */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
+        <StatCard
+          title="Total P&L"
+          value={`$${totalProfit.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}`}
+          trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
+          icon={<DollarSign className="h-5 w-5" />}
+          color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
+          description={`Trades in total: ${totalTrades}`}
+        />
+        <StatCard
+          title="Profit factor"
+          value={profitFactor === Infinity ? "∞" : profitFactor.toFixed(2)}
+          icon={<Activity className="h-5 w-5" />}
+          description={`${profitFactor > 1 ? '+' : ''}${profitFactor === Infinity ? "" : (profitFactor - 1).toFixed(2)}`}
+        />
+        
+        <div className="md:col-span-2">
+          <AverageTradeCards 
+            avgWin={avgWinningTrade} 
+            avgLoss={avgLosingTrade}
+            winCount={winningTrades}
+            lossCount={losingTrades}
+          />
+        </div>
+      </div>
+
       {/* Calendar moved to top */}
       <Card className="mb-6">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
@@ -306,36 +336,7 @@ const Dashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
-        <StatCard
-          title="Total P&L"
-          value={`$${totalProfit.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })}`}
-          trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
-          icon={<DollarSign className="h-5 w-5" />}
-          color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
-          description={`Trades in total: ${totalTrades}`}
-        />
-        <StatCard
-          title="Profit factor"
-          value={profitFactor === Infinity ? "∞" : profitFactor.toFixed(2)}
-          icon={<Activity className="h-5 w-5" />}
-          description={`${profitFactor > 1 ? '+' : ''}${profitFactor === Infinity ? "" : (profitFactor - 1).toFixed(2)}`}
-        />
-        
-        <div className="md:col-span-2">
-          <AverageTradeCards 
-            avgWin={avgWinningTrade} 
-            avgLoss={avgLosingTrade}
-            winCount={winningTrades}
-            lossCount={losingTrades}
-          />
-        </div>
-      </div>
-
+      {/* Rest of the existing dashboard content */}
       {/* Charts and analysis section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <Card className="col-span-1">
