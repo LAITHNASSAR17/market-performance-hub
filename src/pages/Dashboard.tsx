@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -22,7 +21,6 @@ import AverageTradeCards from '@/components/AverageTradeCards';
 import TradingTips from '@/components/TradingTips';
 import { format } from 'date-fns';
 
-// Inner Dashboard component that uses the dashboard context
 const DashboardContent: React.FC = () => {
   const { trades, deleteTrade } = useTrade();
   const { user } = useAuth();
@@ -74,7 +72,6 @@ const DashboardContent: React.FC = () => {
   const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (winningTradesData.length > 0 ? Infinity : 0);
 
-  // Generate sample data for mini charts
   const generateSampleData = (length = 10, trend: 'up' | 'down' | 'mixed' = 'up') => {
     return Array.from({ length }).map((_, i) => {
       let value;
@@ -116,7 +113,7 @@ const DashboardContent: React.FC = () => {
     };
   });
 
-  const handleViewBadges = () => {
+  const handelViewBadges = () => {
     navigate('/profile');
   };
 
@@ -128,7 +125,6 @@ const DashboardContent: React.FC = () => {
     updateDashboardLayout(layout);
   };
 
-  // Dashboard Items Configuration
   const dashboardItems = [
     {
       id: 'welcome',
@@ -142,7 +138,7 @@ const DashboardContent: React.FC = () => {
           name={user?.name || 'Trader'}
           message={`You've completed ${totalTrades} trades this month. Check your latest stats in your trading profile.`}
           buttonText="View Stats"
-          onButtonClick={handleViewBadges}
+          onButtonClick={handelViewBadges}
           className="h-full"
         />
       )
@@ -298,7 +294,7 @@ const DashboardContent: React.FC = () => {
       component: (
         <div className="h-full pt-2">
           <CumulativePLChart 
-            data={filteredTrades}
+            trades={filteredTrades}
             height={250}
           />
         </div>
@@ -405,7 +401,6 @@ const DashboardContent: React.FC = () => {
   );
 };
 
-// Main Dashboard component that wraps the content with the provider
 const Dashboard: React.FC = () => {
   return (
     <Layout>

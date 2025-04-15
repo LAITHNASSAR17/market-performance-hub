@@ -106,14 +106,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
-  }, [theme]);
-
-  // Apply LTR direction since we only support English now
-  useEffect(() => {
-    const root = window.document.documentElement;
+    
+    // Set document direction to LTR (left-to-right)
     root.dir = 'ltr';
     root.lang = 'en';
-  }, []);
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
