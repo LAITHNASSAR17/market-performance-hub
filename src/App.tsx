@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -56,13 +57,18 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait">
       <PageTransition key={location.pathname}>
         <Routes location={location}>
-          {/* User Routes */}
+          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify" element={<EmailVerify />} />
-          <Route path="/" element={<Homepage />} />
+          
+          {/* Index route - handles initial routing based on auth state */}
+          <Route path="/" element={<Index />} />
+          <Route path="/homepage" element={<Homepage />} />
+          
+          {/* Protected Routes */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/add-trade" element={<AddTrade />} />
           <Route path="/trades" element={<Trades />} />

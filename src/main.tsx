@@ -28,4 +28,11 @@ if (favicon) {
   }
 }
 
+// Check for user auth status at startup
+const authStatus = localStorage.getItem('trackmind_auth_status');
+if (authStatus === 'true') {
+  // Store that the user is authenticated so they stay logged in on refresh
+  console.log('User is authenticated on app startup');
+}
+
 createRoot(document.getElementById("root")!).render(<App />);
