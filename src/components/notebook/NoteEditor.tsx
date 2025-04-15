@@ -42,7 +42,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
     if (note) {
       setTitle(note.title);
       setContent(note.content);
-      setFolderId(note.folderId);
+      setFolderId(note.folderId || undefined);
       setNoteTags(note.tags || []);
       setIsFavorite(note.isFavorite || false);
       setIsDirty(false);
@@ -77,9 +77,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
 
   if (!note) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-8">
+      <div className="flex items-center justify-center h-full bg-gray-50 border-l border-gray-200 p-8">
         <div className="text-center">
-          <h2 className="text-lg font-medium text-gray-500 dark:text-gray-400">
+          <h2 className="text-lg font-medium text-gray-500">
             Select a note to view or edit
           </h2>
         </div>
@@ -88,8 +88,8 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
-      <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+    <div className="flex flex-col h-full bg-white border-l border-gray-200">
+      <div className="border-b border-gray-200 p-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
@@ -117,7 +117,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         </Button>
       </div>
       
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-b border-gray-200">
         <Input
           placeholder="Note title"
           value={title}

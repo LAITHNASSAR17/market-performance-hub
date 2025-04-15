@@ -55,7 +55,7 @@ const CreateNoteDialog: React.FC<CreateNoteDialogProps> = ({
 
   // Apply template when selected
   useEffect(() => {
-    if (templateId) {
+    if (templateId && templateId !== 'none' && templateId !== '_custom') {
       const template = templates.find(t => t.id === templateId);
       if (template) {
         setContent(template.content);
@@ -69,8 +69,8 @@ const CreateNoteDialog: React.FC<CreateNoteDialogProps> = ({
     onCreateNote({
       title,
       content,
-      folderId: folderId || undefined,
-      templateId: templateId || undefined,
+      folderId: folderId !== 'none' ? folderId : undefined,
+      templateId: templateId !== 'none' && templateId !== '_custom' ? templateId : undefined,
       tags: noteTags,
       isFavorite
     });
@@ -81,8 +81,8 @@ const CreateNoteDialog: React.FC<CreateNoteDialogProps> = ({
   const resetForm = () => {
     setTitle('');
     setContent('');
-    setFolderId('');
-    setTemplateId('');
+    setFolderId('none');
+    setTemplateId('none');
     setNoteTags([]);
     setIsFavorite(false);
   };
@@ -108,7 +108,7 @@ const CreateNoteDialog: React.FC<CreateNoteDialogProps> = ({
               <label className="text-sm font-medium">
                 Folder
               </label>
-              <Select value={folderId} onValueChange={setFolderId}>
+              <Select value={folderId || "none"} onValueChange={setFolderId}>
                 <SelectTrigger>
                   <SelectValue placeholder="No folder" />
                 </SelectTrigger>
@@ -127,7 +127,7 @@ const CreateNoteDialog: React.FC<CreateNoteDialogProps> = ({
               <label className="text-sm font-medium">
                 Template
               </label>
-              <Select value={templateId} onValueChange={setTemplateId}>
+              <Select value={templateId || "none"} onValueChange={setTemplateId}>
                 <SelectTrigger>
                   <SelectValue placeholder="No template" />
                 </SelectTrigger>

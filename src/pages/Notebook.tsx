@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useNotebook } from '@/contexts/NotebookContext';
 import Sidebar from '@/components/notebook/Sidebar';
