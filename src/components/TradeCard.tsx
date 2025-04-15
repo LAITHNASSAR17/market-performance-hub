@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -69,26 +68,26 @@ const TradeCard: React.FC<TradeCardProps> = ({
       <CardContent className="py-2 grid gap-4">
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <span className="text-muted-foreground">{t('trade.entry') || 'Entry'}:</span> {trade.entry}
+            <span className="text-muted-foreground">Entry:</span> {trade.entry}
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.exit') || 'Exit'}:</span> {trade.exit}
+            <span className="text-muted-foreground">Exit:</span> {trade.exit}
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.lotSize') || 'Lot Size'}:</span> {trade.lotSize}
+            <span className="text-muted-foreground">Lot Size:</span> {trade.lotSize}
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.duration') || 'Duration'}:</span> {trade.durationMinutes} min
+            <span className="text-muted-foreground">Duration:</span> {trade.durationMinutes} min
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.profitLoss') || 'P/L'}:</span> ${trade.profitLoss.toFixed(2)}
+            <span className="text-muted-foreground">P/L:</span> ${trade.profitLoss.toFixed(2)}
           </div>
           <div>
-            <span className="text-muted-foreground">{t('trade.date') || 'Date'}:</span> {trade.date}
+            <span className="text-muted-foreground">Date:</span> {trade.date}
           </div>
         </div>
         <div className="line-clamp-2">
-          <span className="text-muted-foreground">{t('trade.notes') || 'Notes'}:</span> {trade.notes}
+          <span className="text-muted-foreground">Notes:</span> {trade.notes}
         </div>
         <div className="flex flex-wrap gap-1">
           {trade.hashtags.map((tag) => (
@@ -98,22 +97,18 @@ const TradeCard: React.FC<TradeCardProps> = ({
       </CardContent>
       <CardFooter className="flex justify-between items-center py-3">
         <span className="text-xs text-muted-foreground">
-          {t('trade.added')} {formatDistanceToNow(new Date(trade.createdAt), { addSuffix: true })}
+          Added {formatDistanceToNow(new Date(trade.createdAt), { addSuffix: true })}
         </span>
         
         <div className="flex space-x-2 rtl:space-x-reverse">
-          <Button size="sm" variant="default" className="mr-2" onClick={() => onView(trade.id)}>
-            <Eye className="h-4 w-4 mr-1" />
-            {t('trade.view') || 'View'}
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onView(trade.id)}>
+            <Eye className="h-4 w-4" />
           </Button>
-
-          <Button size="sm" variant="ghost" onClick={() => onEdit(trade.id)}>
-            <Edit className="h-4 w-4 mr-1" />
-            {t('trade.edit') || 'Edit'}
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onEdit(trade.id)}>
+            <Edit className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4 mr-1" />
-            {t('trade.delete') || 'Delete'}
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleDelete}>
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </CardFooter>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -20,9 +19,12 @@ const Trades: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [pairFilter, setPairFilter] = useState('all');
   const [tradeTypeFilter, setTradeTypeFilter] = useState('all');
+  const [accountFilter, setAccountFilter] = useState('all');
   const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const navigate = useNavigate();
+
+  const accounts = Array.from(new Set(trades.map(trade => trade.account)));
 
   const filteredTrades = trades.filter(trade => {
     const matchesSearch = searchTerm === '' || 
@@ -32,8 +34,9 @@ const Trades: React.FC = () => {
     
     const matchesPair = pairFilter === 'all' || trade.pair === pairFilter;
     const matchesType = tradeTypeFilter === 'all' || trade.type === tradeTypeFilter;
+    const matchesAccount = accountFilter === 'all' || trade.account === accountFilter;
     
-    return matchesSearch && matchesPair && matchesType;
+    return matchesSearch && matchesPair && matchesType && matchesAccount;
   });
 
   const sortedTrades = [...filteredTrades].sort((a, b) => 
@@ -59,6 +62,7 @@ const Trades: React.FC = () => {
     setSearchTerm('');
     setPairFilter('all');
     setTradeTypeFilter('all');
+    setAccountFilter('all');
   };
 
   const handleViewTrade = (id: string) => {
@@ -70,16 +74,29 @@ const Trades: React.FC = () => {
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold mb-1">Your Trades</h1>
-          <p className="text-gray-500">
-            {sortedTrades.length} trade{sortedTrades.length !== 1 ? 's' : ''} found
+          <p className="text-gray-500 truncate">
+            {sortedTrades.length} trades found
           </p>
         </div>
-        <Button asChild>
-          <Link to="/add-trade">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Trade
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Select value={accountFilter} onValueChange={setAccountFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select account" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All accounts</SelectItem>
+              {accounts.map(account => (
+                <SelectItem key={account} value={account}>{account}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button asChild>
+            <Link to="/add-trade">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Trade
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 mb-6">
