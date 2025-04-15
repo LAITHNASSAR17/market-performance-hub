@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -17,10 +16,12 @@ import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CalendarIcon, PlusIcon, X } from 'lucide-react';
+import { CalendarIcon, PlusIcon, X, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { userService } from '@/services/userService';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const AddTrade: React.FC = () => {
   const { 
@@ -28,7 +29,6 @@ const AddTrade: React.FC = () => {
     accounts, 
     allHashtags,
     tradingAccounts,
-    createTradingAccount,
     fetchTradingAccounts
   } = useTrade();
   const { user } = useAuth();
@@ -132,7 +132,7 @@ const AddTrade: React.FC = () => {
       return;
     }
 
-    if (!newAccountData.name) {
+    if (!newAccountData.name || newAccountData.name.trim() === '') {
       setAccountError("الرجاء إدخال اسم الحساب");
       return;
     }
@@ -141,11 +141,13 @@ const AddTrade: React.FC = () => {
     setAccountError(null);
 
     try {
-      // First try using the TradeContext method
-      const newAccount = await createTradingAccount(
+      const newAccount = await userService.createTradingAccount(
+        user.id, 
         newAccountData.name, 
         Number(newAccountData.balance)
       );
+      
+      await fetchTradingAccounts();
       
       setFormData(prev => ({
         ...prev,
@@ -153,19 +155,26 @@ const AddTrade: React.FC = () => {
       }));
       
       setNewAccountData({ name: '', balance: 0 });
+      setIsAccountDialogOpen(false);
+      
       toast({
         title: "تم بنجاح",
         description: `تم إنشاء حساب ${newAccountData.name} بنجاح`,
       });
-      
-      // Close the dialog after successful creation
-      setIsAccountDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create account', error);
-      setAccountError("فشل إنشاء الحساب، يرجى المحاولة مرة أخرى");
+      
+      let errorMessage = "فشل إنشاء الحساب، يرجى المحاولة مرة أخرى";
+      
+      if (error?.message) {
+        errorMessage = `فشل إنشاء الحساب: ${error.message}`;
+      }
+      
+      setAccountError(errorMessage);
+      
       toast({
         title: "خطأ",
-        description: "فشل إنشاء الحساب، يرجى المحاولة مرة أخرى",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -217,12 +226,16 @@ const AddTrade: React.FC = () => {
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>إنشاء حساب جديد</DialogTitle>
-                        {accountError && (
-                          <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-800 text-sm">
-                            {accountError}
-                          </div>
-                        )}
                       </DialogHeader>
+                      
+                      {accountError && (
+                        <Alert variant="destructive" className="mb-4">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>خطأ</AlertTitle>
+                          <AlertDescription>{accountError}</AlertDescription>
+                        </Alert>
+                      )}
+                      
                       <div className="space-y-4">
                         <div>
                           <Label>اسم الحساب</Label>
@@ -236,7 +249,7 @@ const AddTrade: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <Label>الرصيد الأولي</Label>
+                          <Label>ا��رصيد الأولي</Label>
                           <Input
                             type="number"
                             value={newAccountData.balance}
@@ -252,7 +265,12 @@ const AddTrade: React.FC = () => {
                             onClick={handleCreateAccount} 
                             disabled={isCreatingAccount}
                           >
-                            {isCreatingAccount ? 'جاري الإنشاء...' : 'إنشاء'}
+                            {isCreatingAccount ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                جاري الإنشاء...
+                              </>
+                            ) : 'إنشاء'}
                           </Button>
                           <DialogClose asChild>
                             <Button variant="outline">

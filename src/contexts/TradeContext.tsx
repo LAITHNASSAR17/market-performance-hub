@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
+import { userService } from '@/services/userService';
 
 export type Trade = {
   id: string;
@@ -583,22 +584,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('trading_accounts')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      const formattedAccounts: TradingAccount[] = (data || []).map(account => ({
-        id: account.id,
-        userId: account.user_id,
-        name: account.name,
-        balance: Number(account.balance),
-        createdAt: account.created_at
-      }));
-
-      setTradingAccounts(formattedAccounts);
+      // Use the userService to fetch trading accounts
+      const accounts = await userService.getTradingAccounts(user.id);
+      setTradingAccounts(accounts);
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
       toast({
@@ -613,7 +601,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const createTradingAccount = async (name: string, balance: number) => {
     if (!user) throw new Error('User not authenticated');
 
-    // Add validation for account name and balance
+    // Add validation for account name
     if (!name.trim()) {
       toast({
         title: "خطأ",
@@ -624,26 +612,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      const { data, error } = await supabase
-        .from('trading_accounts')
-        .insert({
-          user_id: user.id,
-          name,
-          balance: balance || 0  // Default to 0 if no balance provided
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newAccount: TradingAccount = {
-        id: data.id,
-        userId: data.user_id,
-        name: data.name,
-        balance: Number(data.balance || 0),
-        createdAt: data.created_at
-      };
-
+      // Use userService to create the account
+      const newAccount = await userService.createTradingAccount(user.id, name, balance);
+      
+      // Update the local trading accounts array
       setTradingAccounts(prev => [...prev, newAccount]);
       
       toast({
@@ -652,7 +624,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
 
       return newAccount;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating trading account:', error);
       toast({
         title: "خطأ",
