@@ -137,7 +137,7 @@ export const noteService = {
         is_favorite: noteData.isFavorite || false,
         tags: noteData.tags || [],
         trade_data: noteData.tradeData || null,
-        user_id: user.id,
+        user_id: noteData.userId || user.id,
         created_at: now,
         updated_at: now
       })
