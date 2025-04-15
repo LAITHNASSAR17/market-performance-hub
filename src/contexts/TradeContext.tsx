@@ -3,34 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 import { userService } from '@/services/userService';
+import { Trade } from '@/types/trade';
 
-export type Trade = {
-  id: string;
-  userId: string;
-  account: string;
-  date: string;
-  pair: string;
-  type: 'Buy' | 'Sell';
-  entry: number;
-  exit: number;
-  lotSize: number;
-  stopLoss: number | null;
-  takeProfit: number | null;
-  riskPercentage: number;
-  returnPercentage: number;
-  profitLoss: number;
-  durationMinutes: number;
-  notes: string;
-  imageUrl: string | null;
-  beforeImageUrl: string | null; // Added before image
-  afterImageUrl: string | null;  // Added after image
-  hashtags: string[];
-  createdAt: string;
-  commission?: number; // Optional commission field
-  instrumentType?: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other'; // Added instrument type
-};
-
-// Add new type for trading accounts
 export type TradingAccount = {
   id: string;
   userId: string;
@@ -59,19 +33,15 @@ type TradeContextType = {
   fetchTradingAccounts: () => Promise<void>;
 };
 
-// Symbol type for the open and dynamic symbol list
 export type Symbol = {
   symbol: string;
   name: string;
   type: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other';
 };
 
-// Sample accounts
 const sampleAccounts = ['Main Trading', 'Demo Account', 'Savings Account'];
 
-// Advanced symbols list with categories
 const defaultSymbols: Symbol[] = [
-  // Forex
   { symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
   { symbol: 'GBP/USD', name: 'British Pound / US Dollar', type: 'forex' },
   { symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen', type: 'forex' },
@@ -81,14 +51,12 @@ const defaultSymbols: Symbol[] = [
   { symbol: 'EUR/GBP', name: 'Euro / British Pound', type: 'forex' },
   { symbol: 'USD/CHF', name: 'US Dollar / Swiss Franc', type: 'forex' },
   
-  // Cryptocurrencies
   { symbol: 'BTC/USD', name: 'Bitcoin / US Dollar', type: 'crypto' },
   { symbol: 'ETH/USD', name: 'Ethereum / US Dollar', type: 'crypto' },
   { symbol: 'XRP/USD', name: 'Ripple / US Dollar', type: 'crypto' },
   { symbol: 'LTC/USD', name: 'Litecoin / US Dollar', type: 'crypto' },
   { symbol: 'ADA/USD', name: 'Cardano / US Dollar', type: 'crypto' },
   
-  // US Stocks
   { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock' },
   { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'stock' },
   { symbol: 'AMZN', name: 'Amazon.com Inc.', type: 'stock' },
@@ -96,28 +64,23 @@ const defaultSymbols: Symbol[] = [
   { symbol: 'META', name: 'Meta Platforms Inc.', type: 'stock' },
   { symbol: 'TSLA', name: 'Tesla Inc.', type: 'stock' },
   
-  // Saudi Stocks
   { symbol: '2222.SR', name: 'Saudi Aramco', type: 'stock' },
   { symbol: '1120.SR', name: 'Al Rajhi Bank', type: 'stock' },
   { symbol: '2010.SR', name: 'Saudi Basic Industries Corp', type: 'stock' },
   
-  // Indices
   { symbol: 'SPX', name: 'S&P 500', type: 'index' },
   { symbol: 'NDX', name: 'Nasdaq 100', type: 'index' },
   { symbol: 'TASI', name: 'Tadawul All Share Index', type: 'index' },
   
-  // Commodities
   { symbol: 'XAUUSD', name: 'Gold', type: 'commodity' },
   { symbol: 'XAGUSD', name: 'Silver', type: 'commodity' },
   { symbol: 'CL', name: 'Crude Oil', type: 'commodity' }
 ];
 
-// Convert symbols to pairs for backward compatibility
 const symbolsToPairs = (symbols: Symbol[]): string[] => {
   return symbols.map(symbol => symbol.symbol);
 };
 
-// Sample data for demonstration purposes
 const sampleTrades: Trade[] = [
   {
     id: '1',
@@ -255,7 +218,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { user } = useAuth();
   const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
 
-  // Calculate profit/loss based on instrument type
   const calculateProfitLoss = (
     entry: number, 
     exit: number, 
@@ -263,16 +225,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     type: 'Buy' | 'Sell',
     instrumentType: string = 'forex'
   ): number => {
-    // Set multipliers based on instrument type
     let pipValue = 0;
     let pipMultiplier = 1;
-    let contractSize = 100000; // Default for forex
+    let contractSize = 100000;
 
-    // Determine instrument type from the input or check for specific patterns
     let detectedType = instrumentType.toLowerCase();
     
     if (!detectedType) {
-      // Auto-detect instrument type if not provided
       if (/\//.test(instrumentType)) {
         detectedType = 'forex';
       } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
@@ -284,57 +243,47 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } else if (/^(xau|xag|cl|ng)/i.test(instrumentType)) {
         detectedType = 'commodity';
       } else {
-        detectedType = 'stock'; // Default to stock
+        detectedType = 'stock';
       }
     }
     
-    // Configure calculation parameters based on instrument type
     switch (detectedType) {
       case 'forex':
-        contractSize = 100000; // Standard lot size
+        contractSize = 100000;
         
-        // Set pip multiplier based on currency pair
         if (instrumentType.includes('JPY')) {
           pipMultiplier = 0.01;
         } else {
           pipMultiplier = 0.0001;
         }
         
-        // Calculate pip value
         pipValue = pipMultiplier * contractSize;
         break;
         
       case 'crypto':
-        // For crypto, we typically calculate based on direct price difference
         contractSize = 1;
         pipMultiplier = 1;
         pipValue = 1;
         break;
         
       case 'stock':
-        // For stocks, calculate based on share price difference
         contractSize = lotSize;
         pipMultiplier = 1;
         pipValue = 1;
         break;
         
       case 'index':
-        // For indices, multiplier depends on the specific index
         contractSize = lotSize;
         pipMultiplier = 1;
         pipValue = 1;
         break;
         
       case 'commodity':
-        // For commodities, contract specifics vary
         if (instrumentType.toUpperCase().includes('XAU')) {
-          // Gold is typically $100 per $1 movement per oz
           contractSize = 100;
         } else if (instrumentType.toUpperCase().includes('XAG')) {
-          // Silver is typically $50 per $1 movement per oz
           contractSize = 50;
         } else {
-          // Default for other commodities
           contractSize = 1000;
         }
         pipMultiplier = 1;
@@ -342,24 +291,20 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         break;
         
       default:
-        // Default calculation for any other instrument
         contractSize = lotSize;
         pipMultiplier = 1;
         pipValue = 1;
     }
     
-    // Calculate price difference based on trade type
     const priceDiff = type === 'Buy' 
       ? exit - entry 
       : entry - exit;
     
-    // Calculate total profit/loss
     const profitLoss = priceDiff * lotSize * contractSize;
     
-    return Math.round(profitLoss * 100) / 100; // Round to 2 decimal places
+    return Math.round(profitLoss * 100) / 100;
   };
 
-  // استرجاع التداولات من Supabase
   useEffect(() => {
     const fetchTrades = async () => {
       if (user) {
@@ -376,7 +321,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const formattedTrades: Trade[] = data.map(trade => ({
             id: trade.id,
             userId: trade.user_id,
-            account: 'Main Trading', // Default account since it's not in the database
+            account: 'Main Trading',
             date: trade.entry_date.split('T')[0],
             pair: trade.symbol,
             type: trade.direction === 'long' ? 'Buy' : 'Sell',
@@ -395,11 +340,11 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             afterImageUrl: null,
             hashtags: trade.tags || [],
             createdAt: trade.created_at,
+            commission: trade.fees || 0
           }));
 
           setTrades(formattedTrades);
 
-          // استخراج الهاشتاجات الفريدة
           const uniqueHashtags = Array.from(new Set(
             formattedTrades.flatMap(trade => trade.hashtags)
           ));
@@ -426,7 +371,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     fetchTrades();
   }, [user, toast]);
 
-  // تعديل addTrade لإضافة التداول مباشرة إلى Supabase
   const addTrade = async (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) return;
 
@@ -475,7 +419,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // تعديل updateTrade لتحديث التداول مباشرة في Supabase
   const updateTrade = async (id: string, tradeUpdate: Partial<Trade>) => {
     if (!user) return;
     
@@ -523,7 +466,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // تعديل deleteTrade لحذف التداول مباشرة من Supabase
   const deleteTrade = async (id: string) => {
     if (!user) return;
     
@@ -556,7 +498,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return trades.find(trade => trade.id === id);
   };
 
-  // Function for admin to get ALL trades from all users
   const getAllTrades = (): Trade[] => {
     return trades;
   };
@@ -568,7 +509,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
   
   const addSymbol = (symbol: Symbol) => {
-    // Check if symbol already exists
     if (!symbols.some(s => s.symbol === symbol.symbol)) {
       const updatedSymbols = [...symbols, symbol];
       setSymbols(updatedSymbols);
@@ -579,12 +519,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // New method to fetch trading accounts
   const fetchTradingAccounts = async () => {
     if (!user) return;
 
     try {
-      // Use the userService to fetch trading accounts
       const accounts = await userService.getTradingAccounts(user.id);
       setTradingAccounts(accounts);
     } catch (error) {
@@ -597,11 +535,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // New method to create a trading account
   const createTradingAccount = async (name: string, balance: number) => {
     if (!user) throw new Error('User not authenticated');
 
-    // Add validation for account name
     if (!name.trim()) {
       toast({
         title: "خطأ",
@@ -612,10 +548,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      // Use userService to create the account
       const newAccount = await userService.createTradingAccount(user.id, name, balance);
       
-      // Update the local trading accounts array
       setTradingAccounts(prev => [...prev, newAccount]);
       
       toast({
@@ -635,7 +569,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Fetch trading accounts on user login
   useEffect(() => {
     if (user) {
       fetchTradingAccounts();

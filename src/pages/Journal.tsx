@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -11,7 +10,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import HashtagBadge from '@/components/HashtagBadge';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Trade } from '@/types/trade'; // Added import for Trade type
+import { Trade } from '@/types/trade';
 
 const Journal: React.FC = () => {
   const { trades, allHashtags } = useTrade();
@@ -21,7 +20,6 @@ const Journal: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Get date from URL query parameter if present
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const dateParam = params.get('date');
@@ -30,7 +28,6 @@ const Journal: React.FC = () => {
     }
   }, [location.search]);
 
-  // Added function to handle viewing a trade
   const handleViewTrade = (id: string) => {
     navigate(`/trades/${id}`);
   };
@@ -43,17 +40,14 @@ const Journal: React.FC = () => {
     return matchesDate && matchesPair && matchesHashtags;
   });
 
-  // Get unique pairs from trades
   const pairs = Array.from(new Set(trades.map(trade => trade.pair)));
 
-  // Clear all filters
   const clearFilters = () => {
     setDateFilter('all');
     setPairFilter('all');
     setSelectedHashtags([]);
   };
 
-  // Toggle hashtag selection
   const toggleHashtag = (tag: string) => {
     setSelectedHashtags(prev => 
       prev.includes(tag) 
@@ -62,7 +56,6 @@ const Journal: React.FC = () => {
     );
   };
 
-  // Group trades by date
   type TradesByDate = Record<string, {
     trades: Trade[];
     totalProfit: number;
@@ -80,7 +73,6 @@ const Journal: React.FC = () => {
     return acc;
   }, {});
 
-  // Sort dates in descending order
   const sortedDates = Object.keys(tradesByDate).sort((a, b) => 
     new Date(b).getTime() - new Date(a).getTime()
   );
@@ -92,7 +84,6 @@ const Journal: React.FC = () => {
         <p className="text-gray-500">View your trading activity by day</p>
       </div>
 
-      {/* Filters */}
       <div className="space-y-4 mb-6">
         <div className="flex flex-col md:flex-row gap-3">
           <div className="relative flex-1">
@@ -123,7 +114,6 @@ const Journal: React.FC = () => {
           </Button>
         </div>
 
-        {/* Hashtag filters */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Tags className="h-4 w-4" />
@@ -150,7 +140,6 @@ const Journal: React.FC = () => {
         </div>
       </div>
 
-      {/* Daily Entries */}
       {sortedDates.length > 0 ? (
         <div className="space-y-6">
           {sortedDates.map(date => {
