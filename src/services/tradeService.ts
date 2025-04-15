@@ -6,11 +6,11 @@ export interface ITrade {
   userId: string;
   symbol: string;
   entryPrice: number;
-  exitPrice: number;
+  exitPrice: number | null;
   quantity: number;
   direction: 'long' | 'short';
   entryDate: Date;
-  exitDate: Date;
+  exitDate: Date | null;
   profitLoss: number;
   fees: number;
   notes: string;
@@ -60,7 +60,17 @@ export const tradeService = {
     const { data, error } = await supabase
       .from('trades')
       .insert({
-        ...tradeData,
+        symbol: tradeData.symbol,
+        entry_price: tradeData.entryPrice,
+        exit_price: tradeData.exitPrice,
+        quantity: tradeData.quantity,
+        direction: tradeData.direction,
+        entry_date: tradeData.entryDate.toISOString(),
+        exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
+        profit_loss: tradeData.profitLoss,
+        fees: tradeData.fees || 0,
+        notes: tradeData.notes || '',
+        tags: tradeData.tags || [],
         user_id: user.id, // Ensure the trade is associated with the current user
         created_at: now,
         updated_at: now
@@ -77,13 +87,25 @@ export const tradeService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
+    const updateData: any = {};
+    if (tradeData.symbol !== undefined) updateData.symbol = tradeData.symbol;
+    if (tradeData.entryPrice !== undefined) updateData.entry_price = tradeData.entryPrice;
+    if (tradeData.exitPrice !== undefined) updateData.exit_price = tradeData.exitPrice;
+    if (tradeData.quantity !== undefined) updateData.quantity = tradeData.quantity;
+    if (tradeData.direction !== undefined) updateData.direction = tradeData.direction;
+    if (tradeData.entryDate !== undefined) updateData.entry_date = tradeData.entryDate.toISOString();
+    if (tradeData.exitDate !== undefined) updateData.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
+    if (tradeData.profitLoss !== undefined) updateData.profit_loss = tradeData.profitLoss;
+    if (tradeData.fees !== undefined) updateData.fees = tradeData.fees;
+    if (tradeData.notes !== undefined) updateData.notes = tradeData.notes;
+    if (tradeData.tags !== undefined) updateData.tags = tradeData.tags;
+
     const now = new Date().toISOString();
+    updateData.updated_at = now;
+
     const { data, error } = await supabase
       .from('trades')
-      .update({
-        ...tradeData,
-        updated_at: now
-      })
+      .update(updateData)
       .eq('id', id)
       .eq('user_id', user.id) // Ensure the user can only update their own trades
       .select()

@@ -1,9 +1,11 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
-import { tradeService } from '@/services/tradeService';
-import { Trade } from '@/types/trade';
+import { tradeService, ITrade } from '@/services/tradeService';
+import { Trade, mapDBTradeToTrade, mapTradeToDBTrade } from '@/types/trade';
+import { userService } from '@/services/userService';
 
 export type { Trade } from '@/types/trade';
 
@@ -313,10 +315,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setLoading(true);
         try {
           const userTrades = await tradeService.getAllTrades(user.id);
-          setTrades(userTrades);
+          // Convert ITrade[] to Trade[]
+          const uiTrades = userTrades.map(mapDBTradeToTrade);
+          setTrades(uiTrades);
 
           const uniqueHashtags = Array.from(new Set(
-            userTrades.flatMap(trade => trade.hashtags)
+            uiTrades.flatMap(trade => trade.hashtags)
           ));
           setAllHashtags(prevHashtags => [
             ...prevHashtags,
@@ -345,12 +349,18 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return;
 
     try {
-      const newTrade = await tradeService.createTrade({
-        ...newTradeData,
-        userId: user.id
-      });
-
-      setTrades(prevTrades => [newTrade, ...prevTrades]);
+      // Convert Trade to ITrade format expected by the API
+      const dbTradeData = mapTradeToDBTrade(newTradeData);
+      dbTradeData.userId = user.id;
+      
+      // Send to API
+      const newDbTrade = await tradeService.createTrade(dbTradeData);
+      
+      // Convert back to UI format
+      const newUiTrade = mapDBTradeToTrade(newDbTrade);
+      
+      // Update state
+      setTrades(prevTrades => [newUiTrade, ...prevTrades]);
       
       toast({
         title: "تم إضافة التداول",
