@@ -2,7 +2,6 @@
 import React, { useEffect, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 declare global {
   interface Window {
@@ -11,7 +10,6 @@ declare global {
 }
 
 const TradingChart: React.FC = () => {
-  const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<any>(null);
 
@@ -78,7 +76,7 @@ const TradingChart: React.FC = () => {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-4rem)]">
+      <div className="h-screen">
         <Card className="h-full border-0">
           <CardContent className="p-0 h-full">
             <div 

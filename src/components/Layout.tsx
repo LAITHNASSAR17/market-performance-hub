@@ -39,31 +39,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   const navigation = [{
-    name: t('nav.dashboard'),
+    name: 'Dashboard',
     icon: Home,
     href: '/dashboard'
   }, {
-    name: t('nav.addTrade'),
+    name: 'Add Trade',
     icon: PlusCircle,
     href: '/add-trade'
   }, {
-    name: t('nav.trades'),
+    name: 'Trades',
     icon: BookText,
     href: '/trades'
   }, {
-    name: t('nav.journal'),
+    name: 'Journal',
     icon: Calendar,
     href: '/journal'
   }, {
-    name: t('nav.notebook'),
+    name: 'Notebook',
     icon: BookText,
     href: '/notebook'
   }, {
-    name: t('nav.reports'),
+    name: 'Reports',
     icon: BarChart,
     href: '/reports'
   }, {
-    name: t('nav.insights'),
+    name: 'Insights',
     icon: Sparkles,
     href: '/insights'
   }, {
@@ -71,7 +71,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     icon: BarChart2,
     href: '/analytics'
   }, {
-    name: t('chart.title') || 'Chart',
+    name: 'Chart',
     icon: LineChart3,
     href: '/chart'
   }];
