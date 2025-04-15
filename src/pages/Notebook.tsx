@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useNotebook } from '@/contexts/NotebookContext';
@@ -6,7 +5,6 @@ import Sidebar from '@/components/notebook/Sidebar';
 import NotesList from '@/components/notebook/NotesList';
 import NoteEditor from '@/components/notebook/NoteEditor';
 import CreateNoteDialog from '@/components/notebook/CreateNoteDialog';
-import { INote } from '@/services/noteService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
@@ -99,46 +97,44 @@ const Notebook: React.FC = () => {
 
   return (
     <Layout>
-      <div className="flex h-[calc(100vh-80px)] bg-white dark:bg-gray-900 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="h-screen flex overflow-hidden bg-white">
         {/* Sidebar */}
-        <Sidebar onNewNote={handleNewNote} />
+        <div className="w-64 border-r border-gray-200 flex-shrink-0">
+          <Sidebar onNewNote={handleNewNote} />
+        </div>
         
-        {/* Main content area */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-          {/* Notes list */}
-          <div className="md:w-1/2 lg:w-2/5 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-            <NotesList
-              notes={notes}
-              loading={loadingNotes}
-              onSelectNote={handleSelectNote}
-              onToggleFavorite={handleToggleFavorite}
-              onDeleteNote={handleDeleteNote}
-              onNewNote={handleNewNote}
-              filterInfo={getFilterInfo()}
-            />
-          </div>
-          
-          {/* Note editor */}
-          <div className="md:w-1/2 lg:w-3/5 overflow-y-auto">
-            {saveError && (
-              <Alert variant="destructive" className="m-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{saveError}</AlertDescription>
-              </Alert>
-            )}
-            <NoteEditor
-              note={currentNote}
-              folders={folders}
-              tags={noteTags}
-              onSave={handleSaveNote}
-              onToggleFavorite={handleToggleFavorite}
-              onClose={() => setCurrentNote(null)}
-            />
-          </div>
+        {/* Notes List */}
+        <div className="w-72 border-r border-gray-200 flex-shrink-0 overflow-y-auto">
+          <NotesList
+            notes={notes}
+            loading={loadingNotes}
+            onSelectNote={handleSelectNote}
+            onToggleFavorite={handleToggleFavorite}
+            onDeleteNote={handleDeleteNote}
+            onNewNote={handleNewNote}
+            filterInfo={getFilterInfo()}
+          />
+        </div>
+        
+        {/* Note Editor */}
+        <div className="flex-1 overflow-y-auto">
+          {saveError && (
+            <Alert variant="destructive" className="m-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{saveError}</AlertDescription>
+            </Alert>
+          )}
+          <NoteEditor
+            note={currentNote}
+            folders={folders}
+            tags={noteTags}
+            onSave={handleSaveNote}
+            onToggleFavorite={handleToggleFavorite}
+            onClose={() => setCurrentNote(null)}
+          />
         </div>
       </div>
       
-      {/* Create Note Dialog */}
       <CreateNoteDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}

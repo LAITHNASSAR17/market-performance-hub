@@ -20,7 +20,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
  
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 262.1 83.3% 57.8%;
     --primary-foreground: 210 40% 98%;
  
     --secondary: 210 40% 96.1%;
@@ -35,126 +35,29 @@
     --ring: 215 20.2% 65.1%;
  
     --radius: 0.5rem;
-    
-    /* Custom colors */
-    --profit: 142 72% 29%; /* Green for profits */
-    --loss: 0 84% 60%;     /* Red for losses */
-    
-    /* Sidebar colors */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222.2 47.4% 11.2%;
-    --sidebar-primary: 222.2 47.4% 11.2%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 215 20.2% 65.1%;
   }
- 
-  .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
- 
-    --muted: 223 47% 11%;
-    --muted-foreground: 215.4 16.3% 56.9%;
- 
-    --popover: 224 71% 4%;
-    --popover-foreground: 215 20.2% 65.1%;
- 
-    --card: 224 71% 4%;
-    --card-foreground: 213 31% 91%;
- 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 1.2%;
- 
-    --secondary: 222.2 47.4% 11.2%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --ring: 216 34% 17%;
- 
-    --radius: 0.5rem;
-    
-    /* Custom colors in dark mode */
-    --profit: 142 72% 40%; /* Brighter green for dark mode */
-    --loss: 0 84% 70%;     /* Brighter red for dark mode */
-    
-    /* Sidebar colors for dark mode */
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 222.2 47.4% 1.2%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 212.7 26.8% 83.9%;
-  }
-}
- 
-@layer base {
+
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  .text-profit {
-    color: hsl(var(--profit));
-  }
-  .text-loss {
-    color: hsl(var(--loss));
-  }
 }
 
-.dark .bg-trading-background {
-  @apply bg-gray-900;
+.note-editor-content {
+  min-height: 300px;
+  height: 100%;
+  resize: none;
+  font-family: monospace;
 }
 
-.dark .bg-card {
-  @apply bg-gray-800;
+.folder-item {
+  @apply flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md hover:bg-secondary transition-colors;
 }
 
-.dark .text-card-foreground {
-  @apply text-gray-100;
-}
-
-.dark .hover\:bg-gray-100:hover {
-  @apply hover:bg-gray-700;
-}
-
-.dark .border {
-  @apply border-gray-700;
-}
-
-.dark .bg-white {
-  @apply bg-gray-800;
-}
-
-.dark .text-gray-700 {
-  @apply text-gray-300;
-}
-
-.dark .text-gray-600 {
-  @apply text-gray-400;
-}
-
-.dark .text-gray-500 {
-  @apply text-gray-400;
-}
-
-.dark .bg-gray-50 {
-  @apply bg-gray-900;
-}
-
-.dark .bg-gray-100 {
-  @apply bg-gray-800;
+.folder-item.active {
+  @apply bg-secondary;
 }
