@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -18,6 +18,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import MetaTraderImport from '@/components/MetaTraderImport';
+import { Trade } from '@/types/trade';
 
 const AddTrade: React.FC = () => {
   const { 
@@ -109,12 +111,25 @@ const AddTrade: React.FC = () => {
     navigate('/trades');
   };
 
+  const handleImportedTrades = async (importedTrades: Partial<Trade>[]) => {
+    if (importedTrades.length === 0) return;
+    
+    // Use the first trade to populate the form
+    const firstTrade = importedTrades[0];
+    setFormData(prev => ({
+      ...prev,
+      ...firstTrade
+    }));
+  };
+
   return (
     <Layout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">Add New Trade</h1>
         <p className="text-gray-500">Record details about your trade</p>
       </div>
+
+      <MetaTraderImport onImport={handleImportedTrades} />
 
       <Card>
         <form onSubmit={handleSubmit}>
