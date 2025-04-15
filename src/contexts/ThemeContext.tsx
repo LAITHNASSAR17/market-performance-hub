@@ -15,8 +15,10 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Always initialize with light theme
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Check for system preference as default
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -34,19 +36,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
           if (error) throw error;
           
-          // Always set light theme regardless of stored preferences
-          if (data?.theme !== 'light') {
-            // Update to light theme in database
+          if (data?.theme) {
+            setTheme(data.theme as Theme);
+          } else {
+            // Create initial preference if it doesn't exist
             await supabase
               .from('user_preferences')
-              .upsert({ 
-                user_id: user.id, 
-                theme: 'light',
-                updated_at: new Date().toISOString()
-              });
+              .insert({ user_id: user.id, theme });
           }
-          
-          setTheme('light');
         } catch (error) {
           console.error('Error loading theme preference:', error);
         }
@@ -74,7 +71,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           const { error } = await supabase
             .from('user_preferences')
             .update({
-              theme: 'light', // Always save as light
+              theme,
               updated_at: new Date().toISOString()
             })
             .eq('user_id', user.id);
@@ -86,7 +83,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             .from('user_preferences')
             .insert({
               user_id: user.id,
-              theme: 'light',
+              theme,
               updated_at: new Date().toISOString()
             });
 
@@ -102,14 +99,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       updateThemePreference();
     }
-  }, [user]);
+  }, [theme, user]);
 
   // Update the DOM when theme changes
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
-    root.classList.add('light'); // Always add light class
-  }, []);
+    root.classList.add(theme);
+  }, [theme]);
 
   // Apply LTR direction since we only support English now
   useEffect(() => {
@@ -118,14 +115,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.lang = 'en';
   }, []);
 
-  // Toggle theme function (won't actually toggle in this case)
   const toggleTheme = () => {
-    // Always set to light theme
-    setTheme('light');
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
   return (
-    <ThemeContext.Provider value={{ theme: 'light', toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -97,28 +97,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className={cn("relative h-full bg-white transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-64" : "w-16", "border-r", "border-gray-200")}>
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <div className={cn("relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-64" : "w-16", "border-r", "dark:bg-indigo-900/90 dark:border-indigo-800")}>
         <div className="flex flex-col items-center py-4 px-4">
           <div className="flex items-center justify-between w-full">
-            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-gray-700">
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-sidebar-foreground dark:text-white">
               <Menu className="h-5 w-5" />
             </Button>
             
-            {sidebarOpen && <h2 className="text-xl font-bold flex-1 text-center text-gray-800">{siteName}</h2>}
+            {sidebarOpen && <h2 className="text-xl font-bold flex-1 text-center dark:text-white">{siteName}</h2>}
           </div>
           
           {sidebarOpen && <div className="flex items-center gap-2 mt-4 w-full">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="text-left w-full justify-between px-2 py-1 h-auto hover:bg-gray-100">
+                  <Button variant="ghost" className="text-left w-full justify-between px-2 py-1 h-auto hover:bg-sidebar-accent">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 overflow-hidden">
+                      <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400 overflow-hidden">
                         {user?.name?.charAt(0) || 'U'}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-800 truncate">{user?.name || 'User'}</span>
-                        <span className="text-xs text-gray-500 truncate">{user?.email || 'user@example.com'}</span>
+                        <span className="text-sm font-medium dark:text-white truncate">{user?.name || 'User'}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email || 'user@example.com'}</span>
                       </div>
                       {isAdmin && (
                         <div className="flex-shrink-0 ms-1">
@@ -167,8 +167,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <TooltipTrigger asChild>
                   <Link 
                     to={item.href} 
-                    className={cn("flex items-center px-4 py-3 text-sm transition-colors hover:bg-gray-100 hover:text-gray-900", 
-                      isActive && "bg-gray-100 text-gray-900 font-medium")}
+                    className={cn("flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground dark:hover:bg-indigo-800 dark:hover:text-white", 
+                      isActive && "bg-sidebar-accent text-sidebar-accent-foreground dark:bg-indigo-800 dark:text-white font-medium")}
                   >
                     <item.icon className="h-5 w-5 flex-shrink-0" />
                     {sidebarOpen && <span className="ml-3">{item.name}</span>}
@@ -190,7 +190,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <main className="flex-1 overflow-y-auto bg-white p-4 md:p-6">
+      <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
         {children}
       </main>
     </div>

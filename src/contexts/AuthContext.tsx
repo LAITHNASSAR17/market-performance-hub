@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hashPassword, comparePassword } from '@/utils/encryption';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
 interface User {
@@ -109,32 +109,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setLoading(false);
       }
     );
-
-    const initSession = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        
-        if (data.session?.user) {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', data.session.user.id)
-            .single();
-            
-          if (userData) {
-            setUser(userData);
-            setIsAdmin(userData.role === 'admin');
-            setIsAuthenticated(true);
-          }
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    initSession();
 
     return () => {
       subscription.unsubscribe();
