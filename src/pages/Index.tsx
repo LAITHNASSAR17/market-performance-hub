@@ -8,10 +8,18 @@ const Index = () => {
   const [redirect, setRedirect] = useState<string | null>(null);
   
   useEffect(() => {
+    // Check localStorage for remembered session
+    const rememberedPath = localStorage.getItem('last_path');
+    const isRemembered = localStorage.getItem(AUTH_STATUS_KEY) === 'true';
+    
     if (!loading) {
       if (isAuthenticated) {
         console.log("Index page: User is authenticated, redirecting to dashboard");
-        setRedirect('/dashboard');
+        // If user is authenticated, go to dashboard or last remembered path
+        const redirectPath = rememberedPath && rememberedPath !== '/' && rememberedPath !== '/login' 
+          ? rememberedPath 
+          : '/dashboard';
+        setRedirect(redirectPath);
       } else {
         console.log("Index page: User is not authenticated, redirecting to login");
         setRedirect('/login');
@@ -27,5 +35,8 @@ const Index = () => {
   // Redirect to appropriate page
   return <Navigate to={redirect} replace />;
 };
+
+// Same constant as in AuthContext for consistency
+const AUTH_STATUS_KEY = 'trackmind_auth_status';
 
 export default Index;

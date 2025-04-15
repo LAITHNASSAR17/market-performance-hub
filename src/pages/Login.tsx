@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -29,13 +28,21 @@ const Login: React.FC = () => {
     }
   }, [location.state]);
 
-  // Redirect if authenticated - only in this tab
+  // Enhanced session handling - redirect if authenticated
   useEffect(() => {
     if (isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");
-      navigate('/dashboard', { replace: true });
+      // Get the path the user was trying to access before being redirected to login
+      const intendedPath = location.state?.from || '/dashboard';
+      
+      // Store the path in localStorage for recovery in other tabs
+      if (intendedPath !== '/login' && intendedPath !== '/') {
+        localStorage.setItem('last_path', intendedPath);
+      }
+      
+      navigate(intendedPath, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,14 +64,7 @@ const Login: React.FC = () => {
         description: "مرحبًا بعودتك!",
       });
       
-      // التأكد من التوجيه إلى لوحة التحكم مباشرة بعد تسجيل الدخول
-      console.log('Login successful, forcing redirect to dashboard');
-      
-      // استخدام setTimeout لضمان تنفيذ التوجيه بعد اكتمال عملية تسجيل الدخول
-      setTimeout(() => {
-        console.log('Executing delayed redirect to dashboard');
-        navigate('/dashboard', { replace: true });
-      }, 100);
+      // No need for the timeout - the useEffect will handle the redirect
       
     } catch (error: any) {
       console.error('Login error:', error);
