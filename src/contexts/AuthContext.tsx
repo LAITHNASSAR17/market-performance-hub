@@ -208,21 +208,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsAdmin(data.role === 'admin');
         setIsAuthenticated(true);
         
-        navigate('/dashboard');
+        console.log('Authentication successful, user set:', data.name);
+        console.log('Role:', data.role, 'isAdmin:', data.role === 'admin');
+        console.log('isAuthenticated set to true');
+        
         toast({
           title: "Login Successful",
           description: `Welcome back, ${data.name}!`,
         });
+        
+        return;
       } else {
         throw new Error('Invalid credentials');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      toast({
-        title: "Login Failed",
-        description: (error as Error).message || "Invalid credentials",
-        variant: "destructive",
-      });
+      console.error('Login error in AuthContext:', error);
       throw error;
     } finally {
       setLoading(false);

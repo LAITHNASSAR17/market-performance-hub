@@ -57,7 +57,8 @@ const Login: React.FC = () => {
         description: "مرحبًا بعودتك!",
       });
       
-      console.log('Login successful, redirecting to dashboard');
+      // Force navigation to dashboard
+      console.log('Login successful, forcing redirect to dashboard');
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
@@ -84,7 +85,7 @@ const Login: React.FC = () => {
 
   const handleForgotPassword = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log('Login page: Starting forgot password flow for', email);
+    console.log('Login page: Navigating to forgot password page');
     navigate('/forgot-password');
   };
 
