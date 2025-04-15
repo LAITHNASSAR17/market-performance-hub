@@ -57,9 +57,15 @@ const Login: React.FC = () => {
         description: "مرحبًا بعودتك!",
       });
       
-      // Force navigation to dashboard
+      // التأكد من التوجيه إلى لوحة التحكم مباشرة بعد تسجيل الدخول
       console.log('Login successful, forcing redirect to dashboard');
-      navigate('/dashboard', { replace: true });
+      
+      // استخدام setTimeout لضمان تنفيذ التوجيه بعد اكتمال عملية تسجيل الدخول
+      setTimeout(() => {
+        console.log('Executing delayed redirect to dashboard');
+        navigate('/dashboard', { replace: true });
+      }, 100);
+      
     } catch (error: any) {
       console.error('Login error:', error);
       let errorMessage = "خطأ في تسجيل الدخول. تأكد من صحة البريد الإلكتروني وكلمة المرور.";
@@ -85,6 +91,7 @@ const Login: React.FC = () => {
 
   const handleForgotPassword = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // منع انتشار الحدث
     console.log('Login page: Navigating to forgot password page');
     navigate('/forgot-password');
   };
@@ -144,6 +151,7 @@ const Login: React.FC = () => {
                     variant="link" 
                     className="p-0 h-auto text-sm text-blue-600" 
                     onClick={handleForgotPassword}
+                    type="button" // تحديد النوع كزر عادي وليس زر إرسال
                   >
                     نسيت كلمة المرور؟
                   </Button>
