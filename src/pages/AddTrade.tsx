@@ -136,6 +136,7 @@ const AddTrade: React.FC = () => {
             <CardHeader>
               <CardTitle>Trade Information</CardTitle>
             </CardHeader>
+            
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -338,7 +339,9 @@ const AddTrade: React.FC = () => {
                     onChange={handleInputChange}
                   />
                 </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="durationMinutes">Duration (minutes)</Label>
                   <Input
@@ -350,15 +353,15 @@ const AddTrade: React.FC = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label>Trade Rating</Label>
-                <StarRating
-                  value={formData.rating}
-                  onChange={(rating) => setFormData(prev => ({ ...prev, rating }))}
-                  className="mt-1"
-                />
+                <div className="space-y-2">
+                  <Label>Trade Rating</Label>
+                  <StarRating
+                    value={formData.rating}
+                    onChange={(rating) => setFormData(prev => ({ ...prev, rating }))}
+                    className="mt-1"
+                  />
+                </div>
               </div>
 
               <div>
