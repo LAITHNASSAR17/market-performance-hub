@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { useSiteSettings } from '@/hooks/use-site-settings';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 interface HomeContent {
   title: string;

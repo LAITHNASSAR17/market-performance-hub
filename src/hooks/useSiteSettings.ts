@@ -22,15 +22,14 @@ export const useSiteSettings = () => {
 
       if (error) throw error;
       return data as SiteSettings;
-    },
-    onSuccess: (data) => {
-      // Update localStorage and document title when settings are fetched
-      if (data?.site_name) {
-        localStorage.setItem('siteName', data.site_name);
-        document.title = data.site_name;
-      }
     }
   });
+
+  // Apply site name to document title and localStorage when settings are loaded
+  if (settings?.site_name) {
+    localStorage.setItem('siteName', settings.site_name);
+    document.title = settings.site_name;
+  }
 
   const updateSettings = useMutation({
     mutationFn: async (newSettings: Partial<SiteSettings>) => {
