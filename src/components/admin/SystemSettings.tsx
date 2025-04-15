@@ -1,41 +1,31 @@
 
 import React from 'react';
-import { Bell, FileUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useSiteSettings } from '@/hooks/useSiteSettings';
+import { Save } from 'lucide-react';
 
 const SystemSettings: React.FC = () => {
   const { toast } = useToast();
-  const [siteName, setSiteName] = React.useState(localStorage.getItem('siteName') || 'TradeTracker');
+  const { settings, updateSettings, isUpdating } = useSiteSettings();
+  const [siteName, setSiteName] = React.useState(settings?.site_name || 'TradeTracker');
+  const [maintenanceMode, setMaintenanceMode] = React.useState(false);
   
+  React.useEffect(() => {
+    if (settings?.site_name) {
+      setSiteName(settings.site_name);
+    }
+  }, [settings]);
+
   const handleSaveSettings = async () => {
     try {
-      // Update site_settings table
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert({ 
-          site_name: siteName
-        });
-
-      if (error) throw error;
-
-      // Update localStorage
-      localStorage.setItem('siteName', siteName);
-      
-      // Update document title
-      document.title = siteName;
+      await updateSettings({
+        site_name: siteName
+      });
 
       toast({
         title: "Settings Saved",
@@ -53,67 +43,50 @@ const SystemSettings: React.FC = () => {
   };
 
   return (
-    <div className="grid gap-6">
-      <Card className="bg-white shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle>Site Settings</CardTitle>
-          <CardDescription>Configure global site settings</CardDescription>
-        </CardHeader>
+    <Card className="bg-white shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle>Site Settings</CardTitle>
+        <CardDescription>Configure global site settings</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="siteName">Site Name</Label>
+          <Input 
+            id="siteName" 
+            value={siteName}
+            onChange={(e) => setSiteName(e.target.value)}
+            placeholder="Enter site name"
+          />
+          <p className="text-sm text-gray-500">
+            This name will be used across the entire platform
+          </p>
+        </div>
         
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="siteName">Site Name</Label>
-            <Input 
-              id="siteName" 
-              value={siteName}
-              onChange={(e) => setSiteName(e.target.value)}
-              placeholder="Enter site name"
-            />
-            <p className="text-sm text-gray-500">
-              This name will be used across the entire platform
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label htmlFor="maintenance">Maintenance Mode</Label>
+            <p className="text-sm text-gray-500">Put the site in maintenance mode</p>
           </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="maintenance">Maintenance Mode</Label>
-              <p className="text-sm text-gray-500">Put the site in maintenance mode</p>
-            </div>
-            <Switch id="maintenance" />
-          </div>
-        </CardContent>
-        
-        <CardFooter>
-          <Button onClick={handleSaveSettings} className="w-full">
-            Save Settings
-          </Button>
-        </CardFooter>
-      </Card>
-
-      <Card className="bg-white shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle>Backup and Export</CardTitle>
-          <CardDescription>Create and manage system backups</CardDescription>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button variant="outline" className="flex items-center justify-center">
-              <FileUp className="mr-2 h-4 w-4" />
-              Export All Users
-            </Button>
-            <Button variant="outline" className="flex items-center justify-center">
-              <FileUp className="mr-2 h-4 w-4" />
-              Export All Trades
-            </Button>
-            <Button variant="outline" className="flex items-center justify-center">
-              <FileUp className="mr-2 h-4 w-4" />
-              Export All Notes
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          <Switch 
+            id="maintenance" 
+            checked={maintenanceMode}
+            onCheckedChange={setMaintenanceMode}
+          />
+        </div>
+      </CardContent>
+      
+      <CardFooter>
+        <Button 
+          onClick={handleSaveSettings} 
+          disabled={isUpdating}
+          className="w-full flex items-center justify-center gap-2"
+        >
+          <Save className="h-4 w-4" />
+          {isUpdating ? 'Saving...' : 'Save Settings'}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { useSiteSettings } from '@/hooks/use-site-settings';
 
 interface HomeContent {
   title: string;
@@ -55,14 +56,15 @@ const defaultContent: HomeContent = {
 const Homepage: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const { settings } = useSiteSettings();
   const [content, setContent] = useState<HomeContent>(defaultContent);
   const [loading, setLoading] = useState(true);
   
-  const siteName = localStorage.getItem('siteName') || 'TradeTracker';
-  
   useEffect(() => {
-    document.title = siteName;
-  }, [siteName]);
+    if (settings?.site_name) {
+      document.title = settings.site_name;
+    }
+  }, [settings]);
   
   useEffect(() => {
     const fetchHomepageContent = async () => {
@@ -112,7 +114,7 @@ const Homepage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
             </div>
-            <span className="text-xl font-bold">{siteName}</span>
+            <span className="text-xl font-bold">{settings?.site_name || 'TradeTracker'}</span>
           </div>
           
           <nav className="hidden md:flex space-x-8">
@@ -191,7 +193,7 @@ const Homepage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <p className="text-indigo-400">© 2025 {siteName}. All rights reserved.</p>
+              <p className="text-indigo-400">© 2025 {settings?.site_name || 'TradeTracker'}. All rights reserved.</p>
             </div>
             
             <div className="flex space-x-6">

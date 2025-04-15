@@ -1,13 +1,10 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Globe, Shield, Database } from 'lucide-react';
-import SiteSettings from '@/components/admin/SiteSettings';
+import { Globe, Settings, Shield } from 'lucide-react';
 import SystemSettings from '@/components/admin/SystemSettings';
 
 const AdminSettings: React.FC = () => {
-  const siteName = localStorage.getItem('siteName') || 'TradeTracker';
-
   return (
     <div>
       <header className="mb-6">
@@ -15,7 +12,7 @@ const AdminSettings: React.FC = () => {
           System Settings
         </h1>
         <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-          Configure and manage global platform settings for {siteName}
+          Configure and manage global platform settings
         </p>
       </header>
       
@@ -40,11 +37,12 @@ const AdminSettings: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="system" className="space-y-6">
-          <SiteSettings />
+          <div className="text-center py-8 text-gray-500">
+            System settings configuration coming soon
+          </div>
         </TabsContent>
         
         <TabsContent value="security" className="space-y-6">
-          {/* Security settings component will be added later */}
           <div className="text-center py-8 text-gray-500">
             Security settings coming soon
           </div>
