@@ -17,15 +17,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     // Check for system preference as default
-    if (typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
 
-  // Use optional chaining to prevent errors if auth is not ready
-  const auth = useAuth?.() || { user: null };
-  const { user } = auth;
+  const { user } = useAuth();
   const { toast } = useToast();
 
   // Load theme preference from Supabase when user logs in
@@ -108,16 +103,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Update the DOM when theme changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(theme);
-      
-      // Set document direction and language
-      root.setAttribute('dir', 'ltr');
-      root.setAttribute('lang', 'en');
-    }
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
   }, [theme]);
+
+  // Apply LTR direction since we only support English now
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.dir = 'ltr';
+    root.lang = 'en';
+  }, []);
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
