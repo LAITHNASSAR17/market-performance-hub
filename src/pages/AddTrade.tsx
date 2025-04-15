@@ -15,21 +15,15 @@ import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CalendarIcon, PlusIcon, X, Loader2 } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { userService } from '@/services/userService';
-import { AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const AddTrade: React.FC = () => {
   const { 
     addTrade, 
-    accounts, 
+    accounts,
     allHashtags,
-    tradingAccounts,
-    fetchTradingAccounts
   } = useTrade();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -57,19 +51,6 @@ const AddTrade: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [newAccountData, setNewAccountData] = useState({
-    name: '',
-    balance: 0
-  });
-  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
-  const [accountError, setAccountError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      fetchTradingAccounts();
-    }
-  }, [user, fetchTradingAccounts]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -126,62 +107,6 @@ const AddTrade: React.FC = () => {
     navigate('/trades');
   };
 
-  const handleCreateAccount = async () => {
-    if (!user) {
-      setAccountError("يجب تسجيل الدخول لإنشاء حساب");
-      return;
-    }
-
-    if (!newAccountData.name || newAccountData.name.trim() === '') {
-      setAccountError("الرجاء إدخال اسم الحساب");
-      return;
-    }
-
-    setIsCreatingAccount(true);
-    setAccountError(null);
-
-    try {
-      const newAccount = await userService.createTradingAccount(
-        user.id, 
-        newAccountData.name, 
-        Number(newAccountData.balance)
-      );
-      
-      await fetchTradingAccounts();
-      
-      setFormData(prev => ({
-        ...prev,
-        account: newAccount.name
-      }));
-      
-      setNewAccountData({ name: '', balance: 0 });
-      setIsAccountDialogOpen(false);
-      
-      toast({
-        title: "تم بنجاح",
-        description: `تم إنشاء حساب ${newAccountData.name} بنجاح`,
-      });
-    } catch (error: any) {
-      console.error('Failed to create account', error);
-      
-      let errorMessage = "فشل إنشاء الحساب، يرجى المحاولة مرة أخرى";
-      
-      if (error?.message) {
-        errorMessage = `فشل إنشاء الحساب: ${error.message}`;
-      }
-      
-      setAccountError(errorMessage);
-      
-      toast({
-        title: "خطأ",
-        description: errorMessage,
-        variant: "destructive"
-      });
-    } finally {
-      setIsCreatingAccount(false);
-    }
-  };
-
   return (
     <Layout>
       <div className="mb-6">
@@ -198,90 +123,23 @@ const AddTrade: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="account">Account</Label>
-                <div className="flex items-center space-x-2">
-                  <Select
-                    value={formData.account}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, account: value }))}
-                  >
-                    <SelectTrigger className={errors.account ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Select account" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {tradingAccounts.map((account) => (
-                          <SelectItem key={account.id} value={account.name}>
-                            {account.name} (Balance: ${account.balance.toFixed(2)})
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-
-                  <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="icon">
-                        <PlusIcon className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>إنشاء حساب جديد</DialogTitle>
-                      </DialogHeader>
-                      
-                      {accountError && (
-                        <Alert variant="destructive" className="mb-4">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>خطأ</AlertTitle>
-                          <AlertDescription>{accountError}</AlertDescription>
-                        </Alert>
-                      )}
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <Label>اسم الحساب</Label>
-                          <Input
-                            value={newAccountData.name}
-                            onChange={(e) => setNewAccountData(prev => ({ 
-                              ...prev, 
-                              name: e.target.value 
-                            }))}
-                            placeholder="مثال: الحساب الرئيسي"
-                          />
-                        </div>
-                        <div>
-                          <Label>ا��رصيد الأولي</Label>
-                          <Input
-                            type="number"
-                            value={newAccountData.balance}
-                            onChange={(e) => setNewAccountData(prev => ({ 
-                              ...prev, 
-                              balance: Number(e.target.value) 
-                            }))}
-                            placeholder="0.00"
-                          />
-                        </div>
-                        <div className="flex justify-between">
-                          <Button 
-                            onClick={handleCreateAccount} 
-                            disabled={isCreatingAccount}
-                          >
-                            {isCreatingAccount ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                جاري الإنشاء...
-                              </>
-                            ) : 'إنشاء'}
-                          </Button>
-                          <DialogClose asChild>
-                            <Button variant="outline">
-                              إلغاء
-                            </Button>
-                          </DialogClose>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
+                <Select
+                  value={formData.account}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, account: value }))}
+                >
+                  <SelectTrigger className={errors.account ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {accounts.map((account) => (
+                        <SelectItem key={account} value={account}>
+                          {account}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
                 {errors.account && <p className="text-red-500 text-sm mt-1">{errors.account}</p>}
               </div>
 

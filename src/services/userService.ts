@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -98,7 +97,6 @@ export const userService = {
     return data.map(formatUser);
   },
   
-  // تحسين وظيفة إنشاء حساب التداول
   async createTradingAccount(userId: string, name: string, balance: number): Promise<ITradingAccount> {
     if (!userId) {
       throw new Error('User ID is required to create a trading account');
@@ -108,7 +106,6 @@ export const userService = {
       throw new Error('Account name is required');
     }
     
-    // التأكد من أن الرصيد هو رقم صالح
     const parsedBalance = Number(balance) || 0;
     
     const { data, error } = await supabase
@@ -130,7 +127,6 @@ export const userService = {
       throw new Error('Failed to create trading account, no data returned');
     }
     
-    // تنسيق البيانات المرجعة
     return {
       id: data.id,
       userId: data.user_id,
@@ -140,7 +136,6 @@ export const userService = {
     };
   },
   
-  // إضافة وظيفة للحصول على حسابات التداول للمستخدم
   async getTradingAccounts(userId: string): Promise<ITradingAccount[]> {
     if (!userId) {
       throw new Error('User ID is required to fetch trading accounts');
@@ -168,7 +163,6 @@ export const userService = {
   }
 };
 
-// Helper function to format Supabase data to our interface format
 function formatUser(data: any): IUser {
   return {
     id: data.id,
