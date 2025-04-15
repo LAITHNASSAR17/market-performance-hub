@@ -1,10 +1,11 @@
-
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileUp } from 'lucide-react';
+import { FileUp, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import Papa from 'papaparse';
 import { Trade } from '@/types/trade';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MetaTraderImportProps {
   onImport: (trades: Partial<Trade>[]) => void;
@@ -13,6 +14,8 @@ interface MetaTraderImportProps {
 const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const parseXMLData = (xmlText: string) => {
     const parser = new DOMParser();
@@ -48,14 +51,12 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlText, 'text/html');
       
-      // Try to find a table in the document
       const tables = doc.querySelectorAll('table');
       if (tables.length === 0) {
         console.log("No tables found in HTML");
         return [];
       }
       
-      // Use the first table that has rows
       let targetTable = tables[0];
       for (const table of tables) {
         if (table.querySelectorAll('tr').length > 1) {
@@ -71,7 +72,6 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
         return [];
       }
       
-      // Skip header row and process the rest
       return Array.from(rows).slice(1).map(row => {
         const cells = row.querySelectorAll('td');
         
@@ -80,37 +80,27 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
           return null;
         }
         
-        // This mapping depends on MetaTrader HTML export format
-        // Common formats include:
-        // [ticket, openTime, type, size, symbol, openPrice, sl, tp, closeTime, closePrice, commission, swap, profit]
         let ticket = '', openTime = '', type = '', size = '', symbol = '', openPrice = '', 
             sl = '', tp = '', closeTime = '', closePrice = '', commission = '', swap = '', profit = '';
         
-        // Handle different table formats
         if (cells.length >= 13) {
-          // Standard format with all fields
           [ticket, openTime, type, size, symbol, openPrice, sl, tp, closeTime, closePrice, commission, swap, profit] = 
             Array.from(cells).map(cell => cell.textContent?.trim() || '');
         } else if (cells.length >= 10) {
-          // Common format with fewer fields
           [ticket, openTime, type, size, symbol, openPrice, closeTime, closePrice, commission, profit] = 
             Array.from(cells).map(cell => cell.textContent?.trim() || '');
         } else if (cells.length >= 7) {
-          // Minimal format
           [ticket, openTime, type, size, symbol, openPrice, closePrice] = 
             Array.from(cells).map(cell => cell.textContent?.trim() || '');
           profit = cells[cells.length - 1]?.textContent?.trim() || '0';
         }
         
-        // Make sure the trade type is correctly determined
         const tradeType = type.toLowerCase().includes('buy') || type.toLowerCase().includes('شراء') 
           ? 'Buy' as const 
           : 'Sell' as const;
         
-        // Debug logging to help diagnose issues
         console.log(`Processing trade: ${symbol} ${tradeType} ${openPrice} -> ${closePrice}`);
         
-        // Skip rows with missing critical data
         if (!symbol || !openPrice) {
           console.log("Missing symbol or price data, skipping row");
           return null;
@@ -142,17 +132,13 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
     }
   };
 
-  // Helper to parse dates with different formats
   const tryParseDate = (dateStr: string): string => {
     try {
-      // Try to handle various date formats
       let date: Date;
       
-      // Clean up the date string
       dateStr = dateStr.trim().replace(/\s+/g, ' ');
       
       if (dateStr.includes('/')) {
-        // Handle DD/MM/YYYY format
         const parts = dateStr.split(' ')[0].split('/');
         if (parts.length === 3) {
           date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
@@ -160,11 +146,9 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
           date = new Date(dateStr);
         }
       } else {
-        // Try standard parsing
         date = new Date(dateStr);
       }
       
-      // Check if date is valid
       if (isNaN(date.getTime())) {
         console.log(`Invalid date format: ${dateStr}, using current date`);
         return new Date().toISOString().split('T')[0];
@@ -175,8 +159,7 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
       return new Date().toISOString().split('T')[0];
     }
   };
-  
-  // Calculate duration between two dates in minutes
+
   const calculateDuration = (startDateStr: string, endDateStr: string): number => {
     try {
       const startDate = new Date(startDateStr);
@@ -192,20 +175,17 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
     }
   };
 
-  // تحويل HTML إلى CSV
   const convertHTMLToCSV = (htmlContent: string): string => {
     try {
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlContent, 'text/html');
       
-      // Try to find tables in the document
       const tables = doc.querySelectorAll('table');
       if (tables.length === 0) {
         console.log("No tables found for CSV conversion");
         return '';
       }
       
-      // Use the first table that has rows
       let targetTable = tables[0];
       for (const table of tables) {
         if (table.querySelectorAll('tr').length > 1) {
@@ -225,7 +205,6 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
         const cells = Array.from(row.querySelectorAll('td, th'));
         return cells.map(cell => {
           let text = cell.textContent?.trim() || '';
-          // Properly escape quotes for CSV
           text = text.replace(/"/g, '""');
           return `"${text}"`;
         }).join(',');
@@ -238,10 +217,127 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const saveImportedTradesToDB = async (trades: Partial<Trade>[]) => {
+    if (!user) {
+      toast({
+        title: "خطأ في الحفظ",
+        description: "يجب تسجيل الدخول لحفظ الصفقات",
+        variant: "destructive"
+      });
+      return [];
+    }
+
+    try {
+      const savedTrades: Partial<Trade>[] = [];
+      const existingTrades = new Set<string>();
+      
+      const { data: existingTradesData } = await supabase
+        .from('trades')
+        .select('symbol, entry_price, exit_price, entry_date, direction')
+        .eq('user_id', user.id);
+      
+      if (existingTradesData) {
+        existingTradesData.forEach(trade => {
+          const tradeKey = `${trade.symbol}-${trade.entry_price}-${trade.exit_price}-${trade.entry_date.split('T')[0]}-${trade.direction}`;
+          existingTrades.add(tradeKey);
+        });
+      }
+
+      const batchSize = 10;
+      for (let i = 0; i < trades.length; i += batchSize) {
+        const batch = trades.slice(i, i + batchSize);
+        const tradesToInsert = [];
+        
+        for (const trade of batch) {
+          if (!trade.pair || !trade.entry || !trade.date) continue;
+          
+          const tradeType = trade.type === 'Buy' ? 'long' : 'short';
+          const tradeKey = `${trade.pair}-${trade.entry}-${trade.exit}-${trade.date}-${tradeType}`;
+          
+          if (existingTrades.has(tradeKey)) {
+            console.log(`Skipping duplicate trade: ${tradeKey}`);
+            continue;
+          }
+          
+          tradesToInsert.push({
+            user_id: user.id,
+            symbol: trade.pair,
+            entry_price: trade.entry,
+            exit_price: trade.exit || null,
+            quantity: trade.lotSize,
+            direction: trade.type === 'Buy' ? 'long' : 'short',
+            entry_date: new Date(trade.date).toISOString(),
+            exit_date: trade.exit ? new Date(trade.date).toISOString() : null,
+            profit_loss: trade.profitLoss,
+            fees: trade.commission || 0,
+            notes: trade.notes,
+            tags: trade.hashtags
+          });
+          
+          existingTrades.add(tradeKey);
+        }
+        
+        if (tradesToInsert.length > 0) {
+          const { data, error } = await supabase
+            .from('trades')
+            .insert(tradesToInsert)
+            .select();
+            
+          if (error) {
+            console.error('Error inserting trades:', error);
+            toast({
+              title: "خطأ في الحفظ",
+              description: `تم حفظ ${savedTrades.length} صفقة، وفشل البعض: ${error.message}`,
+              variant: "destructive"
+            });
+          } else if (data) {
+            const newSavedTrades = data.map(dbTrade => ({
+              id: dbTrade.id,
+              userId: dbTrade.user_id,
+              pair: dbTrade.symbol,
+              type: dbTrade.direction === 'long' ? 'Buy' as const : 'Sell' as const,
+              entry: dbTrade.entry_price,
+              exit: dbTrade.exit_price || 0,
+              lotSize: dbTrade.quantity,
+              stopLoss: null,
+              takeProfit: null,
+              profitLoss: dbTrade.profit_loss || 0,
+              date: new Date(dbTrade.entry_date).toISOString().split('T')[0],
+              durationMinutes: 0,
+              commission: dbTrade.fees || 0,
+              account: 'Main Trading',
+              notes: dbTrade.notes || '',
+              hashtags: dbTrade.tags || [],
+              riskPercentage: 0,
+              returnPercentage: 0,
+              imageUrl: null,
+              beforeImageUrl: null,
+              afterImageUrl: null,
+              createdAt: dbTrade.created_at
+            }));
+            
+            savedTrades.push(...newSavedTrades);
+          }
+        }
+      }
+      
+      return savedTrades;
+    } catch (error) {
+      console.error('Error saving trades to database:', error);
+      toast({
+        title: "خطأ في الحفظ",
+        description: "حدث خطأ أثناء حفظ الصفقات في قاعدة البيانات",
+        variant: "destructive"
+      });
+      return [];
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setLoading(true);
     const reader = new FileReader();
     reader.onload = async (e) => {
       const content = e.target?.result as string;
@@ -251,7 +347,6 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
         console.log(`Processing file: ${file.name}, size: ${file.size} bytes`);
         
         if (file.name.endsWith('.csv')) {
-          console.log("Processing CSV file");
           const results = Papa.parse(content, { header: false });
           trades = results.data.slice(1).map((row: any) => {
             if (!Array.isArray(row) || row.length < 7) return null;
@@ -283,16 +378,11 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
             };
           }).filter(Boolean);
         } else if (file.name.endsWith('.xml')) {
-          console.log("Processing XML file");
           trades = parseXMLData(content);
         } else if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
-          console.log("Processing HTML file");
-          
-          // First try direct HTML parsing
           trades = parseHTMLData(content);
           console.log(`Direct HTML parsing found ${trades.length} trades`);
           
-          // If no trades found, try converting to CSV
           if (trades.length === 0) {
             console.log("No trades found, trying HTML to CSV conversion");
             const csvContent = convertHTMLToCSV(content);
@@ -304,15 +394,12 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
               trades = results.data.slice(1).map((row: any) => {
                 if (!Array.isArray(row) || row.length < 7) return null;
                 
-                // Extract data from CSV row
                 let ticket = '', openTime = '', type = '', size = '', symbol = '', openPrice = '', 
                     closePrice = '', profit = '';
                 
                 if (row.length >= 13) {
-                  // Full format
                   [ticket, openTime, type, size, symbol, openPrice, , , , closePrice, , , profit] = row;
                 } else if (row.length >= 7) {
-                  // Minimal format
                   [ticket, openTime, type, size, symbol, openPrice, closePrice] = row;
                   profit = row[row.length - 1] || '0';
                 }
@@ -355,11 +442,22 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
         }
 
         console.log(`Successfully imported ${trades.length} trades`);
-        onImport(trades);
-        toast({
-          title: "تم استيراد الصفقات",
-          description: `تم استيراد ${trades.length} صفقة بنجاح`,
-        });
+        
+        const savedTrades = await saveImportedTradesToDB(trades);
+        
+        if (savedTrades.length > 0) {
+          onImport(savedTrades);
+          toast({
+            title: "تم استيراد الصفقات",
+            description: `تم استيراد ${savedTrades.length} صفقة بنجاح من أصل ${trades.length} صفقة`,
+          });
+        } else if (trades.length > 0 && savedTrades.length === 0) {
+          toast({
+            title: "تنبيه",
+            description: "لم يتم استيراد أي صفقات جديدة، قد تكون الصفقات موجودة مسبقًا",
+            variant: "default"
+          });
+        }
       } catch (error) {
         console.error('Import error:', error);
         toast({
@@ -367,6 +465,8 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
           description: "تأكد من تنسيق الملف",
           variant: "destructive"
         });
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -386,9 +486,14 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
         variant="outline" 
         onClick={() => fileInputRef.current?.click()}
         className="flex items-center gap-2"
+        disabled={loading}
       >
-        <FileUp className="h-4 w-4" />
-        استيراد من MetaTrader
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <FileUp className="h-4 w-4" />
+        )}
+        {loading ? 'جاري المعالجة...' : 'استيراد من MetaTrader'}
       </Button>
       <div className="text-sm text-muted-foreground">
         قم بتصدير سجل الصفقات من MetaTrader بصيغة CSV, HTML, أو XML وارفعه هنا
