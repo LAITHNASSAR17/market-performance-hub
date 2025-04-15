@@ -51,7 +51,7 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   hashtags: dbTrade.tags || [],
   createdAt: dbTrade.createdAt.toISOString(),
   commission: dbTrade.fees || 0,
-  rating: 0 // Default rating
+  rating: dbTrade.rating || 0 // Get rating from DB or default to 0
 });
 
 // Update mapTradeToDBTrade to include rating
@@ -67,5 +67,6 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   profitLoss: trade.profitLoss,
   fees: trade.commission || 0,
   notes: trade.notes,
-  tags: trade.hashtags
+  tags: trade.hashtags,
+  rating: trade.rating || 0 // Include the rating field here
 });
