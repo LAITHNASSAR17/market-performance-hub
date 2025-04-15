@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface INote {
@@ -52,16 +51,13 @@ export const noteService = {
   },
 
   async getAllNotes(userId?: string): Promise<INote[]> {
-    // Get the current authenticated user if userId not provided
     if (!userId) {
       const { data: { user } } = await supabase.auth.getUser();
       userId = user?.id;
     }
 
-    // If no user, return empty array
     if (!userId) return [];
 
-    // Get notes for this specific user only
     const { data, error } = await supabase
       .from('notes')
       .select('*')
@@ -121,8 +117,7 @@ export const noteService = {
     return data.map(formatNote);
   },
 
-  async createNote(noteData: Omit<INote, 'id' | 'createdAt' | 'updatedAt'>): Promise<INote> {
-    // Get the current authenticated user
+  async createNote(noteData: Omit<INote, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<INote> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -137,7 +132,7 @@ export const noteService = {
         is_favorite: noteData.isFavorite || false,
         tags: noteData.tags || [],
         trade_data: noteData.tradeData || null,
-        user_id: noteData.userId || user.id,
+        user_id: user.id,
         created_at: now,
         updated_at: now
       })
@@ -149,7 +144,6 @@ export const noteService = {
   },
 
   async updateNote(id: string, noteData: Partial<INote>): Promise<INote | null> {
-    // Get the current authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
@@ -179,7 +173,6 @@ export const noteService = {
   },
 
   async deleteNote(id: string, permanent: boolean = false): Promise<boolean> {
-    // Get the current authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
@@ -192,7 +185,6 @@ export const noteService = {
       
       return !error;
     } else {
-      // Soft delete
       const now = new Date().toISOString();
       const { error } = await supabase
         .from('notes')
@@ -277,7 +269,6 @@ export const noteService = {
   async getAllTemplates(): Promise<ITemplate[]> {
     const { data: { user } } = await supabase.auth.getUser();
     
-    // Get both default templates and user templates
     const { data, error } = await supabase
       .from('note_templates')
       .select('*')
@@ -363,7 +354,6 @@ export const noteService = {
   }
 };
 
-// Helper functions to format Supabase data to our interface format
 function formatNote(data: any): INote {
   return {
     id: data.id,

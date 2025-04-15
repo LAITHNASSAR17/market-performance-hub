@@ -6,6 +6,9 @@ import { noteService, INote, IFolder, ITemplate } from '@/services/noteService';
 
 type Filter = 'all' | 'favorites' | 'folder' | 'tag' | 'search';
 
+// This type omits userId from the required fields for addNote
+type AddNoteData = Omit<INote, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
+
 type NotebookContextType = {
   notes: INote[];
   folders: IFolder[];
@@ -17,7 +20,7 @@ type NotebookContextType = {
   noteTags: string[];
   
   // Note operations
-  addNote: (note: Omit<INote, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<INote | null>;
+  addNote: (note: AddNoteData) => Promise<INote | null>;
   updateNote: (id: string, note: Partial<INote>) => Promise<INote | null>;
   deleteNote: (id: string, permanent?: boolean) => Promise<boolean>;
   getNote: (id: string) => Promise<INote | null>;
@@ -159,7 +162,7 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [currentFilter, currentFilterValue, user, toast]);
 
   // Note operations
-  const addNote = async (noteData: Omit<INote, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+  const addNote = async (noteData: AddNoteData) => {
     if (!user) return null;
 
     try {
