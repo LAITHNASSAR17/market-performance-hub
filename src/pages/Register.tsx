@@ -7,8 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, AlertCircle, Mail, Lock, User } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { countries } from '@/utils/countries';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
@@ -17,6 +25,7 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [country, setCountry] = useState('');
   const [error, setError] = useState('');
   const { register, isAuthenticated, loading } = useAuth();
 
@@ -24,7 +33,7 @@ const Register: React.FC = () => {
     e.preventDefault();
     setError('');
     
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !country) {
       setError(t('register.error.fillAll'));
       return;
     }
@@ -41,7 +50,8 @@ const Register: React.FC = () => {
     
     try {
       console.log('Registering user with email:', email);
-      await register(name, email, password);
+      // Pass the country along with other registration data
+      await register(name, email, password, country);
       
       toast({
         title: t('register.success.title'),
@@ -87,73 +97,98 @@ const Register: React.FC = () => {
                 </div>
               )}
               
-              <div className="mb-4">
-                <Label htmlFor="name">{t('register.fullName')}</Label>
-                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                  <User className="h-4 w-4 mx-3 text-gray-500" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder={t('register.fullName')}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    required
-                  />
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">{t('register.fullName')}</Label>
+                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <User className="h-4 w-4 mx-3 text-gray-500" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder={t('register.fullName')}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="mb-4">
-                <Label htmlFor="email">{t('register.email')}</Label>
-                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                  <Mail className="h-4 w-4 mx-3 text-gray-500" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={t('register.email')}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    required
-                  />
+
+                <div className="grid gap-2">
+                  <Label htmlFor="email">{t('register.email')}</Label>
+                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <Mail className="h-4 w-4 mx-3 text-gray-500" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder={t('register.email')}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="mb-4">
-                <Label htmlFor="password">{t('register.password')}</Label>
-                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                  <Lock className="h-4 w-4 mx-3 text-gray-500" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder={t('register.password')}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    required
-                  />
+
+                <div className="grid gap-2">
+                  <Label htmlFor="country">{t('register.country')}</Label>
+                  <Select value={country} onValueChange={setCountry}>
+                    <SelectTrigger className="w-full">
+                      <div className="flex items-center gap-2">
+                        <Map className="h-4 w-4 text-gray-500" />
+                        <SelectValue placeholder={t('register.selectCountry')} />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country.value} value={country.value}>
+                          {country.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-              <div className="mb-6">
-                <Label htmlFor="confirmPassword">{t('register.confirmPassword')}</Label>
-                <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-                  <Lock className="h-4 w-4 mx-3 text-gray-500" />
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder={t('register.confirmPassword')}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    required
-                  />
+
+                <div className="grid gap-2">
+                  <Label htmlFor="password">{t('register.password')}</Label>
+                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder={t('register.password')}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      required
+                    />
+                  </div>
                 </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="confirmPassword">{t('register.confirmPassword')}</Label>
+                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <Lock className="h-4 w-4 mx-3 text-gray-500" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder={t('register.confirmPassword')}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loading}
+                >
+                  {loading ? t('register.registering') : t('register.createAccount')}
+                </Button>
               </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loading}
-              >
-                {loading ? t('register.registering') : t('register.createAccount')}
-              </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">

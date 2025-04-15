@@ -21,7 +21,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   users: User[];
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, country?: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
@@ -115,7 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const register = async (name: string, email: string, password: string): Promise<void> => {
+  const register = async (name: string, email: string, password: string, country?: string): Promise<void> => {
     setLoading(true);
     try {
       const hashedPassword = hashPassword(password);
@@ -136,15 +136,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (error) throw new Error(error.message);
       
+      if (country) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.id,
+            country: country
+          });
+          
+        if (profileError) console.error('Error creating profile:', profileError);
+      }
+      
       console.log("User registered successfully:", data);
       
-      // Send verification email right after registration
       try {
         await sendVerificationEmail(email);
         console.log("Verification email sent successfully");
       } catch (emailError) {
         console.error("Error sending verification email:", emailError);
-        // Don't throw here, we still want to complete registration
       }
       
       toast({
@@ -185,7 +194,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw new Error('User is blocked');
         }
         
-        // Check if email is verified
         if (!data.email_verified) {
           toast({
             title: "البريد الإلكتروني غير مفعل",
@@ -193,7 +201,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             variant: "destructive",
           });
           
-          // Resend verification email
           try {
             await sendVerificationEmail(email);
             console.log("Verification email resent successfully");
@@ -479,7 +486,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending verification email to ${email}`);
       
-      // Use trackmind.vip domain
       const verificationLink = `https://trackmind.vip/verify?email=${encodeURIComponent(email)}`;
       console.log(`Verification link: ${verificationLink}`);
       
@@ -506,7 +512,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       toast({
         title: "تم إرسال البريد الإلكتروني",
-        description: "تم إرسال رابط التحقق إلى بريدك الإلكتروني",
+        description: "تم إرس��ل رابط التحقق إلى بريدك الإلكتروني",
       });
       
       return response;
@@ -541,7 +547,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error("User not found");
       }
       
-      // Use trackmind.vip domain
       const resetLink = `https://trackmind.vip/reset-password?email=${encodeURIComponent(email)}`;
       console.log(`Reset password link: ${resetLink}`);
       

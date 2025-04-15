@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -47,7 +46,6 @@ import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 
-// Full list of countries for selection
 const countries = [
   { value: 'af', label: 'Afghanistan' },
   { value: 'al', label: 'Albania' },
@@ -250,7 +248,6 @@ const UserProfileSettings: React.FC = () => {
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
   
-  // User info form state
   const [name, setName] = useState(user?.name || '');
   const [username, setUsername] = useState(user?.name?.split(' ')[0]?.toLowerCase() || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -260,32 +257,25 @@ const UserProfileSettings: React.FC = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
   
-  // Password form state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   
-  // Delete account dialog state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   
-  // 2FA state
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   
-  // File input reference
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   
   useEffect(() => {
-    // Load user data when component mounts
     if (user) {
       setName(user.name || '');
       setEmail(user.email || '');
-      // Initialize with placeholder values if needed
       setUsername(user.name?.split(' ')[0]?.toLowerCase() || '');
       
-      // Fetch profile data from Supabase
       const fetchProfile = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -323,7 +313,6 @@ const UserProfileSettings: React.FC = () => {
       const fileName = `${userId}_${Math.random().toString(36).substring(2)}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
       
-      // Upload file to storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file);
@@ -332,14 +321,12 @@ const UserProfileSettings: React.FC = () => {
         throw uploadError;
       }
       
-      // Get public URL
       const { data } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
         
       const avatarUrl = data.publicUrl;
       
-      // Update or create profile record
       const { error: updateError } = await supabase
         .from('profiles')
         .upsert({ 
@@ -374,8 +361,7 @@ const UserProfileSettings: React.FC = () => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-      // Validate file size and type
-      if (file.size > 2 * 1024 * 1024) { // 2MB
+      if (file.size > 2 * 1024 * 1024) {
         toast({
           title: "File Too Large",
           description: "Please select an image under 2MB",
@@ -417,16 +403,17 @@ const UserProfileSettings: React.FC = () => {
       setIsUpdating(true);
       await updateProfile(name, email);
       
-      // Update country in profiles table
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('profiles')
           .upsert({ 
             id: session.user.id, 
             country,
             updated_at: new Date().toISOString()
           });
+          
+        if (updateError) throw updateError;
       }
       
       toast({
@@ -468,7 +455,6 @@ const UserProfileSettings: React.FC = () => {
       setIsChangingPassword(true);
       await updateProfile(user?.name || '', user?.email || '', currentPassword, newPassword);
       
-      // Reset form
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
@@ -495,7 +481,6 @@ const UserProfileSettings: React.FC = () => {
     }
     
     try {
-      // Account deletion logic would go here
       toast({
         title: "Account Deleted",
         description: "Your account has been permanently deleted",
@@ -517,12 +502,11 @@ const UserProfileSettings: React.FC = () => {
   
   const handleLogoutAllDevices = async () => {
     try {
-      // Logic to logout from all devices would go here
       toast({
         title: "Success",
         description: "You have been logged out from all devices",
       });
-      logout(); // Logout from current device as well
+      logout();
     } catch (error) {
       console.error('Error logging out from all devices:', error);
       toast({
@@ -534,7 +518,6 @@ const UserProfileSettings: React.FC = () => {
   };
   
   const handleUpgradePlan = () => {
-    // Navigate to the payment page
     window.location.href = '/payment';
   };
 
@@ -565,7 +548,6 @@ const UserProfileSettings: React.FC = () => {
             </TabsTrigger>
           </TabsList>
           
-          {/* Profile Information Tab */}
           <TabsContent value="profile">
             <Card>
               <CardHeader>
@@ -579,7 +561,6 @@ const UserProfileSettings: React.FC = () => {
               <CardContent>
                 <form onSubmit={handleProfileUpdate}>
                   <div className="grid gap-6">
-                    {/* Profile Picture */}
                     <div className="flex flex-col items-center sm:flex-row sm:items-start gap-4 mb-4">
                       <div className="relative">
                         <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -747,7 +728,6 @@ const UserProfileSettings: React.FC = () => {
             </Card>
           </TabsContent>
           
-          {/* Security Tab */}
           <TabsContent value="security">
             <Card className="mb-6">
               <CardHeader>
@@ -828,7 +808,6 @@ const UserProfileSettings: React.FC = () => {
             </Card>
           </TabsContent>
 
-          {/* Subscription Tab */}
           <TabsContent value="subscription">
             <Card>
               <CardHeader>
@@ -877,7 +856,6 @@ const UserProfileSettings: React.FC = () => {
             </Card>
           </TabsContent>
 
-          {/* Account Management Tab */}
           <TabsContent value="account">
             <Card className="mb-6">
               <CardHeader>
