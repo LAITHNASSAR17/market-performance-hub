@@ -78,6 +78,23 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
     }).filter(Boolean);
   };
 
+  // تحويل HTML إلى CSV
+  const convertHTMLToCSV = (htmlContent: string): string => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, 'text/html');
+    const table = doc.querySelector('table');
+    
+    if (!table) return '';
+    
+    const rows = Array.from(table.querySelectorAll('tr'));
+    const csvRows = rows.map(row => {
+      const cells = Array.from(row.querySelectorAll('td, th'));
+      return cells.map(cell => `"${cell.textContent?.trim().replace(/"/g, '""') || ''}"`).join(',');
+    });
+    
+    return csvRows.join('\n');
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -91,7 +108,11 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
         if (file.name.endsWith('.csv')) {
           const results = Papa.parse(content, { header: false });
           trades = results.data.slice(1).map((row: any) => {
+            if (!Array.isArray(row) || row.length < 7) return null;
+            
             const [ticket, openTime, type, size, symbol, openPrice, sl, tp, closeTime, closePrice, commission, swap, profit] = row;
+            
+            if (!symbol || !openPrice || !closePrice || !type) return null;
             
             return {
               pair: symbol,
@@ -109,11 +130,48 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
               notes: `Imported from MetaTrader - Ticket: ${ticket}`,
               hashtags: ['imported']
             };
-          });
+          }).filter(Boolean);
         } else if (file.name.endsWith('.xml')) {
           trades = parseXMLData(content);
         } else if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
-          trades = parseHTMLData(content);
+          // محاولة تحليل HTML مباشرة
+          const htmlTrades = parseHTMLData(content);
+          
+          // إذا لم يتم العثور على صفقات، حاول تحويل HTML إلى CSV ثم تحليله
+          if (htmlTrades.length === 0) {
+            const csvContent = convertHTMLToCSV(content);
+            if (csvContent) {
+              const results = Papa.parse(csvContent, { header: false });
+              trades = results.data.slice(1).map((row: any) => {
+                if (!Array.isArray(row) || row.length < 7) return null;
+                
+                const [ticket, openTime, type, size, symbol, openPrice, sl, tp, closeTime, closePrice, commission, swap, profit] = row;
+                
+                if (!symbol || !openPrice || !closePrice || !type) return null;
+                
+                return {
+                  pair: symbol,
+                  type: type.toLowerCase().includes('buy') ? 'Buy' as const : 'Sell' as const,
+                  entry: parseFloat(openPrice),
+                  exit: parseFloat(closePrice),
+                  lotSize: parseFloat(size),
+                  stopLoss: sl ? parseFloat(sl) : null,
+                  takeProfit: tp ? parseFloat(tp) : null,
+                  profitLoss: parseFloat(profit),
+                  date: new Date(openTime).toISOString().split('T')[0],
+                  durationMinutes: Math.round((new Date(closeTime).getTime() - new Date(openTime).getTime()) / (1000 * 60)),
+                  commission: Math.abs(parseFloat(commission || '0') + parseFloat(swap || '0')),
+                  account: 'Main Trading',
+                  notes: `Imported from MetaTrader - Ticket: ${ticket}`,
+                  hashtags: ['imported']
+                };
+              }).filter(Boolean);
+            } else {
+              trades = htmlTrades;
+            }
+          } else {
+            trades = htmlTrades;
+          }
         } else {
           throw new Error('Unsupported file format');
         }
@@ -132,6 +190,7 @@ const MetaTraderImport: React.FC<MetaTraderImportProps> = ({ onImport }) => {
           description: `تم استيراد ${trades.length} صفقة بنجاح`,
         });
       } catch (error) {
+        console.error('Import error:', error);
         toast({
           title: "خطأ في الاستيراد",
           description: "تأكد من تنسيق الملف",
