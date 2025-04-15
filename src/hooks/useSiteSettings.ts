@@ -1,6 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useEffect } from 'react';
 
 interface SiteSettings {
   site_name: string;
@@ -25,11 +26,19 @@ export const useSiteSettings = () => {
     }
   });
 
-  // Apply site name to document title and localStorage when settings are loaded
-  if (settings?.site_name) {
-    localStorage.setItem('siteName', settings.site_name);
-    document.title = settings.site_name;
-  }
+  // Use useEffect to update document title when settings are loaded
+  useEffect(() => {
+    if (settings?.site_name) {
+      localStorage.setItem('siteName', settings.site_name);
+      document.title = settings.site_name;
+      
+      // Update favicon if it exists in localStorage
+      const favicon = localStorage.getItem('favicon');
+      if (favicon) {
+        updateFavicon(favicon);
+      }
+    }
+  }, [settings]);
 
   const updateSettings = useMutation({
     mutationFn: async (newSettings: Partial<SiteSettings>) => {
@@ -53,10 +62,29 @@ export const useSiteSettings = () => {
     }
   });
 
+  // Function to update favicon
+  const updateFavicon = (iconUrl: string) => {
+    const linkElements = document.querySelectorAll("link[rel*='icon']");
+    
+    if (linkElements.length > 0) {
+      // Update existing favicon links
+      linkElements.forEach(link => {
+        (link as HTMLLinkElement).href = iconUrl;
+      });
+    } else {
+      // Create a new favicon link if none exists
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = iconUrl;
+      document.head.appendChild(link);
+    }
+  };
+
   return {
     settings,
     isLoading,
     updateSettings: updateSettings.mutate,
-    isUpdating: updateSettings.isPending
+    isUpdating: updateSettings.isPending,
+    updateFavicon
   };
 };

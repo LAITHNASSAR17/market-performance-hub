@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { Save } from 'lucide-react';
+import { Save, Image } from 'lucide-react';
+import FaviconUpload from '@/components/FaviconUpload';
 
 const SystemSettings: React.FC = () => {
   const { toast } = useToast();
   const { settings, updateSettings, isUpdating } = useSiteSettings();
   const [siteName, setSiteName] = React.useState(settings?.site_name || 'TradeTracker');
   const [maintenanceMode, setMaintenanceMode] = React.useState(false);
+  const [showFaviconUpload, setShowFaviconUpload] = React.useState(false);
   
-  React.useEffect(() => {
+  useEffect(() => {
     if (settings?.site_name) {
       setSiteName(settings.site_name);
     }
@@ -74,6 +76,17 @@ const SystemSettings: React.FC = () => {
             onCheckedChange={setMaintenanceMode}
           />
         </div>
+
+        <div className="pt-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setShowFaviconUpload(true)}
+          >
+            <Image className="h-4 w-4" />
+            Change Website Favicon
+          </Button>
+        </div>
       </CardContent>
       
       <CardFooter>
@@ -86,6 +99,11 @@ const SystemSettings: React.FC = () => {
           {isUpdating ? 'Saving...' : 'Save Settings'}
         </Button>
       </CardFooter>
+
+      <FaviconUpload 
+        isOpen={showFaviconUpload} 
+        onClose={() => setShowFaviconUpload(false)} 
+      />
     </Card>
   );
 };

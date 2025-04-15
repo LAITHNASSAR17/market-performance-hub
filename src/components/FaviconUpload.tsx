@@ -7,6 +7,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/components/ui/use-toast';
 import ImageUpload from '@/components/ImageUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useSiteSettings } from '@/hooks/useSiteSettings';
 
 interface FaviconUploadProps {
   isOpen?: boolean;
@@ -16,6 +17,15 @@ interface FaviconUploadProps {
 const FaviconUpload: React.FC<FaviconUploadProps> = ({ isOpen, onClose }) => {
   const { t } = useLanguage();
   const [favicon, setFavicon] = React.useState<string | null>(null);
+  const { updateFavicon } = useSiteSettings();
+
+  React.useEffect(() => {
+    // Load favicon from localStorage if available
+    const savedFavicon = localStorage.getItem('favicon');
+    if (savedFavicon) {
+      setFavicon(savedFavicon);
+    }
+  }, []);
 
   const handleFaviconChange = (value: string | null) => {
     setFavicon(value);
@@ -23,22 +33,11 @@ const FaviconUpload: React.FC<FaviconUploadProps> = ({ isOpen, onClose }) => {
 
   const handleSave = () => {
     if (favicon) {
-      // In a real implementation, you would upload this to your server
-      // For now, we'll update the favicon link directly in the DOM
-      const linkElements = document.querySelectorAll("link[rel*='icon']");
+      // Save favicon to localStorage for persistence
+      localStorage.setItem('favicon', favicon);
       
-      if (linkElements.length > 0) {
-        // Update existing favicon links
-        linkElements.forEach(link => {
-          (link as HTMLLinkElement).href = favicon;
-        });
-      } else {
-        // Create a new favicon link if none exists
-        const link = document.createElement('link');
-        link.rel = 'icon';
-        link.href = favicon;
-        document.head.appendChild(link);
-      }
+      // Update the favicon in the document
+      updateFavicon(favicon);
 
       toast({
         title: t('settings.faviconUpdated') || "Favicon Updated",
