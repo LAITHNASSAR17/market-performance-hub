@@ -1,9 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
-import { userService } from '@/services/userService';
+import { tradeService } from '@/services/tradeService';
 import { Trade } from '@/types/trade';
 
 export type { Trade } from '@/types/trade';
@@ -313,43 +312,11 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (user) {
         setLoading(true);
         try {
-          const { data, error } = await supabase
-            .from('trades')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-
-          if (error) throw error;
-
-          const formattedTrades: Trade[] = data.map(trade => ({
-            id: trade.id,
-            userId: trade.user_id,
-            account: 'Main Trading',
-            date: trade.entry_date.split('T')[0],
-            pair: trade.symbol,
-            type: trade.direction === 'long' ? 'Buy' : 'Sell',
-            entry: trade.entry_price,
-            exit: trade.exit_price || 0,
-            lotSize: trade.quantity,
-            stopLoss: null,
-            takeProfit: null,
-            riskPercentage: 0,
-            returnPercentage: 0,
-            profitLoss: trade.profit_loss || 0,
-            durationMinutes: 0,
-            notes: trade.notes || '',
-            imageUrl: null,
-            beforeImageUrl: null,
-            afterImageUrl: null,
-            hashtags: trade.tags || [],
-            createdAt: trade.created_at,
-            commission: trade.fees || 0
-          }));
-
-          setTrades(formattedTrades);
+          const userTrades = await tradeService.getAllTrades(user.id);
+          setTrades(userTrades);
 
           const uniqueHashtags = Array.from(new Set(
-            formattedTrades.flatMap(trade => trade.hashtags)
+            userTrades.flatMap(trade => trade.hashtags)
           ));
           setAllHashtags(prevHashtags => [
             ...prevHashtags,
@@ -378,33 +345,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
-        .from('trades')
-        .insert({
-          user_id: user.id,
-          symbol: newTradeData.pair,
-          entry_price: newTradeData.entry,
-          exit_price: newTradeData.exit,
-          quantity: newTradeData.lotSize,
-          direction: newTradeData.type === 'Buy' ? 'long' : 'short',
-          entry_date: new Date(newTradeData.date).toISOString(),
-          exit_date: newTradeData.exit ? new Date(newTradeData.date).toISOString() : null,
-          profit_loss: newTradeData.profitLoss,
-          fees: 0,
-          notes: newTradeData.notes,
-          tags: newTradeData.hashtags
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newTrade: Trade = {
+      const newTrade = await tradeService.createTrade({
         ...newTradeData,
-        id: data.id,
-        userId: user.id,
-        createdAt: data.created_at,
-      };
+        userId: user.id
+      });
 
       setTrades(prevTrades => [newTrade, ...prevTrades]);
       
