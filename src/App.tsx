@@ -1,14 +1,15 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { TradeProvider } from "@/contexts/TradeContext";
 import { NotebookProvider } from "@/contexts/NotebookContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import PageTransition from "@/components/PageTransition";
 
 import Index from "./pages/Index";
 import Homepage from "./pages/Homepage";
@@ -48,6 +49,55 @@ import AdminLayout from "./components/layouts/AdminLayout";
 
 const queryClient = new QueryClient();
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <PageTransition key={location.pathname}>
+        <Routes location={location}>
+          {/* User Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/verify" element={<EmailVerify />} />
+          <Route path="/" element={<Homepage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/add-trade" element={<AddTrade />} />
+          <Route path="/trades" element={<Trades />} />
+          <Route path="/journal" element={<Journal />} />
+          <Route path="/notebook" element={<Notebook />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/chart" element={<TradingChart />} />
+          <Route path="/tracking/:id" element={<TradeTracking />} />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/profile" element={<UserProfileSettings />} />
+          <Route path="/subscriptions" element={<Subscriptions />} />
+          
+          {/* Admin Routes - Completely Separate */}
+          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+          <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
+          <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
+          <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
+          <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
+          <Route path="/admin/pages" element={<AdminLayout><AdminPages /></AdminLayout>} />
+          <Route path="/admin/subscriptions" element={<AdminLayout><AdminSubscriptions /></AdminLayout>} />
+          <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
+          <Route path="/admin/profile" element={<AdminLayout><AdminProfileSettings /></AdminLayout>} />
+          
+          {/* Catch-all route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </PageTransition>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
   <BrowserRouter>
     <QueryClientProvider client={queryClient}>
@@ -59,44 +109,7 @@ const App = () => (
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
-                  <Routes>
-                    {/* User Routes */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    <Route path="/verify" element={<EmailVerify />} />
-                    <Route path="/" element={<Homepage />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/add-trade" element={<AddTrade />} />
-                    <Route path="/trades" element={<Trades />} />
-                    <Route path="/journal" element={<Journal />} />
-                    <Route path="/notebook" element={<Notebook />} />
-                    <Route path="/reports" element={<Reports />} />
-                    <Route path="/insights" element={<Insights />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/chart" element={<TradingChart />} />
-                    <Route path="/tracking/:id" element={<TradeTracking />} />
-                    <Route path="/payment" element={<Payment />} />
-                    <Route path="/payment-success" element={<PaymentSuccess />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/profile" element={<UserProfileSettings />} />
-                    <Route path="/subscriptions" element={<Subscriptions />} />
-                    
-                    {/* Admin Routes - Completely Separate */}
-                    <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-                    <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
-                    <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
-                    <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
-                    <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
-                    <Route path="/admin/pages" element={<AdminLayout><AdminPages /></AdminLayout>} />
-                    <Route path="/admin/subscriptions" element={<AdminLayout><AdminSubscriptions /></AdminLayout>} />
-                    <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
-                    <Route path="/admin/profile" element={<AdminLayout><AdminProfileSettings /></AdminLayout>} />
-                    
-                    {/* Catch-all route */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
+                  <AnimatedRoutes />
                 </TooltipProvider>
               </NotebookProvider>
             </TradeProvider>
