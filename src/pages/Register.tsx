@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,23 +51,8 @@ const Register: React.FC = () => {
     try {
       console.log('Registering user with email:', email, 'and country:', country);
       
-      // First register the user
-      const user = await register(name, email, password, country);
-      
-      // Then save the country to their profile
-      if (user && user.id) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id,
-            country: country,
-            updated_at: new Date().toISOString()
-          });
-          
-        if (profileError) {
-          console.error('Error saving profile:', profileError);
-        }
-      }
+      // First register the user - but don't rely on the return value for conditional logic
+      await register(name, email, password, country);
       
       toast({
         title: t('register.success.title'),
