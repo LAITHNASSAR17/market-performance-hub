@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase, getSiteSettings, updateSiteSettings } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -36,16 +36,28 @@ const SiteSettings: React.FC = () => {
   
   const loadSettings = async () => {
     try {
-      const data = await getSiteSettings();
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .limit(1)
+        .single();
+        
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No records found, initialize settings
+          await initializeSettings();
+          return;
+        }
+        throw error;
+      }
+      
       if (data) {
         setSettings(data);
         setFormValues(data);
         
         // Update document title
         document.title = data.site_name;
-      } else {
-        // Initialize settings if not exists
-        await initializeSettings();
+        localStorage.setItem('siteName', data.site_name);
       }
     } catch (error) {
       console.error('Error loading site settings:', error);
@@ -59,11 +71,17 @@ const SiteSettings: React.FC = () => {
   
   const initializeSettings = async () => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('site_settings')
-        .insert([settings]);
+        .insert([settings])
+        .select();
         
       if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setSettings(data[0]);
+        setFormValues(data[0]);
+      }
       
       toast({
         title: "Settings Initialized",
@@ -71,6 +89,11 @@ const SiteSettings: React.FC = () => {
       });
     } catch (error) {
       console.error('Error initializing site settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize site settings",
+        variant: "destructive"
+      });
     }
   };
   
@@ -85,19 +108,28 @@ const SiteSettings: React.FC = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateSiteSettings(formValues);
+      const { data, error } = await supabase
+        .from('site_settings')
+        .update(formValues)
+        .eq('site_name', settings.site_name)
+        .select();
       
-      setSettings(formValues);
-      setIsEditing(false);
+      if (error) throw error;
       
-      toast({
-        title: "Settings Saved",
-        description: "Site settings have been updated successfully"
-      });
-      
-      // Update document title if site name changed
-      if (formValues.site_name !== settings.site_name) {
-        document.title = formValues.site_name;
+      if (data && data.length > 0) {
+        setSettings(data[0]);
+        setIsEditing(false);
+        
+        // Update document title if site name changed
+        if (formValues.site_name !== settings.site_name) {
+          document.title = formValues.site_name;
+          localStorage.setItem('siteName', formValues.site_name);
+        }
+        
+        toast({
+          title: "Settings Saved",
+          description: "Site settings have been updated successfully"
+        });
       }
     } catch (error) {
       console.error('Error saving settings:', error);

@@ -3,6 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Globe, Settings, Shield } from 'lucide-react';
 import SystemSettings from '@/components/admin/SystemSettings';
+import SiteSettings from '@/components/admin/SiteSettings';
 
 const AdminSettings: React.FC = () => {
   return (
@@ -33,13 +34,11 @@ const AdminSettings: React.FC = () => {
         </TabsList>
         
         <TabsContent value="site" className="space-y-6">
-          <SystemSettings />
+          <SiteSettings />
         </TabsContent>
         
         <TabsContent value="system" className="space-y-6">
-          <div className="text-center py-8 text-gray-500">
-            System settings configuration coming soon
-          </div>
+          <SystemSettings />
         </TabsContent>
         
         <TabsContent value="security" className="space-y-6">

@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
 import { Save, Image } from 'lucide-react';
 import FaviconUpload from '@/components/FaviconUpload';
+import { supabase } from '@/lib/supabase';
 
 const SystemSettings: React.FC = () => {
   const { toast } = useToast();
@@ -25,20 +26,56 @@ const SystemSettings: React.FC = () => {
 
   const handleSaveSettings = async () => {
     try {
-      await updateSettings({
-        site_name: siteName
-      });
+      // Direct update to the database, bypassing the updateSettings function
+      const { data, error } = await supabase
+        .from('site_settings')
+        .update({ site_name: siteName })
+        .eq('site_name', settings?.site_name || 'TradeTracker')
+        .select();
 
-      toast({
-        title: "Settings Saved",
-        description: "Site settings have been updated successfully"
-      });
+      if (error) {
+        console.error('Error saving settings:', error);
+        throw error;
+      }
 
+      if (data && data.length > 0) {
+        // Update localStorage and document title
+        localStorage.setItem('siteName', siteName);
+        document.title = siteName;
+        
+        toast({
+          title: "Settings Saved",
+          description: "Site settings have been updated successfully"
+        });
+      } else if (!data || data.length === 0) {
+        // If no rows were updated, it means the record doesn't exist, so create it
+        const { data: insertData, error: insertError } = await supabase
+          .from('site_settings')
+          .insert([{ 
+            site_name: siteName,
+            company_email: settings?.company_email || 'support@tradetracker.com' 
+          }])
+          .select();
+
+        if (insertError) {
+          console.error('Error creating settings:', insertError);
+          throw insertError;
+        }
+
+        // Update localStorage and document title
+        localStorage.setItem('siteName', siteName);
+        document.title = siteName;
+        
+        toast({
+          title: "Settings Created",
+          description: "Site settings have been created successfully"
+        });
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({
         title: "Error",
-        description: "Failed to save settings",
+        description: "Failed to save settings. Please try again.",
         variant: "destructive"
       });
     }
