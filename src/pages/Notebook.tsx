@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useNotebook } from '@/contexts/NotebookContext';
@@ -7,6 +8,7 @@ import NoteEditor from '@/components/notebook/NoteEditor';
 import CreateNoteDialog from '@/components/notebook/CreateNoteDialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { INote } from '@/services/noteService';
 
 const Notebook: React.FC = () => {
   const {
