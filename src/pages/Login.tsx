@@ -1,28 +1,41 @@
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { LineChart, Mail, LockKeyhole, AlertCircle } from 'lucide-react';
+import { LineChart, Mail, LockKeyhole, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  if (isAuthenticated) {
-    navigate('/dashboard');
-    return null;
-  }
+  // Check if coming from verification page
+  useEffect(() => {
+    if (location.state?.verified) {
+      setSuccessMessage(location.state.message || "تم التحقق من بريدك الإلكتروني بنجاح.");
+      setEmail(location.state.email || "");
+    }
+  }, [location.state]);
+
+  // Redirect if authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log("User is authenticated, redirecting to dashboard");
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +46,7 @@ const Login: React.FC = () => {
 
     setLoading(true);
     setError('');
+    setSuccessMessage('');
     
     try {
       console.log('Login page: Starting login for', email);
@@ -41,7 +55,8 @@ const Login: React.FC = () => {
         title: "تم تسجيل الدخول بنجاح",
         description: "مرحبًا بعودتك!",
       });
-      navigate('/dashboard');
+      console.log('Login successful, redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
       let errorMessage = "خطأ في تسجيل الدخول. تأكد من صحة البريد الإلكتروني وكلمة المرور.";
@@ -50,6 +65,8 @@ const Login: React.FC = () => {
         errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
       } else if (error.message === 'User is blocked') {
         errorMessage = "تم حظر هذا الحساب. يرجى التواصل مع الدعم.";
+      } else if (error.message === 'البريد الإلكتروني غير مفعل') {
+        errorMessage = "البريد الإلكتروني غير مفعل. يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك.";
       }
       
       setError(errorMessage);
@@ -86,6 +103,13 @@ const Login: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {successMessage && (
+              <Alert className="mb-4 bg-green-50 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-700">{successMessage}</AlertDescription>
+              </Alert>
+            )}
+            
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />

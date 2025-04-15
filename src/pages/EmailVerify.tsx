@@ -76,7 +76,13 @@ const EmailVerify = () => {
           
           // بعد 3 ثوانٍ، انتقل إلى صفحة تسجيل الدخول
           setTimeout(() => {
-            navigate('/login');
+            navigate('/login', { 
+              state: { 
+                verified: true, 
+                email: email,
+                message: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول." 
+              } 
+            });
           }, 3000);
         } catch (err) {
           console.error('Unexpected error during update:', err);
