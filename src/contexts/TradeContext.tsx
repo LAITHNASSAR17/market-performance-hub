@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 import { userService } from '@/services/userService';
-import { Trade } from '@/types/trade';
+import { Trade, mapDBTradeToTrade, mapTradeToDBTrade } from '@/types/trade';
 
 export type TradingAccount = {
   id: string;
@@ -607,3 +607,5 @@ export const useTrade = () => {
   }
   return context;
 };
+
+export { Trade } from '@/types/trade';
