@@ -47,7 +47,8 @@ const AddTrade: React.FC = () => {
     imageUrl: null as string | null,
     beforeImageUrl: null as string | null,
     afterImageUrl: null as string | null,
-    hashtags: [] as string[]
+    hashtags: [] as string[],
+    commission: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -96,7 +97,8 @@ const AddTrade: React.FC = () => {
       returnPercentage: formData.returnPercentage ? parseFloat(formData.returnPercentage) : 0,
       profitLoss: parseFloat(formData.profitLoss),
       durationMinutes: formData.durationMinutes ? parseInt(formData.durationMinutes) : 0,
-      date: formData.date.toISOString().split('T')[0]
+      date: formData.date.toISOString().split('T')[0],
+      commission: formData.commission ? parseFloat(formData.commission) : 0
     };
     
     addTrade(tradeData);
@@ -305,6 +307,19 @@ const AddTrade: React.FC = () => {
                   step="0.01"
                   placeholder="0.00"
                   value={formData.profitLoss}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="commission">Commission / Spread</Label>
+                <Input
+                  id="commission"
+                  name="commission"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.commission}
                   onChange={handleInputChange}
                 />
               </div>

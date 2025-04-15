@@ -22,6 +22,7 @@ export interface Trade {
   afterImageUrl: string | null;
   hashtags: string[];
   createdAt: string;
+  commission: number;
 }
 
 // Convert database trade to UI trade
@@ -46,7 +47,8 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   beforeImageUrl: null,
   afterImageUrl: null,
   hashtags: dbTrade.tags || [],
-  createdAt: dbTrade.createdAt.toISOString()
+  createdAt: dbTrade.createdAt.toISOString(),
+  commission: dbTrade.fees || 0
 });
 
 // Convert UI trade to database trade
@@ -60,7 +62,7 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   entryDate: new Date(trade.date),
   exitDate: trade.exit ? new Date(trade.date) : null,
   profitLoss: trade.profitLoss,
-  fees: 0,
+  fees: trade.commission || 0,
   notes: trade.notes,
   tags: trade.hashtags
 });
