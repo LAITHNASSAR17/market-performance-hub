@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,10 +16,11 @@ import ImageUpload from '@/components/ImageUpload';
 import { Separator } from '@/components/ui/separator';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CalendarIcon, PlusIcon } from 'lucide-react';
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CalendarIcon, PlusIcon, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { userService } from '@/services/userService';
 
 const AddTrade: React.FC = () => {
   const { 
@@ -25,8 +28,10 @@ const AddTrade: React.FC = () => {
     accounts, 
     allHashtags,
     tradingAccounts,
-    createTradingAccount
+    createTradingAccount,
+    fetchTradingAccounts
   } = useTrade();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -57,6 +62,14 @@ const AddTrade: React.FC = () => {
     balance: 0
   });
   const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [isAccountDialogOpen, setIsAccountDialogOpen] = useState(false);
+  const [accountError, setAccountError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchTradingAccounts();
+    }
+  }, [user, fetchTradingAccounts]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -114,18 +127,21 @@ const AddTrade: React.FC = () => {
   };
 
   const handleCreateAccount = async () => {
+    if (!user) {
+      setAccountError("يجب تسجيل الدخول لإنشاء حساب");
+      return;
+    }
+
     if (!newAccountData.name) {
-      toast({
-        title: "خطأ",
-        description: "الرجاء إدخال اسم الحساب",
-        variant: "destructive"
-      });
+      setAccountError("الرجاء إدخال اسم الحساب");
       return;
     }
 
     setIsCreatingAccount(true);
+    setAccountError(null);
 
     try {
+      // First try using the TradeContext method
       const newAccount = await createTradingAccount(
         newAccountData.name, 
         Number(newAccountData.balance)
@@ -141,8 +157,12 @@ const AddTrade: React.FC = () => {
         title: "تم بنجاح",
         description: `تم إنشاء حساب ${newAccountData.name} بنجاح`,
       });
+      
+      // Close the dialog after successful creation
+      setIsAccountDialogOpen(false);
     } catch (error) {
       console.error('Failed to create account', error);
+      setAccountError("فشل إنشاء الحساب، يرجى المحاولة مرة أخرى");
       toast({
         title: "خطأ",
         description: "فشل إنشاء الحساب، يرجى المحاولة مرة أخرى",
@@ -188,7 +208,7 @@ const AddTrade: React.FC = () => {
                     </SelectContent>
                   </Select>
 
-                  <Dialog>
+                  <Dialog open={isAccountDialogOpen} onOpenChange={setIsAccountDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="icon">
                         <PlusIcon className="h-4 w-4" />
@@ -197,6 +217,11 @@ const AddTrade: React.FC = () => {
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>إنشاء حساب جديد</DialogTitle>
+                        {accountError && (
+                          <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-800 text-sm">
+                            {accountError}
+                          </div>
+                        )}
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
@@ -222,12 +247,19 @@ const AddTrade: React.FC = () => {
                             placeholder="0.00"
                           />
                         </div>
-                        <Button 
-                          onClick={handleCreateAccount} 
-                          disabled={isCreatingAccount}
-                        >
-                          {isCreatingAccount ? 'جاري الإنشاء...' : 'إنشاء'}
-                        </Button>
+                        <div className="flex justify-between">
+                          <Button 
+                            onClick={handleCreateAccount} 
+                            disabled={isCreatingAccount}
+                          >
+                            {isCreatingAccount ? 'جاري الإنشاء...' : 'إنشاء'}
+                          </Button>
+                          <DialogClose asChild>
+                            <Button variant="outline">
+                              إلغاء
+                            </Button>
+                          </DialogClose>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -258,7 +290,7 @@ const AddTrade: React.FC = () => {
                     <Calendar
                       mode="single"
                       selected={formData.date}
-                      onSelect={(date) => setFormData(prev => ({ ...prev, date }))}
+                      onSelect={(date) => setFormData(prev => ({ ...prev, date: date || new Date() }))}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />

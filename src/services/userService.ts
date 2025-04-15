@@ -88,6 +88,27 @@ export const userService = {
     
     if (error || !data) return [];
     return data.map(formatUser);
+  },
+  
+  // Add a new method to create a trading account
+  async createTradingAccount(userId: string, name: string, balance: number): Promise<any> {
+    try {
+      const { data, error } = await supabase
+        .from('trading_accounts')
+        .insert({
+          user_id: userId,
+          name,
+          balance
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating trading account:', error);
+      throw error;
+    }
   }
 };
 
