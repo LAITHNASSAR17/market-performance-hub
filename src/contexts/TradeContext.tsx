@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 import { userService } from '@/services/userService';
-import { Trade, mapDBTradeToTrade, mapTradeToDBTrade } from '@/types/trade';
+import { Trade } from '@/types/trade';
 
 export type TradingAccount = {
   id: string;
@@ -236,7 +236,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         detectedType = 'forex';
       } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
         detectedType = 'crypto';
-      } else if (/^(sr|sa)$/i.test(instrumentType)) {
+      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
         detectedType = 'stock';
       } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
         detectedType = 'index';
@@ -607,5 +607,3 @@ export const useTrade = () => {
   }
   return context;
 };
-
-export type { Trade } from '@/types/trade';

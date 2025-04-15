@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -19,8 +18,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import MetaTraderImport from '@/components/MetaTraderImport';
-import { Trade } from '@/types/trade';
 
 const AddTrade: React.FC = () => {
   const { 
@@ -112,41 +109,12 @@ const AddTrade: React.FC = () => {
     navigate('/trades');
   };
 
-  const handleImportedTrades = async (importedTrades: Partial<Trade>[]) => {
-    if (importedTrades.length === 0) return;
-    
-    // Use the first trade to populate the form
-    const firstTrade = importedTrades[0];
-    
-    // We need to handle the date correctly, as it might be a string in the imported trade
-    setFormData(prev => ({
-      ...prev,
-      pair: firstTrade.pair || prev.pair,
-      type: firstTrade.type || prev.type,
-      entry: firstTrade.entry?.toString() || prev.entry,
-      exit: firstTrade.exit?.toString() || prev.exit,
-      lotSize: firstTrade.lotSize?.toString() || prev.lotSize,
-      stopLoss: firstTrade.stopLoss?.toString() || prev.stopLoss,
-      takeProfit: firstTrade.takeProfit?.toString() || prev.takeProfit,
-      profitLoss: firstTrade.profitLoss?.toString() || prev.profitLoss,
-      durationMinutes: firstTrade.durationMinutes?.toString() || prev.durationMinutes,
-      notes: firstTrade.notes || prev.notes,
-      hashtags: firstTrade.hashtags || prev.hashtags,
-      commission: firstTrade.commission?.toString() || prev.commission,
-      // If the date is a string, convert it to a Date object
-      date: firstTrade.date ? new Date(firstTrade.date) : prev.date,
-      account: firstTrade.account || prev.account,
-    }));
-  };
-
   return (
     <Layout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">Add New Trade</h1>
         <p className="text-gray-500">Record details about your trade</p>
       </div>
-
-      <MetaTraderImport onImport={handleImportedTrades} />
 
       <Card>
         <form onSubmit={handleSubmit}>
