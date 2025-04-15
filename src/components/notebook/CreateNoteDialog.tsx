@@ -113,7 +113,7 @@ const CreateNoteDialog: React.FC<CreateNoteDialogProps> = ({
                   <SelectValue placeholder="No folder" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No folder</SelectItem>
+                  <SelectItem value="none">No folder</SelectItem>
                   {folders.map(folder => (
                     <SelectItem key={folder.id} value={folder.id}>
                       {folder.name}
@@ -132,7 +132,7 @@ const CreateNoteDialog: React.FC<CreateNoteDialogProps> = ({
                   <SelectValue placeholder="No template" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Blank note</SelectItem>
+                  <SelectItem value="none">Blank note</SelectItem>
                   <SelectItem value="_custom">Custom template</SelectItem>
                   {templates.map(template => (
                     <SelectItem key={template.id} value={template.id}>

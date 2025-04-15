@@ -135,9 +135,9 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
               <span className="text-sm">Folder</span>
             </div>
             <Select 
-              value={folderId} 
+              value={folderId || "none"} 
               onValueChange={(value) => {
-                setFolderId(value || undefined);
+                setFolderId(value === "none" ? undefined : value);
                 handleChange();
               }}
             >
@@ -145,7 +145,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
                 <SelectValue placeholder="No folder" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No folder</SelectItem>
+                <SelectItem value="none">No folder</SelectItem>
                 {folders.map(folder => (
                   <SelectItem key={folder.id} value={folder.id}>
                     {folder.name}
