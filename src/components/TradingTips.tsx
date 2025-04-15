@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,9 +22,12 @@ const TradingTips: React.FC<TradingTipsProps> = ({ className = '' }) => {
   const [aiAdvice, setAiAdvice] = useState<string>('');
   const [loadingAdvice, setLoadingAdvice] = useState(false);
 
-  // Load tips when data changes
   useEffect(() => {
-    loadTips();
+    // Load tips when data changes and there are trades
+    if (trades.length > 0 && stats && !loading) {
+      loadTips();
+      loadAIAdvice();
+    }
   }, [trades, stats]);
 
   const loadTips = async () => {

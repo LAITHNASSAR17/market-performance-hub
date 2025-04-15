@@ -1,4 +1,3 @@
-
 import { Trade } from '@/contexts/TradeContext';
 import { TradeStats } from '@/hooks/useAnalyticsStats';
 
@@ -167,36 +166,54 @@ const getDefaultTips = (trades: Trade[]): TradingTip[] => {
 
 // توليد نصيحة AI مفصلة
 export const generateAIAdvice = async (tradeData: Trade[], stats: TradeStats): Promise<string> => {
-  // التحقق من وجود صفقات كافية
+  // Check if there are enough trades for analysis
   if (tradeData.length < 3) {
-    return getDefaultAdvice(tradeData, stats);
+    return "Add more trades to receive personalized AI analysis of your trading performance.";
   }
 
   try {
-    // إعداد البيانات
+    // Calculate relevant metrics
     const recentTrades = tradeData.slice(-10);
+    const winRate = parseFloat(stats.winRate.replace('%', ''));
+    const totalPL = parseFloat(stats.totalPL.replace('$', ''));
+    const avgWin = parseFloat(stats.avgWin.replace('$', ''));
+    const avgLoss = parseFloat(stats.avgLoss.replace('$', ''));
     
-    // إنشاء المطلب
-    const prompt = `
-    قم بتحليل بيانات التداول التالية وقدم نصيحة مفصلة للمتداول. قدم تحليلاً عميقاً وتوصيات محددة.
-    
-    بيانات التداول الأخيرة:
-    ${JSON.stringify(recentTrades, null, 2)}
-    
-    إحصائيات:
-    - إجمالي الصفقات: ${stats.totalTrades}
-    - معدل الربح: ${stats.winRate}
-    - متوسط الربح: ${stats.avgWin}
-    - متوسط الخسارة: ${stats.avgLoss}
-    - أكبر ربح: ${stats.largestWin}
-    - أكبر خسارة: ${stats.largestLoss}
-    
-    قدم تحليلاً شاملاً لأدائه وتوصيات محددة لتحسين نتائجه. اجعل النصيحة موجزة ومفيدة.
-    `;
+    // Determine trading style based on duration
+    const tradingStyle = recentTrades.some(t => t.durationMinutes > 1440) 
+      ? "متداول طويل الأجل"
+      : recentTrades.some(t => t.durationMinutes < 60)
+      ? "متداول قصير الأجل"
+      : "متداول متنوع";
 
-    // استدعاء الـ API
-    const advice = await callPerplexityAPI(prompt);
-    return advice || getDefaultAdvice(tradeData, stats);
+    // Recent performance analysis
+    const recentProfits = recentTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+    const recentPerformance = recentProfits > 0 
+      ? "صفقاتك الأخيرة إيجابية، استمر في تطبيق ما تعلمته مؤخراً."
+      : "صفقاتك الأخيرة تحتاج إلى مراجعة، خذ وقتاً للتأمل وتحليل أسباب الخسارة.";
+
+    // Generate personalized advice
+    let advice = `بناءً على تحليل ${tradeData.length} صفقة، يبدو أنك ${tradingStyle} `;
+    advice += `بمعدل ربح ${winRate.toFixed(1)}%. `;
+    
+    if (winRate > 50) {
+      advice += "أداؤك جيد، ولكن هناك دائماً مجال للتحسين. ";
+    } else {
+      advice += "يمكنك تحسين أدائك من خلال مراجعة استراتيجية الدخول والخروج. ";
+    }
+    
+    advice += recentPerformance + " ";
+    
+    if (Math.abs(avgWin) > Math.abs(avgLoss)) {
+      advice += "نسبة الربح إلى الخسارة جيدة، حافظ على هذا النمط. ";
+    } else {
+      advice += "حاول تحسين نسبة الربح إلى الخسارة من خلال تقليل حجم ��لخسائر. ";
+    }
+    
+    advice += "توصيتي الرئيسية: حافظ على الانضباط في اتباع خطة التداول، واستمر في توثيق كل صفقة لتحليلها لاحقاً.";
+    
+    return advice;
+
   } catch (error) {
     console.error("Error generating AI advice:", error);
     return getDefaultAdvice(tradeData, stats);
@@ -212,7 +229,7 @@ const getDefaultAdvice = (tradeData: Trade[], stats: TradeStats): string => {
   
   let tradingStyle = "متنوع";
   if (tradeData.some(t => t.durationMinutes > 1440)) {
-    tradingStyle = "مستثمر طويل الأجل";
+    tradingStyle = "متداول طويل الأجل";
   } else if (tradeData.some(t => t.durationMinutes < 60)) {
     tradingStyle = "متداول قصير الأجل";
   }
