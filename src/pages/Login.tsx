@@ -29,7 +29,7 @@ const Login: React.FC = () => {
     }
   }, [location.state]);
 
-  // Redirect if authenticated
+  // Redirect if authenticated - only in this tab
   useEffect(() => {
     if (isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");

@@ -43,14 +43,60 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+// Session storage keys
+const USER_STORAGE_KEY = 'trackmind_user';
+const AUTH_STATUS_KEY = 'trackmind_auth_status';
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(() => {
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+    return storedUser ? JSON.parse(storedUser)?.role === 'admin' : false;
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem(AUTH_STATUS_KEY) === 'true';
+  });
   const [loading, setLoading] = useState<boolean>(true);
   const [users, setUsers] = useState<User[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Handle storage events to sync auth state across tabs
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === USER_STORAGE_KEY) {
+        const newUser = e.newValue ? JSON.parse(e.newValue) : null;
+        setUser(newUser);
+        setIsAdmin(newUser?.role === 'admin');
+      } else if (e.key === AUTH_STATUS_KEY) {
+        setIsAuthenticated(e.newValue === 'true');
+        
+        // If logged out in another tab, redirect to login
+        if (e.newValue !== 'true' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          navigate('/login');
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [navigate]);
+
+  // Save auth state to local storage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+    
+    localStorage.setItem(AUTH_STATUS_KEY, isAuthenticated.toString());
+  }, [user, isAuthenticated]);
 
   useEffect(() => {
     const initializeAdminUser = async () => {
@@ -87,32 +133,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          const { data } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+    const loadInitialSession = async () => {
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', localStorage.getItem('user_email'))
+          .single();
 
-          if (data) {
-            setUser(data);
-            setIsAdmin(data.role === 'admin');
-            setIsAuthenticated(true);
-          }
-        } else {
-          setUser(null);
-          setIsAdmin(false);
-          setIsAuthenticated(false);
+        if (data) {
+          setUser(data);
+          setIsAdmin(data.role === 'admin');
+          setIsAuthenticated(true);
         }
+      } catch (error) {
+        console.error('Error loading initial session:', error);
+      } finally {
         setLoading(false);
       }
-    );
-
-    return () => {
-      subscription.unsubscribe();
     };
+
+    loadInitialSession();
   }, []);
 
   const register = async (name: string, email: string, password: string, country?: string): Promise<void> => {
@@ -211,6 +252,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw new Error('البريد الإلكتروني غير مفعل');
         }
         
+        // Save email for session recovery
+        localStorage.setItem('user_email', email);
+        
         setUser(data);
         setIsAdmin(data.role === 'admin');
         setIsAuthenticated(true);
@@ -237,9 +281,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Remove current session data
+    localStorage.removeItem('user_email');
+    
+    // Update state
     setUser(null);
     setIsAdmin(false);
     setIsAuthenticated(false);
+    
+    // Navigate to login page
     navigate('/login');
   };
 
@@ -512,7 +562,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       toast({
         title: "تم إرسال البريد الإلكتروني",
-        description: "تم إرس��ل رابط التحقق إلى بريدك الإلكتروني",
+        description: "تم إرسل رابط التحقق إلى بريدك الإلكتروني",
       });
       
       return response;
