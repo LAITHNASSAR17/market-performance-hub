@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -40,21 +41,24 @@ import Subscriptions from './pages/Subscriptions';
 import PaymentSuccess from './pages/PaymentSuccess';
 import Payment from './pages/Payment';
 import UserProfileSettings from './pages/UserProfileSettings';
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <TradeProvider>
-          <NotebookProvider>
-            <BrowserRouter>
-              <Toaster />
-              <AnimatedRoutes />
-            </BrowserRouter>
-          </NotebookProvider>
-        </TradeProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <TradeProvider>
+              <NotebookProvider>
+                <Toaster />
+                <AnimatedRoutes />
+              </NotebookProvider>
+            </TradeProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
