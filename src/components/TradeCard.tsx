@@ -27,14 +27,12 @@ const TradeCard: React.FC<TradeCardProps> = ({
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // Get site name from localStorage for toast title
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
+  const handleDelete = () => {
     toast({
       title: "Are you sure?",
       description: (
@@ -49,15 +47,11 @@ const TradeCard: React.FC<TradeCardProps> = ({
     });
   };
 
-  const handleEdit = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleEdit = () => {
     onEdit(trade.id);
   };
 
-  const handleView = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleView = () => {
     onView(trade.id);
   };
 
