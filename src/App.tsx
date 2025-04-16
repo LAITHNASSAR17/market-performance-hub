@@ -42,6 +42,7 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import Payment from './pages/Payment';
 import UserProfileSettings from './pages/UserProfileSettings';
 import { AuthProvider } from './contexts/AuthContext';
+import { TooltipProvider } from './components/ui/tooltip';
 
 function App() {
   return (
@@ -51,8 +52,10 @@ function App() {
           <LanguageProvider>
             <TradeProvider>
               <NotebookProvider>
-                <Toaster />
-                <AnimatedRoutes />
+                <TooltipProvider>
+                  <Toaster />
+                  <AnimatedRoutes />
+                </TooltipProvider>
               </NotebookProvider>
             </TradeProvider>
           </LanguageProvider>
