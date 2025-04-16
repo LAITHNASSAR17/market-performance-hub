@@ -23,15 +23,12 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
   const { theme, toggleTheme } = useTheme();
   const { t } = useLanguage();
   
-  // The theme is always 'light', but we will maintain the UI to look the same
-  // and simply disable the actual functionality
-  
   if (variant === 'switch') {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
         <Sun className="h-4 w-4 text-amber-500" />
         <Switch 
-          checked={false} 
+          checked={theme === 'dark'} 
           onCheckedChange={toggleTheme} 
           aria-label={t('theme.toggle') || 'Toggle theme'}
         />
@@ -50,12 +47,18 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           className={className}
           aria-label={t('theme.toggle') || 'Toggle theme'}
         >
-          <Sun className="h-5 w-5 text-amber-300" />
+          {theme === 'dark' ? (
+            <Sun className="h-5 w-5 text-amber-300" />
+          ) : (
+            <Moon className="h-5 w-5 text-indigo-600" />
+          )}
           <span className="sr-only">{t('theme.toggle') || 'Toggle theme'}</span>
         </Button>
       </TooltipTrigger>
       <TooltipContent side="right">
-        {t('theme.lightMode') || 'Light mode'}
+        {theme === 'dark' 
+          ? (t('theme.lightMode') || 'Light mode') 
+          : (t('theme.darkMode') || 'Dark mode')}
       </TooltipContent>
     </Tooltip>
   );

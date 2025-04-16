@@ -28,13 +28,11 @@
   }
 
   * {
-    @apply border-gray-200;
+    @apply border-border;
     scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
-    overflow-y: auto;
-    overflow-x: hidden;
   }
 }
