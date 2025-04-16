@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -209,8 +208,8 @@ const TradeTracking: React.FC = () => {
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">How would you rate this trade?</p>
               <StarRating 
-                rating={rating} 
-                onRatingChange={handleRatingChange}
+                value={rating} 
+                onChange={handleRatingChange}
                 size="large"
               />
             </div>
