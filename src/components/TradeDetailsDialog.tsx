@@ -88,7 +88,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
   };
 
   const navigateToTrade = (tradeId: string) => {
-    navigate(`/trades/${tradeId}`);
+    navigate(`/trade/${tradeId}`);
     onClose();
   };
   

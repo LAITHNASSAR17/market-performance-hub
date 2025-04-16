@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -15,7 +16,7 @@ const TradeCalendar = () => {
   const navigate = useNavigate();
 
   const handleTradeClick = (trade: Trade) => {
-    navigate(`/tracking/${trade.id}`);
+    navigate(`/trade/${trade.id}`);
   };
 
   const filteredTrades = trades.filter(trade => {

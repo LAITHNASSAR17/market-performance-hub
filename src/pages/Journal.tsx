@@ -282,7 +282,7 @@ const Journal: React.FC = () => {
         isOpen={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         selectedDate={selectedDate}
-        trades={trades}
+        trades={trades.filter(t => t.date === selectedDate)}
       />
     </Layout>
   );
