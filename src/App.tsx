@@ -1,129 +1,105 @@
+import React, { useEffect } from 'react';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
+import ForgotPassword from './pages/ForgotPassword';
+import Trades from './pages/Trades';
+import AddTrade from './pages/AddTrade';
+import Analytics from './pages/Analytics';
+import Journal from './pages/Journal';
+import Insights from './pages/Insights';
+import NotFound from './pages/NotFound';
+import ProfileSettings from './pages/ProfileSettings';
+import Settings from './pages/Settings';
+import './App.css';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { Toaster } from './components/ui/toaster';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { TradeProvider } from './contexts/TradeContext';
+import { NotebookProvider } from './contexts/NotebookContext';
+import TradeTracking from './pages/TradeTracking';
+import TradingChart from './pages/TradingChart';
+import Notebook from './pages/Notebook';
+import EmailVerify from './pages/EmailVerify';
+import PageTransition from './components/PageTransition';
+import Homepage from './pages/Homepage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminTrades from './pages/admin/AdminTrades';
+import AdminHashtags from './pages/admin/AdminHashtags';
+import AdminPages from './pages/admin/AdminPages';
+import AdminNotes from './pages/admin/AdminNotes';
+import AdminSubscriptions from './pages/admin/AdminSubscriptions';
+import AdminProfileSettings from './pages/admin/AdminProfileSettings';
+import Index from './pages/Index';
+import Reports from './pages/Reports';
+import Subscriptions from './pages/Subscriptions';
+import PaymentSuccess from './pages/PaymentSuccess';
+import Payment from './pages/Payment';
+import UserProfileSettings from './pages/UserProfileSettings';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { TradeProvider } from "@/contexts/TradeContext";
-import { NotebookProvider } from "@/contexts/NotebookContext";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import PageTransition from "@/components/PageTransition";
+function App() {
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        <TradeProvider>
+          <NotebookProvider>
+            <BrowserRouter>
+              <Toaster />
+              <AnimatedRoutes />
+            </BrowserRouter>
+          </NotebookProvider>
+        </TradeProvider>
+      </LanguageProvider>
+    </ThemeProvider>
+  );
+}
 
-import Index from "./pages/Index";
-import Homepage from "./pages/Homepage";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import AddTrade from "./pages/AddTrade";
-import Trades from "./pages/Trades";
-import Journal from "./pages/Journal";
-import Notebook from "./pages/Notebook";
-import Reports from "./pages/Reports";
-import Insights from "./pages/Insights";
-import Analytics from "./pages/Analytics";
-import TradingChart from "./pages/TradingChart";
-import TradeTracking from "./pages/TradeTracking";
-import Payment from "./pages/Payment";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import NotFound from "./pages/NotFound";
-import Settings from "./pages/Settings";
-import UserProfileSettings from "./pages/UserProfileSettings";
-import Subscriptions from "./pages/Subscriptions";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import EmailVerify from "./pages/EmailVerify";
-
-// Admin Components
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminTrades from "./pages/admin/AdminTrades";
-import AdminHashtags from "./pages/admin/AdminHashtags";
-import AdminNotes from "./pages/admin/AdminNotes";
-import AdminSettings from "./pages/admin/AdminSettings";
-import AdminProfileSettings from "./pages/admin/AdminProfileSettings";
-import AdminSubscriptions from "./pages/admin/AdminSubscriptions";
-import AdminPages from "./pages/admin/AdminPages";
-import AdminLayout from "./components/layouts/AdminLayout";
-
-const queryClient = new QueryClient();
-
-const AnimatedRoutes = () => {
+function AnimatedRoutes() {
   const location = useLocation();
   
   return (
-    <AnimatePresence mode="wait">
-      <PageTransition key={location.pathname}>
-        <Routes location={location}>
-          {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify" element={<EmailVerify />} />
-          
-          {/* Index route - handles initial routing based on auth state */}
-          <Route path="/" element={<Index />} />
-          <Route path="/homepage" element={<Homepage />} />
-          
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/add-trade" element={<AddTrade />} />
-          <Route path="/trades" element={<Trades />} />
-          <Route path="/journal" element={<Journal />} />
-          <Route path="/notebook" element={<Notebook />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/insights" element={<Insights />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/chart" element={<TradingChart />} />
-          <Route path="/tracking/:id" element={<TradeTracking />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/payment-success" element={<PaymentSuccess />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/profile" element={<UserProfileSettings />} />
-          <Route path="/subscriptions" element={<Subscriptions />} />
-          
-          {/* Admin Routes - Completely Separate */}
-          <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-          <Route path="/admin/users" element={<AdminLayout><AdminUsers /></AdminLayout>} />
-          <Route path="/admin/trades" element={<AdminLayout><AdminTrades /></AdminLayout>} />
-          <Route path="/admin/hashtags" element={<AdminLayout><AdminHashtags /></AdminLayout>} />
-          <Route path="/admin/notes" element={<AdminLayout><AdminNotes /></AdminLayout>} />
-          <Route path="/admin/pages" element={<AdminLayout><AdminPages /></AdminLayout>} />
-          <Route path="/admin/subscriptions" element={<AdminLayout><AdminSubscriptions /></AdminLayout>} />
-          <Route path="/admin/settings" element={<AdminLayout><AdminSettings /></AdminLayout>} />
-          <Route path="/admin/profile" element={<AdminLayout><AdminProfileSettings /></AdminLayout>} />
-          
-          {/* Catch-all route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </PageTransition>
-    </AnimatePresence>
+    <PageTransition>
+      <Routes location={location}>
+        <Route path="/" element={<Index />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/email-verify" element={<EmailVerify />} />
+        <Route path="/trades" element={<Trades />} />
+        <Route path="/add-trade" element={<AddTrade />} />
+        <Route path="/edit-trade/:id" element={<AddTrade />} />
+        <Route path="/trade/:id" element={<TradeTracking />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/journal" element={<Journal />} />
+        <Route path="/notebook" element={<Notebook />} />
+        <Route path="/insights" element={<Insights />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/chart" element={<TradingChart />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<ProfileSettings />} />
+        <Route path="/user-profile" element={<UserProfileSettings />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/trades" element={<AdminTrades />} />
+        <Route path="/admin/hashtags" element={<AdminHashtags />} />
+        <Route path="/admin/pages" element={<AdminPages />} />
+        <Route path="/admin/notes" element={<AdminNotes />} />
+        <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+        <Route path="/admin/profile" element={<AdminProfileSettings />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </PageTransition>
   );
-};
-
-const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <LanguageProvider>
-          <ThemeProvider>
-            <TradeProvider>
-              <NotebookProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <AnimatedRoutes />
-                </TooltipProvider>
-              </NotebookProvider>
-            </TradeProvider>
-          </ThemeProvider>
-        </LanguageProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
-);
+}
 
 export default App;

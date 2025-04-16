@@ -1,476 +1,450 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import HashtagInput from '@/components/HashtagInput';
-import ImageUpload from '@/components/ImageUpload';
-import { Separator } from '@/components/ui/separator';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 import StarRating from '@/components/StarRating';
 
-const EMOTIONS = [
-  "Confident",
-  "Nervous",
-  "Fearful",
-  "Excited",
-  "Angry",
-  "Calm",
-  "Anxious",
-  "Hesitant",
-  "Overconfident",
-  "Neutral",
-  "Other"
-] as const;
-
 const AddTrade: React.FC = () => {
-  const { 
-    addTrade, 
-    accounts,
-    allHashtags,
-  } = useTrade();
-  const { user } = useAuth();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag, calculateProfitLoss } = useTrade();
   const { toast } = useToast();
+  const { t } = useLanguage();
+  const [isEditing, setIsEditing] = useState(false);
+  
+  const [pair, setPair] = useState('');
+  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
+  const [entry, setEntry] = useState('');
+  const [exit, setExit] = useState('');
+  const [lotSize, setLotSize] = useState('');
+  const [stopLoss, setStopLoss] = useState('');
+  const [takeProfit, setTakeProfit] = useState('');
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [durationMinutes, setDurationMinutes] = useState('');
+  const [notes, setNotes] = useState('');
+  const [account, setAccount] = useState(accounts[0] || '');
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [newHashtag, setNewHashtag] = useState('');
+  const [profitLoss, setProfitLoss] = useState(0);
+  const [commission, setCommission] = useState('0');
+  const [rating, setRating] = useState(0);
+  
+  // Load trade data if editing
+  useEffect(() => {
+    if (id) {
+      const trade = getTrade(id);
+      if (trade) {
+        setPair(trade.pair);
+        setType(trade.type);
+        setEntry(trade.entry.toString());
+        setExit(trade.exit.toString());
+        setLotSize(trade.lotSize.toString());
+        setStopLoss(trade.stopLoss ? trade.stopLoss.toString() : '');
+        setTakeProfit(trade.takeProfit ? trade.takeProfit.toString() : '');
+        setDate(trade.date);
+        setDurationMinutes(trade.durationMinutes.toString());
+        setNotes(trade.notes);
+        setAccount(trade.account);
+        setHashtags(trade.hashtags);
+        setProfitLoss(trade.profitLoss);
+        setCommission(trade.commission.toString());
+        setRating(trade.rating || 0);
+        setIsEditing(true);
+      } else {
+        // Trade not found, redirect to trades list
+        toast({
+          title: "Trade not found",
+          description: "The trade you're trying to edit doesn't exist",
+          variant: "destructive"
+        });
+        navigate('/trades');
+      }
+    }
+  }, [id, getTrade, navigate, toast]);
 
-  const [formData, setFormData] = useState({
-    account: '',
-    date: new Date(),
-    pair: '',
-    type: 'Buy' as 'Buy' | 'Sell',
-    entry: '',
-    exit: '',
-    lotSize: '',
-    stopLoss: '',
-    takeProfit: '',
-    riskPercentage: '',
-    returnPercentage: '',
-    profitLoss: '',
-    durationMinutes: '',
-    notes: '',
-    imageUrl: null as string | null,
-    beforeImageUrl: null as string | null,
-    afterImageUrl: null as string | null,
-    hashtags: [] as string[],
-    commission: '',
-    emotion: '',
-    otherEmotion: '',
-    rating: 0
-  });
+  // Calculate profit/loss when relevant fields change
+  useEffect(() => {
+    if (entry && exit && lotSize && type) {
+      const calculatedPL = calculateProfitLoss(
+        parseFloat(entry),
+        parseFloat(exit),
+        parseFloat(lotSize),
+        type,
+        pair
+      );
+      setProfitLoss(calculatedPL);
+    }
+  }, [entry, exit, lotSize, type, pair, calculateProfitLoss]);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
+  const handleAddHashtag = () => {
+    if (newHashtag && !hashtags.includes(newHashtag)) {
+      setHashtags([...hashtags, newHashtag]);
+      addHashtag(newHashtag);
+      setNewHashtag('');
     }
   };
 
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData({ ...formData, [name]: value });
-    
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
+  const handleRemoveHashtag = (tag: string) => {
+    setHashtags(hashtags.filter(t => t !== tag));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newErrors: Record<string, string> = {};
-    if (!formData.account) newErrors.account = 'Account is required';
-    if (!formData.pair) newErrors.pair = 'Currency pair is required';
-    if (!formData.entry) newErrors.entry = 'Entry price is required';
-    if (!formData.exit) newErrors.exit = 'Exit price is required';
-    if (!formData.lotSize) newErrors.lotSize = 'Lot size is required';
-    if (!formData.profitLoss) newErrors.profitLoss = 'Profit/Loss is required';
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    // Validate form
+    if (!pair || !type || !entry || !exit || !lotSize || !date || !account) {
+      toast({
+        title: "Missing fields",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
       return;
     }
-    
+
     const tradeData = {
-      ...formData,
-      entry: parseFloat(formData.entry),
-      exit: parseFloat(formData.exit),
-      lotSize: parseFloat(formData.lotSize),
-      stopLoss: formData.stopLoss ? parseFloat(formData.stopLoss) : null,
-      takeProfit: formData.takeProfit ? parseFloat(formData.takeProfit) : null,
-      riskPercentage: formData.riskPercentage ? parseFloat(formData.riskPercentage) : 0,
-      returnPercentage: formData.returnPercentage ? parseFloat(formData.returnPercentage) : 0,
-      profitLoss: parseFloat(formData.profitLoss),
-      durationMinutes: formData.durationMinutes ? parseInt(formData.durationMinutes) : 0,
-      date: formData.date.toISOString().split('T')[0],
-      commission: formData.commission ? parseFloat(formData.commission) : 0,
-      rating: formData.rating
+      pair,
+      type,
+      entry: parseFloat(entry),
+      exit: parseFloat(exit),
+      lotSize: parseFloat(lotSize),
+      stopLoss: stopLoss ? parseFloat(stopLoss) : null,
+      takeProfit: takeProfit ? parseFloat(takeProfit) : null,
+      date,
+      durationMinutes: durationMinutes ? parseInt(durationMinutes) : 0,
+      notes,
+      account,
+      hashtags,
+      profitLoss,
+      riskPercentage: 0, // Calculate or add input
+      returnPercentage: 0, // Calculate or add input
+      imageUrl: null,
+      beforeImageUrl: null,
+      afterImageUrl: null,
+      commission: parseFloat(commission) || 0,
+      rating
     };
+
+    if (isEditing && id) {
+      updateTrade(id, tradeData);
+      toast({
+        title: "Trade updated",
+        description: "Your trade has been updated successfully",
+      });
+    } else {
+      addTrade(tradeData);
+      toast({
+        title: "Trade added",
+        description: "Your trade has been added successfully",
+      });
+    }
     
-    addTrade(tradeData);
-    toast({
-      title: "Trade Added",
-      description: "Your trade has been added successfully",
-    });
     navigate('/trades');
   };
 
   return (
     <Layout>
-      <div className="container mx-auto max-w-4xl">
-        <Card className="w-full">
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mb-2" 
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+        <h1 className="text-2xl font-bold">{isEditing ? 'Edit Trade' : 'Add New Trade'}</h1>
+        <p className="text-gray-500">
+          {isEditing 
+            ? 'Update the details of your existing trade' 
+            : 'Record a new trade with all relevant details'}
+        </p>
+      </div>
+      
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-6 mb-6">
+          <Card>
             <CardHeader>
-              <CardTitle>Trade Information</CardTitle>
+              <CardTitle>Trade Details</CardTitle>
+              <CardDescription>Enter the basic information about your trade</CardDescription>
             </CardHeader>
-            
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="account">Account</Label>
-                  <Select
-                    value={formData.account}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, account: value }))}
-                  >
-                    <SelectTrigger className={errors.account ? 'border-red-500' : ''}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pair">Trading Pair/Symbol</Label>
+                  <Select value={pair} onValueChange={setPair} required>
+                    <SelectTrigger id="pair">
+                      <SelectValue placeholder="Select pair" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pairs.map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="account">Trading Account</Label>
+                  <Select value={account} onValueChange={setAccount} required>
+                    <SelectTrigger id="account">
                       <SelectValue placeholder="Select account" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectGroup>
-                        {accounts.map((account) => (
-                          <SelectItem key={account} value={account}>
-                            {account}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
+                      {accounts.map(a => (
+                        <SelectItem key={a} value={a}>{a}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  {errors.account && <p className="text-red-500 text-sm mt-1">{errors.account}</p>}
                 </div>
-
-                <div>
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !formData.date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.date ? (
-                          format(formData.date, "PPP")
-                        ) : (
-                          <span>اختر تاريخ</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={formData.date}
-                        onSelect={(date) => setFormData(prev => ({ ...prev, date: date || new Date() }))}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="pair">Currency Pair / Symbol</Label>
-                  <Input
-                    id="pair"
-                    name="pair"
-                    type="text"
-                    placeholder="E.g. EURUSD, BTCUSD, AAPL"
-                    value={formData.pair}
-                    onChange={handleInputChange}
-                    className={errors.pair ? 'border-red-500' : ''}
-                  />
-                  {errors.pair && <p className="text-red-500 text-sm mt-1">{errors.pair}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="type">Type</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(value) => handleSelectChange('type', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="type">Trade Type</Label>
+                  <Select value={type} onValueChange={(value: 'Buy' | 'Sell') => setType(value)} required>
+                    <SelectTrigger id="type">
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Buy">Buy</SelectItem>
-                      <SelectItem value="Sell">Sell</SelectItem>
+                      <SelectItem value="Buy">Buy (Long)</SelectItem>
+                      <SelectItem value="Sell">Sell (Short)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <Label htmlFor="entry">Entry Price</Label>
-                  <Input
-                    id="entry"
-                    name="entry"
-                    type="number"
-                    step="0.00001"
-                    placeholder="0.0000"
-                    value={formData.entry}
-                    onChange={handleInputChange}
-                    className={errors.entry ? 'border-red-500' : ''}
-                  />
-                  {errors.entry && <p className="text-red-500 text-sm mt-1">{errors.entry}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="exit">Exit Price</Label>
-                  <Input
-                    id="exit"
-                    name="exit"
-                    type="number"
-                    step="0.00001"
-                    placeholder="0.0000"
-                    value={formData.exit}
-                    onChange={handleInputChange}
-                    className={errors.exit ? 'border-red-500' : ''}
-                  />
-                  {errors.exit && <p className="text-red-500 text-sm mt-1">{errors.exit}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="lotSize">Lot Size</Label>
-                  <Input
-                    id="lotSize"
-                    name="lotSize"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.01"
-                    value={formData.lotSize}
-                    onChange={handleInputChange}
-                    className={errors.lotSize ? 'border-red-500' : ''}
-                  />
-                  {errors.lotSize && <p className="text-red-500 text-sm mt-1">{errors.lotSize}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="stopLoss">Stop Loss (optional)</Label>
-                  <Input
-                    id="stopLoss"
-                    name="stopLoss"
-                    type="number"
-                    step="0.00001"
-                    placeholder="0.0000"
-                    value={formData.stopLoss}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="takeProfit">Take Profit (optional)</Label>
-                  <Input
-                    id="takeProfit"
-                    name="takeProfit"
-                    type="number"
-                    step="0.00001"
-                    placeholder="0.0000"
-                    value={formData.takeProfit}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <Label htmlFor="riskPercentage">Risk %</Label>
-                  <Input
-                    id="riskPercentage"
-                    name="riskPercentage"
-                    type="number"
-                    step="0.1"
-                    placeholder="0.0"
-                    value={formData.riskPercentage}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="profitLoss">Profit/Loss</Label>
-                  <Input
-                    id="profitLoss"
-                    name="profitLoss"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={formData.profitLoss}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="commission">Commission / Spread</Label>
-                  <Input
-                    id="commission"
-                    name="commission"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={formData.commission}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="durationMinutes">Duration (minutes)</Label>
-                  <Input
-                    id="durationMinutes"
-                    name="durationMinutes"
-                    type="number"
-                    placeholder="0"
-                    value={formData.durationMinutes}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
+                
                 <div className="space-y-2">
-                  <Label>Trade Rating</Label>
-                  <StarRating
-                    value={formData.rating}
-                    onChange={(rating) => setFormData(prev => ({ ...prev, rating }))}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea
-                  id="notes"
-                  name="notes"
-                  placeholder="Enter trade notes, observations, or reasons for taking the trade"
-                  rows={3}
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="hashtags">Hashtags</Label>
-                <HashtagInput
-                  id="hashtags"
-                  value={formData.hashtags}
-                  onChange={(hashtags) => setFormData({ ...formData, hashtags })}
-                  suggestions={allHashtags}
-                  placeholder="Add hashtags (e.g. setup, breakout, mistake)"
-                />
-              </div>
-
-              <Separator className="my-4" />
-              
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Trade Images</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="beforeImage">Before Trade Image</Label>
-                    <p className="text-sm text-gray-500 mb-2">Upload an image of the chart before your entry</p>
-                    <ImageUpload
-                      value={formData.beforeImageUrl}
-                      onChange={(imageUrl) => setFormData({ ...formData, beforeImageUrl: imageUrl })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="afterImage">After Trade Image</Label>
-                    <p className="text-sm text-gray-500 mb-2">Upload an image of the chart after your exit</p>
-                    <ImageUpload
-                      value={formData.afterImageUrl}
-                      onChange={(imageUrl) => setFormData({ ...formData, afterImageUrl: imageUrl })}
+                  <Label htmlFor="date">Trade Date</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input 
+                      id="date" 
+                      type="date" 
+                      value={date} 
+                      onChange={(e) => setDate(e.target.value)} 
+                      className="pl-9"
+                      required
                     />
                   </div>
                 </div>
-                
-                <div>
-                  <Label htmlFor="image">Additional Chart Image (Optional)</Label>
-                  <p className="text-sm text-gray-500 mb-2">Upload any other relevant chart image</p>
-                  <ImageUpload
-                    value={formData.imageUrl}
-                    onChange={(imageUrl) => setFormData({ ...formData, imageUrl })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emotion">How did you feel during this trade?</Label>
-                <Select
-                  value={formData.emotion}
-                  onValueChange={(value) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      emotion: value,
-                      otherEmotion: value !== 'Other' ? '' : prev.otherEmotion
-                    }))
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select emotion" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {EMOTIONS.map((emotion) => (
-                        <SelectItem key={emotion} value={emotion}>
-                          {emotion}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-
-                {formData.emotion === 'Other' && (
-                  <Input
-                    placeholder="Specify other emotion"
-                    value={formData.otherEmotion}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      otherEmotion: e.target.value
-                    }))}
-                    className="mt-2"
-                  />
-                )}
               </div>
             </CardContent>
-            
-            <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => navigate('/trades')}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-primary text-primary-foreground">Save Trade</Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </div>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Price Information</CardTitle>
+              <CardDescription>Enter the entry, exit, and risk management details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="entry">Entry Price</Label>
+                  <Input 
+                    id="entry" 
+                    type="number" 
+                    step="any" 
+                    value={entry} 
+                    onChange={(e) => setEntry(e.target.value)} 
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="exit">Exit Price</Label>
+                  <Input 
+                    id="exit" 
+                    type="number" 
+                    step="any" 
+                    value={exit} 
+                    onChange={(e) => setExit(e.target.value)} 
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="lotSize">Lot Size</Label>
+                  <Input 
+                    id="lotSize" 
+                    type="number" 
+                    step="any" 
+                    value={lotSize} 
+                    onChange={(e) => setLotSize(e.target.value)} 
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="stopLoss">Stop Loss</Label>
+                  <Input 
+                    id="stopLoss" 
+                    type="number" 
+                    step="any" 
+                    value={stopLoss} 
+                    onChange={(e) => setStopLoss(e.target.value)} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="takeProfit">Take Profit</Label>
+                  <Input 
+                    id="takeProfit" 
+                    type="number" 
+                    step="any" 
+                    value={takeProfit} 
+                    onChange={(e) => setTakeProfit(e.target.value)} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="durationMinutes">Duration (minutes)</Label>
+                  <Input 
+                    id="durationMinutes" 
+                    type="number" 
+                    value={durationMinutes} 
+                    onChange={(e) => setDurationMinutes(e.target.value)} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="commission">Commission/Fees</Label>
+                  <Input 
+                    id="commission" 
+                    type="number" 
+                    step="any" 
+                    value={commission} 
+                    onChange={(e) => setCommission(e.target.value)} 
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="profitLoss">Profit/Loss</Label>
+                  <Input 
+                    id="profitLoss" 
+                    type="number" 
+                    step="any" 
+                    value={profitLoss.toString()} 
+                    readOnly 
+                    className="bg-muted"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Trade Rating</CardTitle>
+              <CardDescription>Rate the quality of this trade execution</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">How would you rate this trade?</p>
+                <StarRating 
+                  value={rating} 
+                  onChange={setRating}
+                  size="large"
+                />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Notes & Tags</CardTitle>
+              <CardDescription>Add notes and categorize your trade</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="notes">Trade Notes</Label>
+                <Textarea 
+                  id="notes" 
+                  placeholder="Add your trade notes, strategy used, and observations..." 
+                  value={notes} 
+                  onChange={(e) => setNotes(e.target.value)} 
+                  className="min-h-[100px]"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Tags</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {hashtags.map(tag => (
+                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                      {tag}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-4 w-4 p-0 hover:bg-transparent" 
+                        onClick={() => handleRemoveHashtag(tag)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    placeholder="Add a tag..." 
+                    value={newHashtag} 
+                    onChange={(e) => setNewHashtag(e.target.value)} 
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddHashtag())}
+                  />
+                  <Button type="button" onClick={handleAddHashtag} variant="outline">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+                
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-2">Suggested tags:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {allHashtags.slice(0, 10).map(tag => (
+                      <Badge 
+                        key={tag} 
+                        variant="outline" 
+                        className="cursor-pointer hover:bg-secondary"
+                        onClick={() => {
+                          if (!hashtags.includes(tag)) {
+                            setHashtags([...hashtags, tag]);
+                          }
+                        }}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="flex justify-end gap-4 mb-10">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => navigate('/trades')}
+          >
+            Cancel
+          </Button>
+          <Button type="submit">
+            {isEditing ? 'Update Trade' : 'Add Trade'}
+          </Button>
+        </div>
+      </form>
     </Layout>
   );
 };

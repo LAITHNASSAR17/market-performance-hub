@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -47,6 +46,7 @@ const Trades: React.FC = () => {
   );
 
   const handleEditTrade = (id: string) => {
+    // Navigate to the edit trade page with the correct id
     navigate(`/edit-trade/${id}`);
   };
 
@@ -73,6 +73,7 @@ const Trades: React.FC = () => {
   };
 
   const handleViewTrade = (id: string) => {
+    // Navigate to the trade details page with the correct id
     navigate(`/trade/${id}`);
   };
 
