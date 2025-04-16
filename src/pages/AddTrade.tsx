@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +30,7 @@ const AddTrade: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const [pair, setPair] = useState('');
-  const [type, setType<'Buy' | 'Sell'>('Buy');
+  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
   const [entry, setEntry] = useState('');
   const [exit, setExit] = useState('');
   const [lotSize, setLotSize] = useState('');
@@ -84,8 +85,8 @@ const AddTrade: React.FC = () => {
     } catch (error) {
       console.error('Error fetching trade:', error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب بيانات التداول",
+        title: "Error",
+        description: "An error occurred while fetching trade data",
         variant: "destructive"
       });
       navigate('/trades');
