@@ -1,9 +1,11 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 import { Trade } from '@/types/trade';
 import { tradeService } from '@/services/tradeService';
+import { userService } from '@/services/userService';
 
 export type { Trade } from '@/types/trade';
 
