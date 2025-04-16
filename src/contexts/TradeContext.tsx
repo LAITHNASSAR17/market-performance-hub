@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
-import { userService } from '@/services/userService';
 import { Trade } from '@/types/trade';
+import { tradeService } from '@/services/tradeService';
 
 export type { Trade } from '@/types/trade';
 
@@ -17,9 +17,9 @@ export type TradingAccount = {
 
 type TradeContextType = {
   trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => void;
-  updateTrade: (id: string, trade: Partial<Trade>) => void;
-  deleteTrade: (id: string) => void;
+  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
+  deleteTrade: (id: string) => Promise<void>;
   getTrade: (id: string) => Trade | undefined;
   getAllTrades: () => Trade[];
   loading: boolean;
@@ -335,12 +335,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             entry: trade.entry_price,
             exit: trade.exit_price || 0,
             lotSize: trade.quantity,
-            stopLoss: null,
-            takeProfit: null,
+            stopLoss: trade.stop_loss || null,
+            takeProfit: trade.take_profit || null,
             riskPercentage: 0,
             returnPercentage: 0,
             profitLoss: trade.profit_loss || 0,
-            durationMinutes: 0,
+            durationMinutes: trade.duration_minutes || 0,
             notes: trade.notes || '',
             imageUrl: null,
             beforeImageUrl: null,
@@ -389,15 +389,18 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           user_id: user.id,
           symbol: newTradeData.pair,
           entry_price: newTradeData.entry,
-          exit_price: newTradeData.exit,
+          exit_price: newTradeData.exit || null,
           quantity: newTradeData.lotSize,
           direction: newTradeData.type === 'Buy' ? 'long' : 'short',
           entry_date: new Date(newTradeData.date).toISOString(),
           exit_date: newTradeData.exit ? new Date(newTradeData.date).toISOString() : null,
           profit_loss: newTradeData.profitLoss,
-          fees: 0,
-          notes: newTradeData.notes,
-          tags: newTradeData.hashtags,
+          fees: newTradeData.commission || 0,
+          notes: newTradeData.notes || '',
+          tags: newTradeData.hashtags || [],
+          stop_loss: newTradeData.stopLoss || null,
+          take_profit: newTradeData.takeProfit || null,
+          duration_minutes: newTradeData.durationMinutes || null,
           rating: newTradeData.rating || 0
         })
         .select()
@@ -410,7 +413,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         id: data.id,
         userId: user.id,
         createdAt: data.created_at,
-        rating: data.rating || 0
       };
 
       setTrades(prevTrades => [newTrade, ...prevTrades]);
@@ -426,6 +428,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "حدث خطأ أثناء إضافة التداول",
         variant: "destructive"
       });
+      throw error; // Re-throw to handle in the component
     }
   };
 
@@ -435,25 +438,34 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const updateData: any = {};
       
-      if (tradeUpdate.pair) updateData.symbol = tradeUpdate.pair;
+      if (tradeUpdate.pair !== undefined) updateData.symbol = tradeUpdate.pair;
       if (tradeUpdate.entry !== undefined) updateData.entry_price = tradeUpdate.entry;
       if (tradeUpdate.exit !== undefined) updateData.exit_price = tradeUpdate.exit;
       if (tradeUpdate.lotSize !== undefined) updateData.quantity = tradeUpdate.lotSize;
-      if (tradeUpdate.type) updateData.direction = tradeUpdate.type === 'Buy' ? 'long' : 'short';
-      if (tradeUpdate.date) updateData.entry_date = new Date(tradeUpdate.date).toISOString();
+      if (tradeUpdate.type !== undefined) updateData.direction = tradeUpdate.type === 'Buy' ? 'long' : 'short';
+      if (tradeUpdate.date !== undefined) updateData.entry_date = new Date(tradeUpdate.date).toISOString();
+      if (tradeUpdate.profitLoss !== undefined) updateData.profit_loss = tradeUpdate.profitLoss;
+      if (tradeUpdate.notes !== undefined) updateData.notes = tradeUpdate.notes;
+      if (tradeUpdate.hashtags !== undefined) updateData.tags = tradeUpdate.hashtags;
+      if (tradeUpdate.commission !== undefined) updateData.fees = tradeUpdate.commission;
+      if (tradeUpdate.rating !== undefined) updateData.rating = tradeUpdate.rating;
+      if (tradeUpdate.stopLoss !== undefined) updateData.stop_loss = tradeUpdate.stopLoss;
+      if (tradeUpdate.takeProfit !== undefined) updateData.take_profit = tradeUpdate.takeProfit;
+      if (tradeUpdate.durationMinutes !== undefined) updateData.duration_minutes = tradeUpdate.durationMinutes;
+      
       if (tradeUpdate.exit !== undefined && tradeUpdate.date) {
         updateData.exit_date = tradeUpdate.exit ? new Date(tradeUpdate.date).toISOString() : null;
       }
-      if (tradeUpdate.profitLoss !== undefined) updateData.profit_loss = tradeUpdate.profitLoss;
-      if (tradeUpdate.notes !== undefined) updateData.notes = tradeUpdate.notes;
-      if (tradeUpdate.hashtags) updateData.tags = tradeUpdate.hashtags;
-      if (tradeUpdate.rating !== undefined) updateData.rating = tradeUpdate.rating;
 
-      const { error } = await supabase
+      console.log('Updating trade with data:', updateData);
+
+      const { data, error } = await supabase
         .from('trades')
         .update(updateData)
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -474,6 +486,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "حدث خطأ أثناء تحديث التداول",
         variant: "destructive"
       });
+      throw error; // Re-throw to handle in the component
     }
   };
 

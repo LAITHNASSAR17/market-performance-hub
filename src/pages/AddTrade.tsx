@@ -42,7 +42,7 @@ const AddTrade: React.FC = () => {
   const [account, setAccount] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [newHashtag, setNewHashtag] = useState('');
-  const [profitLoss, setProfitLoss] = useState<string>('0');  // Changed to string for direct editing
+  const [profitLoss, setProfitLoss] = useState<string>('0');
   const [commission, setCommission] = useState('0');
   const [rating, setRating] = useState(0);
   
@@ -59,22 +59,32 @@ const AddTrade: React.FC = () => {
       if (error) throw error;
       
       if (data) {
+        // Set all form fields with data from the database
         setPair(data.symbol || '');
         setType(data.direction === 'long' ? 'Buy' : 'Sell');
         setEntry(data.entry_price?.toString() || '');
         setExit(data.exit_price?.toString() || '');
         setLotSize(data.quantity?.toString() || '');
+        
         // Extract date from entry_date
         if (data.entry_date) {
           setDate(data.entry_date.split('T')[0]);
         }
+        
+        // Set additional fields
+        setStopLoss(data.stop_loss?.toString() || '');
+        setTakeProfit(data.take_profit?.toString() || '');
+        setDurationMinutes(data.duration_minutes?.toString() || '');
         setNotes(data.notes || '');
         setHashtags(data.tags || []);
         setProfitLoss(data.profit_loss?.toString() || '0');
         setCommission(data.fees?.toString() || '0');
         setRating(data.rating || 0);
-        setAccount(accounts[0] || ''); // Set default account
+        
+        // Default account
+        setAccount(accounts[0] || '');
         setIsEditing(true);
+        console.log("Trade data loaded:", data);
       }
     } catch (error) {
       console.error('Error fetching trade:', error);
@@ -97,11 +107,11 @@ const AddTrade: React.FC = () => {
       // Default values for new trade
       setAccount(accounts[0] || '');
     }
-  }, [id, accounts, navigate, toast]);
+  }, [id, accounts]);
 
   // Calculate profit/loss when relevant fields change
   useEffect(() => {
-    if (entry && exit && lotSize && type) {
+    if (entry && exit && lotSize && type && pair && !isEditing) {
       const calculatedPL = calculateProfitLoss(
         parseFloat(entry),
         parseFloat(exit),
@@ -110,10 +120,7 @@ const AddTrade: React.FC = () => {
         pair
       );
       
-      // Only update profit/loss if user hasn't manually edited it
-      if (!isEditing) {
-        setProfitLoss(calculatedPL.toString());
-      }
+      setProfitLoss(calculatedPL.toString());
     }
   }, [entry, exit, lotSize, type, pair, calculateProfitLoss, isEditing]);
 
@@ -129,57 +136,66 @@ const AddTrade: React.FC = () => {
     setHashtags(hashtags.filter(t => t !== tag));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate form
     if (!pair || !type || !entry || !date || !account) {
       toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
+        title: "بيانات ناقصة",
+        description: "يرجى ملء جميع الحقول المطلوبة",
         variant: "destructive"
       });
       return;
     }
 
-    const tradeData = {
-      pair,
-      type,
-      entry: parseFloat(entry),
-      exit: exit ? parseFloat(exit) : null,
-      lotSize: parseFloat(lotSize),
-      stopLoss: stopLoss ? parseFloat(stopLoss) : null,
-      takeProfit: takeProfit ? parseFloat(takeProfit) : null,
-      date,
-      durationMinutes: durationMinutes ? parseInt(durationMinutes) : 0,
-      notes,
-      account,
-      hashtags,
-      profitLoss: parseFloat(profitLoss),
-      riskPercentage: 0, // Calculate or add input
-      returnPercentage: 0, // Calculate or add input
-      imageUrl: null,
-      beforeImageUrl: null,
-      afterImageUrl: null,
-      commission: parseFloat(commission) || 0,
-      rating
-    };
+    try {
+      const tradeData = {
+        pair,
+        type,
+        entry: parseFloat(entry),
+        exit: exit ? parseFloat(exit) : null,
+        lotSize: parseFloat(lotSize),
+        stopLoss: stopLoss ? parseFloat(stopLoss) : null,
+        takeProfit: takeProfit ? parseFloat(takeProfit) : null,
+        date,
+        durationMinutes: durationMinutes ? parseInt(durationMinutes) : 0,
+        notes,
+        account,
+        hashtags,
+        profitLoss: parseFloat(profitLoss),
+        riskPercentage: 0,
+        returnPercentage: 0,
+        imageUrl: null,
+        beforeImageUrl: null,
+        afterImageUrl: null,
+        commission: parseFloat(commission) || 0,
+        rating
+      };
 
-    if (isEditing && id) {
-      updateTrade(id, tradeData);
+      if (isEditing && id) {
+        await updateTrade(id, tradeData);
+        toast({
+          title: "تم التحديث",
+          description: "تم تحديث التداول بنجاح",
+        });
+      } else {
+        await addTrade(tradeData);
+        toast({
+          title: "تمت الإضافة",
+          description: "تمت إضافة التداول بنجاح",
+        });
+      }
+      
+      navigate('/trades');
+    } catch (error) {
+      console.error('Error saving trade:', error);
       toast({
-        title: "Trade updated",
-        description: "Your trade has been updated successfully",
-      });
-    } else {
-      addTrade(tradeData);
-      toast({
-        title: "Trade added",
-        description: "Your trade has been added successfully",
+        title: "خطأ",
+        description: "حدث خطأ أثناء حفظ التداول",
+        variant: "destructive"
       });
     }
-    
-    navigate('/trades');
   };
 
   return (
@@ -192,35 +208,35 @@ const AddTrade: React.FC = () => {
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          العودة
         </Button>
-        <h1 className="text-2xl font-bold">{isEditing ? 'Edit Trade' : 'Add New Trade'}</h1>
+        <h1 className="text-2xl font-bold">{isEditing ? 'تعديل التداول' : 'إضافة تداول جديد'}</h1>
         <p className="text-gray-500">
           {isEditing 
-            ? 'Update the details of your existing trade' 
-            : 'Record a new trade with all relevant details'}
+            ? 'قم بتحديث تفاصيل التداول الخاص بك' 
+            : 'سجل تداول جديد مع جميع التفاصيل ذات الصلة'}
         </p>
       </div>
       
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <p>Loading trade data...</p>
+          <p>جاري تحميل بيانات التداول...</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Trade Details</CardTitle>
-                <CardDescription>Enter the basic information about your trade</CardDescription>
+                <CardTitle className="text-lg">تفاصيل التداول</CardTitle>
+                <CardDescription>أدخل المعلومات الأساسية حول التداول الخاص بك</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <Label htmlFor="pair">Trading Pair/Symbol</Label>
+                    <Label htmlFor="pair">زوج التداول/الرمز</Label>
                     <Select value={pair} onValueChange={setPair} required>
                       <SelectTrigger id="pair">
-                        <SelectValue placeholder="Select pair" />
+                        <SelectValue placeholder="اختر الزوج" />
                       </SelectTrigger>
                       <SelectContent>
                         {pairs.map(p => (
@@ -231,10 +247,10 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="account">Trading Account</Label>
+                    <Label htmlFor="account">حساب التداول</Label>
                     <Select value={account} onValueChange={setAccount} required>
                       <SelectTrigger id="account">
-                        <SelectValue placeholder="Select account" />
+                        <SelectValue placeholder="اختر الحساب" />
                       </SelectTrigger>
                       <SelectContent>
                         {accounts.map(a => (
@@ -245,20 +261,20 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="type">Trade Type</Label>
+                    <Label htmlFor="type">نوع التداول</Label>
                     <Select value={type} onValueChange={(value: 'Buy' | 'Sell') => setType(value)} required>
                       <SelectTrigger id="type">
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue placeholder="اختر النوع" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Buy">Buy (Long)</SelectItem>
-                        <SelectItem value="Sell">Sell (Short)</SelectItem>
+                        <SelectItem value="Buy">شراء (طويل)</SelectItem>
+                        <SelectItem value="Sell">بيع (قصير)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="date">Trade Date</Label>
+                    <Label htmlFor="date">تاريخ التداول</Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
                       <Input 
@@ -277,13 +293,13 @@ const AddTrade: React.FC = () => {
             
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Price Information</CardTitle>
-                <CardDescription>Enter the entry, exit, and risk management details</CardDescription>
+                <CardTitle className="text-lg">معلومات السعر</CardTitle>
+                <CardDescription>أدخل سعر الدخول والخروج وتفاصيل إدارة المخاطر</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="space-y-2">
-                    <Label htmlFor="entry">Entry Price</Label>
+                    <Label htmlFor="entry">سعر الدخول</Label>
                     <Input 
                       id="entry" 
                       type="number" 
@@ -295,7 +311,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="exit">Exit Price</Label>
+                    <Label htmlFor="exit">سعر الخروج</Label>
                     <Input 
                       id="exit" 
                       type="number" 
@@ -306,7 +322,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="lotSize">Lot Size</Label>
+                    <Label htmlFor="lotSize">حجم العقد</Label>
                     <Input 
                       id="lotSize" 
                       type="number" 
@@ -318,7 +334,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="stopLoss">Stop Loss</Label>
+                    <Label htmlFor="stopLoss">وقف الخسارة</Label>
                     <Input 
                       id="stopLoss" 
                       type="number" 
@@ -329,7 +345,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="takeProfit">Take Profit</Label>
+                    <Label htmlFor="takeProfit">هدف الربح</Label>
                     <Input 
                       id="takeProfit" 
                       type="number" 
@@ -340,7 +356,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="durationMinutes">Duration (minutes)</Label>
+                    <Label htmlFor="durationMinutes">المدة (بالدقائق)</Label>
                     <Input 
                       id="durationMinutes" 
                       type="number" 
@@ -350,7 +366,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="commission">Commission/Fees</Label>
+                    <Label htmlFor="commission">العمولة/الرسوم</Label>
                     <Input 
                       id="commission" 
                       type="number" 
@@ -361,7 +377,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="profitLoss">Profit/Loss</Label>
+                    <Label htmlFor="profitLoss">الربح/الخسارة</Label>
                     <Input 
                       id="profitLoss" 
                       type="number" 
@@ -376,12 +392,12 @@ const AddTrade: React.FC = () => {
             
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Trade Rating</CardTitle>
-                <CardDescription>Rate the quality of this trade execution</CardDescription>
+                <CardTitle className="text-lg">تقييم التداول</CardTitle>
+                <CardDescription>قيّم جودة تنفيذ هذا التداول</CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">How would you rate this trade?</p>
+                  <p className="text-sm text-muted-foreground">كيف تقيّم هذا التداول؟</p>
                   <StarRating 
                     value={rating} 
                     onChange={setRating}
@@ -393,15 +409,15 @@ const AddTrade: React.FC = () => {
             
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Notes & Tags</CardTitle>
-                <CardDescription>Add notes and categorize your trade</CardDescription>
+                <CardTitle className="text-lg">الملاحظات والوسوم</CardTitle>
+                <CardDescription>أضف ملاحظات وصنّف تداولك</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Trade Notes</Label>
+                  <Label htmlFor="notes">ملاحظات التداول</Label>
                   <Textarea 
                     id="notes" 
-                    placeholder="Add your trade notes, strategy used, and observations..." 
+                    placeholder="أضف ملاحظات حول تداولك، الاستراتيجية المستخدمة، والملاحظات..." 
                     value={notes} 
                     onChange={(e) => setNotes(e.target.value)} 
                     className="min-h-[100px]"
@@ -409,7 +425,7 @@ const AddTrade: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Tags</Label>
+                  <Label>الوسوم</Label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {hashtags.map(tag => (
                       <Badge key={tag} variant="secondary" className="flex items-center gap-1">
@@ -427,7 +443,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   <div className="flex gap-2">
                     <Input 
-                      placeholder="Add a tag..." 
+                      placeholder="أضف وسمًا..." 
                       value={newHashtag} 
                       onChange={(e) => setNewHashtag(e.target.value)} 
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddHashtag())}
@@ -438,12 +454,12 @@ const AddTrade: React.FC = () => {
                       variant="outline"
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      Add
+                      إضافة
                     </Button>
                   </div>
                   
                   <div className="mt-4">
-                    <p className="text-sm text-muted-foreground mb-2">Suggested tags:</p>
+                    <p className="text-sm text-muted-foreground mb-2">وسوم مقترحة:</p>
                     <div className="flex flex-wrap gap-1">
                       {allHashtags.slice(0, 10).map(tag => (
                         <Badge 
@@ -472,12 +488,12 @@ const AddTrade: React.FC = () => {
               variant="outline" 
               onClick={() => navigate('/trades')}
             >
-              Cancel
+              إلغاء
             </Button>
             <Button 
               type="submit"
             >
-              {isEditing ? 'Update Trade' : 'Add Trade'}
+              {isEditing ? 'تحديث التداول' : 'إضافة التداول'}
             </Button>
           </div>
         </form>

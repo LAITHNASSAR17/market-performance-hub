@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -5,18 +6,21 @@ export interface ITrade {
   userId: string;
   symbol: string;
   entryPrice: number;
-  exitPrice: number;
+  exitPrice: number | null;
   quantity: number;
   direction: 'long' | 'short';
   entryDate: Date;
-  exitDate: Date;
-  profitLoss: number;
+  exitDate: Date | null;
+  profitLoss: number | null;
   fees: number;
   notes: string;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
   rating: number;
+  stopLoss: number | null;
+  takeProfit: number | null;
+  durationMinutes: number | null;
 }
 
 export const tradeService = {
@@ -45,9 +49,24 @@ export const tradeService = {
     const { data, error } = await supabase
       .from('trades')
       .insert({
-        ...tradeData,
+        symbol: tradeData.symbol,
+        user_id: tradeData.userId,
+        entry_price: tradeData.entryPrice,
+        exit_price: tradeData.exitPrice,
+        quantity: tradeData.quantity,
+        direction: tradeData.direction,
+        entry_date: tradeData.entryDate.toISOString(),
+        exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
+        profit_loss: tradeData.profitLoss,
+        fees: tradeData.fees || 0,
+        notes: tradeData.notes || '',
+        tags: tradeData.tags || [],
         created_at: now,
-        updated_at: now
+        updated_at: now,
+        rating: tradeData.rating || 0,
+        stop_loss: tradeData.stopLoss,
+        take_profit: tradeData.takeProfit,
+        duration_minutes: tradeData.durationMinutes
       })
       .select()
       .single();
@@ -58,12 +77,30 @@ export const tradeService = {
 
   async updateTrade(id: string, tradeData: Partial<ITrade>): Promise<ITrade | null> {
     const now = new Date().toISOString();
+    const updateObject: any = {
+      updated_at: now
+    };
+    
+    // Map the trade data to the database columns
+    if (tradeData.symbol !== undefined) updateObject.symbol = tradeData.symbol;
+    if (tradeData.entryPrice !== undefined) updateObject.entry_price = tradeData.entryPrice;
+    if (tradeData.exitPrice !== undefined) updateObject.exit_price = tradeData.exitPrice;
+    if (tradeData.quantity !== undefined) updateObject.quantity = tradeData.quantity;
+    if (tradeData.direction !== undefined) updateObject.direction = tradeData.direction;
+    if (tradeData.entryDate !== undefined) updateObject.entry_date = tradeData.entryDate.toISOString();
+    if (tradeData.exitDate !== undefined) updateObject.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
+    if (tradeData.profitLoss !== undefined) updateObject.profit_loss = tradeData.profitLoss;
+    if (tradeData.fees !== undefined) updateObject.fees = tradeData.fees;
+    if (tradeData.notes !== undefined) updateObject.notes = tradeData.notes;
+    if (tradeData.tags !== undefined) updateObject.tags = tradeData.tags;
+    if (tradeData.rating !== undefined) updateObject.rating = tradeData.rating;
+    if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
+    if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
+    if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
+    
     const { data, error } = await supabase
       .from('trades')
-      .update({
-        ...tradeData,
-        updated_at: now
-      })
+      .update(updateObject)
       .eq('id', id)
       .select()
       .single();
@@ -87,7 +124,9 @@ export const tradeService = {
     // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined) {
-        query = query.eq(key, value);
+        // Map from camelCase to snake_case for database column names
+        const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        query = query.eq(dbKey, value);
       }
     });
     
@@ -116,6 +155,9 @@ function formatTrade(data: any): ITrade {
     tags: data.tags || [],
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
-    rating: data.rating || 0
+    rating: data.rating || 0,
+    stopLoss: data.stop_loss,
+    takeProfit: data.take_profit,
+    durationMinutes: data.duration_minutes
   };
 }
