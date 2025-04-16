@@ -28,6 +28,10 @@ if (favicon) {
   }
 }
 
+// Set the default theme to light
+document.documentElement.classList.remove('dark');
+document.documentElement.classList.add('light');
+
 // Check for user auth status at startup
 const authStatus = localStorage.getItem('trackmind_auth_status');
 if (authStatus === 'true') {

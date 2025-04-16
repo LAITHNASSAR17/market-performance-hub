@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -46,7 +45,6 @@ const AddTrade: React.FC = () => {
   const [commission, setCommission] = useState('0');
   const [rating, setRating] = useState(0);
   
-  // Fetch trade data from database if editing
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
     try {
@@ -59,19 +57,16 @@ const AddTrade: React.FC = () => {
       if (error) throw error;
       
       if (data) {
-        // Set all form fields with data from the database
         setPair(data.symbol || '');
         setType(data.direction === 'long' ? 'Buy' : 'Sell');
         setEntry(data.entry_price?.toString() || '');
         setExit(data.exit_price?.toString() || '');
         setLotSize(data.quantity?.toString() || '');
         
-        // Extract date from entry_date
         if (data.entry_date) {
           setDate(data.entry_date.split('T')[0]);
         }
         
-        // Set additional fields
         setStopLoss(data.stop_loss?.toString() || '');
         setTakeProfit(data.take_profit?.toString() || '');
         setDurationMinutes(data.duration_minutes?.toString() || '');
@@ -81,7 +76,6 @@ const AddTrade: React.FC = () => {
         setCommission(data.fees?.toString() || '0');
         setRating(data.rating || 0);
         
-        // Default account
         setAccount(accounts[0] || '');
         setIsEditing(true);
         console.log("Trade data loaded:", data);
@@ -99,17 +93,14 @@ const AddTrade: React.FC = () => {
     }
   };
   
-  // Load trade data if editing
   useEffect(() => {
     if (id) {
       fetchTradeFromDb(id);
     } else {
-      // Default values for new trade
       setAccount(accounts[0] || '');
     }
   }, [id, accounts]);
 
-  // Calculate profit/loss when relevant fields change
   useEffect(() => {
     if (entry && exit && lotSize && type && pair && !isEditing) {
       const calculatedPL = calculateProfitLoss(
@@ -139,7 +130,6 @@ const AddTrade: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form
     if (!pair || !type || !entry || !date || !account) {
       toast({
         title: "بيانات ناقصة",
@@ -234,16 +224,25 @@ const AddTrade: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <Label htmlFor="pair">زوج التداول/الرمز</Label>
-                    <Select value={pair} onValueChange={setPair} required>
-                      <SelectTrigger id="pair">
-                        <SelectValue placeholder="اختر الزوج" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {pairs.map(p => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {isEditing ? (
+                      <Input 
+                        id="pair" 
+                        value={pair} 
+                        readOnly 
+                        className="bg-gray-100 border border-gray-300"
+                      />
+                    ) : (
+                      <Select value={pair} onValueChange={setPair} required>
+                        <SelectTrigger id="pair">
+                          <SelectValue placeholder="اختر الزوج" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pairs.map(p => (
+                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
