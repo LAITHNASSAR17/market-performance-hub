@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -175,19 +176,19 @@ const AddTrade: React.FC = () => {
         </p>
       </div>
       
-      <form onSubmit={handleSubmit}>
-        <div className="grid gap-6 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Trade Details</CardTitle>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid gap-6">
+          <Card className="border-[#9b87f5]/30 shadow-sm">
+            <CardHeader className="pb-3 bg-gradient-to-r from-[#f1f0fb]/50 to-transparent">
+              <CardTitle className="text-lg text-[#1A1F2C] flex items-center">Trade Details</CardTitle>
               <CardDescription>Enter the basic information about your trade</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="space-y-4 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <Label htmlFor="pair">Trading Pair/Symbol</Label>
-                  <Select value={pair} onValueChange={setPair} required>
-                    <SelectTrigger id="pair">
+                  <Label htmlFor="pair" className="text-[#1A1F2C]">Trading Pair/Symbol</Label>
+                  <Select value={pair} onValueChange={setPair} required disabled={isEditing}>
+                    <SelectTrigger id="pair" className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/30">
                       <SelectValue placeholder="Select pair" />
                     </SelectTrigger>
                     <SelectContent>
@@ -199,9 +200,9 @@ const AddTrade: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="account">Trading Account</Label>
-                  <Select value={account} onValueChange={setAccount} required>
-                    <SelectTrigger id="account">
+                  <Label htmlFor="account" className="text-[#1A1F2C]">Trading Account</Label>
+                  <Select value={account} onValueChange={setAccount} required disabled={isEditing}>
+                    <SelectTrigger id="account" className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/30">
                       <SelectValue placeholder="Select account" />
                     </SelectTrigger>
                     <SelectContent>
@@ -213,9 +214,9 @@ const AddTrade: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="type">Trade Type</Label>
-                  <Select value={type} onValueChange={(value: 'Buy' | 'Sell') => setType(value)} required>
-                    <SelectTrigger id="type">
+                  <Label htmlFor="type" className="text-[#1A1F2C]">Trade Type</Label>
+                  <Select value={type} onValueChange={(value: 'Buy' | 'Sell') => setType(value)} required disabled={isEditing}>
+                    <SelectTrigger id="type" className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/30">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -226,16 +227,17 @@ const AddTrade: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="date">Trade Date</Label>
+                  <Label htmlFor="date" className="text-[#1A1F2C]">Trade Date</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#7E69AB]" />
                     <Input 
                       id="date" 
                       type="date" 
                       value={date} 
                       onChange={(e) => setDate(e.target.value)} 
-                      className="pl-9"
+                      className="pl-9 border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                       required
+                      disabled={isEditing}
                     />
                   </div>
                 </div>
@@ -243,15 +245,15 @@ const AddTrade: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Price Information</CardTitle>
+          <Card className="border-[#9b87f5]/30 shadow-sm">
+            <CardHeader className="pb-3 bg-gradient-to-r from-[#f1f0fb]/50 to-transparent">
+              <CardTitle className="text-lg text-[#1A1F2C] flex items-center">Price Information</CardTitle>
               <CardDescription>Enter the entry, exit, and risk management details</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent className="space-y-4 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div className="space-y-2">
-                  <Label htmlFor="entry">Entry Price</Label>
+                  <Label htmlFor="entry" className="text-[#1A1F2C]">Entry Price</Label>
                   <Input 
                     id="entry" 
                     type="number" 
@@ -259,11 +261,12 @@ const AddTrade: React.FC = () => {
                     value={entry} 
                     onChange={(e) => setEntry(e.target.value)} 
                     required
+                    className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="exit">Exit Price</Label>
+                  <Label htmlFor="exit" className="text-[#1A1F2C]">Exit Price</Label>
                   <Input 
                     id="exit" 
                     type="number" 
@@ -271,11 +274,12 @@ const AddTrade: React.FC = () => {
                     value={exit} 
                     onChange={(e) => setExit(e.target.value)} 
                     required
+                    className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="lotSize">Lot Size</Label>
+                  <Label htmlFor="lotSize" className="text-[#1A1F2C]">Lot Size</Label>
                   <Input 
                     id="lotSize" 
                     type="number" 
@@ -283,73 +287,78 @@ const AddTrade: React.FC = () => {
                     value={lotSize} 
                     onChange={(e) => setLotSize(e.target.value)} 
                     required
+                    className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="stopLoss">Stop Loss</Label>
+                  <Label htmlFor="stopLoss" className="text-[#1A1F2C]">Stop Loss</Label>
                   <Input 
                     id="stopLoss" 
                     type="number" 
                     step="any" 
                     value={stopLoss} 
                     onChange={(e) => setStopLoss(e.target.value)} 
+                    className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="takeProfit">Take Profit</Label>
+                  <Label htmlFor="takeProfit" className="text-[#1A1F2C]">Take Profit</Label>
                   <Input 
                     id="takeProfit" 
                     type="number" 
                     step="any" 
                     value={takeProfit} 
                     onChange={(e) => setTakeProfit(e.target.value)} 
+                    className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="durationMinutes">Duration (minutes)</Label>
+                  <Label htmlFor="durationMinutes" className="text-[#1A1F2C]">Duration (minutes)</Label>
                   <Input 
                     id="durationMinutes" 
                     type="number" 
                     value={durationMinutes} 
                     onChange={(e) => setDurationMinutes(e.target.value)} 
+                    className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="commission">Commission/Fees</Label>
+                  <Label htmlFor="commission" className="text-[#1A1F2C]">Commission/Fees</Label>
                   <Input 
                     id="commission" 
                     type="number" 
                     step="any" 
                     value={commission} 
                     onChange={(e) => setCommission(e.target.value)} 
+                    className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                   />
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="profitLoss">Profit/Loss</Label>
+                  <Label htmlFor="profitLoss" className="text-[#1A1F2C]">Profit/Loss</Label>
                   <Input 
                     id="profitLoss" 
                     type="number" 
                     step="any" 
                     value={profitLoss.toString()} 
                     readOnly 
-                    className="bg-muted"
+                    className="bg-muted/50 border-[#9b87f5]/30"
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Trade Rating</CardTitle>
+          <Card className="border-[#9b87f5]/30 shadow-sm">
+            <CardHeader className="pb-3 bg-gradient-to-r from-[#f1f0fb]/50 to-transparent">
+              <CardTitle className="text-lg text-[#1A1F2C] flex items-center">Trade Rating</CardTitle>
               <CardDescription>Rate the quality of this trade execution</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">How would you rate this trade?</p>
                 <StarRating 
@@ -361,28 +370,28 @@ const AddTrade: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Notes & Tags</CardTitle>
+          <Card className="border-[#9b87f5]/30 shadow-sm">
+            <CardHeader className="pb-3 bg-gradient-to-r from-[#f1f0fb]/50 to-transparent">
+              <CardTitle className="text-lg text-[#1A1F2C] flex items-center">Notes & Tags</CardTitle>
               <CardDescription>Add notes and categorize your trade</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="notes">Trade Notes</Label>
+                <Label htmlFor="notes" className="text-[#1A1F2C]">Trade Notes</Label>
                 <Textarea 
                   id="notes" 
                   placeholder="Add your trade notes, strategy used, and observations..." 
                   value={notes} 
                   onChange={(e) => setNotes(e.target.value)} 
-                  className="min-h-[100px]"
+                  className="min-h-[100px] border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label>Tags</Label>
+                <Label className="text-[#1A1F2C]">Tags</Label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {hashtags.map(tag => (
-                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                    <Badge key={tag} variant="secondary" className="flex items-center gap-1 bg-[#9b87f5]/10 text-[#7E69AB] hover:bg-[#9b87f5]/20">
                       {tag}
                       <Button 
                         variant="ghost" 
@@ -401,8 +410,14 @@ const AddTrade: React.FC = () => {
                     value={newHashtag} 
                     onChange={(e) => setNewHashtag(e.target.value)} 
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddHashtag())}
+                    className="border-[#9b87f5]/30 focus:ring-[#9b87f5]/20"
                   />
-                  <Button type="button" onClick={handleAddHashtag} variant="outline">
+                  <Button 
+                    type="button" 
+                    onClick={handleAddHashtag} 
+                    variant="outline"
+                    className="border-[#9b87f5]/30 hover:bg-[#9b87f5]/10 hover:text-[#7E69AB]"
+                  >
                     <Plus className="h-4 w-4 mr-1" />
                     Add
                   </Button>
@@ -415,7 +430,7 @@ const AddTrade: React.FC = () => {
                       <Badge 
                         key={tag} 
                         variant="outline" 
-                        className="cursor-pointer hover:bg-secondary"
+                        className="cursor-pointer hover:bg-[#9b87f5]/10 border-[#9b87f5]/30 text-[#7E69AB]"
                         onClick={() => {
                           if (!hashtags.includes(tag)) {
                             setHashtags([...hashtags, tag]);
@@ -437,10 +452,14 @@ const AddTrade: React.FC = () => {
             type="button" 
             variant="outline" 
             onClick={() => navigate('/trades')}
+            className="border-[#9b87f5]/30 hover:bg-[#9b87f5]/10 hover:text-[#7E69AB]"
           >
             Cancel
           </Button>
-          <Button type="submit">
+          <Button 
+            type="submit"
+            className="bg-[#9b87f5] hover:bg-[#7E69AB] text-white"
+          >
             {isEditing ? 'Update Trade' : 'Add Trade'}
           </Button>
         </div>
