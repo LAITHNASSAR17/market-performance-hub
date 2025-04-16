@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Sun, Moon } from 'lucide-react';
+import { Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -28,11 +28,12 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
       <div className={`flex items-center gap-2 ${className}`}>
         <Sun className="h-4 w-4 text-amber-500" />
         <Switch 
-          checked={theme === 'dark'} 
+          checked={false} 
           onCheckedChange={toggleTheme} 
           aria-label={t('theme.toggle') || 'Toggle theme'}
+          disabled={true}
         />
-        <Moon className="h-4 w-4 text-indigo-400" />
+        <Sun className="h-4 w-4 text-amber-500" />
       </div>
     );
   }
@@ -47,18 +48,12 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
           className={className}
           aria-label={t('theme.toggle') || 'Toggle theme'}
         >
-          {theme === 'dark' ? (
-            <Sun className="h-5 w-5 text-amber-300" />
-          ) : (
-            <Moon className="h-5 w-5 text-indigo-600" />
-          )}
+          <Sun className="h-5 w-5 text-amber-300" />
           <span className="sr-only">{t('theme.toggle') || 'Toggle theme'}</span>
         </Button>
       </TooltipTrigger>
       <TooltipContent side="right">
-        {theme === 'dark' 
-          ? (t('theme.lightMode') || 'Light mode') 
-          : (t('theme.darkMode') || 'Dark mode')}
+        {t('theme.lightMode') || 'Light mode'}
       </TooltipContent>
     </Tooltip>
   );
