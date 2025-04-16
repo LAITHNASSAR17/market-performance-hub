@@ -12,6 +12,8 @@ export interface TradeStats {
   totalTrades: number;
   winningTrades: number;
   losingTrades: number;
+  profitFactor: string;
+  winLossRatio: string;
 }
 
 export const useAnalyticsStats = (): TradeStats => {
@@ -25,7 +27,9 @@ export const useAnalyticsStats = (): TradeStats => {
     largestLoss: '$0.00',
     totalTrades: 0,
     winningTrades: 0,
-    losingTrades: 0
+    losingTrades: 0,
+    profitFactor: '0.00',
+    winLossRatio: '0.00'
   });
 
   useEffect(() => {
@@ -47,7 +51,9 @@ const calculateStats = (trades: Trade[]): TradeStats => {
       largestLoss: '$0.00',
       totalTrades: 0,
       winningTrades: 0,
-      losingTrades: 0
+      losingTrades: 0,
+      profitFactor: '0.00',
+      winLossRatio: '0.00'
     };
   }
   
@@ -73,6 +79,16 @@ const calculateStats = (trades: Trade[]): TradeStats => {
     Math.min(...losingTrades.map(trade => trade.profitLoss)) : 
     0;
   
+  // Calculate profit factor (ratio of gross profit to gross loss)
+  const grossProfit = winningTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const grossLoss = Math.abs(losingTrades.reduce((sum, trade) => sum + trade.profitLoss, 0));
+  const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (winningTrades.length > 0 ? "∞" : "0.00");
+  
+  // Calculate win/loss ratio
+  const winLossRatio = losingTrades.length > 0 ? 
+    (winningTrades.length / losingTrades.length).toFixed(2) : 
+    (winningTrades.length > 0 ? "∞" : "0.00");
+  
   return {
     totalPL: `$${totalPL.toFixed(2)}`,
     winRate: `${winRate.toFixed(1)}%`,
@@ -82,6 +98,8 @@ const calculateStats = (trades: Trade[]): TradeStats => {
     largestLoss: `$${largestLoss.toFixed(2)}`,
     totalTrades: trades.length,
     winningTrades: winningTrades.length,
-    losingTrades: losingTrades.length
+    losingTrades: losingTrades.length,
+    profitFactor,
+    winLossRatio
   };
 };

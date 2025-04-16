@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -11,12 +12,15 @@ import HashtagBadge from '@/components/HashtagBadge';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Trade } from '@/types/trade';
+import TradeDetailsDialog from '@/components/TradeDetailsDialog';
 
 const Journal: React.FC = () => {
   const { trades, allHashtags } = useTrade();
   const [dateFilter, setDateFilter] = useState('all');
   const [pairFilter, setPairFilter] = useState('all');
   const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -29,7 +33,12 @@ const Journal: React.FC = () => {
   }, [location.search]);
 
   const handleViewTrade = (id: string) => {
-    navigate(`/trades/${id}`);
+    navigate(`/trade/${id}`);
+  };
+
+  const handleViewDate = (date: string) => {
+    setSelectedDate(date);
+    setIsDetailsOpen(true);
   };
 
   const filteredTrades = trades.filter(trade => {
@@ -161,11 +170,22 @@ const Journal: React.FC = () => {
                         {dayTrades.length} trade{dayTrades.length !== 1 ? 's' : ''}
                       </p>
                     </div>
-                    <div className={cn(
-                      "text-lg font-bold",
-                      totalProfit > 0 ? "text-profit" : totalProfit < 0 ? "text-loss" : "text-gray-500"
-                    )}>
-                      {totalProfit > 0 ? '+' : ''}{totalProfit.toFixed(2)}
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "text-lg font-bold",
+                        totalProfit > 0 ? "text-profit" : totalProfit < 0 ? "text-loss" : "text-gray-500"
+                      )}>
+                        {totalProfit > 0 ? '+' : ''}{totalProfit.toFixed(2)}
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleViewDate(date)}
+                        className="flex items-center gap-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -224,7 +244,11 @@ const Journal: React.FC = () => {
                               />
                             )}
                             
-                            <Button variant="ghost" size="sm" onClick={() => handleViewTrade(trade.id)}>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleViewTrade(trade.id)}
+                            >
                               <Eye className="h-4 w-4 mr-1" />
                               View
                             </Button>
@@ -253,6 +277,13 @@ const Journal: React.FC = () => {
           )}
         </div>
       )}
+
+      <TradeDetailsDialog
+        isOpen={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        selectedDate={selectedDate}
+        trades={trades}
+      />
     </Layout>
   );
 };

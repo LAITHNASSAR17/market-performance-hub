@@ -16,6 +16,8 @@ interface OverviewTabProps {
     totalTrades: number;
     winningTrades: number;
     losingTrades: number;
+    profitFactor: string;
+    winLossRatio: string;
   };
 }
 
@@ -31,8 +33,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats }) => {
           type={parseFloat(stats.totalPL.replace('$', '')) >= 0 ? 'profit' : 'loss'}
           icon={<DollarSign className="h-4 w-4" />}
           additionalStats={[
-            { label: t('analytics.tradesToday') || 'Trades Today', value: '3' },
-            { label: t('analytics.plToday') || 'P&L Today', value: '$600.00' }
+            { label: t('analytics.trades') || 'Total Trades', value: stats.totalTrades },
+            { label: t('analytics.profitFactor') || 'Profit Factor', value: stats.profitFactor }
           ]}
         />
         
@@ -42,7 +44,8 @@ const OverviewTab: React.FC<OverviewTabProps> = ({ stats }) => {
           icon={<Target className="h-4 w-4" />}
           additionalStats={[
             { label: t('analytics.wins') || 'Wins', value: stats.winningTrades },
-            { label: t('analytics.losses') || 'Losses', value: stats.losingTrades }
+            { label: t('analytics.losses') || 'Losses', value: stats.losingTrades },
+            { label: t('analytics.winLossRatio') || 'Win/Loss Ratio', value: stats.winLossRatio }
           ]}
         />
         

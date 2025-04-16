@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, ReferenceLine } from 'recharts';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, ExternalLink, Eye, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Eye, Trash2, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
@@ -327,6 +327,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                     <th className="px-3 py-2 text-left font-medium text-gray-500">Size</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-500">P&L</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-500">R-Multiple</th>
+                    <th className="px-3 py-2 text-left font-medium text-gray-500">Rating</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-500">Tags</th>
                     <th className="px-3 py-2 text-left font-medium text-gray-500">Actions</th>
                   </tr>
@@ -359,6 +360,21 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                       </td>
                       <td className="px-3 py-2">
                         {trade.stopLoss ? (Math.abs(trade.profitLoss) / Math.abs(trade.entry - trade.stopLoss)).toFixed(2) : '-'}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={cn(
+                                "h-4 w-4",
+                                star <= trade.rating 
+                                  ? "fill-yellow-400 text-yellow-400" 
+                                  : "text-gray-300"
+                              )}
+                            />
+                          ))}
+                        </div>
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex flex-wrap gap-1">
