@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -21,7 +22,7 @@ const Trades: React.FC = () => {
   const [tradeTypeFilter, setTradeTypeFilter] = useState('all');
   const [accountFilter, setAccountFilter] = useState('all');
   const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const navigate = useNavigate();
 
   const accounts = Array.from(new Set(trades.map(trade => trade.account)));
@@ -66,7 +67,7 @@ const Trades: React.FC = () => {
   };
 
   const handleViewTrade = (id: string) => {
-    navigate(`/tracking/${id}`);
+    navigate(`/trade/${id}`);
   };
 
   return (

@@ -8,13 +8,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Calendar, Clock, ExternalLink, Landmark, LineChart, Maximize2, PieChart, Save, Tag, Wallet } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, ExternalLink, Landmark, LineChart, Maximize2, PieChart, Save, Star, Tag, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import HashtagBadge from '@/components/HashtagBadge';
 import TradeChart from '@/components/TradeChart';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
+import StarRating from '@/components/StarRating';
 
 const TradeTracking: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,7 @@ const TradeTracking: React.FC = () => {
   const trade = id ? getTrade(id) : undefined;
   const [notes, setNotes] = useState(trade?.notes || '');
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+  const [rating, setRating] = useState(trade?.rating || 0);
   
   if (!trade) {
     return (
@@ -46,6 +48,17 @@ const TradeTracking: React.FC = () => {
       toast({
         title: "Notes saved",
         description: "Your trade notes have been updated successfully",
+      });
+    }
+  };
+
+  const handleRatingChange = (newRating: number) => {
+    setRating(newRating);
+    if (id) {
+      updateTrade(id, { rating: newRating });
+      toast({
+        title: "Rating updated",
+        description: "Your trade rating has been updated successfully",
       });
     }
   };
@@ -183,6 +196,26 @@ const TradeTracking: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Trade Rating Section */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center">
+              <Star className="mr-2 h-4 w-4" />
+              Trade Rating
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">How would you rate this trade?</p>
+              <StarRating 
+                rating={rating} 
+                onRatingChange={handleRatingChange}
+                size="large"
+              />
+            </div>
+          </CardContent>
+        </Card>
         
         {/* Risk & Reward Section */}
         <Card>
