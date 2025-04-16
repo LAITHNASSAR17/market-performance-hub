@@ -4,21 +4,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
 import { useToast } from '@/components/ui/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -75,12 +75,6 @@ const AddTrade: React.FC = () => {
         setRating(data.rating || 0);
         setAccount(accounts[0] || ''); // Set default account
         setIsEditing(true);
-        
-        // Add new fields for populating additional trade details
-        setStopLoss(data.stop_loss?.toString() || '');
-        setTakeProfit(data.take_profit?.toString() || '');
-        setDurationMinutes(data.duration_minutes?.toString() || '');
-        setCommission(data.fees?.toString() || '0');
       }
     } catch (error) {
       console.error('Error fetching trade:', error);

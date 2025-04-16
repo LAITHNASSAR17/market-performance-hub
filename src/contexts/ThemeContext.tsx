@@ -15,32 +15,108 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>(() => {
+    // Check for system preference as default
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Update theme in DOM
+  // Load theme preference from Supabase when user logs in
+  useEffect(() => {
+    const loadThemePreference = async () => {
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from('user_preferences')
+            .select('theme')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (error) throw error;
+          
+          if (data?.theme) {
+            setTheme(data.theme as Theme);
+          } else {
+            // Create initial preference if it doesn't exist
+            await supabase
+              .from('user_preferences')
+              .insert({ user_id: user.id, theme });
+          }
+        } catch (error) {
+          console.error('Error loading theme preference:', error);
+        }
+      }
+    };
+
+    loadThemePreference();
+  }, [user]);
+
+  // Update theme in Supabase when it changes - with better error handling
+  useEffect(() => {
+    const updateThemePreference = async () => {
+      if (!user) return; // Don't proceed if no user
+
+      try {
+        // Check if record exists first
+        const { data: existingRecord } = await supabase
+          .from('user_preferences')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (existingRecord) {
+          // Update the existing record
+          const { error } = await supabase
+            .from('user_preferences')
+            .update({
+              theme,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+        } else {
+          // Insert a new record
+          const { error } = await supabase
+            .from('user_preferences')
+            .insert({
+              user_id: user.id,
+              theme,
+              updated_at: new Date().toISOString()
+            });
+
+          if (error) throw error;
+        }
+      } catch (error) {
+        console.error('Error updating theme preference:', error);
+        // Silent error, don't show toast to avoid repeated error notifications
+      }
+    };
+
+    // Only run after initial user load
+    if (user) {
+      updateThemePreference();
+    }
+  }, [theme, user]);
+
+  // Update the DOM when theme changes
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    } else {
-      root.classList.remove('dark');
-      root.classList.add('light');
-    }
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    // Theme is always light for now
-    toast({
-      title: "Light Mode",
-      description: "Light mode is always active"
-    });
-  };
+  // Apply LTR direction since we only support English now
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.dir = 'ltr';
+    root.lang = 'en';
+  }, []);
 
-  const setTheme = (newTheme: Theme) => {
-    // No-op, theme is always light
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
   return (
