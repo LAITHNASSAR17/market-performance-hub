@@ -27,7 +27,6 @@ const TradeCard: React.FC<TradeCardProps> = ({
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const navigate = useNavigate();
   
   // Get site name from localStorage for toast title
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
@@ -107,13 +106,31 @@ const TradeCard: React.FC<TradeCardProps> = ({
         </span>
         
         <div className="flex space-x-2 rtl:space-x-reverse">
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleView}>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 w-8 p-0" 
+            onClick={handleView}
+            title="View trade details"
+          >
             <Eye className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleEdit}>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 w-8 p-0" 
+            onClick={handleEdit}
+            title="Edit trade"
+          >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleDelete}>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            className="h-8 w-8 p-0" 
+            onClick={handleDelete}
+            title="Delete trade"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

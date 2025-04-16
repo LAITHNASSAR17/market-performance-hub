@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import HashtagBadge from '@/components/HashtagBadge';
+import { useToast } from '@/components/ui/use-toast';
 
 const Trades: React.FC = () => {
   const { trades, deleteTrade, pairs } = useTrade();
@@ -24,6 +25,7 @@ const Trades: React.FC = () => {
   const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const accounts = Array.from(new Set(trades.map(trade => trade.account)));
 
@@ -56,6 +58,10 @@ const Trades: React.FC = () => {
     if (tradeToDelete) {
       deleteTrade(tradeToDelete);
       setTradeToDelete(null);
+      toast({
+        title: "Trade deleted",
+        description: "The trade has been successfully deleted",
+      });
     }
   };
 
@@ -229,13 +235,31 @@ const Trades: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleViewTrade(trade.id)}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            onClick={() => handleViewTrade(trade.id)}
+                            title="View trade details"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditTrade(trade.id)}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            onClick={() => handleEditTrade(trade.id)}
+                            title="Edit trade"
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteTrade(trade.id)}>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            onClick={() => handleDeleteTrade(trade.id)}
+                            title="Delete trade"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
