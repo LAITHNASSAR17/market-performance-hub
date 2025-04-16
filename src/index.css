@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -106,12 +105,17 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    margin: 0;
+    padding: 0;
+    transform: none;
+    overflow-x: hidden;
   }
-  .text-profit {
-    color: hsl(var(--profit));
-  }
-  .text-loss {
-    color: hsl(var(--loss));
+
+  #root {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    transform: none;
   }
 }
 
