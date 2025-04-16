@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -100,35 +101,35 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <div className={cn("relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-64" : "w-16", "border-r")}>
-        <div className="flex flex-col items-center py-4 px-4">
+      <div className={cn("fixed h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-52" : "w-14", "border-r")}>
+        <div className="flex flex-col items-center py-3 px-3">
           <div className="flex items-center justify-between w-full">
             <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-sidebar-foreground">
               <Menu className="h-5 w-5" />
             </Button>
             
-            {sidebarOpen && <h2 className="text-xl font-bold flex-1 text-center">{siteName}</h2>}
+            {sidebarOpen && <h2 className="text-lg font-bold flex-1 text-center">{siteName}</h2>}
           </div>
           
-          {sidebarOpen && <div className="flex items-center gap-2 mt-4 w-full">
+          {sidebarOpen && <div className="flex items-center gap-2 mt-3 w-full">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="text-left w-full justify-between px-2 py-1 h-auto hover:bg-sidebar-accent">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 overflow-hidden">
+                      <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 overflow-hidden">
                         {user?.name?.charAt(0) || 'U'}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-sm font-medium truncate">{user?.name || 'User'}</span>
+                        <span className="text-xs font-medium truncate">{user?.name || 'User'}</span>
                         <span className="text-xs text-gray-500 truncate">{user?.email || 'user@example.com'}</span>
                       </div>
                       {isAdmin && (
                         <div className="flex-shrink-0 ms-1">
-                          <Shield className="h-4 w-4 text-purple-500" />
+                          <Shield className="h-3 w-3 text-purple-500" />
                         </div>
                       )}
                     </div>
-                    <ChevronDown className="h-4 w-4 ms-2 opacity-50" />
+                    <ChevronDown className="h-3 w-3 ms-1 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -161,7 +162,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>}
         </div>
 
-        <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <div className="mt-2 overflow-y-auto max-h-[calc(100vh-120px)]">
           {navigation.map(item => {
             const isActive = location.pathname === item.href;
             return (
@@ -169,11 +170,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <TooltipTrigger asChild>
                   <Link 
                     to={item.href} 
-                    className={cn("flex items-center px-4 py-3 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground", 
+                    className={cn("flex items-center px-3 py-2 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground", 
                       isActive && "bg-sidebar-accent text-sidebar-accent-foreground font-medium")}
                   >
-                    <item.icon className="h-5 w-5 flex-shrink-0" />
-                    {sidebarOpen && <span className="ml-3">{item.name}</span>}
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    {sidebarOpen && <span className="ml-2 text-sm">{item.name}</span>}
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right" align="center" hidden={sidebarOpen}>
@@ -189,7 +190,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <main className="flex-1 overflow-y-auto bg-white p-4 md:p-6">
+      <main className={cn("flex-1 overflow-x-hidden bg-white p-3 md:p-4", sidebarOpen ? "ml-14 md:ml-52" : "ml-14")}>
         {children}
       </main>
     </div>

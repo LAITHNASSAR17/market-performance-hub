@@ -33,7 +33,7 @@ const TradeCalendar = () => {
         <Button
           variant={"outline"}
           className={cn(
-            "w-[300px] justify-start text-left font-normal",
+            "w-full sm:w-[300px] justify-start text-left font-normal",
             !date && "text-muted-foreground"
           )}
         >
@@ -46,6 +46,7 @@ const TradeCalendar = () => {
           mode="single"
           selected={date}
           onSelect={setDate}
+          numberOfMonths={3}
           className={cn("p-3 pointer-events-auto")}
         />
 
