@@ -28,11 +28,11 @@
   }
 
   * {
-    @apply border-gray-200 border-solid;
+    @apply border-border;
     scroll-behavior: smooth;
   }
 
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-background text-foreground antialiased;
   }
 }

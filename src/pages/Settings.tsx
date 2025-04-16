@@ -17,7 +17,7 @@ const Settings: React.FC = () => {
   return (
     <Layout>
       <div className="container mx-auto py-6">
-        <h1 className="text-3xl font-bold mb-4">
+        <h1 className="text-3xl font-bold mb-4 dark:text-white">
           Settings
         </h1>
         
@@ -36,21 +36,23 @@ const Settings: React.FC = () => {
           <TabsContent value="appearance">
             <Card>
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="dark:text-white">
                   Appearance & Theme
                 </CardTitle>
-                <CardDescription>
-                  Customize the look of the application.
+                <CardDescription className="dark:text-gray-300">
+                  Customize the look of the application, including light/dark mode.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div>
-                    <h3 className="font-medium">
+                    <h3 className="font-medium dark:text-white">
                       Display Mode
                     </h3>
-                    <p className="text-sm text-gray-500">
-                      Light mode is currently active
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {theme === 'dark' 
+                        ? 'Dark mode is currently active'
+                        : 'Light mode is currently active'}
                     </p>
                   </div>
                   <ThemeToggle />
@@ -62,24 +64,24 @@ const Settings: React.FC = () => {
           <TabsContent value="favicon">
             <Card>
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="dark:text-white">
                   Favicon
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="dark:text-gray-300">
                   Change the favicon that appears in your browser tab.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="flex-1">
-                    <h3 className="font-medium">
+                    <h3 className="font-medium dark:text-white">
                       Current Favicon
                     </h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       You can change the favicon by clicking the button below.
                     </p>
                   </div>
-                  <div className="w-12 h-12 bg-white border rounded-lg flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
                     <img src="/favicon.ico" alt="Current Favicon" className="max-w-full max-h-full" />
                   </div>
                 </div>
