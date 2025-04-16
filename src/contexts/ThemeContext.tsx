@@ -1,10 +1,10 @@
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-type Theme = 'light';
+type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
@@ -15,26 +15,31 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const theme: Theme = 'light';
+  const [theme, setThemeState] = useState<Theme>('light');
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Update theme in DOM to always be light
+  // Update theme in DOM
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove('dark');
-    root.classList.add('light');
-  }, []);
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    }
+  }, [theme]);
 
-  // Simplified theme management - always light
   const toggleTheme = () => {
+    // Theme is always light for now
     toast({
       title: "Light Mode",
       description: "Light mode is always active"
     });
   };
 
-  const setTheme = () => {
+  const setTheme = (newTheme: Theme) => {
     // No-op, theme is always light
   };
 
