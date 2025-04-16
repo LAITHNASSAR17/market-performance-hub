@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -97,7 +96,6 @@ const TradeTracking: React.FC = () => {
       </div>
       
       <div className="space-y-6">
-        {/* Trade Details Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader className="pb-2">
@@ -197,7 +195,6 @@ const TradeTracking: React.FC = () => {
           </Card>
         </div>
         
-        {/* Trade Rating Section */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center">
@@ -209,15 +206,14 @@ const TradeTracking: React.FC = () => {
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">How would you rate this trade?</p>
               <StarRating 
-                rating={rating} 
-                onRatingChange={handleRatingChange}
+                value={rating} 
+                onChange={handleRatingChange}
                 size="large"
               />
             </div>
           </CardContent>
         </Card>
         
-        {/* Risk & Reward Section */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center">
@@ -307,7 +303,6 @@ const TradeTracking: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Chart Section */}
         <Card>
           <CardHeader>
             <CardTitle>Trade Chart Analysis</CardTitle>
@@ -318,7 +313,6 @@ const TradeTracking: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Trade Images Section */}
         <Card>
           <CardHeader>
             <CardTitle>Trade Images</CardTitle>
@@ -326,7 +320,6 @@ const TradeTracking: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Before Trade Image */}
               <div className="rounded-md overflow-hidden border">
                 <div className="bg-gray-50 p-2 border-b">
                   <h3 className="font-medium">Before Trade</h3>
@@ -354,7 +347,6 @@ const TradeTracking: React.FC = () => {
                 )}
               </div>
               
-              {/* After Trade Image */}
               <div className="rounded-md overflow-hidden border">
                 <div className="bg-gray-50 p-2 border-b">
                   <h3 className="font-medium">After Trade</h3>
@@ -383,7 +375,6 @@ const TradeTracking: React.FC = () => {
               </div>
             </div>
             
-            {/* Additional Chart Image */}
             {trade.imageUrl && (
               <div className="mt-6 rounded-md overflow-hidden border">
                 <div className="bg-gray-50 p-2 border-b">
@@ -409,7 +400,6 @@ const TradeTracking: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Tags & Notes Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardHeader className="pb-2">
@@ -449,7 +439,6 @@ const TradeTracking: React.FC = () => {
           </Card>
         </div>
 
-        {/* Advanced Notes Section */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -473,7 +462,6 @@ const TradeTracking: React.FC = () => {
         </Card>
       </div>
       
-      {/* Enlarged Image Dialog */}
       <Dialog open={!!enlargedImage} onOpenChange={closeEnlargedImage}>
         <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
           {enlargedImage && (

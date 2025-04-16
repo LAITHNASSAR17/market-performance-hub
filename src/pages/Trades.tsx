@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -213,7 +212,7 @@ const Trades: React.FC = () => {
                       <td className="px-4 py-3">{trade.lotSize}</td>
                       <td className={cn(
                         "px-4 py-3 font-medium",
-                        trade.profitLoss > 0 ? "text-profit" : "text-loss"
+                        trade.profitLoss > 0 ? "text-emerald-500" : "text-red-500"
                       )}>
                         {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss.toFixed(2)}
                       </td>

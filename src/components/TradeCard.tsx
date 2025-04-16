@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,12 +27,11 @@ const TradeCard: React.FC<TradeCardProps> = ({
 }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const navigate = useNavigate();
   
   // Get site name from localStorage for toast title
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
-  const handleDelete = (e: React.SyntheticEvent) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -41,12 +41,24 @@ const TradeCard: React.FC<TradeCardProps> = ({
         <div className="grid gap-1">
           <p>Are you sure you want to delete this trade?</p>
           <div className="flex justify-end space-x-2">
-            <Button variant="ghost">Cancel</Button>
+            <Button variant="ghost" onClick={() => toast({ title: "Cancelled", description: "Delete action cancelled" })}>Cancel</Button>
             <Button variant="destructive" onClick={() => onDelete(trade.id)}>Delete</Button>
           </div>
         </div>
       ),
-    })
+    });
+  };
+
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit(trade.id);
+  };
+
+  const handleView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onView(trade.id);
   };
 
   return (
@@ -101,10 +113,10 @@ const TradeCard: React.FC<TradeCardProps> = ({
         </span>
         
         <div className="flex space-x-2 rtl:space-x-reverse">
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onView(trade.id)}>
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleView}>
             <Eye className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => onEdit(trade.id)}>
+          <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleEdit}>
             <Edit className="h-4 w-4" />
           </Button>
           <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleDelete}>
