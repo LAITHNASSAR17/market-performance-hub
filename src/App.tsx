@@ -6,8 +6,10 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { TradeProvider } from './contexts/TradeContext';
 import { Toaster } from './components/ui/toaster';
+import { TooltipProvider } from './components/ui/tooltip';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -16,12 +18,15 @@ function App() {
         <ThemeProvider>
           <LanguageProvider>
             <TradeProvider>
-              <Toaster />
-              <Routes>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="*" element={<Login />} />
-              </Routes>
+              <TooltipProvider>
+                <Toaster />
+                <Routes>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="*" element={<Login />} />
+                </Routes>
+              </TooltipProvider>
             </TradeProvider>
           </LanguageProvider>
         </ThemeProvider>
