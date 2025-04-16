@@ -28,7 +28,7 @@
   }
 
   * {
-    @apply border-border;
+    @apply border-gray-200;
     scroll-behavior: smooth;
   }
 
