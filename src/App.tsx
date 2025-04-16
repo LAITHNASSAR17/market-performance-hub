@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -10,6 +10,7 @@ import { TooltipProvider } from './components/ui/tooltip';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
+import Index from './pages/Index';
 
 function App() {
   return (
@@ -21,10 +22,21 @@ function App() {
               <TooltipProvider>
                 <Toaster />
                 <Routes>
+                  <Route path="/" element={<Index />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<Login />} />
+                  <Route path="/add-trade" element={<Navigate to="/dashboard" />} />
+                  <Route path="/trades" element={<Navigate to="/dashboard" />} />
+                  <Route path="/journal" element={<Navigate to="/dashboard" />} />
+                  <Route path="/notebook" element={<Navigate to="/dashboard" />} />
+                  <Route path="/reports" element={<Navigate to="/dashboard" />} />
+                  <Route path="/insights" element={<Navigate to="/dashboard" />} />
+                  <Route path="/analytics" element={<Navigate to="/dashboard" />} />
+                  <Route path="/chart" element={<Navigate to="/dashboard" />} />
+                  <Route path="/admin" element={<Navigate to="/dashboard" />} />
+                  <Route path="/profile" element={<Navigate to="/settings" />} />
+                  <Route path="*" element={<Navigate to="/dashboard" />} />
                 </Routes>
               </TooltipProvider>
             </TradeProvider>

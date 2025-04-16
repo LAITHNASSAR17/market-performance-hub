@@ -371,6 +371,17 @@ const Dashboard: React.FC = () => {
                     strokeDashoffset="0"
                     transform="rotate(-90, 50, 50)"
                   />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    fill="none"
+                    stroke="#FF5630"
+                    strokeWidth="15"
+                    strokeDasharray={`${(100 - winRate) * 2.512} ${winRate * 2.512}`}
+                    strokeDashoffset={`-${winRate * 2.512}`}
+                    transform="rotate(-90, 50, 50)"
+                  />
                 </svg>
               </div>
               <div className="ml-0 mt-4 sm:mt-0 sm:ml-4">
