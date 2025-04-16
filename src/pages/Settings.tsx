@@ -50,9 +50,7 @@ const Settings: React.FC = () => {
                       Display Mode
                     </h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {theme === 'dark' 
-                        ? 'Dark mode is currently active'
-                        : 'Light mode is currently active'}
+                      Light mode is currently active
                     </p>
                   </div>
                   <ThemeToggle />
