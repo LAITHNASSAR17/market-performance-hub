@@ -169,7 +169,6 @@ export type Database = {
         Row: {
           created_at: string
           direction: string
-          duration_minutes: number | null
           entry_date: string
           entry_price: number
           exit_date: string | null
@@ -180,17 +179,14 @@ export type Database = {
           profit_loss: number | null
           quantity: number
           rating: number | null
-          stop_loss: number | null
           symbol: string
           tags: string[]
-          take_profit: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
           direction: string
-          duration_minutes?: number | null
           entry_date: string
           entry_price: number
           exit_date?: string | null
@@ -201,17 +197,14 @@ export type Database = {
           profit_loss?: number | null
           quantity: number
           rating?: number | null
-          stop_loss?: number | null
           symbol: string
           tags?: string[]
-          take_profit?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
           direction?: string
-          duration_minutes?: number | null
           entry_date?: string
           entry_price?: number
           exit_date?: string | null
@@ -222,10 +215,8 @@ export type Database = {
           profit_loss?: number | null
           quantity?: number
           rating?: number | null
-          stop_loss?: number | null
           symbol?: string
           tags?: string[]
-          take_profit?: number | null
           updated_at?: string
           user_id?: string
         }
