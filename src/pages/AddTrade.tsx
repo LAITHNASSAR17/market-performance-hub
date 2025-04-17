@@ -11,25 +11,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Plus, X, Wallet } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
-import AddAccountDialog from '@/components/AddAccountDialog';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag, tradingAccounts, fetchTradingAccounts } = useTrade();
+  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag } = useTrade();
   const { toast } = useToast();
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddPairDialog, setShowAddPairDialog] = useState(false);
-  const [showAddAccountDialog, setShowAddAccountDialog] = useState(false);
   
   const [pair, setPair] = useState('');
   const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
@@ -42,7 +40,6 @@ const AddTrade: React.FC = () => {
   const [durationMinutes, setDurationMinutes] = useState('');
   const [notes, setNotes] = useState('');
   const [account, setAccount] = useState('');
-  const [accountId, setAccountId] = useState<string | null>(null);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [newHashtag, setNewHashtag] = useState('');
   const [profitLoss, setProfitLoss] = useState<string>('0');
@@ -52,16 +49,12 @@ const AddTrade: React.FC = () => {
   const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
   const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
   
-  useEffect(() => {
-    fetchTradingAccounts();
-  }, [fetchTradingAccounts]);
-  
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('trades')
-        .select('*, trading_accounts(id, name)')
+        .select('*')
         .eq('id', tradeId)
         .single();
       
@@ -90,19 +83,7 @@ const AddTrade: React.FC = () => {
         setBeforeImageUrl(data.before_image_url || null);
         setAfterImageUrl(data.after_image_url || null);
         
-        if (data.trading_accounts) {
-          setAccount(data.trading_accounts.name);
-          setAccountId(data.trading_accounts.id);
-        } else {
-          if (tradingAccounts.length > 0) {
-            setAccount(tradingAccounts[0].name);
-            setAccountId(tradingAccounts[0].id);
-          } else {
-            setAccount('Main Trading');
-            setAccountId(null);
-          }
-        }
-        
+        setAccount(accounts[0] || '');
         setIsEditing(true);
         console.log("Trade data loaded:", data);
       }
@@ -123,15 +104,9 @@ const AddTrade: React.FC = () => {
     if (id) {
       fetchTradeFromDb(id);
     } else {
-      if (tradingAccounts.length > 0) {
-        setAccount(tradingAccounts[0].name);
-        setAccountId(tradingAccounts[0].id);
-      } else {
-        setAccount('Main Trading');
-        setAccountId(null);
-      }
+      setAccount(accounts[0] || '');
     }
-  }, [id, tradingAccounts]);
+  }, [id, accounts]);
 
   const handleAddHashtag = () => {
     if (newHashtag && !hashtags.includes(newHashtag)) {
@@ -189,7 +164,6 @@ const AddTrade: React.FC = () => {
         durationMinutes: durationMinutes ? parseInt(durationMinutes) : 0,
         notes,
         account,
-        accountId,
         hashtags,
         profitLoss: parseFloat(profitLoss),
         riskPercentage: 0,
@@ -300,56 +274,16 @@ const AddTrade: React.FC = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="account">حساب التداول</Label>
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <Select 
-                          value={accountId || 'default'} 
-                          onValueChange={(value) => {
-                            if (value === 'add-new') {
-                              setShowAddAccountDialog(true);
-                              return;
-                            }
-                            
-                            if (value === 'default') {
-                              setAccountId(null);
-                              setAccount('Main Trading');
-                            } else {
-                              setAccountId(value);
-                              const selectedAccount = tradingAccounts.find(a => a.id === value);
-                              if (selectedAccount) {
-                                setAccount(selectedAccount.name);
-                              }
-                            }
-                          }}
-                        >
-                          <SelectTrigger id="account" className="w-full">
-                            <div className="flex items-center">
-                              <Wallet className="h-4 w-4 mr-2" />
-                              <SelectValue placeholder="اختر الحساب" />
-                            </div>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="default">Main Trading</SelectItem>
-                            {tradingAccounts.map(account => (
-                              <SelectItem key={account.id} value={account.id}>
-                                {account.name} (${account.balance.toLocaleString()})
-                              </SelectItem>
-                            ))}
-                            <SelectItem value="add-new" className="text-primary font-semibold">
-                              + إضافة حساب جديد
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        className="px-3" 
-                        onClick={() => setShowAddAccountDialog(true)}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Select value={account} onValueChange={setAccount} required>
+                      <SelectTrigger id="account">
+                        <SelectValue placeholder="اختر الحساب" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map(a => (
+                          <SelectItem key={a} value={a}>{a}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   
                   <div className="space-y-2">
@@ -644,11 +578,6 @@ const AddTrade: React.FC = () => {
           setPair(newSymbol);
           setShowAddPairDialog(false);
         }}
-      />
-      
-      <AddAccountDialog
-        isOpen={showAddAccountDialog}
-        onClose={() => setShowAddAccountDialog(false)}
       />
     </Layout>
   );

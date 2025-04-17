@@ -29,33 +29,15 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import AverageTradeCards from '@/components/AverageTradeCards';
 import TradingTips from '@/components/TradingTips';
-import AccountSelector from '@/components/AccountSelector';
-import AddAccountDialog from '@/components/AddAccountDialog';
 
 const Dashboard: React.FC = () => {
-  const { 
-    trades, 
-    deleteTrade, 
-    selectedAccountId, 
-    setSelectedAccountId, 
-    tradingAccounts,
-    initializeMainAccount
-  } = useTrade();
+  const { trades, deleteTrade } = useTrade();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [timeframeFilter, setTimeframeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTradeDetails, setShowTradeDetails] = useState(false);
-  const [showAddAccountDialog, setShowAddAccountDialog] = useState(false);
-  
-  useEffect(() => {
-    if (user) {
-      initializeMainAccount().catch(err => {
-        console.error("Error initializing main account:", err);
-      });
-    }
-  }, [user, initializeMainAccount]);
   
   const exportReport = () => {
     toast({
@@ -247,46 +229,12 @@ const Dashboard: React.FC = () => {
               <SelectItem value="year">Last Year</SelectItem>
             </SelectContent>
           </Select>
-          
-          <AccountSelector 
-            selectedAccount={selectedAccountId}
-            onSelectAccount={(value) => {
-              if (value === "all") {
-                setSelectedAccountId(null);
-              } else {
-                setSelectedAccountId(value);
-              }
-            }}
-            onAddAccount={() => setShowAddAccountDialog(true)}
-            className="w-full sm:w-auto"
-          />
-          
           <Button variant="outline" onClick={exportReport} className="w-full sm:w-auto">
             <Calendar className="h-4 w-4 mr-2" />
             Export Report
           </Button>
         </div>
       </div>
-
-      {selectedAccountId && (
-        <div className="mb-4">
-          <Card className="bg-primary/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {tradingAccounts.find(a => a.id === selectedAccountId)?.name}
-                  </h3>
-                  <p className="text-gray-500">Current Account</p>
-                </div>
-                <div className="text-xl font-bold">
-                  ${tradingAccounts.find(a => a.id === selectedAccountId)?.balance.toLocaleString() || 0}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <StatCard
@@ -392,6 +340,7 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center">
                 Winning % By Trades
+                <CircleIcon className="h-4 w-4 ml-2 text-gray-400" />
               </CardTitle>
             </div>
           </CardHeader>
@@ -478,11 +427,6 @@ const Dashboard: React.FC = () => {
         onClose={handleCloseTradeDetails}
         selectedDate={selectedDate}
         trades={trades.filter(t => t.date === selectedDate && t.userId === user?.id)}
-      />
-
-      <AddAccountDialog
-        isOpen={showAddAccountDialog}
-        onClose={() => setShowAddAccountDialog(false)}
       />
     </Layout>
   );

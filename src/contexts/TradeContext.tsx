@@ -34,10 +34,6 @@ type TradeContextType = {
   tradingAccounts: TradingAccount[];
   createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
   fetchTradingAccounts: () => Promise<void>;
-  selectedAccountId: string | null;
-  setSelectedAccountId: (accountId: string | null) => void;
-  initializeMainAccount: () => Promise<TradingAccount | null>;
-  migrateOldTradesToMainAccount: (accountId: string) => Promise<void>;
 };
 
 export type Symbol = {
@@ -93,7 +89,6 @@ const sampleTrades: Trade[] = [
     id: '1',
     userId: '1',
     account: 'Main Trading',
-    accountId: null,
     date: '2025-04-10',
     pair: 'EUR/USD',
     type: 'Buy',
@@ -119,7 +114,6 @@ const sampleTrades: Trade[] = [
     id: '2',
     userId: '1',
     account: 'Main Trading',
-    accountId: null,
     date: '2025-04-09',
     pair: 'GBP/USD',
     type: 'Sell',
@@ -145,7 +139,6 @@ const sampleTrades: Trade[] = [
     id: '3',
     userId: '1',
     account: 'Demo Account',
-    accountId: null,
     date: '2025-04-08',
     pair: 'USD/JPY',
     type: 'Buy',
@@ -171,7 +164,6 @@ const sampleTrades: Trade[] = [
     id: '4',
     userId: '1',
     account: 'Main Trading',
-    accountId: null,
     date: '2025-04-07',
     pair: 'EUR/USD',
     type: 'Sell',
@@ -197,7 +189,6 @@ const sampleTrades: Trade[] = [
     id: '5',
     userId: '1',
     account: 'Main Trading',
-    accountId: null,
     date: '2025-04-06',
     pair: 'AUD/USD',
     type: 'Buy',
@@ -234,8 +225,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { toast } = useToast();
   const { user } = useAuth();
   const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-  const [mainAccountInitialized, setMainAccountInitialized] = useState(false);
 
   const calculateProfitLoss = (
     entry: number, 
@@ -255,7 +244,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         detectedType = 'forex';
       } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
         detectedType = 'crypto';
-      } else if (/^(sr|sa)$/i.test(instrumentType)) {
+      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
         detectedType = 'stock';
       } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
         detectedType = 'index';
@@ -324,112 +313,24 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return Math.round(profitLoss * 100) / 100;
   };
 
-  const initializeMainAccount = async (): Promise<TradingAccount | null> => {
-    if (!user) return null;
-    
-    try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      
-      if (!authUser) {
-        console.error("Authentication required to initialize accounts");
-        toast({
-          title: "خطأ في المصادقة",
-          description: "الرجاء تسجيل الدخول مرة أخرى",
-          variant: "destructive"
-        });
-        return null;
-      }
-      
-      await fetchTradingAccounts();
-      
-      const accounts = await userService.getTradingAccounts(user.id);
-      
-      if (accounts.length > 0) {
-        const firstAccount = accounts[0];
-        setSelectedAccountId(firstAccount.id);
-        return firstAccount;
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error initializing accounts:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تهيئة الحسابات",
-        variant: "destructive"
-      });
-      return null;
-    }
-  };
-
-  const migrateOldTradesToMainAccount = async (accountId: string): Promise<void> => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('trades')
-        .select('id')
-        .eq('user_id', user.id)
-        .is('account_id', null);
-        
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        const tradeIds = data.map(t => t.id);
-        
-        const { error: updateError } = await supabase
-          .from('trades')
-          .update({ account_id: accountId })
-          .in('id', tradeIds);
-          
-        if (updateError) throw updateError;
-        
-        setTrades(prev => 
-          prev.map(trade => 
-            trade.accountId === null
-              ? { ...trade, accountId, account: 'Main Trading' }
-              : trade
-          )
-        );
-        
-        toast({
-          title: "تم تحديث الصفقات",
-          description: `تم ربط ${tradeIds.length} صفقة بالحساب الرئيسي`,
-        });
-      }
-    } catch (error) {
-      console.error('Error migrating trades:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تحديث الصفقات",
-        variant: "destructive"
-      });
-    }
-  };
-
   useEffect(() => {
     const fetchTrades = async () => {
       if (user) {
         setLoading(true);
         try {
-          let query = supabase
+          const { data, error } = await supabase
             .from('trades')
-            .select('*, trading_accounts(name)')
-            .eq('user_id', user.id);
-          
-          if (selectedAccountId) {
-            query = query.eq('account_id', selectedAccountId);
-          }
-          
-          query = query.order('created_at', { ascending: false });
-          
-          const { data, error } = await query;
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
 
           if (error) throw error;
 
           const formattedTrades: Trade[] = data.map(trade => ({
             id: trade.id,
             userId: trade.user_id,
+            account: 'Main Trading',
+            date: trade.entry_date.split('T')[0],
             pair: trade.symbol,
             type: trade.direction === 'long' ? 'Buy' : 'Sell',
             entry: trade.entry_price,
@@ -442,9 +343,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             profitLoss: trade.profit_loss || 0,
             durationMinutes: trade.duration_minutes || 0,
             notes: trade.notes || '',
-            date: trade.entry_date.split('T')[0],
-            account: trade.trading_accounts?.name || 'Main Trading',
-            accountId: trade.account_id,
             imageUrl: null,
             beforeImageUrl: null,
             afterImageUrl: null,
@@ -480,22 +378,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     fetchTrades();
-  }, [user, toast, selectedAccountId]);
-
-  useEffect(() => {
-    const setupAccounts = async () => {
-      if (user && !mainAccountInitialized) {
-        try {
-          await fetchTradingAccounts();
-          setMainAccountInitialized(true);
-        } catch (error) {
-          console.error('Error setting up accounts:', error);
-        }
-      }
-    };
-    
-    setupAccounts();
-  }, [user, mainAccountInitialized]);
+  }, [user, toast]);
 
   const addTrade = async (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) return;
@@ -524,7 +407,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           stop_loss: newTradeData.stopLoss || null,
           take_profit: newTradeData.takeProfit || null,
           duration_minutes: newTradeData.durationMinutes || null,
-          account_id: newTradeData.accountId
+          rating: newTradeData.rating || 0
         })
         .select()
         .single();
@@ -575,7 +458,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (tradeUpdate.stopLoss !== undefined) updateData.stop_loss = tradeUpdate.stopLoss;
       if (tradeUpdate.takeProfit !== undefined) updateData.take_profit = tradeUpdate.takeProfit;
       if (tradeUpdate.durationMinutes !== undefined) updateData.duration_minutes = tradeUpdate.durationMinutes;
-      if (tradeUpdate.accountId !== undefined) updateData.account_id = tradeUpdate.accountId;
       
       if (tradeUpdate.exit !== undefined && tradeUpdate.date) {
         updateData.exit_date = tradeUpdate.exit ? new Date(tradeUpdate.date).toISOString() : null;
@@ -667,16 +549,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const fetchTradingAccounts = async (): Promise<void> => {
+  const fetchTradingAccounts = async () => {
     if (!user) return;
 
     try {
       const accounts = await userService.getTradingAccounts(user.id);
       setTradingAccounts(accounts);
-      
-      if (accounts.length > 0 && !selectedAccountId) {
-        setSelectedAccountId(accounts[0].id);
-      }
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
       toast({
@@ -700,17 +578,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      
-      if (!authUser) {
-        toast({
-          title: "خطأ في المصادقة",
-          description: "الرجاء تسجيل الدخول مرة أخرى",
-          variant: "destructive"
-        });
-        throw new Error('Authentication required');
-      }
-      
       const newAccount = await userService.createTradingAccount(user.id, name, balance);
       
       setTradingAccounts(prev => [...prev, newAccount]);
@@ -757,10 +624,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tradingAccounts,
       createTradingAccount,
       fetchTradingAccounts,
-      selectedAccountId,
-      setSelectedAccountId,
-      initializeMainAccount,
-      migrateOldTradesToMainAccount
     }}>
       {children}
     </TradeContext.Provider>

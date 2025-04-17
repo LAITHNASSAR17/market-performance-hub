@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -21,42 +20,27 @@ export interface ITrade {
   stopLoss: number | null;
   takeProfit: number | null;
   durationMinutes: number | null;
-  accountId: string | null;
-  accountName: string | null;
 }
 
 export const tradeService = {
   async getTradeById(id: string): Promise<ITrade | null> {
     const { data, error } = await supabase
       .from('trades')
-      .select('*, trading_accounts(name)')
+      .select('*')
       .eq('id', id)
       .single();
     
     if (error || !data) return null;
-    
-    const formattedTrade = formatTrade(data);
-    if (data.trading_accounts) {
-      formattedTrade.accountName = data.trading_accounts.name;
-    }
-    
-    return formattedTrade;
+    return formatTrade(data);
   },
 
   async getAllTrades(): Promise<ITrade[]> {
     const { data, error } = await supabase
       .from('trades')
-      .select('*, trading_accounts(name)');
+      .select('*');
     
     if (error || !data) return [];
-    
-    return data.map(tradeData => {
-      const formattedTrade = formatTrade(tradeData);
-      if (tradeData.trading_accounts) {
-        formattedTrade.accountName = tradeData.trading_accounts.name;
-      }
-      return formattedTrade;
-    });
+    return data.map(formatTrade);
   },
 
   async createTrade(tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>): Promise<ITrade> {
@@ -85,8 +69,7 @@ export const tradeService = {
         rating: tradeData.rating || 0,
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
-        duration_minutes: tradeData.durationMinutes,
-        account_id: tradeData.accountId
+        duration_minutes: tradeData.durationMinutes
       })
       .select()
       .single();
@@ -132,7 +115,6 @@ export const tradeService = {
     if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
-    if (tradeData.accountId !== undefined) updateObject.account_id = tradeData.accountId;
     
     const { data, error } = await supabase
       .from('trades')
@@ -191,8 +173,6 @@ function formatTrade(data: any): ITrade {
     rating: data.rating || 0,
     stopLoss: data.stop_loss,
     takeProfit: data.take_profit,
-    durationMinutes: data.duration_minutes,
-    accountId: data.account_id,
-    accountName: data.trading_accounts?.name || null
+    durationMinutes: data.duration_minutes
   };
 }
