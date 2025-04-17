@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -18,6 +19,7 @@ import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
+import { Checkbox } from "@/components/ui/checkbox";
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +50,8 @@ const AddTrade: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
   const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
+  const [isMultipleTrades, setIsMultipleTrades] = useState(false);
+  const [tradesCount, setTradesCount] = useState('1');
   
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
@@ -82,6 +86,8 @@ const AddTrade: React.FC = () => {
         setImageUrl(data.image_url || null);
         setBeforeImageUrl(data.before_image_url || null);
         setAfterImageUrl(data.after_image_url || null);
+        setIsMultipleTrades(data.is_multiple_trades || false);
+        setTradesCount(data.trades_count?.toString() || '1');
         
         setAccount(accounts[0] || '');
         setIsEditing(true);
@@ -153,7 +159,9 @@ const AddTrade: React.FC = () => {
         beforeImageUrl,
         afterImageUrl,
         commission: parseFloat(commission) || 0,
-        rating
+        rating,
+        isMultipleTrades,
+        tradesCount: isMultipleTrades ? parseInt(tradesCount) : 1
       };
 
       if (isEditing && id) {
@@ -401,6 +409,34 @@ const AddTrade: React.FC = () => {
                       onChange={(e) => setCommission(e.target.value)} 
                       className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
+                  </div>
+                  
+                  <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox 
+                        id="isMultipleTrades" 
+                        checked={isMultipleTrades}
+                        onCheckedChange={(checked) => {
+                          setIsMultipleTrades(checked === true);
+                          if (checked !== true) {
+                            setTradesCount('1');
+                          }
+                        }}
+                      />
+                      <Label htmlFor="isMultipleTrades" className="mr-2">صفقات متعددة</Label>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="tradesCount" className={isMultipleTrades ? "" : "text-gray-400"}>عدد الصفقات</Label>
+                      <Input 
+                        id="tradesCount" 
+                        type="number" 
+                        value={tradesCount} 
+                        onChange={(e) => setTradesCount(e.target.value)}
+                        disabled={!isMultipleTrades}
+                        className={`[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!isMultipleTrades ? 'bg-gray-100' : ''}`}
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>

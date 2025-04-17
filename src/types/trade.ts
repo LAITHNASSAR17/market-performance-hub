@@ -25,6 +25,8 @@ export interface Trade {
   createdAt: string;
   commission: number;
   rating: number;
+  isMultipleTrades?: boolean;
+  tradesCount?: number;
 }
 
 // Update mapDBTradeToTrade to include all fields
@@ -51,7 +53,9 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   hashtags: dbTrade.tags || [],
   createdAt: dbTrade.createdAt.toISOString(),
   commission: dbTrade.fees || 0,
-  rating: dbTrade.rating || 0
+  rating: dbTrade.rating || 0,
+  isMultipleTrades: dbTrade.isMultipleTrades || false,
+  tradesCount: dbTrade.tradesCount || 1
 });
 
 // Update mapTradeToDBTrade to include all fields
@@ -71,5 +75,7 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   rating: trade.rating || 0,
   stopLoss: trade.stopLoss || null,
   takeProfit: trade.takeProfit || null,
-  durationMinutes: trade.durationMinutes || null
+  durationMinutes: trade.durationMinutes || null,
+  isMultipleTrades: trade.isMultipleTrades || false,
+  tradesCount: trade.tradesCount || 1
 });
