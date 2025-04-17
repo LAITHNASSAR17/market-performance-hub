@@ -1,15 +1,16 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
 import { format } from 'date-fns';
@@ -18,6 +19,7 @@ import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
+import { Checkbox } from "@/components/ui/checkbox";
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -398,49 +400,42 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <Label htmlFor="commission">العمولة/الرسوم</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        id="commission" 
-                        type="number" 
-                        step="any" 
-                        value={commission} 
-                        onChange={(e) => setCommission(e.target.value)}
-                        className="flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    <Label htmlFor="commission">العمولة/الرسوم</Label>
+                    <Input 
+                      id="commission" 
+                      type="number" 
+                      step="any" 
+                      value={commission} 
+                      onChange={(e) => setCommission(e.target.value)} 
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  
+                  <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox 
+                        id="isMultipleTrades" 
+                        checked={isMultipleTrades}
+                        onCheckedChange={(checked) => {
+                          setIsMultipleTrades(checked === true);
+                          if (checked !== true) {
+                            setTradesCount('1');
+                          }
+                        }}
                       />
-                      <div className="flex items-center space-x-1 space-x-reverse">
-                        <Checkbox 
-                          id="isMultipleTrades" 
-                          checked={isMultipleTrades}
-                          onCheckedChange={(checked) => {
-                            setIsMultipleTrades(checked === true);
-                            if (checked !== true) {
-                              setTradesCount('1');
-                            }
-                          }}
-                          className="ml-1"
-                        />
-                        <Label htmlFor="isMultipleTrades" className="mr-1 whitespace-nowrap text-xs">صفقات متعددة</Label>
-                      </div>
-                      
-                      <Select 
+                      <Label htmlFor="isMultipleTrades" className="mr-2">صفقات متعددة</Label>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="tradesCount" className={isMultipleTrades ? "" : "text-gray-400"}>عدد الصفقات</Label>
+                      <Input 
+                        id="tradesCount" 
+                        type="number" 
                         value={tradesCount} 
-                        onValueChange={setTradesCount}
+                        onChange={(e) => setTradesCount(e.target.value)}
                         disabled={!isMultipleTrades}
-                      >
-                        <SelectTrigger className={`w-16 h-8 py-0 px-2 text-xs ${!isMultipleTrades ? 'opacity-50' : ''}`}>
-                          <SelectValue placeholder={tradesCount} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[200px]">
-                          {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
-                            <SelectItem key={num} value={num.toString()} className="text-xs">
-                              {num}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        className={`[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!isMultipleTrades ? 'bg-gray-100' : ''}`}
+                      />
                     </div>
                   </div>
                 </div>

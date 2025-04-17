@@ -15,11 +15,7 @@ const tradeSchema = new mongoose.Schema({
   notes: { type: String },
   tags: [{ type: String }],
   isMultipleTrades: { type: Boolean, default: false },
-  tradesCount: { type: Number, default: 1, min: 1, max: 30 },
-  stopLoss: { type: Number },
-  takeProfit: { type: Number },
-  rating: { type: Number, min: 0, max: 5 },
-  durationMinutes: { type: Number },
+  tradesCount: { type: Number, default: 1 },
 }, { timestamps: true });
 
 export const Trade = mongoose.model('Trade', tradeSchema);
