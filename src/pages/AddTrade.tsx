@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -19,6 +18,7 @@ import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +29,7 @@ const AddTrade: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddPairDialog, setShowAddPairDialog] = useState(false);
+  const isMobile = useIsMobile();
   
   const [pair, setPair] = useState('');
   const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
@@ -311,7 +312,7 @@ const AddTrade: React.FC = () => {
                 <CardDescription>أدخل سعر الدخول والخروج وتفاصيل إدارة المخاطر</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="entry">سعر الدخول</Label>
                     <Input 
@@ -321,7 +322,7 @@ const AddTrade: React.FC = () => {
                       value={entry} 
                       onChange={(e) => setEntry(e.target.value)} 
                       required
-                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full sm:w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -333,7 +334,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={exit} 
                       onChange={(e) => setExit(e.target.value)} 
-                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full sm:w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -346,7 +347,7 @@ const AddTrade: React.FC = () => {
                       value={lotSize} 
                       onChange={(e) => setLotSize(e.target.value)} 
                       required
-                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full sm:w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -358,7 +359,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={stopLoss} 
                       onChange={(e) => setStopLoss(e.target.value)} 
-                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full sm:w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -370,7 +371,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={takeProfit} 
                       onChange={(e) => setTakeProfit(e.target.value)} 
-                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full sm:w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -383,7 +384,7 @@ const AddTrade: React.FC = () => {
                       value={profitLoss} 
                       onChange={(e) => setProfitLoss(e.target.value)}
                       required
-                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full sm:w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -394,7 +395,7 @@ const AddTrade: React.FC = () => {
                       type="number" 
                       value={durationMinutes} 
                       onChange={(e) => setDurationMinutes(e.target.value)}
-                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      className="w-full sm:w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                     />
                   </div>
                   
@@ -402,16 +403,16 @@ const AddTrade: React.FC = () => {
                     <div className="flex justify-between">
                       <Label htmlFor="commission">العمولة/الرسوم</Label>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className={`flex ${isMobile ? 'flex-col' : 'items-center'} gap-2`}>
                       <Input 
                         id="commission" 
                         type="number" 
                         step="any" 
                         value={commission} 
                         onChange={(e) => setCommission(e.target.value)}
-                        className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full sm:w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
-                      <div className="flex items-center space-x-1 space-x-reverse">
+                      <div className={`flex items-center space-x-1 space-x-reverse ${isMobile ? 'mt-2' : ''}`}>
                         <Checkbox 
                           id="isMultipleTrades" 
                           checked={isMultipleTrades}
