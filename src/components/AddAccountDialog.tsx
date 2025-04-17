@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTrade } from '@/contexts/TradeContext';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AddAccountDialogProps {
   isOpen: boolean;
@@ -23,11 +24,17 @@ const AddAccountDialog: React.FC<AddAccountDialogProps> = ({ isOpen, onClose }) 
   const [balance, setBalance] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { createTradingAccount } = useTrade();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) {
+      toast({
+        title: "خطأ",
+        description: "يرجى إدخال اسم الحساب",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -37,8 +44,17 @@ const AddAccountDialog: React.FC<AddAccountDialogProps> = ({ isOpen, onClose }) 
       setName('');
       setBalance('');
       onClose();
+      toast({
+        title: "تم بنجاح",
+        description: "تم إنشاء حساب التداول الجديد",
+      });
     } catch (error) {
       console.error('Error creating account:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء إنشاء الحساب",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }

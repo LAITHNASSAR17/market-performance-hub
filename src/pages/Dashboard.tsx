@@ -33,7 +33,14 @@ import AccountSelector from '@/components/AccountSelector';
 import AddAccountDialog from '@/components/AddAccountDialog';
 
 const Dashboard: React.FC = () => {
-  const { trades, deleteTrade, selectedAccountId, setSelectedAccountId, tradingAccounts } = useTrade();
+  const { 
+    trades, 
+    deleteTrade, 
+    selectedAccountId, 
+    setSelectedAccountId, 
+    tradingAccounts,
+    initializeMainAccount
+  } = useTrade();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -41,6 +48,14 @@ const Dashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTradeDetails, setShowTradeDetails] = useState(false);
   const [showAddAccountDialog, setShowAddAccountDialog] = useState(false);
+  
+  useEffect(() => {
+    if (user) {
+      initializeMainAccount().catch(err => {
+        console.error("Error initializing main account:", err);
+      });
+    }
+  }, [user, initializeMainAccount]);
   
   const exportReport = () => {
     toast({
@@ -377,7 +392,6 @@ const Dashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center">
                 Winning % By Trades
-                <CircleIcon className="h-4 w-4 ml-2 text-gray-400" />
               </CardTitle>
             </div>
           </CardHeader>

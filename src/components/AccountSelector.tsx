@@ -29,7 +29,7 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <Select 
-        value={selectedAccount || ''} 
+        value={selectedAccount || 'default'} 
         onValueChange={onSelectAccount}
       >
         <SelectTrigger className="w-[200px]">
