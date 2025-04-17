@@ -21,8 +21,6 @@ export interface ITrade {
   stopLoss: number | null;
   takeProfit: number | null;
   durationMinutes: number | null;
-  isMultipleTrades?: boolean;
-  tradesCount?: number;
 }
 
 export const tradeService = {
@@ -68,9 +66,7 @@ export const tradeService = {
         rating: tradeData.rating || 0,
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
-        duration_minutes: tradeData.durationMinutes,
-        is_multiple_trades: tradeData.isMultipleTrades || false,
-        trades_count: tradeData.tradesCount || 1
+        duration_minutes: tradeData.durationMinutes
       })
       .select()
       .single();
@@ -101,8 +97,6 @@ export const tradeService = {
     if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
-    if (tradeData.isMultipleTrades !== undefined) updateObject.is_multiple_trades = tradeData.isMultipleTrades;
-    if (tradeData.tradesCount !== undefined) updateObject.trades_count = tradeData.tradesCount;
     
     const { data, error } = await supabase
       .from('trades')
@@ -164,8 +158,6 @@ function formatTrade(data: any): ITrade {
     rating: data.rating || 0,
     stopLoss: data.stop_loss,
     takeProfit: data.take_profit,
-    durationMinutes: data.duration_minutes,
-    isMultipleTrades: data.is_multiple_trades || false,
-    tradesCount: data.trades_count || 1
+    durationMinutes: data.duration_minutes
   };
 }

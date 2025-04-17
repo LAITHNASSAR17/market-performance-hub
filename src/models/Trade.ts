@@ -14,8 +14,6 @@ const tradeSchema = new mongoose.Schema({
   fees: { type: Number, default: 0 },
   notes: { type: String },
   tags: [{ type: String }],
-  isMultipleTrades: { type: Boolean, default: false },
-  tradesCount: { type: Number, default: 1 },
 }, { timestamps: true });
 
 export const Trade = mongoose.model('Trade', tradeSchema);

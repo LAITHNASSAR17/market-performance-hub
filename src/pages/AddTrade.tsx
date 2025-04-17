@@ -1,15 +1,15 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
@@ -18,13 +18,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
-import ImageUpload from '@/components/ImageUpload';
-import { Checkbox } from "@/components/ui/checkbox";
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag } = useTrade();
+  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag, calculateProfitLoss } = useTrade();
   const { toast } = useToast();
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
@@ -47,11 +45,6 @@ const AddTrade: React.FC = () => {
   const [profitLoss, setProfitLoss] = useState<string>('0');
   const [commission, setCommission] = useState('0');
   const [rating, setRating] = useState(0);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
-  const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
-  const [isMultipleTrades, setIsMultipleTrades] = useState(false);
-  const [tradesCount, setTradesCount] = useState('1');
   
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
@@ -83,11 +76,6 @@ const AddTrade: React.FC = () => {
         setProfitLoss(data.profit_loss?.toString() || '0');
         setCommission(data.fees?.toString() || '0');
         setRating(data.rating || 0);
-        setImageUrl(data.image_url || null);
-        setBeforeImageUrl(data.before_image_url || null);
-        setAfterImageUrl(data.after_image_url || null);
-        setIsMultipleTrades(data.is_multiple_trades || false);
-        setTradesCount(data.trades_count?.toString() || '1');
         
         setAccount(accounts[0] || '');
         setIsEditing(true);
@@ -114,6 +102,20 @@ const AddTrade: React.FC = () => {
     }
   }, [id, accounts]);
 
+  useEffect(() => {
+    if (entry && exit && lotSize && type && pair && !isEditing) {
+      const calculatedPL = calculateProfitLoss(
+        parseFloat(entry),
+        parseFloat(exit),
+        parseFloat(lotSize),
+        type,
+        pair
+      );
+      
+      setProfitLoss(calculatedPL.toString());
+    }
+  }, [entry, exit, lotSize, type, pair, calculateProfitLoss, isEditing]);
+
   const handleAddHashtag = () => {
     if (newHashtag && !hashtags.includes(newHashtag)) {
       setHashtags([...hashtags, newHashtag]);
@@ -129,10 +131,10 @@ const AddTrade: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!pair || !type || !entry || !date || !account || !profitLoss) {
+    if (!pair || !type || !entry || !date || !account) {
       toast({
         title: "بيانات ناقصة",
-        description: "يرجى ملء جميع الحقول المطلوبة، خاصة الربح/الخسارة",
+        description: "يرجى ملء جميع الحقول المطلوبة",
         variant: "destructive"
       });
       return;
@@ -155,13 +157,11 @@ const AddTrade: React.FC = () => {
         profitLoss: parseFloat(profitLoss),
         riskPercentage: 0,
         returnPercentage: 0,
-        imageUrl,
-        beforeImageUrl,
-        afterImageUrl,
+        imageUrl: null,
+        beforeImageUrl: null,
+        afterImageUrl: null,
         commission: parseFloat(commission) || 0,
-        rating,
-        isMultipleTrades,
-        tradesCount: isMultipleTrades ? parseInt(tradesCount) : 1
+        rating
       };
 
       if (isEditing && id) {
@@ -322,7 +322,6 @@ const AddTrade: React.FC = () => {
                       value={entry} 
                       onChange={(e) => setEntry(e.target.value)} 
                       required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -334,7 +333,6 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={exit} 
                       onChange={(e) => setExit(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -347,7 +345,6 @@ const AddTrade: React.FC = () => {
                       value={lotSize} 
                       onChange={(e) => setLotSize(e.target.value)} 
                       required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -359,7 +356,6 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={stopLoss} 
                       onChange={(e) => setStopLoss(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -371,20 +367,6 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={takeProfit} 
                       onChange={(e) => setTakeProfit(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="profitLoss">الربح/الخسارة</Label>
-                    <Input 
-                      id="profitLoss" 
-                      type="number" 
-                      step="any" 
-                      value={profitLoss} 
-                      onChange={(e) => setProfitLoss(e.target.value)}
-                      required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -394,8 +376,7 @@ const AddTrade: React.FC = () => {
                       id="durationMinutes" 
                       type="number" 
                       value={durationMinutes} 
-                      onChange={(e) => setDurationMinutes(e.target.value)}
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      onChange={(e) => setDurationMinutes(e.target.value)} 
                     />
                   </div>
                   
@@ -407,72 +388,17 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={commission} 
                       onChange={(e) => setCommission(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Checkbox 
-                        id="isMultipleTrades" 
-                        checked={isMultipleTrades}
-                        onCheckedChange={(checked) => {
-                          setIsMultipleTrades(checked === true);
-                          if (checked !== true) {
-                            setTradesCount('1');
-                          }
-                        }}
-                      />
-                      <Label htmlFor="isMultipleTrades" className="mr-2">صفقات متعددة</Label>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="tradesCount" className={isMultipleTrades ? "" : "text-gray-400"}>عدد الصفقات</Label>
-                      <Input 
-                        id="tradesCount" 
-                        type="number" 
-                        value={tradesCount} 
-                        onChange={(e) => setTradesCount(e.target.value)}
-                        disabled={!isMultipleTrades}
-                        className={`[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!isMultipleTrades ? 'bg-gray-100' : ''}`}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">صور التداول</CardTitle>
-                <CardDescription>أضف صورًا للإعداد والدخول والخروج من التداول</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label>صورة قبل الدخول</Label>
-                    <ImageUpload 
-                      value={beforeImageUrl} 
-                      onChange={setBeforeImageUrl}
-                      className="min-h-[200px]"
                     />
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>صورة بعد الخروج</Label>
-                    <ImageUpload 
-                      value={afterImageUrl} 
-                      onChange={setAfterImageUrl}
-                      className="min-h-[200px]"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>صورة أخرى</Label>
-                    <ImageUpload 
-                      value={imageUrl} 
-                      onChange={setImageUrl}
-                      className="min-h-[200px]"
+                    <Label htmlFor="profitLoss">الربح/الخسارة</Label>
+                    <Input 
+                      id="profitLoss" 
+                      type="number" 
+                      step="any" 
+                      value={profitLoss} 
+                      onChange={(e) => setProfitLoss(e.target.value)}
                     />
                   </div>
                 </div>
