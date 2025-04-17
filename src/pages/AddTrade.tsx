@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,10 +123,10 @@ const AddTrade: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!pair || !type || !entry || !date || !account) {
+    if (!pair || !type || !entry || !date || !account || !profitLoss) {
       toast({
         title: "بيانات ناقصة",
-        description: "يرجى ملء جميع الحقول المطلوبة",
+        description: "يرجى ملء جميع الحقول المطلوبة، خاصة الربح/الخسارة",
         variant: "destructive"
       });
       return;
@@ -369,6 +368,19 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
+                    <Label htmlFor="profitLoss">الربح/الخسارة</Label>
+                    <Input 
+                      id="profitLoss" 
+                      type="number" 
+                      step="any" 
+                      value={profitLoss} 
+                      onChange={(e) => setProfitLoss(e.target.value)}
+                      required
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label htmlFor="durationMinutes">المدة (بالدقائق)</Label>
                     <Input 
                       id="durationMinutes" 
@@ -387,18 +399,6 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={commission} 
                       onChange={(e) => setCommission(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="profitLoss">الربح/الخسارة</Label>
-                    <Input 
-                      id="profitLoss" 
-                      type="number" 
-                      step="any" 
-                      value={profitLoss} 
-                      onChange={(e) => setProfitLoss(e.target.value)}
                       className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>

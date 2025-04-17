@@ -23,12 +23,13 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!symbol) return;
+    if (!symbol.trim()) return;
     
+    // Only add the symbol, without additional details
     const newSymbol = {
       symbol,
       name: symbol,
-      type: 'forex' as const
+      type: 'other' as const
     };
     
     addSymbol(newSymbol);
@@ -54,7 +55,7 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({
               id="symbol"
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
-              placeholder="EUR/USD, AAPL, BTC/USD"
+              placeholder="EUR/USD"
               required
             />
           </div>
