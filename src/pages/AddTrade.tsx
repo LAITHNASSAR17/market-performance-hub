@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -399,45 +398,45 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="commission">العمولة/الرسوم</Label>
-                    <Input 
-                      id="commission" 
-                      type="number" 
-                      step="any" 
-                      value={commission} 
-                      onChange={(e) => setCommission(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="col-span-1 md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Checkbox 
-                        id="isMultipleTrades" 
-                        checked={isMultipleTrades}
-                        onCheckedChange={(checked) => {
-                          setIsMultipleTrades(checked === true);
-                          if (checked !== true) {
-                            setTradesCount('1');
-                          }
-                        }}
-                      />
-                      <Label htmlFor="isMultipleTrades" className="mr-2">صفقات متعددة</Label>
+                    <div className="flex justify-between">
+                      <Label htmlFor="commission">العمولة/الرسوم</Label>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="tradesCount" className={isMultipleTrades ? "" : "text-gray-400"}>عدد الصفقات</Label>
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        id="commission" 
+                        type="number" 
+                        step="any" 
+                        value={commission} 
+                        onChange={(e) => setCommission(e.target.value)}
+                        className="flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <div className="flex items-center space-x-1 space-x-reverse">
+                        <Checkbox 
+                          id="isMultipleTrades" 
+                          checked={isMultipleTrades}
+                          onCheckedChange={(checked) => {
+                            setIsMultipleTrades(checked === true);
+                            if (checked !== true) {
+                              setTradesCount('1');
+                            }
+                          }}
+                          className="ml-1"
+                        />
+                        <Label htmlFor="isMultipleTrades" className="mr-1 whitespace-nowrap text-xs">صفقات متعددة</Label>
+                      </div>
+                      
                       <Select 
                         value={tradesCount} 
                         onValueChange={setTradesCount}
+                        disabled={!isMultipleTrades}
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="اختر عدد الصفقات" />
+                        <SelectTrigger className={`w-16 h-8 py-0 px-2 text-xs ${!isMultipleTrades ? 'opacity-50' : ''}`}>
+                          <SelectValue placeholder={tradesCount} />
                         </SelectTrigger>
-                        <SelectContent>
-                          {[1, 2, 3, 4, 5].map(num => (
-                            <SelectItem key={num} value={num.toString()}>
-                              {num} صفقة
+                        <SelectContent className="max-h-[200px]">
+                          {Array.from({ length: 30 }, (_, i) => i + 1).map(num => (
+                            <SelectItem key={num} value={num.toString()} className="text-xs">
+                              {num}
                             </SelectItem>
                           ))}
                         </SelectContent>
