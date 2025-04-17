@@ -255,7 +255,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         detectedType = 'forex';
       } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
         detectedType = 'crypto';
-      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
+      } else if (/^(sr|sa)$/i.test(instrumentType)) {
         detectedType = 'stock';
       } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
         detectedType = 'index';
@@ -328,18 +328,40 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return null;
     
     try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (!authUser) {
+        console.error("Authentication required to initialize accounts");
+        toast({
+          title: "خطأ في المصادقة",
+          description: "الرجاء تسجيل الدخول مرة أخرى",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
       const existingAccounts = await userService.getTradingAccounts(user.id);
       let mainAccount = existingAccounts.find(acc => acc.name === 'Main Trading');
       
       if (!mainAccount) {
         console.log('Creating main account...');
-        mainAccount = await userService.createTradingAccount(user.id, 'Main Trading', 100000);
-        console.log('Main account created:', mainAccount);
-        
-        toast({
-          title: "تم إنشاء الحساب",
-          description: "تم إنشاء حساب التداول الرئيسي برصيد 100,000 دولار",
-        });
+        try {
+          mainAccount = await userService.createTradingAccount(user.id, 'Main Trading', 100000);
+          console.log('Main account created:', mainAccount);
+          
+          toast({
+            title: "تم إنشاء الحساب",
+            description: "تم إنشاء حساب التداول الرئيسي برصيد 100,000 دولار",
+          });
+        } catch (createError) {
+          console.error("Error creating main account:", createError);
+          toast({
+            title: "خطأ",
+            description: "حدث خطأ أثناء إنشاء الحساب الرئيسي",
+            variant: "destructive"
+          });
+          return null;
+        }
       }
       
       setTradingAccounts(prev => {
@@ -703,6 +725,17 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (!authUser) {
+        toast({
+          title: "خطأ في المصادقة",
+          description: "الرجاء تسجيل الدخول مرة أخرى",
+          variant: "destructive"
+        });
+        throw new Error('Authentication required');
+      }
+      
       const newAccount = await userService.createTradingAccount(user.id, name, balance);
       
       setTradingAccounts(prev => [...prev, newAccount]);

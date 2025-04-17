@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -109,6 +110,14 @@ export const userService = {
     const parsedBalance = Number(balance) || 0;
     
     try {
+      // Check if the current authenticated user matches the userId
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user || user.id !== userId) {
+        throw new Error('Authentication error: You can only create accounts for yourself');
+      }
+      
+      // Create the trading account
       const { data, error } = await supabase
         .from('trading_accounts')
         .insert({
@@ -149,6 +158,13 @@ export const userService = {
     }
     
     try {
+      // Check if the current authenticated user matches the userId
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user || user.id !== userId) {
+        return []; // Return empty array for security
+      }
+      
       const { data, error } = await supabase
         .from('trading_accounts')
         .select('*')
