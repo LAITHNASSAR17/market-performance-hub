@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -9,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
@@ -18,11 +18,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
+import ImageUpload from '@/components/ImageUpload';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag, calculateProfitLoss } = useTrade();
+  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag } = useTrade();
   const { toast } = useToast();
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
@@ -45,6 +46,9 @@ const AddTrade: React.FC = () => {
   const [profitLoss, setProfitLoss] = useState<string>('0');
   const [commission, setCommission] = useState('0');
   const [rating, setRating] = useState(0);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
+  const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
   
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
@@ -76,6 +80,9 @@ const AddTrade: React.FC = () => {
         setProfitLoss(data.profit_loss?.toString() || '0');
         setCommission(data.fees?.toString() || '0');
         setRating(data.rating || 0);
+        setImageUrl(data.image_url || null);
+        setBeforeImageUrl(data.before_image_url || null);
+        setAfterImageUrl(data.after_image_url || null);
         
         setAccount(accounts[0] || '');
         setIsEditing(true);
@@ -101,20 +108,6 @@ const AddTrade: React.FC = () => {
       setAccount(accounts[0] || '');
     }
   }, [id, accounts]);
-
-  useEffect(() => {
-    if (entry && exit && lotSize && type && pair && !isEditing) {
-      const calculatedPL = calculateProfitLoss(
-        parseFloat(entry),
-        parseFloat(exit),
-        parseFloat(lotSize),
-        type,
-        pair
-      );
-      
-      setProfitLoss(calculatedPL.toString());
-    }
-  }, [entry, exit, lotSize, type, pair, calculateProfitLoss, isEditing]);
 
   const handleAddHashtag = () => {
     if (newHashtag && !hashtags.includes(newHashtag)) {
@@ -157,9 +150,9 @@ const AddTrade: React.FC = () => {
         profitLoss: parseFloat(profitLoss),
         riskPercentage: 0,
         returnPercentage: 0,
-        imageUrl: null,
-        beforeImageUrl: null,
-        afterImageUrl: null,
+        imageUrl,
+        beforeImageUrl,
+        afterImageUrl,
         commission: parseFloat(commission) || 0,
         rating
       };
@@ -322,6 +315,7 @@ const AddTrade: React.FC = () => {
                       value={entry} 
                       onChange={(e) => setEntry(e.target.value)} 
                       required
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -333,6 +327,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={exit} 
                       onChange={(e) => setExit(e.target.value)} 
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -345,6 +340,7 @@ const AddTrade: React.FC = () => {
                       value={lotSize} 
                       onChange={(e) => setLotSize(e.target.value)} 
                       required
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -356,6 +352,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={stopLoss} 
                       onChange={(e) => setStopLoss(e.target.value)} 
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -367,6 +364,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={takeProfit} 
                       onChange={(e) => setTakeProfit(e.target.value)} 
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -376,7 +374,8 @@ const AddTrade: React.FC = () => {
                       id="durationMinutes" 
                       type="number" 
                       value={durationMinutes} 
-                      onChange={(e) => setDurationMinutes(e.target.value)} 
+                      onChange={(e) => setDurationMinutes(e.target.value)}
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                     />
                   </div>
                   
@@ -388,6 +387,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={commission} 
                       onChange={(e) => setCommission(e.target.value)} 
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -399,6 +399,44 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={profitLoss} 
                       onChange={(e) => setProfitLoss(e.target.value)}
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">صور التداول</CardTitle>
+                <CardDescription>أضف صورًا للإعداد والدخول والخروج من التداول</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label>صورة قبل الدخول</Label>
+                    <ImageUpload 
+                      value={beforeImageUrl} 
+                      onChange={setBeforeImageUrl}
+                      className="min-h-[200px]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>صورة بعد الخروج</Label>
+                    <ImageUpload 
+                      value={afterImageUrl} 
+                      onChange={setAfterImageUrl}
+                      className="min-h-[200px]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>صورة أخرى</Label>
+                    <ImageUpload 
+                      value={imageUrl} 
+                      onChange={setImageUrl}
+                      className="min-h-[200px]"
                     />
                   </div>
                 </div>
