@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -91,6 +92,7 @@ const sampleTrades: Trade[] = [
     id: '1',
     userId: '1',
     account: 'Main Trading',
+    accountId: null,
     date: '2025-04-10',
     pair: 'EUR/USD',
     type: 'Buy',
@@ -116,6 +118,7 @@ const sampleTrades: Trade[] = [
     id: '2',
     userId: '1',
     account: 'Main Trading',
+    accountId: null,
     date: '2025-04-09',
     pair: 'GBP/USD',
     type: 'Sell',
@@ -141,6 +144,7 @@ const sampleTrades: Trade[] = [
     id: '3',
     userId: '1',
     account: 'Demo Account',
+    accountId: null,
     date: '2025-04-08',
     pair: 'USD/JPY',
     type: 'Buy',
@@ -166,6 +170,7 @@ const sampleTrades: Trade[] = [
     id: '4',
     userId: '1',
     account: 'Main Trading',
+    accountId: null,
     date: '2025-04-07',
     pair: 'EUR/USD',
     type: 'Sell',
@@ -191,6 +196,7 @@ const sampleTrades: Trade[] = [
     id: '5',
     userId: '1',
     account: 'Main Trading',
+    accountId: null,
     date: '2025-04-06',
     pair: 'AUD/USD',
     type: 'Buy',
