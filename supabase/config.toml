@@ -1,14 +1,1 @@
-
-# ... keep existing config
-
-[postgres]
-# ... keep existing postgres config
-
-[auth]
-# ... keep existing auth config
-
-[storage]
-# ... keep existing storage config
-
-[functions]
-# ... keep existing functions config
+project_id = "gworvqqjzirypwfffapt"
