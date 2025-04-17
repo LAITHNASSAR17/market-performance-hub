@@ -1,17 +1,14 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -19,7 +16,6 @@ import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
-import { Checkbox } from "@/components/ui/checkbox";
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -428,14 +424,21 @@ const AddTrade: React.FC = () => {
                     
                     <div className="space-y-2">
                       <Label htmlFor="tradesCount" className={isMultipleTrades ? "" : "text-gray-400"}>عدد الصفقات</Label>
-                      <Input 
-                        id="tradesCount" 
-                        type="number" 
+                      <Select 
                         value={tradesCount} 
-                        onChange={(e) => setTradesCount(e.target.value)}
-                        disabled={!isMultipleTrades}
-                        className={`[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!isMultipleTrades ? 'bg-gray-100' : ''}`}
-                      />
+                        onValueChange={setTradesCount}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر عدد الصفقات" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map(num => (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num} صفقة
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
