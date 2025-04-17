@@ -303,19 +303,22 @@ const AddTrade: React.FC = () => {
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <Select 
-                          value={accountId || ''} 
+                          value={accountId || 'default'} 
                           onValueChange={(value) => {
                             if (value === 'add-new') {
                               setShowAddAccountDialog(true);
                               return;
                             }
                             
-                            setAccountId(value || null);
-                            const selectedAccount = tradingAccounts.find(a => a.id === value);
-                            if (selectedAccount) {
-                              setAccount(selectedAccount.name);
-                            } else if (value === '') {
+                            if (value === 'default') {
+                              setAccountId(null);
                               setAccount('Main Trading');
+                            } else {
+                              setAccountId(value);
+                              const selectedAccount = tradingAccounts.find(a => a.id === value);
+                              if (selectedAccount) {
+                                setAccount(selectedAccount.name);
+                              }
                             }
                           }}
                         >
@@ -326,7 +329,7 @@ const AddTrade: React.FC = () => {
                             </div>
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Main Trading</SelectItem>
+                            <SelectItem value="default">Main Trading</SelectItem>
                             {tradingAccounts.map(account => (
                               <SelectItem key={account.id} value={account.id}>
                                 {account.name} (${account.balance.toLocaleString()})
