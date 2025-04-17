@@ -4,8 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTrade, Symbol } from '@/contexts/TradeContext';
+import { useTrade } from '@/contexts/TradeContext';
 
 type AddPairDialogProps = {
   isOpen: boolean;
@@ -20,30 +19,22 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({
 }) => {
   const { addSymbol } = useTrade();
   const [symbol, setSymbol] = useState('');
-  const [name, setName] = useState('');
-  const [type, setType] = useState<'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other'>('forex');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!symbol || !name) return;
+    if (!symbol) return;
     
-    const newSymbol: Symbol = {
+    const newSymbol = {
       symbol,
-      name,
-      type
+      name: symbol,
+      type: 'forex' as const
     };
     
     addSymbol(newSymbol);
     onPairAdded(symbol);
-    resetForm();
-    onClose();
-  };
-  
-  const resetForm = () => {
     setSymbol('');
-    setName('');
-    setType('forex');
+    onClose();
   };
 
   return (
@@ -52,7 +43,7 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({
         <DialogHeader>
           <DialogTitle>إضافة زوج تداول جديد</DialogTitle>
           <DialogDescription>
-            أدخل تفاصيل زوج التداول أو الرمز الجديد
+            أدخل رمز التداول الجديد
           </DialogDescription>
         </DialogHeader>
         
@@ -66,37 +57,6 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({
               placeholder="EUR/USD, AAPL, BTC/USD"
               required
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="name">الاسم الكامل</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Euro / US Dollar, Apple Inc."
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="type">النوع</Label>
-            <Select 
-              value={type} 
-              onValueChange={(value: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other') => setType(value)}
-            >
-              <SelectTrigger id="type">
-                <SelectValue placeholder="اختر النوع" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="forex">عملات (فوركس)</SelectItem>
-                <SelectItem value="crypto">عملات رقمية</SelectItem>
-                <SelectItem value="stock">أسهم</SelectItem>
-                <SelectItem value="index">مؤشرات</SelectItem>
-                <SelectItem value="commodity">سلع</SelectItem>
-                <SelectItem value="other">أخرى</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           
           <DialogFooter className="pt-4">
