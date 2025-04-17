@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +17,7 @@ import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
+import AddPairDialog from '@/components/AddPairDialog';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +27,7 @@ const AddTrade: React.FC = () => {
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showAddPairDialog, setShowAddPairDialog] = useState(false);
   
   const [pair, setPair] = useState('');
   const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
@@ -232,16 +233,31 @@ const AddTrade: React.FC = () => {
                         className="bg-gray-100 border border-gray-300"
                       />
                     ) : (
-                      <Select value={pair} onValueChange={setPair} required>
-                        <SelectTrigger id="pair">
-                          <SelectValue placeholder="اختر الزوج" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {pairs.map(p => (
-                            <SelectItem key={p} value={p}>{p}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <Select value={pair} onValueChange={setPair} required>
+                            <SelectTrigger id="pair">
+                              <SelectValue placeholder="اختر الزوج" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {pairs.map(p => (
+                                <SelectItem key={p} value={p}>{p}</SelectItem>
+                              ))}
+                              <SelectItem value="add-new" className="text-primary font-semibold">
+                                + إضافة زوج جديد
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="px-3" 
+                          onClick={() => setShowAddPairDialog(true)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                   
@@ -497,6 +513,15 @@ const AddTrade: React.FC = () => {
           </div>
         </form>
       )}
+      
+      <AddPairDialog 
+        isOpen={showAddPairDialog}
+        onClose={() => setShowAddPairDialog(false)}
+        onPairAdded={(newSymbol) => {
+          setPair(newSymbol);
+          setShowAddPairDialog(false);
+        }}
+      />
     </Layout>
   );
 };
