@@ -332,37 +332,23 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       let mainAccount = existingAccounts.find(acc => acc.name === 'Main Trading');
       
       if (!mainAccount) {
+        console.log('Creating main account...');
         mainAccount = await userService.createTradingAccount(user.id, 'Main Trading', 100000);
+        console.log('Main account created:', mainAccount);
+        
         toast({
           title: "تم إنشاء الحساب",
           description: "تم إنشاء حساب التداول الرئيسي برصيد 100,000 دولار",
         });
-      } else if (mainAccount.balance !== 100000) {
-        const { data, error } = await supabase
-          .from('trading_accounts')
-          .update({ balance: 100000 })
-          .eq('id', mainAccount.id)
-          .eq('user_id', user.id)
-          .select()
-          .single();
-          
-        if (!error && data) {
-          mainAccount.balance = 100000;
-          
-          setTradingAccounts(prev => 
-            prev.map(acc => 
-              acc.id === mainAccount?.id 
-                ? { ...acc, balance: 100000 } 
-                : acc
-            )
-          );
-          
-          toast({
-            title: "تم تحديث الرصيد",
-            description: "تم تحديث رصيد الحساب الرئيسي إلى 100,000 دولار",
-          });
-        }
       }
+      
+      setTradingAccounts(prev => {
+        const exists = prev.some(acc => acc.id === mainAccount?.id);
+        if (!exists && mainAccount) {
+          return [...prev, mainAccount];
+        }
+        return prev;
+      });
       
       return mainAccount;
     } catch (error) {

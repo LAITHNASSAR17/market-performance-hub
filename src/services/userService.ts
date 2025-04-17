@@ -108,32 +108,39 @@ export const userService = {
     
     const parsedBalance = Number(balance) || 0;
     
-    const { data, error } = await supabase
-      .from('trading_accounts')
-      .insert({
-        user_id: userId,
-        name: name.trim(),
-        balance: parsedBalance
-      })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error creating trading account:', error);
+    try {
+      const { data, error } = await supabase
+        .from('trading_accounts')
+        .insert({
+          user_id: userId,
+          name: name.trim(),
+          balance: parsedBalance,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating trading account:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('Failed to create trading account, no data returned');
+      }
+      
+      return {
+        id: data.id,
+        userId: data.user_id,
+        name: data.name,
+        balance: Number(data.balance),
+        createdAt: data.created_at
+      };
+    } catch (error) {
+      console.error('Error in createTradingAccount:', error);
       throw error;
     }
-    
-    if (!data) {
-      throw new Error('Failed to create trading account, no data returned');
-    }
-    
-    return {
-      id: data.id,
-      userId: data.user_id,
-      name: data.name,
-      balance: Number(data.balance),
-      createdAt: data.created_at
-    };
   },
   
   async getTradingAccounts(userId: string): Promise<ITradingAccount[]> {
@@ -141,25 +148,30 @@ export const userService = {
       throw new Error('User ID is required to fetch trading accounts');
     }
     
-    const { data, error } = await supabase
-      .from('trading_accounts')
-      .select('*')
-      .eq('user_id', userId);
-    
-    if (error) {
-      console.error('Error fetching trading accounts:', error);
-      return [];
+    try {
+      const { data, error } = await supabase
+        .from('trading_accounts')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (error) {
+        console.error('Error fetching trading accounts:', error);
+        throw error;
+      }
+      
+      if (!data) return [];
+      
+      return data.map(account => ({
+        id: account.id,
+        userId: account.user_id,
+        name: account.name,
+        balance: Number(account.balance),
+        createdAt: account.created_at
+      }));
+    } catch (error) {
+      console.error('Error in getTradingAccounts:', error);
+      throw error;
     }
-    
-    if (!data) return [];
-    
-    return data.map(account => ({
-      id: account.id,
-      userId: account.user_id,
-      name: account.name,
-      balance: Number(account.balance),
-      createdAt: account.created_at
-    }));
   }
 };
 
