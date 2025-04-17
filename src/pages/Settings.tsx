@@ -1,108 +1,230 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import ThemeToggle from '@/components/ThemeToggle';
-import { FileImage, Palette } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import { ArrowRight, Moon, Sun, Languages, User, Lock, Database, Loader2, Shield } from 'lucide-react';
 import FaviconUpload from '@/components/FaviconUpload';
 
 const Settings: React.FC = () => {
-  const { t } = useLanguage();
-  const { theme } = useTheme();
-  const [faviconModalOpen, setFaviconModalOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [siteName, setSiteName] = React.useState(document.title || "TrackMind");
+
+  const handleSiteNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSiteName(e.target.value);
+  };
+
+  const updateSiteName = () => {
+    setIsLoading(true);
+    
+    try {
+      localStorage.setItem('siteName', siteName);
+      document.title = siteName;
+      
+      toast({
+        title: "تم تحديث اسم الموقع",
+        description: "تم تغيير اسم الموقع بنجاح."
+      });
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث اسم الموقع.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Layout>
-      <div className="container mx-auto py-6">
-        <h1 className="text-3xl font-bold mb-4 dark:text-white">
-          Settings
-        </h1>
-        
-        <Tabs defaultValue="appearance" className="w-full">
-          <TabsList className="mb-4 flex w-full sm:w-auto">
-            <TabsTrigger value="appearance" className="flex-1">
-              <Palette className="h-4 w-4 mr-2" />
-              Appearance
-            </TabsTrigger>
-            <TabsTrigger value="favicon" className="flex-1">
-              <FileImage className="h-4 w-4 mr-2" />
-              Favicon
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="appearance">
-            <Card>
-              <CardHeader>
-                <CardTitle className="dark:text-white">
-                  Appearance & Theme
-                </CardTitle>
-                <CardDescription className="dark:text-gray-300">
-                  Customize the look of the application, including light/dark mode.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div>
-                    <h3 className="font-medium dark:text-white">
-                      Display Mode
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {theme === 'dark' 
-                        ? 'Dark mode is currently active'
-                        : 'Light mode is currently active'}
-                    </p>
-                  </div>
-                  <ThemeToggle />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="favicon">
-            <Card>
-              <CardHeader>
-                <CardTitle className="dark:text-white">
-                  Favicon
-                </CardTitle>
-                <CardDescription className="dark:text-gray-300">
-                  Change the favicon that appears in your browser tab.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="flex-1">
-                    <h3 className="font-medium dark:text-white">
-                      Current Favicon
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      You can change the favicon by clicking the button below.
-                    </p>
-                  </div>
-                  <div className="w-12 h-12 bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
-                    <img src="/favicon.ico" alt="Current Favicon" className="max-w-full max-h-full" />
-                  </div>
-                </div>
-                <div>
-                  <button 
-                    onClick={() => setFaviconModalOpen(true)}
-                    className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md"
-                  >
-                    Upload New Favicon
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold">الإعدادات</h1>
+        <p className="text-gray-500">إدارة إعدادات حسابك وتفضيلاتك</p>
       </div>
-      
-      {/* Favicon Upload Modal */}
-      {faviconModalOpen && (
-        <FaviconUpload isOpen={faviconModalOpen} onClose={() => setFaviconModalOpen(false)} />
-      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-3">
+          <Tabs defaultValue="account" className="w-full">
+            <TabsList className="mb-4 grid grid-cols-4 md:grid-cols-5 gap-2">
+              <TabsTrigger value="account">
+                <User className="h-4 w-4 mr-2" />
+                الحساب
+              </TabsTrigger>
+              <TabsTrigger value="appearance">
+                <Sun className="h-4 w-4 mr-2" />
+                المظهر
+              </TabsTrigger>
+              <TabsTrigger value="integrations">
+                <Database className="h-4 w-4 mr-2" />
+                الربط والتكامل
+              </TabsTrigger>
+              <TabsTrigger value="language">
+                <Languages className="h-4 w-4 mr-2" />
+                اللغة
+              </TabsTrigger>
+              <TabsTrigger value="security" className="hidden md:flex">
+                <Shield className="h-4 w-4 mr-2" />
+                الأمان
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="account">
+              <Card>
+                <CardHeader>
+                  <CardTitle>معلومات الحساب</CardTitle>
+                  <CardDescription>
+                    عرض وتعديل معلومات حسابك الشخصية
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="siteName">اسم الموقع</Label>
+                    <div className="flex gap-2">
+                      <input
+                        id="siteName"
+                        value={siteName}
+                        onChange={handleSiteNameChange}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="اسم الموقع الخاص بك"
+                      />
+                      <Button onClick={updateSiteName} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "حفظ"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-8">
+                    <FaviconUpload />
+                  </div>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                  <Button variant="outline" onClick={() => navigate('/profile-settings')}>
+                    إعدادات الملف الشخصي
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" onClick={() => logout()}>
+                    تسجيل الخروج
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="appearance">
+              <Card>
+                <CardHeader>
+                  <CardTitle>المظهر</CardTitle>
+                  <CardDescription>
+                    تخصيص مظهر التطبيق حسب تفضيلاتك
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Moon className="h-5 w-5 ml-2" />
+                      <div>
+                        <Label htmlFor="theme-mode">الوضع الداكن</Label>
+                        <p className="text-sm text-gray-500">
+                          تبديل بين المظهر الفاتح والداكن
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="theme-mode"
+                      checked={theme === "dark"}
+                      onCheckedChange={toggleTheme}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="integrations">
+              <Card>
+                <CardHeader>
+                  <CardTitle>الربط والتكامل</CardTitle>
+                  <CardDescription>
+                    اتصل بخدمات خارجية واستورد البيانات
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="border rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="text-lg font-medium mb-1">ربط MetaTrader</h3>
+                        <p className="text-sm text-gray-500 mb-4">
+                          قم بتوصيل حساب MetaTrader 4 أو 5 لاستيراد صفقاتك تلقائيًا
+                        </p>
+                        <Button onClick={() => navigate('/metatrader-connect')}>
+                          إعداد الاتصال
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="bg-gray-100 dark:bg-gray-800 h-16 w-16 flex items-center justify-center rounded-lg">
+                        <span className="text-xl font-bold">MT</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="language">
+              <Card>
+                <CardHeader>
+                  <CardTitle>إعدادات اللغة</CardTitle>
+                  <CardDescription>
+                    اختر اللغة المفضلة لديك للتطبيق
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="language">اللغة</Label>
+                      <select
+                        id="language"
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        defaultValue="ar"
+                      >
+                        <option value="ar">العربية</option>
+                        <option value="en">English</option>
+                      </select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="security">
+              <Card>
+                <CardHeader>
+                  <CardTitle>الأمان</CardTitle>
+                  <CardDescription>
+                    إدارة إعدادات الأمان وكلمة المرور
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    <Lock className="mr-2 h-4 w-4" />
+                    تغيير كلمة المرور
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </Layout>
   );
 };

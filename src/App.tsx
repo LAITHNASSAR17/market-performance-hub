@@ -1,111 +1,129 @@
-
-import React, { useEffect } from 'react';
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
-import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ResetPassword from './pages/ResetPassword';
-import ForgotPassword from './pages/ForgotPassword';
-import Trades from './pages/Trades';
-import AddTrade from './pages/AddTrade';
-import Analytics from './pages/Analytics';
-import Journal from './pages/Journal';
-import Insights from './pages/Insights';
-import NotFound from './pages/NotFound';
-import ProfileSettings from './pages/ProfileSettings';
-import Settings from './pages/Settings';
-import './App.css';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { Toaster } from './components/ui/toaster';
-import { LanguageProvider } from './contexts/LanguageContext';
-import { TradeProvider } from './contexts/TradeContext';
-import { NotebookProvider } from './contexts/NotebookContext';
-import TradeTracking from './pages/TradeTracking';
-import TradingChart from './pages/TradingChart';
-import Notebook from './pages/Notebook';
-import EmailVerify from './pages/EmailVerify';
-import PageTransition from './components/PageTransition';
-import Homepage from './pages/Homepage';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminTrades from './pages/admin/AdminTrades';
-import AdminHashtags from './pages/admin/AdminHashtags';
-import AdminPages from './pages/admin/AdminPages';
-import AdminNotes from './pages/admin/AdminNotes';
-import AdminSubscriptions from './pages/admin/AdminSubscriptions';
-import AdminProfileSettings from './pages/admin/AdminProfileSettings';
-import Index from './pages/Index';
-import Reports from './pages/Reports';
-import Subscriptions from './pages/Subscriptions';
-import PaymentSuccess from './pages/PaymentSuccess';
-import Payment from './pages/Payment';
-import UserProfileSettings from './pages/UserProfileSettings';
-import { AuthProvider } from './contexts/AuthContext';
-import { TooltipProvider } from './components/ui/tooltip';
+import { Route, Routes } from 'react-router-dom';
+import './App.css'
+import Auth from './pages/Auth.tsx';
+import Home from './pages/Home.tsx';
+import ProtectedRoute from './components/ProtectedRoute.tsx';
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import ProfileSettings from './pages/ProfileSettings.tsx';
+import Settings from './pages/Settings.tsx';
+import AddTrade from './pages/AddTrade.tsx';
+import Trades from './pages/Trades.tsx';
+import TradeDetails from './pages/TradeDetails.tsx';
+import Dashboard from './pages/Dashboard.tsx';
+import Journal from './pages/Journal.tsx';
+import { TradeProvider } from './contexts/TradeContext.tsx';
+import { ThemeProvider } from './contexts/ThemeContext.tsx';
+import { LanguageProvider } from './contexts/LanguageContext.tsx';
+import PageTransition from './components/PageTransition.tsx';
+import AdminRoute from './components/AdminRoute.tsx';
+import AdminDashboard from './pages/admin/AdminDashboard.tsx';
+import AdminTrades from './pages/admin/AdminTrades.tsx';
+import { Toaster } from '@/components/ui/toaster';
+import Notebook from './pages/Notebook.tsx';
+import { NotebookProvider } from './contexts/NotebookContext.tsx';
+import MetaTraderConnect from './pages/MetaTraderConnect.tsx';
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ThemeProvider>
-          <LanguageProvider>
-            <TradeProvider>
-              <NotebookProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AnimatedRoutes />
-                </TooltipProvider>
-              </NotebookProvider>
-            </TradeProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  );
-}
-
-function AnimatedRoutes() {
-  const location = useLocation();
-  
-  return (
-    <PageTransition>
-      <Routes location={location}>
-        <Route path="/" element={<Index />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/email-verify" element={<EmailVerify />} />
-        <Route path="/trades" element={<Trades />} />
-        <Route path="/add-trade" element={<AddTrade />} />
-        <Route path="/edit-trade/:id" element={<AddTrade />} />
-        <Route path="/trade/:id" element={<TradeTracking />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/journal" element={<Journal />} />
-        <Route path="/notebook" element={<Notebook />} />
-        <Route path="/insights" element={<Insights />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/chart" element={<TradingChart />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/profile" element={<ProfileSettings />} />
-        <Route path="/user-profile" element={<UserProfileSettings />} />
-        <Route path="/subscriptions" element={<Subscriptions />} />
-        <Route path="/payment" element={<Payment />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/admin/trades" element={<AdminTrades />} />
-        <Route path="/admin/hashtags" element={<AdminHashtags />} />
-        <Route path="/admin/pages" element={<AdminPages />} />
-        <Route path="/admin/notes" element={<AdminNotes />} />
-        <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
-        <Route path="/admin/profile" element={<AdminProfileSettings />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </PageTransition>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <TradeProvider>
+            <NotebookProvider>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/profile-settings" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <ProfileSettings />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <Settings />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/add-trade" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <AddTrade />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/edit-trade/:id" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <AddTrade />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/trades" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <Trades />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/trade/:id" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <TradeDetails />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <Dashboard />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/journal" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <Journal />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/notebook" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <Notebook />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin" element={
+                  <AdminRoute>
+                    <PageTransition>
+                      <AdminDashboard />
+                    </PageTransition>
+                  </AdminRoute>
+                } />
+                <Route path="/admin/trades" element={
+                  <AdminRoute>
+                    <PageTransition>
+                      <AdminTrades />
+                    </PageTransition>
+                  </AdminRoute>
+                } />
+                <Route path="/metatrader-connect" element={
+                  <ProtectedRoute>
+                    <PageTransition>
+                      <MetaTraderConnect />
+                    </PageTransition>
+                  </ProtectedRoute>
+                } />
+              </Routes>
+              <Toaster />
+            </NotebookProvider>
+          </TradeProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 
