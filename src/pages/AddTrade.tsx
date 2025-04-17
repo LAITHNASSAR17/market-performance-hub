@@ -120,6 +120,25 @@ const AddTrade: React.FC = () => {
     setHashtags(hashtags.filter(t => t !== tag));
   };
 
+  const handleCommissionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCommission = parseFloat(e.target.value) || 0;
+    setCommission(e.target.value);
+    
+    const rawPL = parseFloat(profitLoss) || 0;
+    const oldCommission = parseFloat(commission) || 0;
+    
+    const basePL = rawPL + oldCommission;
+    const adjustedPL = basePL - newCommission;
+    
+    setProfitLoss(adjustedPL.toString());
+  };
+
+  const handleProfitLossChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawPL = parseFloat(e.target.value) || 0;
+    const currentCommission = parseFloat(commission) || 0;
+    setProfitLoss((rawPL - currentCommission).toString());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -374,7 +393,7 @@ const AddTrade: React.FC = () => {
                       type="number" 
                       step="any" 
                       value={profitLoss} 
-                      onChange={(e) => setProfitLoss(e.target.value)}
+                      onChange={handleProfitLossChange}
                       required
                       className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
@@ -398,7 +417,7 @@ const AddTrade: React.FC = () => {
                       type="number" 
                       step="any" 
                       value={commission} 
-                      onChange={(e) => setCommission(e.target.value)} 
+                      onChange={handleCommissionChange}
                       className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
