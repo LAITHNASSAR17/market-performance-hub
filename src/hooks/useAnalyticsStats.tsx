@@ -57,37 +57,56 @@ const calculateStats = (trades: Trade[]): TradeStats => {
     };
   }
   
+  // تعديل لحساب عدد الصفقات الإجمالي مع مراعاة تعدد الصفقات
+  const actualTradesCount = trades.reduce((count, trade) => {
+    // إذا كانت الصفقة متعددة، استخدم عدد الصفقات المحدد، وإلا استخدم 1
+    const tradeCount = trade.isMultipleTrades && trade.tradesCount ? trade.tradesCount : 1;
+    return count + tradeCount;
+  }, 0);
+  
   const totalPL = trades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const winningTrades = trades.filter(trade => trade.profitLoss > 0);
-  const losingTrades = trades.filter(trade => trade.profitLoss < 0);
   
-  const winRate = (winningTrades.length / trades.length) * 100;
+  // تعديل لحساب الصفقات الرابحة والخاسرة مع مراعاة تعدد الصفقات
+  const winningTradesData = trades.filter(trade => trade.profitLoss > 0);
+  const winningTradesCount = winningTradesData.reduce((count, trade) => {
+    const tradeCount = trade.isMultipleTrades && trade.tradesCount ? trade.tradesCount : 1;
+    return count + tradeCount;
+  }, 0);
   
-  const avgWin = winningTrades.length ? 
-    winningTrades.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTrades.length : 
+  const losingTradesData = trades.filter(trade => trade.profitLoss < 0);
+  const losingTradesCount = losingTradesData.reduce((count, trade) => {
+    const tradeCount = trade.isMultipleTrades && trade.tradesCount ? trade.tradesCount : 1;
+    return count + tradeCount;
+  }, 0);
+  
+  // حساب نسبة الربح باستخدام العدد الفعلي للصفقات
+  const winRate = (winningTradesCount / actualTradesCount) * 100;
+  
+  const avgWin = winningTradesData.length ? 
+    winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTradesData.length : 
     0;
     
-  const avgLoss = losingTrades.length ? 
-    losingTrades.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTrades.length : 
+  const avgLoss = losingTradesData.length ? 
+    losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTradesData.length : 
     0;
     
-  const largestWin = winningTrades.length ? 
-    Math.max(...winningTrades.map(trade => trade.profitLoss)) : 
+  const largestWin = winningTradesData.length ? 
+    Math.max(...winningTradesData.map(trade => trade.profitLoss)) : 
     0;
     
-  const largestLoss = losingTrades.length ? 
-    Math.min(...losingTrades.map(trade => trade.profitLoss)) : 
+  const largestLoss = losingTradesData.length ? 
+    Math.min(...losingTradesData.map(trade => trade.profitLoss)) : 
     0;
   
   // Calculate profit factor (ratio of gross profit to gross loss)
-  const grossProfit = winningTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const grossLoss = Math.abs(losingTrades.reduce((sum, trade) => sum + trade.profitLoss, 0));
-  const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (winningTrades.length > 0 ? "∞" : "0.00");
+  const grossProfit = winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0);
+  const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
+  const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (winningTradesData.length > 0 ? "∞" : "0.00");
   
-  // Calculate win/loss ratio
-  const winLossRatio = losingTrades.length > 0 ? 
-    (winningTrades.length / losingTrades.length).toFixed(2) : 
-    (winningTrades.length > 0 ? "∞" : "0.00");
+  // Calculate win/loss ratio using actual counts
+  const winLossRatio = losingTradesCount > 0 ? 
+    (winningTradesCount / losingTradesCount).toFixed(2) : 
+    (winningTradesCount > 0 ? "∞" : "0.00");
   
   return {
     totalPL: `$${totalPL.toFixed(2)}`,
@@ -96,9 +115,9 @@ const calculateStats = (trades: Trade[]): TradeStats => {
     avgLoss: `$${avgLoss.toFixed(2)}`,
     largestWin: `$${largestWin.toFixed(2)}`,
     largestLoss: `$${largestLoss.toFixed(2)}`,
-    totalTrades: trades.length,
-    winningTrades: winningTrades.length,
-    losingTrades: losingTrades.length,
+    totalTrades: actualTradesCount,
+    winningTrades: winningTradesCount,
+    losingTrades: losingTradesCount,
     profitFactor,
     winLossRatio
   };
