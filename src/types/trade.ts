@@ -1,3 +1,4 @@
+
 import { ITrade } from '@/services/tradeService';
 
 export interface Trade {
@@ -24,6 +25,7 @@ export interface Trade {
   createdAt: string;
   commission: number;
   rating: number;
+  accountId: string | null; // Added accountId field
 }
 
 // Update mapDBTradeToTrade to include all fields
@@ -44,7 +46,8 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   notes: dbTrade.notes || '',
   // Important: Always format dates consistently as YYYY-MM-DD
   date: dbTrade.entryDate.toISOString().split('T')[0],
-  account: 'Main Trading',
+  account: dbTrade.accountName || 'Main Trading',
+  accountId: dbTrade.accountId || null,
   imageUrl: null,
   beforeImageUrl: null,
   afterImageUrl: null,
@@ -71,5 +74,7 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   rating: trade.rating || 0,
   stopLoss: trade.stopLoss || null,
   takeProfit: trade.takeProfit || null,
-  durationMinutes: trade.durationMinutes || null
+  durationMinutes: trade.durationMinutes || null,
+  accountId: trade.accountId || null,
+  accountName: trade.account || 'Main Trading'
 });

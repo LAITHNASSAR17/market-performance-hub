@@ -34,6 +34,8 @@ type TradeContextType = {
   tradingAccounts: TradingAccount[];
   createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
   fetchTradingAccounts: () => Promise<void>;
+  selectedAccountId: string | null;
+  setSelectedAccountId: (accountId: string | null) => void;
 };
 
 export type Symbol = {
@@ -225,6 +227,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { toast } = useToast();
   const { user } = useAuth();
   const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
 
   const calculateProfitLoss = (
     entry: number, 
@@ -318,19 +321,24 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (user) {
         setLoading(true);
         try {
-          const { data, error } = await supabase
+          let query = supabase
             .from('trades')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
+            .select('*, trading_accounts(name)')
+            .eq('user_id', user.id);
+          
+          if (selectedAccountId) {
+            query = query.eq('account_id', selectedAccountId);
+          }
+          
+          query = query.order('created_at', { ascending: false });
+          
+          const { data, error } = await query;
 
           if (error) throw error;
 
           const formattedTrades: Trade[] = data.map(trade => ({
             id: trade.id,
             userId: trade.user_id,
-            account: 'Main Trading',
-            date: trade.entry_date.split('T')[0],
             pair: trade.symbol,
             type: trade.direction === 'long' ? 'Buy' : 'Sell',
             entry: trade.entry_price,
@@ -343,6 +351,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             profitLoss: trade.profit_loss || 0,
             durationMinutes: trade.duration_minutes || 0,
             notes: trade.notes || '',
+            date: trade.entry_date.split('T')[0],
+            account: trade.trading_accounts?.name || 'Main Trading',
+            accountId: trade.account_id,
             imageUrl: null,
             beforeImageUrl: null,
             afterImageUrl: null,
@@ -378,7 +389,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     fetchTrades();
-  }, [user, toast]);
+  }, [user, toast, selectedAccountId]);
 
   const addTrade = async (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) return;
@@ -407,7 +418,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           stop_loss: newTradeData.stopLoss || null,
           take_profit: newTradeData.takeProfit || null,
           duration_minutes: newTradeData.durationMinutes || null,
-          rating: newTradeData.rating || 0
+          rating: newTradeData.rating || 0,
+          account_id: newTradeData.accountId
         })
         .select()
         .single();
@@ -624,6 +636,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tradingAccounts,
       createTradingAccount,
       fetchTradingAccounts,
+      selectedAccountId,
+      setSelectedAccountId
     }}>
       {children}
     </TradeContext.Provider>
