@@ -340,44 +340,22 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return null;
       }
       
-      const existingAccounts = await userService.getTradingAccounts(user.id);
-      let mainAccount = existingAccounts.find(acc => acc.name === 'Main Trading');
+      await fetchTradingAccounts();
       
-      if (!mainAccount) {
-        console.log('Creating main account...');
-        try {
-          mainAccount = await userService.createTradingAccount(user.id, 'Main Trading', 100000);
-          console.log('Main account created:', mainAccount);
-          
-          toast({
-            title: "تم إنشاء الحساب",
-            description: "تم إنشاء حساب التداول الرئيسي برصيد 100,000 دولار",
-          });
-        } catch (createError) {
-          console.error("Error creating main account:", createError);
-          toast({
-            title: "خطأ",
-            description: "حدث خطأ أثناء إنشاء الحساب الرئيسي",
-            variant: "destructive"
-          });
-          return null;
-        }
+      const accounts = await userService.getTradingAccounts(user.id);
+      
+      if (accounts.length > 0) {
+        const firstAccount = accounts[0];
+        setSelectedAccountId(firstAccount.id);
+        return firstAccount;
       }
       
-      setTradingAccounts(prev => {
-        const exists = prev.some(acc => acc.id === mainAccount?.id);
-        if (!exists && mainAccount) {
-          return [...prev, mainAccount];
-        }
-        return prev;
-      });
-      
-      return mainAccount;
+      return null;
     } catch (error) {
-      console.error('Error initializing main account:', error);
+      console.error('Error initializing accounts:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء إنشاء الحساب الرئيسي",
+        description: "حدث خطأ أثناء تهيئة الحسابات",
         variant: "destructive"
       });
       return null;
@@ -509,13 +487,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (user && !mainAccountInitialized) {
         try {
           await fetchTradingAccounts();
-          
-          const mainAccount = await initializeMainAccount();
-          
-          if (mainAccount) {
-            await migrateOldTradesToMainAccount(mainAccount.id);
-          }
-          
           setMainAccountInitialized(true);
         } catch (error) {
           console.error('Error setting up accounts:', error);
@@ -702,6 +673,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const accounts = await userService.getTradingAccounts(user.id);
       setTradingAccounts(accounts);
+      
+      if (accounts.length > 0 && !selectedAccountId) {
+        setSelectedAccountId(accounts[0].id);
+      }
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
       toast({
