@@ -1,4 +1,3 @@
-
 import { ITrade } from '@/services/tradeService';
 
 export interface Trade {
@@ -43,6 +42,7 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   profitLoss: dbTrade.profitLoss || 0,
   durationMinutes: dbTrade.durationMinutes || null,
   notes: dbTrade.notes || '',
+  // Important: Always format dates consistently as YYYY-MM-DD
   date: dbTrade.entryDate.toISOString().split('T')[0],
   account: 'Main Trading',
   imageUrl: null,

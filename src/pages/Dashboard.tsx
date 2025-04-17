@@ -144,7 +144,7 @@ const Dashboard: React.FC = () => {
     
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
-      const dateString = date.toISOString().slice(0, 10);
+      const dateString = format(date, 'yyyy-MM-dd');
       const dayTrades = trades.filter(trade => trade.date === dateString);
       
       calendarDays.push({

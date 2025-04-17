@@ -16,15 +16,17 @@ const TradeCalendar = () => {
   const navigate = useNavigate();
 
   const handleTradeClick = (trade: Trade) => {
-    navigate(`/trade/${trade.id}`);
+    navigate(`/trades/${trade.id}`);
   };
 
   const filteredTrades = trades.filter(trade => {
-    const tradeDate = new Date(trade.date);
-    return date &&
-      tradeDate.getFullYear() === date.getFullYear() &&
-      tradeDate.getMonth() === date.getMonth() &&
-      tradeDate.getDate() === date.getDate();
+    if (!date || !trade.date) return false;
+    
+    // Normalize dates to YYYY-MM-DD format for comparison
+    const selectedDateStr = format(date, 'yyyy-MM-dd');
+    const tradeDateStr = trade.date;
+    
+    return selectedDateStr === tradeDateStr;
   });
 
   return (
@@ -59,7 +61,7 @@ const TradeCalendar = () => {
                     onClick={() => handleTradeClick(trade)}
                     className="w-full text-left hover:underline"
                   >
-                    {trade.pair} - {trade.type} - {trade.profitLoss}
+                    {trade.pair} - {trade.type} - {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss}
                   </button>
                 </li>
               ))}

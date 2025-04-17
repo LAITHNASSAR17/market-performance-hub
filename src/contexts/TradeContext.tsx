@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -385,6 +384,11 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return;
 
     try {
+      const entryDate = new Date(newTradeData.date);
+      if (isNaN(entryDate.getTime())) {
+        throw new Error('Invalid date format');
+      }
+      
       const { data, error } = await supabase
         .from('trades')
         .insert({
@@ -394,9 +398,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           exit_price: newTradeData.exit || null,
           quantity: newTradeData.lotSize,
           direction: newTradeData.type === 'Buy' ? 'long' : 'short',
-          entry_date: new Date(newTradeData.date).toISOString(),
-          exit_date: newTradeData.exit ? new Date(newTradeData.date).toISOString() : null,
-          profit_loss: newTradeData.profitLoss,
+          entry_date: entryDate.toISOString(),
+          exit_date: newTradeData.exit ? entryDate.toISOString() : null,
+          profit_loss: newTradeData.profitLoss - (newTradeData.commission || 0),
           fees: newTradeData.commission || 0,
           notes: newTradeData.notes || '',
           tags: newTradeData.hashtags || [],
@@ -430,7 +434,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "حدث خطأ أثناء إضافة التداول",
         variant: "destructive"
       });
-      throw error; // Re-throw to handle in the component
+      throw error;
     }
   };
 
@@ -488,7 +492,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "حدث خطأ أثناء تحديث التداول",
         variant: "destructive"
       });
-      throw error; // Re-throw to handle in the component
+      throw error;
     }
   };
 
