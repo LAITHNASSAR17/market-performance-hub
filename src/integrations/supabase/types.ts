@@ -167,6 +167,8 @@ export type Database = {
       }
       trades: {
         Row: {
+          after_image_url: string | null
+          before_image_url: string | null
           created_at: string
           direction: string
           duration_minutes: number | null
@@ -176,6 +178,7 @@ export type Database = {
           exit_price: number | null
           fees: number | null
           id: string
+          image_url: string | null
           notes: string | null
           profit_loss: number | null
           quantity: number
@@ -188,6 +191,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          after_image_url?: string | null
+          before_image_url?: string | null
           created_at?: string
           direction: string
           duration_minutes?: number | null
@@ -197,6 +202,7 @@ export type Database = {
           exit_price?: number | null
           fees?: number | null
           id?: string
+          image_url?: string | null
           notes?: string | null
           profit_loss?: number | null
           quantity: number
@@ -209,6 +215,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          after_image_url?: string | null
+          before_image_url?: string | null
           created_at?: string
           direction?: string
           duration_minutes?: number | null
@@ -218,6 +226,7 @@ export type Database = {
           exit_price?: number | null
           fees?: number | null
           id?: string
+          image_url?: string | null
           notes?: string | null
           profit_loss?: number | null
           quantity?: number
