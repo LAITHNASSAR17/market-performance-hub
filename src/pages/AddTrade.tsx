@@ -408,7 +408,7 @@ const AddTrade: React.FC = () => {
                         step="any" 
                         value={commission} 
                         onChange={(e) => setCommission(e.target.value)}
-                        className="flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <div className="flex items-center space-x-1 space-x-reverse">
                         <Checkbox 
