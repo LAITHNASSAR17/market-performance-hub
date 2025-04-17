@@ -277,7 +277,7 @@ const AddTrade: React.FC = () => {
                     <Label htmlFor="type">نوع التداول</Label>
                     <Select value={type} onValueChange={(value: 'Buy' | 'Sell') => setType(value)} required>
                       <SelectTrigger id="type">
-                        <SelectValue placeholder="اختر ��لنوع" />
+                        <SelectValue placeholder="اختر النوع" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Buy">شراء (طويل)</SelectItem>
