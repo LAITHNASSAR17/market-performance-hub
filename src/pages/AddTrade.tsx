@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -320,7 +321,7 @@ const AddTrade: React.FC = () => {
                       value={entry} 
                       onChange={(e) => setEntry(e.target.value)} 
                       required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -332,7 +333,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={exit} 
                       onChange={(e) => setExit(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -345,7 +346,7 @@ const AddTrade: React.FC = () => {
                       value={lotSize} 
                       onChange={(e) => setLotSize(e.target.value)} 
                       required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -357,7 +358,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={stopLoss} 
                       onChange={(e) => setStopLoss(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -369,7 +370,7 @@ const AddTrade: React.FC = () => {
                       step="any" 
                       value={takeProfit} 
                       onChange={(e) => setTakeProfit(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -382,7 +383,7 @@ const AddTrade: React.FC = () => {
                       value={profitLoss} 
                       onChange={(e) => setProfitLoss(e.target.value)}
                       required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   
@@ -393,7 +394,7 @@ const AddTrade: React.FC = () => {
                       type="number" 
                       value={durationMinutes} 
                       onChange={(e) => setDurationMinutes(e.target.value)}
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                      className="w-[180px] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                     />
                   </div>
                   
