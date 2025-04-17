@@ -235,7 +235,13 @@ const Dashboard: React.FC = () => {
           
           <AccountSelector 
             selectedAccount={selectedAccountId}
-            onSelectAccount={setSelectedAccountId}
+            onSelectAccount={(value) => {
+              if (value === "all") {
+                setSelectedAccountId(null);
+              } else {
+                setSelectedAccountId(value);
+              }
+            }}
             onAddAccount={() => setShowAddAccountDialog(true)}
             className="w-full sm:w-auto"
           />

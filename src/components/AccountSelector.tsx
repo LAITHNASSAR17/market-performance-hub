@@ -39,7 +39,7 @@ const AccountSelector: React.FC<AccountSelectorProps> = ({
           </div>
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">جميع الحسابات</SelectItem>
+          <SelectItem value="all">جميع الحسابات</SelectItem>
           {tradingAccounts.map(account => (
             <SelectItem key={account.id} value={account.id}>
               {account.name} (${account.balance.toLocaleString()})
