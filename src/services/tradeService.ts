@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -45,6 +44,10 @@ export const tradeService = {
   },
 
   async createTrade(tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>): Promise<ITrade> {
+    const adjustedProfitLoss = tradeData.profitLoss !== null 
+      ? (tradeData.profitLoss - (tradeData.fees || 0)) 
+      : null;
+
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('trades')
@@ -57,7 +60,7 @@ export const tradeService = {
         direction: tradeData.direction,
         entry_date: tradeData.entryDate.toISOString(),
         exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
-        profit_loss: tradeData.profitLoss,
+        profit_loss: adjustedProfitLoss,
         fees: tradeData.fees || 0,
         notes: tradeData.notes || '',
         tags: tradeData.tags || [],
@@ -81,7 +84,22 @@ export const tradeService = {
       updated_at: now
     };
     
-    // Map the trade data to the database columns
+    if (tradeData.profitLoss !== undefined || tradeData.fees !== undefined) {
+      const currentTrade = await this.getTradeById(id);
+      if (currentTrade) {
+        const currentProfitLoss = currentTrade.profitLoss || 0;
+        const currentFees = currentTrade.fees || 0;
+        const newProfitLoss = tradeData.profitLoss !== undefined 
+          ? tradeData.profitLoss 
+          : currentProfitLoss;
+        const newFees = tradeData.fees !== undefined 
+          ? tradeData.fees 
+          : currentFees;
+        
+        updateObject.profit_loss = newProfitLoss - newFees;
+      }
+    }
+    
     if (tradeData.symbol !== undefined) updateObject.symbol = tradeData.symbol;
     if (tradeData.entryPrice !== undefined) updateObject.entry_price = tradeData.entryPrice;
     if (tradeData.exitPrice !== undefined) updateObject.exit_price = tradeData.exitPrice;
@@ -121,10 +139,8 @@ export const tradeService = {
   async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
     let query = supabase.from('trades').select('*');
     
-    // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined) {
-        // Map from camelCase to snake_case for database column names
         const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         query = query.eq(dbKey, value);
       }
@@ -137,7 +153,6 @@ export const tradeService = {
   }
 };
 
-// Helper function to format Supabase data to our interface format
 function formatTrade(data: any): ITrade {
   return {
     id: data.id,
