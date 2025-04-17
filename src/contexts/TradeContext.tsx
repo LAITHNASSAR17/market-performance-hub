@@ -688,13 +688,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const fetchTradingAccounts = async () => {
+  const fetchTradingAccounts = async (): Promise<void> => {
     if (!user) return;
 
     try {
       const accounts = await userService.getTradingAccounts(user.id);
       setTradingAccounts(accounts);
-      return accounts;
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
       toast({
@@ -702,7 +701,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "حدث خطأ أثناء جلب الحسابات",
         variant: "destructive"
       });
-      return [];
     }
   };
 
