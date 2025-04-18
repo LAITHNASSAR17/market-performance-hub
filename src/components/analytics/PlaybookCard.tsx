@@ -37,23 +37,23 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
   
   return (
     <>
-      <Card className="transition-all hover:shadow-md">
+      <Card className="transition-all hover:shadow-md flex flex-col h-full">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
-            <div className="flex flex-col">
-              <CardTitle className="text-lg flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-2 ${getCategoryColor(playbook.category)}`}></div>
-                {playbook.name}
+            <div className="flex flex-col truncate">
+              <CardTitle className="text-lg flex items-center truncate">
+                <div className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${getCategoryColor(playbook.category)}`}></div>
+                <span className="truncate">{playbook.name}</span>
               </CardTitle>
-              <span className="text-xs text-muted-foreground capitalize">
+              <span className="text-xs text-muted-foreground capitalize truncate">
                 {playbook.category || 'uncategorized'}
               </span>
             </div>
-            <div className="flex">
+            <div className="flex ml-2">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star 
                   key={star} 
-                  className={`h-4 w-4 ${
+                  className={`h-4 w-4 flex-shrink-0 ${
                     star <= Math.round(playbook.rating) 
                       ? "fill-yellow-400 text-yellow-400" 
                       : "text-muted-foreground"
@@ -64,34 +64,34 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-grow">
           <p className="text-sm text-muted-foreground mb-4 h-12 overflow-hidden text-ellipsis">
             {playbook.description}
           </p>
           
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="flex flex-col items-center p-2 border rounded-md">
-              <div className="flex items-center text-xs text-muted-foreground mb-1">
-                <TrendingUp className="h-3 w-3 mr-1" />
+            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+                <TrendingUp className="h-3 w-3 mr-1 flex-shrink-0" />
                 {t('analytics.rMultiple') || 'R-Multiple'}
               </div>
-              <div className="text-lg font-semibold">{playbook.rMultiple || 0}R</div>
+              <div className="text-lg font-semibold truncate">{playbook.rMultiple || 0}R</div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md">
-              <div className="flex items-center text-xs text-muted-foreground mb-1">
-                <Percent className="h-3 w-3 mr-1" />
+            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+                <Percent className="h-3 w-3 mr-1 flex-shrink-0" />
                 {t('analytics.winRate') || 'Win Rate'}
               </div>
-              <div className="text-lg font-semibold">{playbook.winRate || 0}%</div>
+              <div className="text-lg font-semibold truncate">{playbook.winRate || 0}%</div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md">
-              <div className="flex items-center text-xs text-muted-foreground mb-1">
-                <ArrowRightLeft className="h-3 w-3 mr-1" />
+            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+                <ArrowRightLeft className="h-3 w-3 mr-1 flex-shrink-0" />
                 {t('analytics.ev') || 'Exp. Value'}
               </div>
-              <div className={`text-lg font-semibold ${
+              <div className={`text-lg font-semibold truncate ${
                 (playbook.expectedValue || 0) > 0 ? 'text-green-500' : 
                 (playbook.expectedValue || 0) < 0 ? 'text-red-500' : ''
               }`}>
@@ -101,32 +101,32 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
           </div>
           
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="flex flex-col items-center p-2 border rounded-md">
-              <div className="flex items-center text-xs text-muted-foreground mb-1">
-                <BarChart className="h-3 w-3 mr-1" />
+            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+                <BarChart className="h-3 w-3 mr-1 flex-shrink-0" />
                 Profit Factor
               </div>
-              <div className={`text-lg font-semibold ${
+              <div className={`text-lg font-semibold truncate ${
                 (playbook.profitFactor || 0) > 1 ? 'text-green-500' : 'text-red-500'
               }`}>
                 {playbook.profitFactor?.toFixed(2) || '0.00'}
               </div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md">
-              <div className="flex items-center text-xs text-muted-foreground mb-1">
-                <Hash className="h-3 w-3 mr-1" />
+            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+                <Hash className="h-3 w-3 mr-1 flex-shrink-0" />
                 Total Trades
               </div>
-              <div className="text-lg font-semibold">{playbook.totalTrades || 0}</div>
+              <div className="text-lg font-semibold truncate">{playbook.totalTrades || 0}</div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md">
-              <div className="flex items-center text-xs text-muted-foreground mb-1">
-                <Coins className="h-3 w-3 mr-1" />
+            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+                <Coins className="h-3 w-3 mr-1 flex-shrink-0" />
                 Avg. Profit
               </div>
-              <div className={`text-lg font-semibold ${
+              <div className={`text-lg font-semibold truncate ${
                 (playbook.averageProfit || 0) > 0 ? 'text-green-500' : 
                 (playbook.averageProfit || 0) < 0 ? 'text-red-500' : ''
               }`}>
@@ -137,7 +137,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
           
           <div className="flex flex-wrap gap-1">
             {playbook.tags.map((tag, i) => (
-              <Badge key={i} variant="outline">{tag}</Badge>
+              <Badge key={i} variant="outline" className="truncate max-w-full">{tag}</Badge>
             ))}
           </div>
         </CardContent>
