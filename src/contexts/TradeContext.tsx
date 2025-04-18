@@ -629,14 +629,30 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     try {
       console.log('Fetching trading accounts for user:', user.id);
+      
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        console.log('No active session found when fetching accounts');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('trading_accounts')
         .select('*')
         .eq('user_id', user.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching trading accounts:', error);
+        return;
+      }
       
-      if (!data) return;
+      if (!data) {
+        console.log('No accounts found');
+        return;
+      }
+      
+      console.log('Fetched accounts:', data);
       
       const accounts: TradingAccount[] = data.map(acc => ({
         id: acc.id,
@@ -663,6 +679,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     if (user) {
       fetchTradingAccounts();
+    } else {
+      setTradingAccounts([]);
     }
   }, [user]);
 

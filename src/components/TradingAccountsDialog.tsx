@@ -9,15 +9,16 @@ import { Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTrade } from '@/contexts/TradeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 const TradingAccountsDialog = () => {
   const [name, setName] = React.useState('');
   const [accountType, setAccountType] = React.useState('live');
   const [balance, setBalance] = React.useState('');
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { toast } = useToast();
-  const { tradingAccounts, fetchTradingAccounts } = useTrade();
+  const { fetchTradingAccounts } = useTrade();
   const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,8 +42,19 @@ const TradingAccountsDialog = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      // مباشرة استخدام supabase لإضافة الحساب
+      console.log('Creating account with user ID:', user.id);
+      
+      // Get session to ensure we have auth permissions
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log('Current session:', sessionData?.session ? 'Active' : 'None');
+      
+      if (!sessionData.session) {
+        throw new Error('No active session found');
+      }
+      
       const { data, error } = await supabase
         .from('trading_accounts')
         .insert({
@@ -59,6 +71,8 @@ const TradingAccountsDialog = () => {
         console.error('Error creating account:', error);
         throw error;
       }
+      
+      console.log('Account created successfully:', data);
       
       // تحديث قائمة الحسابات
       await fetchTradingAccounts();
@@ -80,6 +94,8 @@ const TradingAccountsDialog = () => {
         description: "حدث خطأ أثناء إنشاء الحساب",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -130,8 +146,8 @@ const TradingAccountsDialog = () => {
             />
           </div>
           
-          <Button type="submit" className="w-full">
-            إضافة الحساب
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'جاري الإضافة...' : 'إضافة الحساب'}
           </Button>
         </form>
       </DialogContent>
