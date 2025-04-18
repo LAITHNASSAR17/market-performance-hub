@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -42,11 +41,6 @@ import Payment from './pages/Payment';
 import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
 import { TagsProvider } from './contexts/TagsContext';
-import PublicPlaybook from './pages/PublicPlaybook';
-import MentorDashboard from './pages/MentorDashboard';
-import AcceptMentorInvite from './pages/AcceptMentorInvite';
-import { MentorProvider } from './contexts/MentorContext';
-import MentorModeIndicator from './components/MentorModeIndicator';
 
 function App() {
   return (
@@ -56,13 +50,10 @@ function App() {
           <TagsProvider>
             <TradeProvider>
               <NotebookProvider>
-                <MentorProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <MentorModeIndicator />
-                    <AnimatedRoutes />
-                  </TooltipProvider>
-                </MentorProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <AnimatedRoutes />
+                </TooltipProvider>
               </NotebookProvider>
             </TradeProvider>
           </TagsProvider>
@@ -99,9 +90,6 @@ function AnimatedRoutes() {
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
-        <Route path="/mentor" element={<MentorDashboard />} />
-        <Route path="/accept-invite/:inviteCode" element={<AcceptMentorInvite />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin/users" element={<AdminUsers />} />

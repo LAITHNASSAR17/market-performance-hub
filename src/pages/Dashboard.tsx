@@ -30,8 +30,6 @@ import { useToast } from '@/components/ui/use-toast';
 import AverageTradeCards from '@/components/AverageTradeCards';
 import TradingTips from '@/components/TradingTips';
 import TradingInsights from '@/components/TradingInsights';
-import MentorInviteBanner from '@/components/MentorInviteBanner';
-import { useMentor } from '@/contexts/MentorContext';
 
 const Dashboard: React.FC = () => {
   const { trades, deleteTrade } = useTrade();
@@ -41,7 +39,6 @@ const Dashboard: React.FC = () => {
   const [timeframeFilter, setTimeframeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTradeDetails, setShowTradeDetails] = useState(false);
-  const { isInMenteeView, currentMenteeId } = useMentor();
   
   const exportReport = () => {
     toast({
@@ -57,14 +54,7 @@ const Dashboard: React.FC = () => {
     }, 1500);
   };
 
-  const userTrades = useMemo(() => {
-    if (isInMenteeView && currentMenteeId) {
-      return trades.filter(trade => trade.userId === currentMenteeId);
-    } else if (user) {
-      return trades.filter(trade => trade.userId === user.id);
-    }
-    return [];
-  }, [trades, user, isInMenteeView, currentMenteeId]);
+  const userTrades = user ? trades.filter(trade => trade.userId === user.id) : [];
 
   const filteredTrades = useMemo(() => {
     if (timeframeFilter === 'all') return userTrades;
@@ -222,14 +212,10 @@ const Dashboard: React.FC = () => {
 
   return (
     <Layout>
-      {!isInMenteeView && <MentorInviteBanner />}
-      
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold mb-1">لوحة التحكم</h1>
-          <p className="text-gray-500">
-            {isInMenteeView ? 'عرض بيانات المتدرب' : 'نظرة عامة على أداء التداول الخاص بك'}
-          </p>
+          <p className="text-gray-500">نظرة عامة على أداء التداول الخاص بك</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
@@ -244,12 +230,10 @@ const Dashboard: React.FC = () => {
               <SelectItem value="year">العام الماضي</SelectItem>
             </SelectContent>
           </Select>
-          {!isInMenteeView && (
-            <Button variant="outline" onClick={exportReport} className="w-full sm:w-auto">
-              <Calendar className="h-4 w-4 mr-2" />
-              تصدير التقرير
-            </Button>
-          )}
+          <Button variant="outline" onClick={exportReport} className="w-full sm:w-auto">
+            <Calendar className="h-4 w-4 mr-2" />
+            تصدير التقرير
+          </Button>
         </div>
       </div>
 
@@ -443,9 +427,7 @@ const Dashboard: React.FC = () => {
         isOpen={showTradeDetails}
         onClose={handleCloseTradeDetails}
         selectedDate={selectedDate}
-        trades={trades.filter(t => t.date === selectedDate && (
-          isInMenteeView ? t.userId === currentMenteeId : t.userId === user?.id
-        ))}
+        trades={trades.filter(t => t.date === selectedDate && t.userId === user?.id)}
       />
     </Layout>
   );
