@@ -43,24 +43,30 @@ import Payment from './pages/Payment';
 import UserProfileSettings from './pages/UserProfileSettings';
 import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a new QueryClient instance
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <ThemeProvider>
-          <LanguageProvider>
-            <TradeProvider>
-              <NotebookProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AnimatedRoutes />
-                </TooltipProvider>
-              </NotebookProvider>
-            </TradeProvider>
-          </LanguageProvider>
-        </ThemeProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ThemeProvider>
+            <LanguageProvider>
+              <TradeProvider>
+                <NotebookProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <AnimatedRoutes />
+                  </TooltipProvider>
+                </NotebookProvider>
+              </TradeProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
     </BrowserRouter>
   );
 }
