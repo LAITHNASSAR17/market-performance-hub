@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { 
@@ -101,7 +100,6 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
     });
   };
 
-  // Sample playbook data for demonstration
   const samplePlaybooks = [
     {
       id: "1",
@@ -129,8 +127,8 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-[90vw] w-[1000px] h-[90vh] max-h-[800px] overflow-hidden flex flex-col p-4">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex justify-between items-center">
             <div className="flex items-center">
               <Button variant="ghost" size="icon" className="mr-2">
@@ -150,15 +148,15 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="stats" className="mt-6" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="stats" className="flex-1 flex flex-col" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="stats">Stats</TabsTrigger>
             <TabsTrigger value="playbooks">Playbooks</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="stats" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="h-[160px]">
+          <TabsContent value="stats" className="flex-1 overflow-y-auto space-y-4 pr-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
                     <defs>
@@ -185,7 +183,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                 </ResponsiveContainer>
               </div>
               
-              <div className="h-[160px]">
+              <div className="h-[150px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -212,7 +210,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
               <div className="text-center">
                 <div className="text-sm text-gray-500">Total Trades</div>
                 <div className="font-bold text-lg">{dayTrades.length}</div>
@@ -239,7 +237,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="flex justify-between items-center mb-2 border-b pb-2">
                   <span className="text-sm font-medium">Options traded</span>
@@ -315,7 +313,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
               </div>
             </div>
           
-            <div className="overflow-x-auto">
+            <div className="border rounded-lg overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
@@ -416,7 +414,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
             </div>
           </TabsContent>
           
-          <TabsContent value="playbooks">
+          <TabsContent value="playbooks" className="flex-1 overflow-y-auto pr-2">
             {relevantPlaybooks.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {relevantPlaybooks.map(playbook => (
@@ -459,7 +457,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
           </TabsContent>
         </Tabs>
         
-        <DialogFooter className="mt-6 flex justify-between">
+        <DialogFooter className="flex-shrink-0 mt-4 flex justify-between">
           <Button variant="outline" onClick={onClose}>Close</Button>
           <Button onClick={handleViewDetails} className="flex items-center">
             View Details
