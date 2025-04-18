@@ -1,14 +1,16 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   PlusCircle, Filter, ArrowDownUp, Calendar, Lock, Unlock, 
-  BookOpen, Users, Star, TrendingUp, BarChart4, Percent 
+  BookOpen, Users, Star, TrendingUp, BarChart4, Percent, Coins 
 } from 'lucide-react';
 import { usePlaybooks, PlaybookEntry, PlaybookRule } from '@/hooks/usePlaybooks';
 import PlaybookCard from './PlaybookCard';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Dialog, DialogContent, DialogDescription, DialogFooter, 
+  DialogHeader, DialogTitle, DialogTrigger 
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,7 +62,6 @@ const PlaybookTab = () => {
     }
   });
   
-  // Sorting and filtering state
   const [sortBy, setSortBy] = useState<string>('name');
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -68,17 +69,14 @@ const PlaybookTab = () => {
   const [showPrivate, setShowPrivate] = useState<boolean>(true);
   const [showShared, setShowShared] = useState<boolean>(true);
   
-  // Watch form fields for rules
   const entryRules = watch('entryRules');
   const exitRules = watch('exitRules');
   const riskRules = watch('riskRules');
   const customRules = watch('customRules');
   
-  // Filtered and sorted playbooks
   const filteredPlaybooks = useMemo(() => {
     let filtered = [...playbooks];
     
-    // Filter for My Playbooks vs Shared Playbooks
     if (activeTab === 'my-playbooks') {
       if (!showPrivate) {
         filtered = filtered.filter(p => !p.isPrivate);
@@ -87,16 +85,13 @@ const PlaybookTab = () => {
         filtered = filtered.filter(p => p.isPrivate);
       }
     } else {
-      // In "shared" tab, only show shared playbooks
       filtered = filtered.filter(p => !p.isPrivate);
     }
     
-    // Apply category filter
     if (filterCategory !== 'all') {
       filtered = filtered.filter(p => p.category === filterCategory);
     }
     
-    // Apply search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(p => 
@@ -106,7 +101,6 @@ const PlaybookTab = () => {
       );
     }
     
-    // Apply sorting
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -129,7 +123,6 @@ const PlaybookTab = () => {
     return filtered;
   }, [playbooks, filterCategory, searchQuery, sortBy, activeTab, showPrivate, showShared]);
 
-  // Add/remove rule fields
   const addRuleField = (type: 'entryRules' | 'exitRules' | 'riskRules' | 'customRules') => {
     const currentRules = watch(type) || [];
     setValue(type, [...currentRules, '']);
@@ -142,10 +135,8 @@ const PlaybookTab = () => {
 
   const onSubmit = async (data: PlaybookFormData) => {
     try {
-      // Format the rules array
       const rules: PlaybookRule[] = [];
       
-      // Add entry rules
       if (data.entryRules) {
         data.entryRules.forEach((rule, index) => {
           if (rule.trim()) {
@@ -158,7 +149,6 @@ const PlaybookTab = () => {
         });
       }
       
-      // Add exit rules
       if (data.exitRules) {
         data.exitRules.forEach((rule, index) => {
           if (rule.trim()) {
@@ -171,7 +161,6 @@ const PlaybookTab = () => {
         });
       }
       
-      // Add risk rules
       if (data.riskRules) {
         data.riskRules.forEach((rule, index) => {
           if (rule.trim()) {
@@ -184,7 +173,6 @@ const PlaybookTab = () => {
         });
       }
       
-      // Add custom rules
       if (data.customRules) {
         data.customRules.forEach((rule, index) => {
           if (rule.trim()) {
@@ -316,7 +304,6 @@ const PlaybookTab = () => {
                   <div className="border rounded-md p-4 space-y-4">
                     <h3 className="font-medium">Playbook Rules</h3>
                     
-                    {/* Entry Rules */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Entry Rules</Label>
@@ -350,7 +337,6 @@ const PlaybookTab = () => {
                       ))}
                     </div>
                     
-                    {/* Exit Rules */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Exit Rules</Label>
@@ -384,7 +370,6 @@ const PlaybookTab = () => {
                       ))}
                     </div>
                     
-                    {/* Risk Management Rules */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Risk Management Rules</Label>
@@ -418,7 +403,6 @@ const PlaybookTab = () => {
                       ))}
                     </div>
                     
-                    {/* Custom Rules */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Custom Rules</Label>
@@ -477,7 +461,6 @@ const PlaybookTab = () => {
         </TabsList>
         
         <TabsContent value="my-playbooks" className="space-y-6">
-          {/* Privacy Filter */}
           <div className="flex flex-wrap gap-2">
             <Button 
               variant={showPrivate ? "default" : "outline"} 
@@ -497,7 +480,6 @@ const PlaybookTab = () => {
             </Button>
           </div>
           
-          {/* Filter and Sort Controls */}
           <div className="flex flex-col sm:flex-row gap-3 justify-between">
             <div className="flex flex-wrap gap-2">
               <div className="relative">
@@ -577,7 +559,6 @@ const PlaybookTab = () => {
             </Select>
           </div>
 
-          {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <Card>
               <CardContent className="p-4">
@@ -637,7 +618,6 @@ const PlaybookTab = () => {
             </Card>
           </div>
 
-          {/* Playbook Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPlaybooks.map((playbook) => (
               <PlaybookCard
@@ -657,7 +637,6 @@ const PlaybookTab = () => {
         </TabsContent>
         
         <TabsContent value="shared-playbooks" className="space-y-6">
-          {/* Filter and Sort Controls - Similar to My Playbooks but without privacy filter */}
           <div className="flex flex-col sm:flex-row gap-3 justify-between">
             <div className="flex flex-wrap gap-2">
               <div className="relative">
@@ -672,7 +651,6 @@ const PlaybookTab = () => {
                 </div>
               </div>
               
-              {/* Same filter dropdown as above */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -692,7 +670,6 @@ const PlaybookTab = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              {/* Same sort dropdown as above */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -713,13 +690,11 @@ const PlaybookTab = () => {
             </div>
           </div>
           
-          {/* Shared Playbook Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredPlaybooks.map((playbook) => (
               <PlaybookCard
                 key={playbook.id}
                 playbook={playbook}
-                // Don't allow editing or deleting shared playbooks from other users
                 onViewDetails={() => {}}
               />
             ))}
