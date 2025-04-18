@@ -45,7 +45,16 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguage] = useState<Language>('en');
   const { toast } = useToast();
-  const { user } = useAuth();
+  
+  // Try to use Auth context, but don't error if it's not available yet
+  let user = null;
+  try {
+    const authContext = useAuth();
+    user = authContext.user;
+  } catch (error) {
+    // Auth context not available yet, which is fine
+    console.log('Auth context not available yet in LanguageProvider');
+  }
 
   useEffect(() => {
     setLanguage('en');

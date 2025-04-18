@@ -30,8 +30,8 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <LanguageProvider>
         <TradeProvider>
           <Router>
             <Routes>
@@ -58,8 +58,8 @@ function App() {
             </Routes>
           </Router>
         </TradeProvider>
-      </AuthProvider>
-    </LanguageProvider>
+      </LanguageProvider>
+    </AuthProvider>
   );
 }
 
