@@ -12,7 +12,7 @@ import { PlaybookEntry, PlaybookRule } from '@/hooks/usePlaybooks';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react'; // Changed this from @radix-ui/react-icons
+import { CalendarIcon } from '@radix-ui/react-icons';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -101,11 +101,6 @@ const AddTrade: React.FC = () => {
     }
 
     try {
-      // Calculate the total (profit/loss - commission)
-      const calculatedProfitLoss = profitLoss || 0;
-      const calculatedCommission = commission || 0;
-      const total = calculatedProfitLoss - calculatedCommission;
-
       await addTrade({
         pair: pair,
         type: type,
@@ -129,7 +124,6 @@ const AddTrade: React.FC = () => {
         rating: rating || 0,
         playbook: selectedPlaybook === 'none' ? null : selectedPlaybook,
         followedRules: followedRules,
-        total: total, // Added missing total property
       });
       
       navigate('/trades');
@@ -178,7 +172,7 @@ const AddTrade: React.FC = () => {
           
           <div>
             <Label htmlFor="pair">الزوج</Label>
-            <Popover open={open} onOpenChange={setOpen}>
+            <Command open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -192,35 +186,33 @@ const AddTrade: React.FC = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0">
-                <Command>
-                  <CommandInput
-                    placeholder="Search symbol..."
-                    value={commandValue}
-                    onValueChange={setCommandValue}
-                  />
-                  <CommandList>
-                    <CommandEmpty>No symbol found.</CommandEmpty>
-                    <CommandGroup heading="Symbols">
-                      {filteredSymbols.map((symbol) => (
-                        <CommandItem
-                          key={symbol.symbol}
-                          value={symbol.symbol}
-                          onSelect={() => handleSymbolSelect(symbol)}
-                        >
-                          {symbol.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                    <CommandSeparator />
-                    <CommandGroup heading="Settings">
-                      <CommandItem onSelect={() => alert("Add new symbol.")}>
-                        Add symbol
+                <CommandInput
+                  placeholder="Search symbol..."
+                  value={commandValue}
+                  onValueChange={setCommandValue}
+                />
+                <CommandList>
+                  <CommandEmpty>No symbol found.</CommandEmpty>
+                  <CommandGroup heading="Symbols">
+                    {filteredSymbols.map((symbol) => (
+                      <CommandItem
+                        key={symbol.symbol}
+                        value={symbol.symbol}
+                        onSelect={() => handleSymbolSelect(symbol)}
+                      >
+                        {symbol.name}
                       </CommandItem>
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
+                    ))}
+                  </CommandGroup>
+                  <CommandSeparator />
+                  <CommandGroup heading="Settings">
+                    <CommandItem onSelect={() => alert("Add new symbol.")}>
+                      Add symbol
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
               </PopoverContent>
-            </Popover>
+            </Command>
           </div>
           
           <div>
