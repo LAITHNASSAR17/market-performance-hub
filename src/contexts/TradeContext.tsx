@@ -14,6 +14,9 @@ export type TradingAccount = {
   name: string;
   balance: number;
   createdAt: string;
+  broker?: string;
+  accountNumber?: string;
+  accountType?: string;
 };
 
 type TradeContextType = {
@@ -555,23 +558,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const fetchTradingAccounts = async () => {
-    if (!user) return;
-
-    try {
-      const accounts = await userService.getTradingAccounts(user.id);
-      setTradingAccounts(accounts);
-    } catch (error) {
-      console.error('Error fetching trading accounts:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب الحسابات",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const createTradingAccount = async (name: string, balance: number) => {
+  const createTradingAccount = async (name: string, balance: number): Promise<TradingAccount> => {
     if (!user) throw new Error('User not authenticated');
 
     if (!name.trim()) {
@@ -584,7 +571,33 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      const newAccount = await userService.createTradingAccount(user.id, name, balance);
+      const { data, error } = await supabase
+        .from('trading_accounts')
+        .insert({
+          user_id: user.id,
+          name: name.trim(),
+          balance,
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      if (!data) {
+        throw new Error('Failed to create trading account, no data returned');
+      }
+      
+      const newAccount: TradingAccount = {
+        id: data.id,
+        userId: data.user_id,
+        name: data.name,
+        balance: Number(data.balance),
+        createdAt: data.created_at,
+        broker: data.broker,
+        accountNumber: data.account_number,
+        accountType: data.account_type
+      };
       
       setTradingAccounts(prev => [...prev, newAccount]);
       
@@ -602,6 +615,41 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         variant: "destructive"
       });
       throw error;
+    }
+  };
+
+  const fetchTradingAccounts = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('trading_accounts')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      if (!data) return;
+      
+      const accounts: TradingAccount[] = data.map(acc => ({
+        id: acc.id,
+        userId: acc.user_id,
+        name: acc.name,
+        balance: Number(acc.balance),
+        createdAt: acc.created_at,
+        broker: acc.broker,
+        accountNumber: acc.account_number,
+        accountType: acc.account_type
+      }));
+      
+      setTradingAccounts(accounts);
+    } catch (error) {
+      console.error('Error fetching trading accounts:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء جلب الحسابات",
+        variant: "destructive"
+      });
     }
   };
 

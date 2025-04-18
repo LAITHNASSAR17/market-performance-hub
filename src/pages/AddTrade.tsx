@@ -18,11 +18,12 @@ import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
+import TradingAccountsDialog from '@/components/TradingAccountsDialog';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag } = useTrade();
+  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag, tradingAccounts } = useTrade();
   const { toast } = useToast();
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
@@ -275,16 +276,21 @@ const AddTrade: React.FC = () => {
                   
                   <div className="space-y-2">
                     <Label htmlFor="account">حساب التداول</Label>
-                    <Select value={account} onValueChange={setAccount} required>
-                      <SelectTrigger id="account">
-                        <SelectValue placeholder="اختر الحساب" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.map(a => (
-                          <SelectItem key={a} value={a}>{a}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex gap-2">
+                      <Select value={account} onValueChange={setAccount} required>
+                        <SelectTrigger id="account" className="flex-1">
+                          <SelectValue placeholder="اختر الحساب" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tradingAccounts.map(acc => (
+                            <SelectItem key={acc.id} value={acc.id}>
+                              {acc.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <TradingAccountsDialog />
+                    </div>
                   </div>
                   
                   <div className="space-y-2">
