@@ -513,6 +513,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_playbook_public: {
+        Args: { playbook_id: string }
+        Returns: boolean
+      }
+      is_trade_public: {
+        Args: { trade_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       share_permission: "view" | "note" | "edit"
