@@ -14,9 +14,6 @@ export type TradingAccount = {
   name: string;
   balance: number;
   createdAt: string;
-  broker?: string;
-  accountNumber?: string;
-  accountType?: string;
 };
 
 type TradeContextType = {
@@ -35,7 +32,7 @@ type TradeContextType = {
   addHashtag: (hashtag: string) => void;
   calculateProfitLoss: (entry: number, exit: number, lotSize: number, type: 'Buy' | 'Sell', instrumentType: string) => number;
   tradingAccounts: TradingAccount[];
-  createTradingAccount: (name: string, balance: number, accountType?: string) => Promise<TradingAccount>;
+  createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
   fetchTradingAccounts: () => Promise<void>;
 };
 
@@ -252,7 +249,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         detectedType = 'forex';
       } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
         detectedType = 'crypto';
-      } else if (/^(sr|sa)$/i.test(instrumentType)) {
+      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
         detectedType = 'stock';
       } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
         detectedType = 'index';
@@ -558,7 +555,23 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const createTradingAccount = async (name: string, balance: number, accountType?: string): Promise<TradingAccount> => {
+  const fetchTradingAccounts = async () => {
+    if (!user) return;
+
+    try {
+      const accounts = await userService.getTradingAccounts(user.id);
+      setTradingAccounts(accounts);
+    } catch (error) {
+      console.error('Error fetching trading accounts:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء جلب الحسابات",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const createTradingAccount = async (name: string, balance: number) => {
     if (!user) throw new Error('User not authenticated');
 
     if (!name.trim()) {
@@ -571,17 +584,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
-      console.log('Current user:', user);
-      console.log('Creating account with parameters:', { name, balance, accountType });
-      
-      const newAccount = await userService.createTradingAccount(
-        user.id,
-        name.trim(),
-        balance,
-        accountType || 'live'
-      );
-      
-      console.log('New account created:', newAccount);
+      const newAccount = await userService.createTradingAccount(user.id, name, balance);
       
       setTradingAccounts(prev => [...prev, newAccount]);
       
@@ -595,44 +598,16 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Error creating trading account:', error);
       toast({
         title: "خطأ",
-        description: `حدث خطأ أثناء إنشاء الحساب: ${error.message || 'خطأ غير معروف'}`,
+        description: "حدث خطأ أثناء إنشاء الحساب",
         variant: "destructive"
       });
       throw error;
     }
   };
 
-  const fetchTradingAccounts = async () => {
-    if (!user) {
-      console.log('No user found, cannot fetch trading accounts');
-      return;
-    }
-
-    try {
-      console.log('Fetching trading accounts for user:', user.id);
-      
-      const accounts = await userService.getTradingAccounts(user.id);
-      
-      console.log('Fetched accounts:', accounts);
-      
-      setTradingAccounts(accounts);
-    } catch (error) {
-      console.error('Error fetching trading accounts:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب الحسابات",
-        variant: "destructive"
-      });
-    }
-  };
-
   useEffect(() => {
     if (user) {
-      console.log('User detected, fetching trading accounts');
       fetchTradingAccounts();
-    } else {
-      console.log('No user detected, clearing trading accounts');
-      setTradingAccounts([]);
     }
   }, [user]);
 
@@ -664,7 +639,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 export const useTrade = () => {
   const context = useContext(TradeContext);
   if (context === undefined) {
-    console.error('useTrade hook was called outside of a TradeProvider component hierarchy');
     throw new Error('useTrade must be used within a TradeProvider');
   }
   return context;

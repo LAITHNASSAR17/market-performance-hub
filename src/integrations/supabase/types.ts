@@ -167,7 +167,6 @@ export type Database = {
       }
       trades: {
         Row: {
-          account_id: string | null
           after_image_url: string | null
           before_image_url: string | null
           created_at: string
@@ -192,7 +191,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          account_id?: string | null
           after_image_url?: string | null
           before_image_url?: string | null
           created_at?: string
@@ -217,7 +215,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          account_id?: string | null
           after_image_url?: string | null
           before_image_url?: string | null
           created_at?: string
@@ -241,22 +238,11 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_trade_account"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "trading_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       trading_accounts: {
         Row: {
-          account_number: string | null
-          account_type: string | null
           balance: number | null
-          broker: string | null
           created_at: string | null
           id: string
           name: string
@@ -264,10 +250,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          account_number?: string | null
-          account_type?: string | null
           balance?: number | null
-          broker?: string | null
           created_at?: string | null
           id?: string
           name: string
@@ -275,10 +258,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          account_number?: string | null
-          account_type?: string | null
           balance?: number | null
-          broker?: string | null
           created_at?: string | null
           id?: string
           name?: string
@@ -314,7 +294,6 @@ export type Database = {
       users: {
         Row: {
           created_at: string
-          default_account_id: string | null
           email: string
           email_verified: boolean | null
           id: string
@@ -327,7 +306,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          default_account_id?: string | null
           email: string
           email_verified?: boolean | null
           id?: string
@@ -340,7 +318,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          default_account_id?: string | null
           email?: string
           email_verified?: boolean | null
           id?: string
@@ -351,15 +328,7 @@ export type Database = {
           subscription_tier?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_default_account"
-            columns: ["default_account_id"]
-            isOneToOne: false
-            referencedRelation: "trading_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
