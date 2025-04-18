@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
@@ -117,10 +118,6 @@ const translations = {
     'theme.toggle': 'Toggle theme',
     'theme.lightMode': 'Light mode',
     'theme.darkMode': 'Dark mode',
-    
-    // Analytics section translations
-    'analytics.title': 'Analytics',
-    'analytics.subtitle': 'Track your trading performance and insights',
   }
 };
 

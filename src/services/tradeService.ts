@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -22,7 +21,6 @@ export interface ITrade {
   takeProfit: number | null;
   durationMinutes: number | null;
   playbook?: string;
-  followedRules?: string[];
 }
 
 export const tradeService = {
@@ -67,9 +65,7 @@ export const tradeService = {
         rating: tradeData.rating || 0,
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
-        duration_minutes: tradeData.durationMinutes,
-        playbook: tradeData.playbook,
-        followed_rules: tradeData.followedRules || []
+        duration_minutes: tradeData.durationMinutes
       })
       .select()
       .single();
@@ -101,8 +97,6 @@ export const tradeService = {
     if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
-    if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
-    if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
     
     const { data, error } = await supabase
       .from('trades')
@@ -138,17 +132,6 @@ export const tradeService = {
     
     if (error || !data) return [];
     return data.map(formatTrade);
-  },
-  
-  // New method to find trades by playbook
-  async findTradesByPlaybook(playbookId: string): Promise<ITrade[]> {
-    const { data, error } = await supabase
-      .from('trades')
-      .select('*')
-      .eq('playbook', playbookId);
-    
-    if (error || !data) return [];
-    return data.map(formatTrade);
   }
 };
 
@@ -173,7 +156,6 @@ function formatTrade(data: any): ITrade {
     stopLoss: data.stop_loss,
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
-    playbook: data.playbook,
-    followedRules: data.followed_rules || []
+    playbook: data.playbook
   };
 }

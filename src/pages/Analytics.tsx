@@ -33,9 +33,9 @@ const Analytics: React.FC = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title')}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title') || 'Analytics'}</h1>
             <p className="text-muted-foreground mt-1 dark:text-gray-300">
-              {t('analytics.subtitle')}
+              {t('analytics.subtitle') || 'Track the metrics that matter for your trading journey'}
             </p>
           </div>
         </div>
