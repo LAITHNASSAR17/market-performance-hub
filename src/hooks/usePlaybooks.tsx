@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ITrade } from '@/services/tradeService';
+import { tradeService } from '@/services/tradeService';
 
 export interface PlaybookRule {
   id: string;
@@ -130,33 +131,182 @@ export const usePlaybooks = () => {
       ]
     }
   ]);
+
+  // Load playbooks on initial render
+  useEffect(() => {
+    const fetchPlaybooks = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('playbooks')
+          .select('*');
+        
+        if (error) {
+          console.error('Error fetching playbooks:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          // Replace the default playbooks with data from the database
+          const formattedPlaybooks = data.map(formatPlaybook);
+          setPlaybooks(formattedPlaybooks);
+          
+          // Update metrics for each playbook
+          formattedPlaybooks.forEach(playbook => {
+            calculatePlaybookMetrics(playbook.id);
+          });
+        } else {
+          // If no playbooks in the database, save the default ones
+          playbooks.forEach(async (playbook) => {
+            await savePlaybookToDb(playbook);
+          });
+        }
+      } catch (error) {
+        console.error('Error in fetchPlaybooks:', error);
+      }
+    };
+    
+    fetchPlaybooks();
+  }, []);
   
-  const addPlaybook = (playbook: Omit<PlaybookEntry, 'id'>) => {
+  const formatPlaybook = (dbPlaybook: any): PlaybookEntry => {
+    return {
+      id: dbPlaybook.id,
+      name: dbPlaybook.name,
+      description: dbPlaybook.description,
+      rating: dbPlaybook.rating || 0,
+      tags: dbPlaybook.tags || [],
+      rMultiple: dbPlaybook.r_multiple,
+      winRate: dbPlaybook.win_rate,
+      expectedValue: dbPlaybook.expected_value,
+      profitFactor: dbPlaybook.profit_factor,
+      totalTrades: dbPlaybook.total_trades,
+      averageProfit: dbPlaybook.average_profit,
+      category: dbPlaybook.category,
+      isPrivate: dbPlaybook.is_private,
+      avgWinner: dbPlaybook.avg_winner,
+      avgLoser: dbPlaybook.avg_loser,
+      missedTrades: dbPlaybook.missed_trades,
+      netProfitLoss: dbPlaybook.net_profit_loss,
+      rules: dbPlaybook.rules || []
+    };
+  };
+  
+  const savePlaybookToDb = async (playbook: PlaybookEntry) => {
+    try {
+      const { data, error } = await supabase
+        .from('playbooks')
+        .insert({
+          id: playbook.id,
+          name: playbook.name,
+          description: playbook.description,
+          rating: playbook.rating,
+          tags: playbook.tags,
+          r_multiple: playbook.rMultiple,
+          win_rate: playbook.winRate,
+          expected_value: playbook.expectedValue,
+          profit_factor: playbook.profitFactor,
+          total_trades: playbook.totalTrades,
+          average_profit: playbook.averageProfit,
+          category: playbook.category,
+          is_private: playbook.isPrivate,
+          avg_winner: playbook.avgWinner,
+          avg_loser: playbook.avgLoser,
+          missed_trades: playbook.missedTrades,
+          net_profit_loss: playbook.netProfitLoss,
+          rules: playbook.rules,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select();
+      
+      if (error) {
+        console.error('Error saving playbook:', error);
+      }
+      
+    } catch (error) {
+      console.error('Error in savePlaybookToDb:', error);
+    }
+  };
+  
+  const addPlaybook = async (playbook: Omit<PlaybookEntry, 'id'>) => {
     const newPlaybook = {
       ...playbook,
       id: Date.now().toString()
     };
-    setPlaybooks([...playbooks, newPlaybook]);
+    
+    try {
+      await savePlaybookToDb(newPlaybook);
+      setPlaybooks([...playbooks, newPlaybook]);
+    } catch (error) {
+      console.error('Error adding playbook:', error);
+      throw error;
+    }
   };
   
-  const updatePlaybook = (id: string, updatedData: Partial<PlaybookEntry>) => {
-    setPlaybooks(playbooks.map(p => p.id === id ? {...p, ...updatedData} : p));
+  const updatePlaybook = async (id: string, updatedData: Partial<PlaybookEntry>) => {
+    try {
+      const updateObject: any = {
+        updated_at: new Date().toISOString()
+      };
+      
+      if (updatedData.name !== undefined) updateObject.name = updatedData.name;
+      if (updatedData.description !== undefined) updateObject.description = updatedData.description;
+      if (updatedData.rating !== undefined) updateObject.rating = updatedData.rating;
+      if (updatedData.tags !== undefined) updateObject.tags = updatedData.tags;
+      if (updatedData.rMultiple !== undefined) updateObject.r_multiple = updatedData.rMultiple;
+      if (updatedData.winRate !== undefined) updateObject.win_rate = updatedData.winRate;
+      if (updatedData.expectedValue !== undefined) updateObject.expected_value = updatedData.expectedValue;
+      if (updatedData.profitFactor !== undefined) updateObject.profit_factor = updatedData.profitFactor;
+      if (updatedData.totalTrades !== undefined) updateObject.total_trades = updatedData.totalTrades;
+      if (updatedData.averageProfit !== undefined) updateObject.average_profit = updatedData.averageProfit;
+      if (updatedData.category !== undefined) updateObject.category = updatedData.category;
+      if (updatedData.isPrivate !== undefined) updateObject.is_private = updatedData.isPrivate;
+      if (updatedData.avgWinner !== undefined) updateObject.avg_winner = updatedData.avgWinner;
+      if (updatedData.avgLoser !== undefined) updateObject.avg_loser = updatedData.avgLoser;
+      if (updatedData.missedTrades !== undefined) updateObject.missed_trades = updatedData.missedTrades;
+      if (updatedData.netProfitLoss !== undefined) updateObject.net_profit_loss = updatedData.netProfitLoss;
+      if (updatedData.rules !== undefined) updateObject.rules = updatedData.rules;
+      
+      const { error } = await supabase
+        .from('playbooks')
+        .update(updateObject)
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error updating playbook in database:', error);
+        throw error;
+      }
+      
+      setPlaybooks(playbooks.map(p => p.id === id ? {...p, ...updatedData} : p));
+    } catch (error) {
+      console.error('Error in updatePlaybook:', error);
+      throw error;
+    }
   };
   
-  const deletePlaybook = (id: string) => {
-    setPlaybooks(playbooks.filter(p => p.id !== id));
+  const deletePlaybook = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('playbooks')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting playbook from database:', error);
+        throw error;
+      }
+      
+      setPlaybooks(playbooks.filter(p => p.id !== id));
+    } catch (error) {
+      console.error('Error in deletePlaybook:', error);
+      throw error;
+    }
   };
 
   // Get trades linked to a specific playbook
   const getPlaybookTrades = async (playbookId: string): Promise<ITrade[]> => {
     try {
-      const { data, error } = await supabase
-        .from('trades')
-        .select('*')
-        .contains('tags', [playbooks.find(p => p.id === playbookId)?.name]);
-      
-      if (error) throw error;
-      return data || [];
+      return await tradeService.findTradesByPlaybook(playbookId);
     } catch (error) {
       console.error('Error fetching playbook trades:', error);
       return [];
@@ -185,7 +335,7 @@ export const usePlaybooks = () => {
       // Calculate expectancy: (Win% × Average Win) - (Loss% × Average Loss)
       const expectancy = ((winRate / 100) * avgWinner) + ((1 - winRate / 100) * avgLoser);
       
-      updatePlaybook(playbookId, {
+      await updatePlaybook(playbookId, {
         winRate: parseFloat(winRate.toFixed(2)),
         profitFactor: parseFloat(profitFactor.toFixed(2)),
         totalTrades,

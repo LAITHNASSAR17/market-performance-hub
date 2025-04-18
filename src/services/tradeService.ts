@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -134,6 +135,17 @@ export const tradeService = {
     });
     
     const { data, error } = await query;
+    
+    if (error || !data) return [];
+    return data.map(formatTrade);
+  },
+  
+  // New method to find trades by playbook
+  async findTradesByPlaybook(playbookId: string): Promise<ITrade[]> {
+    const { data, error } = await supabase
+      .from('trades')
+      .select('*')
+      .eq('playbook', playbookId);
     
     if (error || !data) return [];
     return data.map(formatTrade);

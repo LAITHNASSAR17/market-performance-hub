@@ -11,13 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, X, BookMarked } from "lucide-react";
 import { format } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
+import { usePlaybooks } from '@/hooks/usePlaybooks';
+import { Checkbox } from "@/components/ui/checkbox";
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +30,11 @@ const AddTrade: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddPairDialog, setShowAddPairDialog] = useState(false);
+  
+  // Playbook integration
+  const { playbooks } = usePlaybooks();
+  const [selectedPlaybook, setSelectedPlaybook] = useState<string>('');
+  const [followedRules, setFollowedRules] = useState<string[]>([]);
   
   const [pair, setPair] = useState('');
   const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
@@ -49,6 +56,9 @@ const AddTrade: React.FC = () => {
   const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
   const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
   const [total, setTotal] = useState<string>('0');
+
+  // Get the selected playbook's rules
+  const selectedPlaybookRules = playbooks.find(p => p.id === selectedPlaybook)?.rules || [];
 
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
@@ -83,6 +93,8 @@ const AddTrade: React.FC = () => {
         setImageUrl(data.image_url || null);
         setBeforeImageUrl(data.before_image_url || null);
         setAfterImageUrl(data.after_image_url || null);
+        setSelectedPlaybook(data.playbook || '');
+        setFollowedRules(data.followed_rules || []);
         
         setAccount(accounts[0] || '');
         setIsEditing(true);
@@ -139,6 +151,20 @@ const AddTrade: React.FC = () => {
     setTotal((rawPL - fees).toString());
   };
 
+  const handleRuleChange = (ruleId: string, checked: boolean) => {
+    if (checked) {
+      setFollowedRules([...followedRules, ruleId]);
+    } else {
+      setFollowedRules(followedRules.filter(id => id !== ruleId));
+    }
+  };
+
+  const handlePlaybookChange = (playbookId: string) => {
+    setSelectedPlaybook(playbookId);
+    // Reset followed rules when changing playbook
+    setFollowedRules([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -173,7 +199,9 @@ const AddTrade: React.FC = () => {
         returnPercentage: 0,
         imageUrl: imageUrl,
         beforeImageUrl: beforeImageUrl,
-        afterImageUrl: afterImageUrl
+        afterImageUrl: afterImageUrl,
+        playbook: selectedPlaybook || undefined,
+        followedRules: followedRules
       };
 
       if (isEditing && id) {
@@ -491,6 +519,60 @@ const AddTrade: React.FC = () => {
               </CardContent>
             </Card>
             
+            {/* Playbook Card */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center">
+                  <BookMarked className="h-5 w-5 mr-2" />
+                  استراتيجية التداول (Playbook)
+                </CardTitle>
+                <CardDescription>اختر استراتيجية تداول لتصنيف هذا التداول وتتبع أداء استراتيجياتك</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="playbook">استراتيجية التداول</Label>
+                  <Select value={selectedPlaybook} onValueChange={handlePlaybookChange}>
+                    <SelectTrigger id="playbook">
+                      <SelectValue placeholder="اختر استراتيجية" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">بدون استراتيجية</SelectItem>
+                      {playbooks.map(playbook => (
+                        <SelectItem key={playbook.id} value={playbook.id}>
+                          {playbook.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {selectedPlaybook && selectedPlaybookRules.length > 0 && (
+                  <div className="space-y-2 border rounded-md p-4">
+                    <Label>القواعد المتبعة في هذا التداول</Label>
+                    <div className="space-y-2 mt-2">
+                      {selectedPlaybookRules.map(rule => (
+                        <div key={rule.id} className="flex items-start space-x-2 rtl:space-x-reverse">
+                          <Checkbox 
+                            id={`rule-${rule.id}`} 
+                            checked={followedRules.includes(rule.id)}
+                            onCheckedChange={(checked) => handleRuleChange(rule.id, checked as boolean)}
+                          />
+                          <Label htmlFor={`rule-${rule.id}`} className="text-sm leading-tight">
+                            <span className="font-medium">{rule.type === 'entry' ? 'دخول: ' : 
+                                                    rule.type === 'exit' ? 'خروج: ' : 
+                                                    rule.type === 'risk' ? 'إدارة المخاطر: ' : 
+                                                    'قاعدة: '}</span>
+                            {rule.description}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Notes and Tags Card */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">الملاحظات والوسوم</CardTitle>
