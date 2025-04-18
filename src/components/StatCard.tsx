@@ -11,7 +11,6 @@ interface StatCardProps {
   icon?: React.ReactNode;
   trend?: 'up' | 'down' | 'neutral';
   className?: string;
-  textClass?: string;
   color?: 'default' | 'green' | 'red' | 'purple' | 'blue';
   onClick?: () => void;
 }
@@ -23,7 +22,6 @@ const StatCard: React.FC<StatCardProps> = ({
   icon,
   trend,
   className,
-  textClass,
   color = 'default',
   onClick
 }) => {
@@ -47,8 +45,7 @@ const StatCard: React.FC<StatCardProps> = ({
               color === 'green' && "text-emerald-500",
               color === 'red' && "text-red-500",
               color === 'purple' && "text-purple-500",
-              color === 'blue' && "text-blue-500",
-              textClass
+              color === 'blue' && "text-blue-500"
             )}>
               {value}
               {trend && (

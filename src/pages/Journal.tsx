@@ -14,7 +14,7 @@ import { Trade } from '@/types/trade';
 import TradeDetailsDialog from '@/components/TradeDetailsDialog';
 
 const Journal: React.FC = () => {
-  const { trades, allHashtags, selectedAccount } = useTrade();
+  const { trades, allHashtags } = useTrade();
   const [dateFilter, setDateFilter] = useState('all');
   const [pairFilter, setPairFilter] = useState('all');
   const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
@@ -40,9 +40,7 @@ const Journal: React.FC = () => {
     setIsDetailsOpen(true);
   };
 
-  const accountFilteredTrades = trades.filter(trade => trade.account === selectedAccount);
-  
-  const filteredTrades = accountFilteredTrades.filter(trade => {
+  const filteredTrades = trades.filter(trade => {
     const matchesDate = dateFilter === 'all' || trade.date === dateFilter;
     const matchesPair = pairFilter === 'all' || trade.pair === pairFilter;
     const matchesHashtags = selectedHashtags.length === 0 || 
