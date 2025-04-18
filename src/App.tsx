@@ -18,6 +18,7 @@ import { Toaster } from './components/ui/toaster';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { TradeProvider } from './contexts/TradeContext';
 import { NotebookProvider } from './contexts/NotebookContext';
+import { MentorshipProvider } from './contexts/MentorshipContext';
 import TradeTracking from './pages/TradeTracking';
 import TradingChart from './pages/TradingChart';
 import Notebook from './pages/Notebook';
@@ -50,10 +51,12 @@ function App() {
           <TagsProvider>
             <TradeProvider>
               <NotebookProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AnimatedRoutes />
-                </TooltipProvider>
+                <MentorshipProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <AnimatedRoutes />
+                  </TooltipProvider>
+                </MentorshipProvider>
               </NotebookProvider>
             </TradeProvider>
           </TagsProvider>
