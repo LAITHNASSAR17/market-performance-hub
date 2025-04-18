@@ -47,14 +47,7 @@ const TradingAccountsDialog = () => {
     try {
       console.log('Creating account with user ID:', user.id);
       
-      // Get session to ensure we have auth permissions
-      const { data: sessionData } = await supabase.auth.getSession();
-      console.log('Current session:', sessionData?.session ? 'Active' : 'None');
-      
-      if (!sessionData.session) {
-        throw new Error('No active session found');
-      }
-      
+      // Simplified insert now that RLS is disabled
       const { data, error } = await supabase
         .from('trading_accounts')
         .insert({
@@ -64,20 +57,19 @@ const TradingAccountsDialog = () => {
           account_type: accountType || 'live',
           created_at: new Date().toISOString()
         })
-        .select()
-        .single();
+        .select();
       
       if (error) {
-        console.error('Error creating account:', error);
+        console.error('Error details:', error);
         throw error;
       }
       
       console.log('Account created successfully:', data);
       
-      // تحديث قائمة الحسابات
+      // Refresh the accounts list
       await fetchTradingAccounts();
       
-      // إعادة تعيين النموذج
+      // Reset form
       setName('');
       setAccountType('live');
       setBalance('');
