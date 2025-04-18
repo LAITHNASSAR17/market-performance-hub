@@ -43,6 +43,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
 import { TagsProvider } from './contexts/TagsContext';
 import PublicPlaybook from './pages/PublicPlaybook';
+import MentorDashboard from './pages/MentorDashboard';
+import AcceptMentorInvite from './pages/AcceptMentorInvite';
+import { MentorProvider } from './contexts/MentorContext';
+import MentorModeIndicator from './components/MentorModeIndicator';
 
 function App() {
   return (
@@ -52,10 +56,13 @@ function App() {
           <TagsProvider>
             <TradeProvider>
               <NotebookProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AnimatedRoutes />
-                </TooltipProvider>
+                <MentorProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <MentorModeIndicator />
+                    <AnimatedRoutes />
+                  </TooltipProvider>
+                </MentorProvider>
               </NotebookProvider>
             </TradeProvider>
           </TagsProvider>
@@ -93,6 +100,8 @@ function AnimatedRoutes() {
         <Route path="/payment" element={<Payment />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
+        <Route path="/mentor" element={<MentorDashboard />} />
+        <Route path="/accept-invite/:inviteCode" element={<AcceptMentorInvite />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin/users" element={<AdminUsers />} />
