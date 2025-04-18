@@ -11,6 +11,14 @@ export interface TradingTip {
   priority: 'high' | 'medium' | 'low';
 }
 
+export interface TradingInsight {
+  id: string;
+  title: string;
+  content: string;
+  category: 'performance' | 'psychology' | 'risk' | 'strategy' | 'pattern' | 'data' | 'error';
+  importance: 'high' | 'medium' | 'low';
+}
+
 export const getAITradingTips = async (trades: Trade[], stats: TradeStats): Promise<TradingTip[]> => {
   if (trades.length < 3) {
     return [{
@@ -68,5 +76,48 @@ export const generateAIAdvice = async (trades: Trade[], stats: TradeStats): Prom
   } catch (error) {
     console.error("Error generating AI advice:", error);
     return "عذراً، حدث خطأ في توليد التحليل. يرجى المحاولة مرة أخرى لاحقاً.";
+  }
+};
+
+export const generateTradingInsights = async (
+  trades: Trade[], 
+  stats: TradeStats,
+  playbooks: any[] = [],
+  timeRange: string = 'all'
+): Promise<TradingInsight[]> => {
+  if (trades.length < 5) {
+    return [{
+      id: 'data-1',
+      title: 'نحتاج المزيد من البيانات',
+      content: 'أضف المزيد من الصفقات للحصول على تحليل أكثر دقة. نحتاج على الأقل 5 صفقات.',
+      category: 'data',
+      importance: 'high'
+    }];
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-trading-insights', {
+      body: { trades, stats, playbooks, timeRange }
+    });
+
+    if (error) {
+      console.error("Error generating trading insights:", error);
+      throw error;
+    }
+
+    if (!data || !data.insights || !Array.isArray(data.insights)) {
+      throw new Error("Invalid response format from AI service");
+    }
+
+    return data.insights;
+  } catch (error) {
+    console.error("Error generating trading insights:", error);
+    return [{
+      id: 'error-1',
+      title: 'عذراً، حدث خطأ',
+      content: 'حدث خطأ أثناء تحليل بياناتك. يرجى المحاولة مرة أخرى لاحقاً.',
+      category: 'error',
+      importance: 'high'
+    }];
   }
 };

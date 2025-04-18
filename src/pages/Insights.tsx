@@ -5,11 +5,12 @@ import { useTrade, Trade } from '@/contexts/TradeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Calendar, DollarSign, BarChart, Clock, Percent as PercentIcon, LineChart, Target, Lightbulb } from 'lucide-react';
+import { Calendar, DollarSign, BarChart, Clock, Percent as PercentIcon, LineChart, Target, Lightbulb, Brain } from 'lucide-react';
 import StatCard from '@/components/StatCard';
 import HashtagBadge from '@/components/HashtagBadge';
 import { cn } from '@/lib/utils';
 import TradingTips from '@/components/TradingTips';
+import TradingInsights from '@/components/TradingInsights';
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Input } from '@/components/ui/input';
@@ -146,41 +147,41 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
   return (
     <Layout>
       <div className="container mx-auto py-4 md:py-8">
-        <h1 className="text-3xl font-bold mb-4 dark:text-white">Trading Insights</h1>
+        <h1 className="text-3xl font-bold mb-4 dark:text-white">تحليل التداول</h1>
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
           <StatCard
-            title="Total Profit/Loss"
+            title="الربح/الخسارة الإجمالية"
             value={`$${netProfitLoss.toFixed(2)}`}
             trend={netProfitLoss > 0 ? 'up' : netProfitLoss < 0 ? 'down' : 'neutral'}
             icon={<DollarSign className="h-5 w-5" />}
             color={netProfitLoss > 0 ? 'green' : netProfitLoss < 0 ? 'red' : 'default'}
-            description={`Trades: ${totalTrades} | Fees: $${totalFees.toFixed(2)}`}
+            description={`الصفقات: ${totalTrades} | الرسوم: $${totalFees.toFixed(2)}`}
           />
           <StatCard
-            title="Win Rate"
+            title="نسبة الربح"
             value={`${winRate.toFixed(1)}%`}
-            description={`${winningTrades}/${totalTrades} trades`}
+            description={`${winningTrades}/${totalTrades} صفقة`}
             icon={<PercentIcon className="h-5 w-5" />}
           />
           <StatCard
-            title="Total Trades"
+            title="إجمالي الصفقات"
             value={totalTrades}
             icon={<BarChart className="h-5 w-5" />}
-            description={`W:${winningTrades} L:${losingTrades}`}
+            description={`رابحة:${winningTrades} خاسرة:${losingTrades}`}
           />
           <StatCard
-            title="Average Duration"
+            title="متوسط المدة"
             value={formatDuration(avgDuration)}
             icon={<Clock className="h-5 w-5" />}
-            description={`${tradesWithDuration.length} trades`}
+            description={`${tradesWithDuration.length} صفقة`}
           />
         </div>
 
         {/* Hashtag Filters */}
         <div className="mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold mb-2 dark:text-white">Filter by Hashtags</h2>
+          <h2 className="text-xl font-semibold mb-2 dark:text-white">تصفية حسب العلامات</h2>
           <div className="flex flex-wrap gap-2 mb-3">
             {allHashtags.map(tag => (
               <button
@@ -200,7 +201,7 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
           <div className="flex items-center mt-3">
             <Input
               type="text"
-              placeholder="Add new hashtag"
+              placeholder="إضافة علامة جديدة"
               value={newHashtag}
               onChange={e => setNewHashtag(e.target.value)}
               className="border rounded-l px-2 py-1 text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -209,14 +210,14 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
               onClick={handleAddHashtag}
               className="bg-green-500 hover:bg-green-600 text-white rounded-r px-3 py-1 text-sm"
             >
-              Add
+              إضافة
             </Button>
           </div>
         </div>
 
         {/* Time Range Selector */}
         <div className="mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
-          <h2 className="text-xl font-semibold mb-2 dark:text-white">Time Range</h2>
+          <h2 className="text-xl font-semibold mb-2 dark:text-white">النطاق الزمني</h2>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setTimeRange('week')}
@@ -227,7 +228,7 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               )}
             >
-              Week
+              أسبوع
             </button>
             <button
               onClick={() => setTimeRange('month')}
@@ -238,7 +239,7 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               )}
             >
-              Month
+              شهر
             </button>
             <button
               onClick={() => setTimeRange('quarter')}
@@ -249,7 +250,7 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               )}
             >
-              Quarter
+              3 أشهر
             </button>
             <button
               onClick={() => setTimeRange('year')}
@@ -260,7 +261,7 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               )}
             >
-              Year
+              سنة
             </button>
             <button
               onClick={() => setTimeRange('all')}
@@ -271,15 +272,21 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
                   : "bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               )}
             >
-              All Time
+              كل الوقت
             </button>
           </div>
+        </div>
+
+        {/* AI Insights Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <TradingInsights timeRange={timeRange} />
+          <TradingTips />
         </div>
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm h-[350px]">
-            <h2 className="text-xl font-semibold mb-2 dark:text-white">Daily P&L</h2>
+            <h2 className="text-xl font-semibold mb-2 dark:text-white">الربح/الخسارة اليومية</h2>
             <DailyPLBarChart data={dailyPLData} className="h-[280px]" />
           </div>
           <div className="h-[350px]">
@@ -296,18 +303,88 @@ const Insights: React.FC<InsightsProps> = ({ /* props */ }) => {
             lossCount={losingTradesList.length}
           />
           
-          {/* AI Trading Tips */}
-          <div>
-            <TradingTips />
-          </div>
+          {/* Performance Analysis */}
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Brain className="mr-2 h-5 w-5" />
+                تحليل الأداء
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {filteredTrades.length > 0 ? (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium mb-2">الأداء حسب الزوج</h3>
+                    {Object.entries(
+                      filteredTrades.reduce((acc: Record<string, {count: number, pl: number}>, trade) => {
+                        if (!acc[trade.pair]) {
+                          acc[trade.pair] = { count: 0, pl: 0 };
+                        }
+                        acc[trade.pair].count++;
+                        acc[trade.pair].pl += trade.total;
+                        return acc;
+                      }, {})
+                    )
+                      .sort((a, b) => b[1].pl - a[1].pl)
+                      .slice(0, 3)
+                      .map(([pair, data]) => (
+                        <div key={pair} className="flex justify-between items-center mb-2 border-b pb-2">
+                          <span className="font-medium">{pair}</span>
+                          <span className="flex items-center gap-3">
+                            <span className="text-gray-500">{data.count} صفقة</span>
+                            <span className={data.pl > 0 ? "text-green-500" : "text-red-500"}>
+                              ${data.pl.toFixed(2)}
+                            </span>
+                          </span>
+                        </div>
+                      ))
+                    }
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">الأداء حسب العلامات</h3>
+                    {Object.entries(
+                      filteredTrades.reduce((acc: Record<string, {count: number, pl: number}>, trade) => {
+                        trade.hashtags.forEach(tag => {
+                          if (!acc[tag]) {
+                            acc[tag] = { count: 0, pl: 0 };
+                          }
+                          acc[tag].count++;
+                          acc[tag].pl += trade.total;
+                        });
+                        return acc;
+                      }, {})
+                    )
+                      .sort((a, b) => b[1].pl - a[1].pl)
+                      .slice(0, 3)
+                      .map(([tag, data]) => (
+                        <div key={tag} className="flex justify-between items-center mb-2 border-b pb-2">
+                          <span className="font-medium">#{tag}</span>
+                          <span className="flex items-center gap-3">
+                            <span className="text-gray-500">{data.count} صفقة</span>
+                            <span className={data.pl > 0 ? "text-green-500" : "text-red-500"}>
+                              ${data.pl.toFixed(2)}
+                            </span>
+                          </span>
+                        </div>
+                      ))
+                    }
+                  </div>
+                </div>
+              ) : (
+                <p className="text-center text-gray-500">لا توجد بيانات متاحة للفلاتر المحددة.</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Detailed Trade Analysis */}
         <Tabs defaultValue="overview" className="w-full mt-6">
           <TabsList className="mb-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-            <TabsTrigger value="trades">Trades</TabsTrigger>
+            <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
+            <TabsTrigger value="performance">الأداء</TabsTrigger>
+            <TabsTrigger value="trades">الصفقات</TabsTrigger>
           </TabsList>
           <TabsContent value="overview" className="space-y-4">
             <Card>
