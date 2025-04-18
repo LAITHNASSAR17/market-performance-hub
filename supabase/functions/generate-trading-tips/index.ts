@@ -24,20 +24,20 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4-turbo-preview',
         messages: [
           {
             role: 'system',
-            content: 'You are a professional trading advisor. Analyze trading data and provide specific, actionable advice in Arabic. Focus on risk management, psychological aspects, and strategy improvement.'
+            content: 'أنت مستشار تداول محترف. قم بتحليل بيانات التداول وقدم نصائح محددة وقابلة للتنفيذ باللغة العربية. ركز على إدارة المخاطر والجوانب النفسية وتحسين الاستراتيجية.'
           },
           {
             role: 'user',
             content: `
-              Please analyze this trading data and provide 3 specific tips in JSON format.
-              Trading Data: ${JSON.stringify(trades)}
-              Statistics: ${JSON.stringify(stats)}
+              يرجى تحليل بيانات التداول هذه وتقديم 3 نصائح محددة بتنسيق JSON.
+              بيانات التداول: ${JSON.stringify(trades)}
+              الإحصائيات: ${JSON.stringify(stats)}
               
-              Return the response in this exact JSON format:
+              قم بإرجاع الرد بهذا التنسيق JSON بالضبط:
               [
                 {
                   "id": "1",
@@ -50,11 +50,24 @@ serve(async (req) => {
             `
           }
         ],
+        temperature: 0.7,
+        max_tokens: 1000
       }),
     });
 
     const data = await response.json();
-    const tips = JSON.parse(data.choices[0].message.content);
+    console.log('OpenAI Response:', data);
+    
+    let tips;
+    try {
+      tips = JSON.parse(data.choices[0].message.content);
+    } catch (error) {
+      console.error('Error parsing OpenAI response:', error);
+      return new Response(JSON.stringify({ error: 'Invalid response format' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     
     return new Response(JSON.stringify(tips), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

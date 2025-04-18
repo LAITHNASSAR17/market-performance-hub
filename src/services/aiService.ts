@@ -12,20 +12,6 @@ export interface TradingTip {
 }
 
 export const getAITradingTips = async (trades: Trade[], stats: TradeStats): Promise<TradingTip[]> => {
-  try {
-    const { data, error } = await supabase.functions.invoke('generate-trading-tips', {
-      body: { trades, stats }
-    });
-
-    if (error) throw error;
-    return data || getDefaultTips(trades);
-  } catch (error) {
-    console.error("Error getting AI trading tips:", error);
-    return getDefaultTips(trades);
-  }
-};
-
-const getDefaultTips = (trades: Trade[]): TradingTip[] => {
   if (trades.length < 3) {
     return [{
       id: '1',
@@ -35,14 +21,32 @@ const getDefaultTips = (trades: Trade[]): TradingTip[] => {
       priority: 'medium'
     }];
   }
-  
-  return [{
-    id: '1',
-    title: 'راجع استراتيجيتك',
-    content: 'قم بمراجعة وتحليل صفقاتك الأخيرة لتحديد نقاط القوة والضعف',
-    category: 'strategy',
-    priority: 'high'
-  }];
+
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-trading-tips', {
+      body: { trades, stats }
+    });
+
+    if (error) {
+      console.error("Error getting AI trading tips:", error);
+      throw error;
+    }
+
+    if (!data || !Array.isArray(data)) {
+      throw new Error("Invalid response format from AI service");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error getting AI trading tips:", error);
+    return [{
+      id: '1',
+      title: 'راجع استراتيجيتك',
+      content: 'قم بمراجعة وتحليل صفقاتك الأخيرة لتحديد نقاط القوة والضعف',
+      category: 'strategy',
+      priority: 'high'
+    }];
+  }
 };
 
 export const generateAIAdvice = async (trades: Trade[], stats: TradeStats): Promise<string> => {
@@ -51,11 +55,8 @@ export const generateAIAdvice = async (trades: Trade[], stats: TradeStats): Prom
   }
 
   try {
-    const { data: tips } = await supabase.functions.invoke('generate-trading-tips', {
-      body: { trades, stats }
-    });
-    
-    return tips?.[0]?.content || getDefaultTips(trades)[0].content;
+    const tips = await getAITradingTips(trades, stats);
+    return tips[0]?.content || "عذراً، حدث خطأ في توليد النصائح. يرجى المحاولة مرة أخرى لاحقاً.";
   } catch (error) {
     console.error("Error generating AI advice:", error);
     return "عذراً، حدث خطأ في توليد النصائح. يرجى المحاولة مرة أخرى لاحقاً.";
