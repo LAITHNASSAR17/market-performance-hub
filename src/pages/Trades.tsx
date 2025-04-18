@@ -46,7 +46,6 @@ const Trades: React.FC = () => {
   );
 
   const handleEditTrade = (id: string) => {
-    // Navigate to the edit trade page with the correct id
     navigate(`/edit-trade/${id}`);
   };
 
@@ -73,7 +72,6 @@ const Trades: React.FC = () => {
   };
 
   const handleViewTrade = (id: string) => {
-    // Navigate to the trade details page with the correct id
     navigate(`/trade/${id}`);
   };
 
@@ -220,9 +218,9 @@ const Trades: React.FC = () => {
                       <td className="px-4 py-3">{trade.lotSize}</td>
                       <td className={cn(
                         "px-4 py-3 font-medium",
-                        trade.profitLoss > 0 ? "text-emerald-500" : "text-red-500"
+                        trade.total > 0 ? "text-emerald-500" : "text-red-500"
                       )}>
-                        {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss.toFixed(2)}
+                        {trade.total > 0 ? '+' : ''}{trade.total.toFixed(2)}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">

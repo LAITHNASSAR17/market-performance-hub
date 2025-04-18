@@ -74,34 +74,32 @@ const Dashboard: React.FC = () => {
     return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
   }, [userTrades, timeframeFilter]);
 
-  const totalTrades = filteredTrades.length;
-  const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const winningTrades = filteredTrades.filter(trade => trade.profitLoss > 0).length;
-  const losingTrades = filteredTrades.filter(trade => trade.profitLoss < 0).length;
-  const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+  const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.total, 0);
+  const winningTrades = filteredTrades.filter(trade => trade.total > 0).length;
+  const losingTrades = filteredTrades.filter(trade => trade.total < 0).length;
   
   const bestTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
-    (best, trade) => (trade.profitLoss > best.profitLoss ? trade : best),
+    (best, trade) => (trade.total > best.total ? trade : best),
     filteredTrades[0]
   ) : null;
   
   const worstTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
-    (worst, trade) => (trade.profitLoss < worst.profitLoss ? trade : worst),
+    (worst, trade) => (trade.total < worst.total ? trade : worst),
     filteredTrades[0]
   ) : null;
 
-  const winningTradesData = filteredTrades.filter(trade => trade.profitLoss > 0);
+  const winningTradesData = filteredTrades.filter(trade => trade.total > 0);
   const avgWinningTrade = winningTradesData.length > 0 
-    ? winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTradesData.length
+    ? winningTradesData.reduce((sum, trade) => sum + trade.total, 0) / winningTradesData.length
     : 0;
 
-  const losingTradesData = filteredTrades.filter(trade => trade.profitLoss < 0);
+  const losingTradesData = filteredTrades.filter(trade => trade.total < 0);
   const avgLosingTrade = losingTradesData.length > 0 
-    ? losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTradesData.length
+    ? losingTradesData.reduce((sum, trade) => sum + trade.total, 0) / losingTradesData.length
     : 0;
 
-  const grossProfit = winningTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.profitLoss, 0));
+  const grossProfit = winningTradesData.reduce((sum, trade) => sum + trade.total, 0);
+  const grossLoss = Math.abs(losingTradesData.reduce((sum, trade) => sum + trade.total, 0));
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (winningTradesData.length > 0 ? Infinity : 0);
 
   const getLast7Days = () => {
@@ -119,7 +117,7 @@ const Dashboard: React.FC = () => {
 
   const dailyPerformanceData = getLast7Days().map(dayInfo => {
     const dayTrades = filteredTrades.filter(trade => trade.date === dayInfo.date);
-    const dayProfit = dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
+    const dayProfit = dayTrades.reduce((sum, trade) => sum + trade.total, 0);
     
     return {
       day: dayInfo.label,
@@ -151,7 +149,7 @@ const Dashboard: React.FC = () => {
         day,
         date: dateString,
         trades: dayTrades.length,
-        profit: dayTrades.reduce((sum, trade) => sum + trade.profitLoss, 0)
+        profit: dayTrades.reduce((sum, trade) => sum + trade.total, 0)
       });
     }
     

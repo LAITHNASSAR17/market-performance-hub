@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
@@ -78,7 +77,7 @@ const Journal: React.FC = () => {
       };
     }
     acc[trade.date].trades.push(trade);
-    acc[trade.date].totalProfit += trade.profitLoss;
+    acc[trade.date].totalProfit += trade.total;
     return acc;
   }, {});
 
@@ -231,9 +230,9 @@ const Journal: React.FC = () => {
                           <div className="flex items-center gap-4">
                             <div className={cn(
                               "font-medium",
-                              trade.profitLoss > 0 ? "text-profit" : "text-loss"
+                              trade.total > 0 ? "text-profit" : "text-loss"
                             )}>
-                              {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss.toFixed(2)}
+                              {trade.total > 0 ? '+' : ''}{trade.total.toFixed(2)}
                             </div>
                             
                             {trade.imageUrl && (
