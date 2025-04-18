@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -42,6 +43,7 @@ import Payment from './pages/Payment';
 import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
 import { TagsProvider } from './contexts/TagsContext';
+import MentorDashboard from './pages/MentorDashboard';
 
 function App() {
   return (
@@ -93,6 +95,7 @@ function AnimatedRoutes() {
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/mentor-dashboard" element={<MentorDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin/users" element={<AdminUsers />} />

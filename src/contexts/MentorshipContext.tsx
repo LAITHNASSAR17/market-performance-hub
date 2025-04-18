@@ -15,6 +15,8 @@ interface MentorshipContextType {
   refreshMentorships: () => Promise<void>;
   isMentor: boolean;
   isMentee: boolean;
+  getMenteesByMentor: (mentorId: string) => IMentorship[];
+  getMentorsByMentee: (menteeId: string) => IMentorship[];
 }
 
 const MentorshipContext = createContext<MentorshipContextType | undefined>(undefined);
@@ -129,6 +131,15 @@ export const MentorshipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  // New helper methods for the mentor dashboard
+  const getMenteesByMentor = (mentorId: string) => {
+    return mentorships.filter(m => m.mentor_id === mentorId);
+  };
+
+  const getMentorsByMentee = (menteeId: string) => {
+    return mentorships.filter(m => m.mentee_id === menteeId);
+  };
+
   const isMentor = mentorships.some(m => m.mentor_id === user?.id && m.status === 'accepted');
   const isMentee = mentorships.some(m => m.mentee_id === user?.id && m.status === 'accepted');
 
@@ -143,7 +154,9 @@ export const MentorshipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       deleteMentorship,
       refreshMentorships,
       isMentor,
-      isMentee
+      isMentee,
+      getMenteesByMentor,
+      getMentorsByMentee
     }}>
       {children}
     </MentorshipContext.Provider>
