@@ -35,7 +35,7 @@ type TradeContextType = {
   addHashtag: (hashtag: string) => void;
   calculateProfitLoss: (entry: number, exit: number, lotSize: number, type: 'Buy' | 'Sell', instrumentType: string) => number;
   tradingAccounts: TradingAccount[];
-  createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
+  createTradingAccount: (name: string, balance: number, accountType: string = 'live') => Promise<TradingAccount>;
   fetchTradingAccounts: () => Promise<void>;
 };
 
@@ -558,7 +558,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const createTradingAccount = async (name: string, balance: number): Promise<TradingAccount> => {
+  const createTradingAccount = async (name: string, balance: number, accountType: string = 'live'): Promise<TradingAccount> => {
     if (!user) throw new Error('User not authenticated');
 
     if (!name.trim()) {
@@ -577,6 +577,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           user_id: user.id,
           name: name.trim(),
           balance,
+          account_type: accountType,
           created_at: new Date().toISOString()
         })
         .select()

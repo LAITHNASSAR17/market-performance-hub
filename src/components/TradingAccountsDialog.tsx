@@ -5,14 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTrade } from '@/contexts/TradeContext';
 
 const TradingAccountsDialog = () => {
   const [name, setName] = React.useState('');
-  const [broker, setBroker] = React.useState('');
-  const [accountNumber, setAccountNumber] = React.useState('');
   const [accountType, setAccountType] = React.useState('live');
   const [balance, setBalance] = React.useState('');
   const { toast } = useToast();
@@ -31,12 +29,10 @@ const TradingAccountsDialog = () => {
     }
 
     try {
-      await createTradingAccount(name, parseFloat(balance) || 0);
+      await createTradingAccount(name, parseFloat(balance) || 0, accountType);
       
       // Reset form
       setName('');
-      setBroker('');
-      setAccountNumber('');
       setAccountType('live');
       setBalance('');
       
@@ -73,26 +69,6 @@ const TradingAccountsDialog = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="مثال: حسابي الرئيسي"
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="broker">الوسيط</Label>
-            <Input
-              id="broker"
-              value={broker}
-              onChange={(e) => setBroker(e.target.value)}
-              placeholder="اسم شركة الوساطة"
-            />
-          </div>
-          
-          <div className="grid gap-2">
-            <Label htmlFor="accountNumber">رقم الحساب</Label>
-            <Input
-              id="accountNumber"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value)}
-              placeholder="رقم الحساب (اختياري)"
             />
           </div>
           

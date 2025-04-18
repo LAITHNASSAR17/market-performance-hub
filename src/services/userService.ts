@@ -97,7 +97,7 @@ export const userService = {
     return data.map(formatUser);
   },
   
-  async createTradingAccount(userId: string, name: string, balance: number): Promise<ITradingAccount> {
+  async createTradingAccount(userId: string, name: string, balance: number, accountType: string = 'live'): Promise<ITradingAccount> {
     if (!userId) {
       throw new Error('User ID is required to create a trading account');
     }
@@ -113,7 +113,8 @@ export const userService = {
       .insert({
         user_id: userId,
         name: name.trim(),
-        balance: parsedBalance
+        balance: parsedBalance,
+        account_type: accountType
       })
       .select()
       .single();
