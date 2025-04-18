@@ -21,7 +21,7 @@ const Index = () => {
   
   // Show loading state while checking authentication
   if (loading || !redirect) {
-    return <div className="h-screen flex items-center justify-center">جاري التحميل...</div>;
+    return <div className="h-screen flex items-center justify-center">Loading...</div>;
   }
   
   // Redirect to appropriate page

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +23,7 @@ const ForgotPassword: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setError('البريد الإلكتروني مطلوب');
+      setError('Email is required');
       return;
     }
 
@@ -38,23 +37,23 @@ const ForgotPassword: React.FC = () => {
       
       setEmailSent(true);
       toast({
-        title: "تم إرسال البريد الإلكتروني",
-        description: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
+        title: "Password reset link has been sent",
+        description: "Please check your email for the password reset link",
       });
     } catch (error: any) {
       console.error('ForgotPassword: Error in password reset:', error);
       if (error.message === "User not found") {
-        setError('البريد الإلكتروني غير مسجل في النظام');
+        setError('Email is not registered in the system');
         toast({
-          title: "البريد الإلكتروني غير مسجل",
-          description: "لم نجد حساباً مرتبطاً بهذا البريد الإلكتروني",
+          title: "Email not registered",
+          description: "We couldn't find a user account associated with this email",
           variant: "destructive",
         });
       } else {
-        setError(error.message || 'فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.');
+        setError(error.message || 'Failed to send password reset email. Please try again.');
         toast({
-          title: "خطأ",
-          description: "فشل في إرسال بريد إعادة تعيين كلمة المرور. حاول مرة أخرى.",
+          title: "Error",
+          description: "Failed to send password reset email. Please try again.",
           variant: "destructive",
         });
       }
@@ -74,11 +73,11 @@ const ForgotPassword: React.FC = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>إعادة تعيين كلمة المرور</CardTitle>
+            <CardTitle>Reset Password</CardTitle>
             <CardDescription>
               {emailSent 
-                ? "تم إرسال رابط إعادة تعيين كلمة المرور. يرجى التحقق من بريدك الإلكتروني."
-                : "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور"
+                ? "Password reset link has been sent. Please check your email."
+                : "Enter your email and we'll send you a link to reset your password"
               }
             </CardDescription>
           </CardHeader>
@@ -92,13 +91,13 @@ const ForgotPassword: React.FC = () => {
             {!emailSent ? (
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Label htmlFor="email">Email</Label>
                   <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <Mail className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="أدخل بريدك الإلكتروني"
+                      placeholder="Enter your email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -111,15 +110,15 @@ const ForgotPassword: React.FC = () => {
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
+                  {loading ? 'Sending...' : 'Send Reset Link'}
                 </Button>
               </form>
             ) : (
               <div className="text-center">
                 <div className="bg-green-50 p-4 rounded-md mb-4">
                   <p className="text-sm text-green-800">
-                    تم إرسال رابط إعادة تعيين كلمة المرور إلى <strong>{email}</strong>. 
-                    يرجى التحقق من بريدك الإلكتروني واتباع التعليمات.
+                    Password reset link has been sent to <strong>{email}</strong>. 
+                    Please check your email and follow the instructions.
                   </p>
                 </div>
                 
@@ -129,7 +128,7 @@ const ForgotPassword: React.FC = () => {
                     variant="outline" 
                     className="w-full"
                   >
-                    إرسال مرة أخرى
+                    Send Again
                   </Button>
                 </div>
               </div>
@@ -137,9 +136,9 @@ const ForgotPassword: React.FC = () => {
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              تذكرت كلمة المرور؟{' '}
+              Remembered your password?{' '}
               <Link to="/login" className="text-blue-600 hover:underline">
-                تسجيل الدخول
+                Sign In
               </Link>
             </p>
           </CardFooter>

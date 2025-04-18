@@ -20,7 +20,6 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Check if coming from verification page
   useEffect(() => {
     if (location.state?.verified) {
       setSuccessMessage(location.state.message || "تم التحقق من بريدك الإلكتروني بنجاح.");
@@ -28,14 +27,11 @@ const Login: React.FC = () => {
     }
   }, [location.state]);
 
-  // Enhanced session handling - redirect if authenticated
   useEffect(() => {
     if (isAuthenticated) {
       console.log("User is authenticated, redirecting to dashboard");
-      // Get the path the user was trying to access before being redirected to login
       const intendedPath = location.state?.from || '/dashboard';
       
-      // Store the path in localStorage for recovery in other tabs
       if (intendedPath !== '/login' && intendedPath !== '/') {
         localStorage.setItem('last_path', intendedPath);
       }
@@ -47,7 +43,7 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+      setError('Please enter your email and password');
       return;
     }
 
@@ -60,27 +56,25 @@ const Login: React.FC = () => {
       await login(email, password);
       
       toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: "مرحبًا بعودتك!",
+        title: "Login successful",
+        description: "Welcome back!",
       });
-      
-      // No need for the timeout - the useEffect will handle the redirect
       
     } catch (error: any) {
       console.error('Login error:', error);
-      let errorMessage = "خطأ في تسجيل الدخول. تأكد من صحة البريد الإلكتروني وكلمة المرور.";
+      let errorMessage = "Login failed. Please check your email and password.";
       
       if (error.message === 'Invalid credentials') {
-        errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+        errorMessage = "Invalid email or password";
       } else if (error.message === 'User is blocked') {
-        errorMessage = "تم حظر هذا الحساب. يرجى التواصل مع الدعم.";
-      } else if (error.message === 'البريد الإلكتروني غير مفعل') {
-        errorMessage = "البريد الإلكتروني غير مفعل. يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك.";
+        errorMessage = "This account has been blocked. Please contact support.";
+      } else if (error.message === 'Email is not activated') {
+        errorMessage = "Email is not activated. Please check your email to activate your account.";
       }
       
       setError(errorMessage);
       toast({
-        title: "فشل تسجيل الدخول",
+        title: "Login failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -91,7 +85,7 @@ const Login: React.FC = () => {
 
   const handleForgotPassword = (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // منع انتشار الحدث
+    e.stopPropagation();
     console.log('Login page: Navigating to forgot password page');
     navigate('/forgot-password');
   };
@@ -107,9 +101,9 @@ const Login: React.FC = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>تسجيل الدخول</CardTitle>
+            <CardTitle>Sign In</CardTitle>
             <CardDescription>
-              أدخل بيانات حسابك للدخول إلى لوحة التحكم
+              Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -129,13 +123,13 @@ const Login: React.FC = () => {
             
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
+                <Label htmlFor="email">Email</Label>
                 <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                   <Mail className="h-4 w-4 mx-3 text-gray-500" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="أدخل بريدك الإلكتروني"
+                    placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -146,14 +140,14 @@ const Login: React.FC = () => {
               
               <div className="mb-2">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="password">كلمة المرور</Label>
+                  <Label htmlFor="password">Password</Label>
                   <Button 
                     variant="link" 
                     className="p-0 h-auto text-sm text-blue-600" 
                     onClick={handleForgotPassword}
-                    type="button" // تحديد النوع كزر عادي وليس زر إرسال
+                    type="button"
                   >
-                    نسيت كلمة المرور؟
+                    Forgot Password?
                   </Button>
                 </div>
                 <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
@@ -161,7 +155,7 @@ const Login: React.FC = () => {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="أدخل كلمة المرور"
+                    placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -175,15 +169,15 @@ const Login: React.FC = () => {
                 className="w-full mt-6"
                 disabled={loading}
               >
-                {loading ? 'جاري التحميل...' : 'تسجيل الدخول'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              ليس لديك حساب؟{' '}
+              Don't have an account?{' '}
               <Link to="/register" className="text-blue-600 hover:underline">
-                إنشاء حساب جديد
+                Create Account
               </Link>
             </p>
           </CardFooter>

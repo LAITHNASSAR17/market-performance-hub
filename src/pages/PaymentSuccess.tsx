@@ -23,15 +23,15 @@ const PaymentSuccess = () => {
             <div className="flex justify-center mb-4">
               <CheckCircle className="h-16 w-16 text-green-500" />
             </div>
-            <CardTitle className="text-2xl">تمت عملية الدفع بنجاح!</CardTitle>
+            <CardTitle className="text-2xl">Payment Successful!</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              شكراً لك. تم تفعيل اشتراكك في الباقة {selectedTier === 'premium' ? 'المميزة' : 'المتقدمة'} بنجاح.
+              Thank you. Your {selectedTier === 'premium' ? 'Premium' : 'Advanced'} subscription has been activated successfully.
             </p>
             <div className="bg-gray-50 p-4 rounded-md mb-4">
               <p className="text-sm text-gray-500">
-                تم إرسال تفاصيل الاشتراك إلى بريدك الإلكتروني.
+                Subscription details have been sent to your email.
               </p>
             </div>
           </CardContent>
@@ -40,7 +40,7 @@ const PaymentSuccess = () => {
               onClick={() => navigate('/dashboard')}
               className="w-full"
             >
-              العودة إلى لوحة التحكم
+              Return to Dashboard
             </Button>
           </CardFooter>
         </Card>
