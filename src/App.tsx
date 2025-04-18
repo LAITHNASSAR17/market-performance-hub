@@ -1,75 +1,105 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
-import Trades from './pages/Trades';
-import TradeTracking from './pages/TradeTracking';
-import AddTrade from './pages/AddTrade';
-import Journal from './pages/Journal';
-import Analytics from './pages/Analytics';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import { AuthProvider } from './contexts/AuthContext';
-import { TradeProvider } from './contexts/TradeContext';
-import { LanguageProvider } from './contexts/LanguageContext';
-import PublicTrade from './pages/PublicTrade';
-import PublicPlaybook from './pages/PublicPlaybook';
-import EmailVerify from './pages/EmailVerify';
+import ForgotPassword from './pages/ForgotPassword';
+import Trades from './pages/Trades';
+import AddTrade from './pages/AddTrade';
+import Analytics from './pages/Analytics';
+import Journal from './pages/Journal';
+import Insights from './pages/Insights';
+import NotFound from './pages/NotFound';
+import UserProfileSettings from './pages/UserProfileSettings';
+import './App.css';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from './components/ui/toaster';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { TradeProvider } from './contexts/TradeContext';
+import { NotebookProvider } from './contexts/NotebookContext';
+import TradeTracking from './pages/TradeTracking';
+import TradingChart from './pages/TradingChart';
+import Notebook from './pages/Notebook';
+import EmailVerify from './pages/EmailVerify';
+import PageTransition from './components/PageTransition';
+import Homepage from './pages/Homepage';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminTrades from './pages/admin/AdminTrades';
+import AdminHashtags from './pages/admin/AdminHashtags';
+import AdminPages from './pages/admin/AdminPages';
+import AdminNotes from './pages/admin/AdminNotes';
+import AdminSubscriptions from './pages/admin/AdminSubscriptions';
+import AdminProfileSettings from './pages/admin/AdminProfileSettings';
+import Index from './pages/Index';
+import Reports from './pages/Reports';
+import Subscriptions from './pages/Subscriptions';
+import PaymentSuccess from './pages/PaymentSuccess';
+import Payment from './pages/Payment';
+import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
-import NotFound from './pages/NotFound';
-
-// Create a simple PrivateRoute component since it's missing
-const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  // This is a simple implementation that always allows access
-  // In a real app, you would check authentication status
-  return <>{children}</>;
-};
 
 function App() {
   return (
-    <Router>
-      <TooltipProvider>
-        <AuthProvider>
-          <ThemeProvider>
-            <LanguageProvider>
-              <TradeProvider>
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password/:token" element={<ResetPassword />} />
-                  <Route path="/verify" element={<EmailVerify />} />
-
-                  {/* Private Routes */}
-                  <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                  <Route path="/trades" element={<PrivateRoute><Trades /></PrivateRoute>} />
-                  <Route path="/trade/:id" element={<PrivateRoute><TradeTracking /></PrivateRoute>} />
-                  <Route path="/add-trade" element={<PrivateRoute><AddTrade /></PrivateRoute>} />
-                  <Route path="/journal" element={<PrivateRoute><Journal /></PrivateRoute>} />
-                  <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
-            
-                  {/* Public Shared Routes - Note the pattern /public/{type}/{id} */}
-                  <Route path="/public/trade/:id" element={<PublicTrade />} />
-                  <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
-                  
-                  {/* Redirect old format to the 404 page with helpful message */}
-                  <Route path="/playbook/:id" element={<NotFound />} />
-                  
-                  {/* 404 Not Found */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+    <AuthProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <TradeProvider>
+            <NotebookProvider>
+              <TooltipProvider>
                 <Toaster />
-              </TradeProvider>
-            </LanguageProvider>
-          </ThemeProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </Router>
+                <AnimatedRoutes />
+              </TooltipProvider>
+            </NotebookProvider>
+          </TradeProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </AuthProvider>
+  );
+}
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  
+  return (
+    <PageTransition>
+      <Routes location={location}>
+        <Route path="/" element={<Index />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/email-verify" element={<EmailVerify />} />
+        <Route path="/trades" element={<Trades />} />
+        <Route path="/add-trade" element={<AddTrade />} />
+        <Route path="/edit-trade/:id" element={<AddTrade />} />
+        <Route path="/trade/:id" element={<TradeTracking />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/journal" element={<Journal />} />
+        <Route path="/notebook" element={<Notebook />} />
+        <Route path="/insights" element={<Insights />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/chart" element={<TradingChart />} />
+        <Route path="/user-profile" element={<UserProfileSettings />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/trades" element={<AdminTrades />} />
+        <Route path="/admin/hashtags" element={<AdminHashtags />} />
+        <Route path="/admin/pages" element={<AdminPages />} />
+        <Route path="/admin/notes" element={<AdminNotes />} />
+        <Route path="/admin/subscriptions" element={<AdminSubscriptions />} />
+        <Route path="/admin/profile" element={<AdminProfileSettings />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </PageTransition>
   );
 }
 

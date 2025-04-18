@@ -213,54 +213,6 @@ export type Database = {
         }
         Relationships: []
       }
-      shared_items: {
-        Row: {
-          created_at: string
-          id: string
-          item_id: string
-          item_type: Database["public"]["Enums"]["shared_item_type"]
-          permission: Database["public"]["Enums"]["share_permission"]
-          shared_by: string
-          shared_with: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          item_id: string
-          item_type: Database["public"]["Enums"]["shared_item_type"]
-          permission?: Database["public"]["Enums"]["share_permission"]
-          shared_by: string
-          shared_with: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          item_id?: string
-          item_type?: Database["public"]["Enums"]["shared_item_type"]
-          permission?: Database["public"]["Enums"]["share_permission"]
-          shared_by?: string
-          shared_with?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shared_items_shared_by_fkey"
-            columns: ["shared_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shared_items_shared_with_fkey"
-            columns: ["shared_with"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       site_settings: {
         Row: {
           company_email: string
@@ -499,32 +451,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_playbook_access: {
-        Args: {
-          playbook_id: string
-          required_permission?: Database["public"]["Enums"]["share_permission"]
-        }
-        Returns: boolean
-      }
-      has_trade_access: {
-        Args: {
-          trade_id: string
-          required_permission?: Database["public"]["Enums"]["share_permission"]
-        }
-        Returns: boolean
-      }
-      is_playbook_public: {
-        Args: { playbook_id: string }
-        Returns: boolean
-      }
-      is_trade_public: {
-        Args: { trade_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      share_permission: "view" | "note" | "edit"
-      shared_item_type: "trade" | "playbook"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -639,9 +569,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      share_permission: ["view", "note", "edit"],
-      shared_item_type: ["trade", "playbook"],
-    },
+    Enums: {},
   },
 } as const

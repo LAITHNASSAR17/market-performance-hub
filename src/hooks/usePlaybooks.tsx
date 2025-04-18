@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ITrade } from '@/services/tradeService';
@@ -206,21 +207,6 @@ export const usePlaybooks = () => {
     updatePlaybook,
     deletePlaybook,
     getPlaybookTrades,
-    calculatePlaybookMetrics,
-    checkPlaybookAccess: async (playbookId: string, permission: 'view' | 'note' | 'edit' = 'view') => {
-      try {
-        const { data, error } = await supabase
-          .rpc('has_playbook_access', { 
-            playbook_id: playbookId,
-            required_permission: permission
-          });
-        
-        if (error) throw error;
-        return data;
-      } catch (error) {
-        console.error('Error checking playbook access:', error);
-        return false;
-      }
-    }
+    calculatePlaybookMetrics
   };
 };

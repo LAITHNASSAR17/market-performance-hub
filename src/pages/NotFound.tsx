@@ -1,9 +1,5 @@
-
-import React from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Home, AlertTriangle } from "lucide-react";
 
 const NotFound = () => {
   const location = useLocation();
@@ -15,29 +11,14 @@ const NotFound = () => {
     );
   }, [location.pathname]);
 
-  // Check if this is an old playbook URL format that needs to be handled
-  const isOldPlaybookFormat = location.pathname.includes('/playbook/') && !location.pathname.includes('/public/playbook/');
-  
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-      <div className="text-center max-w-md p-6">
-        <div className="mb-6 flex justify-center">
-          <AlertTriangle className="h-16 w-16 text-orange-500" />
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-muted-foreground mb-6">الصفحة غير موجودة</p>
-        <p className="text-muted-foreground mb-8">
-          {isOldPlaybookFormat 
-            ? 'تم تغيير تنسيق الروابط، الرجاء استخدام زر المشاركة للحصول على الرابط الصحيح' 
-            : 'عذراً، لا يمكن العثور على الصفحة التي تبحث عنها'}
-        </p>
-        
-        <Button asChild className="mr-4" variant="default">
-          <Link to="/">
-            <Home className="mr-2 h-4 w-4" />
-            العودة للرئيسية
-          </Link>
-        </Button>
+        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
+        <a href="/" className="text-blue-500 hover:text-blue-700 underline">
+          Return to Home
+        </a>
       </div>
     </div>
   );
