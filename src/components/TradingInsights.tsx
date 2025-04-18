@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 interface TradingInsightsProps {
   className?: string;
@@ -35,13 +35,13 @@ const TradingInsights: React.FC<TradingInsightsProps> = ({
   const { t } = useLanguage();
   const stats = useAnalyticsStats();
   const { playbooks } = usePlaybooks();
+  const { toast } = useToast();
   const [insights, setInsights] = useState<TradingInsight[]>([]);
   const [currentInsight, setCurrentInsight] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load insights when data changes and there are trades
-    if (trades.length > 0 && stats && !loading) {
+    if (trades.length > 0 && stats) {
       loadInsights();
     }
   }, [trades, stats, timeRange]);
@@ -56,6 +56,11 @@ const TradingInsights: React.FC<TradingInsightsProps> = ({
       }
     } catch (error) {
       console.error("Error loading insights:", error);
+      toast({
+        title: "خطأ في تحليل البيانات",
+        description: "حدث خطأ أثناء تحليل بياناتك. يرجى المحاولة مرة أخرى لاحقاً.",
+        variant: "destructive"
+      });
     } finally {
       setLoading(false);
     }
@@ -78,7 +83,13 @@ const TradingInsights: React.FC<TradingInsightsProps> = ({
   };
 
   const refreshInsights = () => {
-    loadInsights();
+    if (!loading) {
+      loadInsights();
+      toast({
+        title: "جاري تحديث التحليل",
+        description: "يتم الآن تحليل بياناتك وتوليد رؤى جديدة.",
+      });
+    }
   };
 
   const getCategoryIcon = (category: string) => {
@@ -167,7 +178,6 @@ const TradingInsights: React.FC<TradingInsightsProps> = ({
   };
 
   useEffect(() => {
-    // Load insights when component first loads
     if (insights.length === 0 && !loading) {
       loadInsights();
     }
@@ -182,7 +192,13 @@ const TradingInsights: React.FC<TradingInsightsProps> = ({
             {t('تحليل ذكي للتداول')}
           </CardTitle>
           <div className="flex space-x-2">
-            <Button variant="ghost" size="sm" onClick={refreshInsights} disabled={loading}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={refreshInsights} 
+              disabled={loading}
+              className="relative"
+            >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
