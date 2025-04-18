@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -32,13 +33,13 @@ const AddTrade: React.FC = () => {
   const { playbooks } = usePlaybooks();
   
   const [pair, setPair] = useState('');
-  const [type, setType<'Buy' | 'Sell'>('Buy');
+  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
   const [entry, setEntry] = useState('');
   const [exit, setExit] = useState('');
   const [lotSize, setLotSize] = useState('');
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
-  const [date, setDate(format(new Date(), 'yyyy-MM-dd'));
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [durationMinutes, setDurationMinutes] = useState('');
   const [notes, setNotes] = useState('');
   const [account, setAccount] = useState('');
