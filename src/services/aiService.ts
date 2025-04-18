@@ -55,10 +55,18 @@ export const generateAIAdvice = async (trades: Trade[], stats: TradeStats): Prom
   }
 
   try {
-    const tips = await getAITradingTips(trades, stats);
-    return tips[0]?.content || "عذراً، حدث خطأ في توليد النصائح. يرجى المحاولة مرة أخرى لاحقاً.";
+    const { data, error } = await supabase.functions.invoke('generate-trading-advice', {
+      body: { trades, stats }
+    });
+
+    if (error) {
+      console.error("Error generating AI advice:", error);
+      throw error;
+    }
+
+    return data?.analysis || "عذراً، حدث خطأ في توليد التحليل. يرجى المحاولة مرة أخرى لاحقاً.";
   } catch (error) {
     console.error("Error generating AI advice:", error);
-    return "عذراً، حدث خطأ في توليد النصائح. يرجى المحاولة مرة أخرى لاحقاً.";
+    return "عذراً، حدث خطأ في توليد التحليل. يرجى المحاولة مرة أخرى لاحقاً.";
   }
 };
