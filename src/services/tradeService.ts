@@ -21,6 +21,7 @@ export interface ITrade {
   takeProfit: number | null;
   durationMinutes: number | null;
   playbook?: string;
+  followedRules?: string[];
 }
 
 export const tradeService = {
@@ -65,7 +66,9 @@ export const tradeService = {
         rating: tradeData.rating || 0,
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
-        duration_minutes: tradeData.durationMinutes
+        duration_minutes: tradeData.durationMinutes,
+        playbook: tradeData.playbook,
+        followed_rules: tradeData.followedRules || []
       })
       .select()
       .single();
@@ -97,6 +100,8 @@ export const tradeService = {
     if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
+    if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
+    if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
     
     const { data, error } = await supabase
       .from('trades')
@@ -156,6 +161,7 @@ function formatTrade(data: any): ITrade {
     stopLoss: data.stop_loss,
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
-    playbook: data.playbook
+    playbook: data.playbook,
+    followedRules: data.followed_rules || []
   };
 }
