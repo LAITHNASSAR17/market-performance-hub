@@ -32,7 +32,7 @@ serve(async (req) => {
       );
     }
 
-    // Verify API key exists and is valid
+    // Verify API key exists
     if (!deepseekApiKey) {
       console.error('Deepseek API key is not available');
       return new Response(
@@ -135,8 +135,11 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userPrompt }],
+          model: "deepseek-chat",
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
           response_format: { type: "json_object" }
         }),
       });
@@ -146,7 +149,6 @@ serve(async (req) => {
       
       if (data.error) {
         console.error('Deepseek API Error:', data.error);
-        
         return new Response(
           JSON.stringify({ insights: generateFallbackInsights() }), 
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

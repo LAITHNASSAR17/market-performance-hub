@@ -47,8 +47,12 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          system: 'You are a professional trading advisor. Analyze the trading data and provide detailed advice in Arabic.',
+          model: "deepseek-chat",
           messages: [
+            {
+              role: 'system',
+              content: 'You are a professional trading advisor. Analyze the trading data and provide detailed advice in Arabic.'
+            },
             {
               role: 'user',
               content: `
