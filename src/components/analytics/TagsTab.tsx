@@ -3,9 +3,10 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from '@/components/ui/separator';
 import TagList from '@/components/analytics/TagList';
-import { CircleX, Target, Lightbulb, ArrowDownRight, CircleCheck, ArrowUpRight } from 'lucide-react';
+import { CircleX, Target, Lightbulb, ArrowDownRight, CircleCheck, ArrowUpRight, AlertTriangle, Zap, Brain } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/components/ui/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TagsTabProps {
   mistakes: string[];
@@ -69,108 +70,136 @@ const TagsTab: React.FC<TagsTabProps> = ({
     setHabits(habits.filter(t => t !== tag));
   };
   
+  // Data for analysis
+  const mistakeData = [
+    { name: 'late entry', impact: -520, occurrences: 3, description: 'Entering a trade after the optimal entry point has passed' },
+    { name: 'hesitated', impact: -350, occurrences: 5, description: 'Delayed execution due to uncertainty or fear' }
+  ];
+  
+  const setupData = [
+    { name: 'pullback', winRate: 78, occurrences: 9, avgProfit: 245 },
+    { name: 'gap and go', winRate: 65, occurrences: 7, avgProfit: 180 }
+  ];
+  
+  const habitData = [
+    { name: 'had a game plan', impact: 980, occurrences: 12 },
+    { name: 'slept well', impact: 750, occurrences: 8 }
+  ];
+  
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <TagList
-          title={t('analytics.mistakes') || 'Mistakes'}
-          icon={<CircleX className="h-4 w-4" />}
+          title="Trading Mistakes"
+          description="Track errors that cost you money"
+          icon={<AlertTriangle className="h-4 w-4" />}
           color="bg-red-500"
           tags={mistakes}
           onAddTag={handleAddMistake}
           onRemoveTag={handleRemoveMistake}
+          addButtonLabel="Add Mistake"
         />
         
         <TagList
-          title={t('analytics.setups') || 'Setups'}
-          icon={<Target className="h-4 w-4" />}
+          title="Trading Setups"
+          description="Track your best patterns"
+          icon={<Zap className="h-4 w-4" />}
           color="bg-blue-500"
           tags={setups}
           onAddTag={handleAddSetup}
           onRemoveTag={handleRemoveSetup}
+          addButtonLabel="Add Setup"
         />
         
         <TagList
-          title={t('analytics.habits') || 'Habits'}
-          icon={<Lightbulb className="h-4 w-4" />}
+          title="Trading Habits"
+          description="Track positive behaviors"
+          icon={<Brain className="h-4 w-4" />}
           color="bg-purple-500"
           tags={habits}
           onAddTag={handleAddHabit}
           onRemoveTag={handleRemoveHabit}
+          addButtonLabel="Add Habit"
         />
       </div>
       
       <div className="mt-6">
         <Card>
           <CardHeader>
-            <CardTitle>{t('analytics.tagTrend') || 'Tag Trends'}</CardTitle>
+            <CardTitle>Tag Performance Analysis</CardTitle>
             <CardDescription>
-              {t('analytics.tagTrendDesc') || 'Analyze how different tags affect your trading performance'}
+              Analyze how different tags affect your trading performance
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <h3 className="text-sm font-medium mb-2">{t('analytics.topMistakes') || 'Top Mistakes (by P&L impact)'}</h3>
+                <h3 className="text-sm font-medium mb-2">Top Mistakes (by P&L impact)</h3>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">late entry</span>
-                    <div className="flex items-center text-red-500">
-                      <ArrowDownRight className="h-4 w-4 mr-1" />
-                      <span>-$520.00</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">hesitated</span>
-                    <div className="flex items-center text-red-500">
-                      <ArrowDownRight className="h-4 w-4 mr-1" />
-                      <span>-$350.00</span>
-                    </div>
-                  </div>
+                  {mistakeData.map((mistake, index) => (
+                    <TooltipProvider key={index}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex justify-between items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md">
+                            <span className="text-sm flex items-center">
+                              {mistake.name} 
+                              <span className="text-xs text-gray-500 ml-2">({mistake.occurrences} times)</span>
+                            </span>
+                            <div className="flex items-center text-red-500">
+                              <ArrowDownRight className="h-4 w-4 mr-1" />
+                              <span>-${Math.abs(mistake.impact).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{mistake.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
                 </div>
               </div>
               
               <Separator />
               
               <div>
-                <h3 className="text-sm font-medium mb-2">{t('analytics.bestSetups') || 'Best Setups (by win rate)'}</h3>
+                <h3 className="text-sm font-medium mb-2">Best Setups (by win rate)</h3>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">pullback</span>
-                    <div className="flex items-center text-green-500">
-                      <CircleCheck className="h-4 w-4 mr-1" />
-                      <span>78% win rate</span>
+                  {setupData.map((setup, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md">
+                      <span className="text-sm flex items-center">
+                        {setup.name}
+                        <span className="text-xs text-gray-500 ml-2">({setup.occurrences} trades)</span>
+                      </span>
+                      <div className="flex flex-col items-end">
+                        <div className="flex items-center text-green-500">
+                          <CircleCheck className="h-4 w-4 mr-1" />
+                          <span>{setup.winRate}% win rate</span>
+                        </div>
+                        <span className="text-xs text-gray-500">Avg: ${setup.avgProfit} per trade</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">gap and go</span>
-                    <div className="flex items-center text-green-500">
-                      <CircleCheck className="h-4 w-4 mr-1" />
-                      <span>65% win rate</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
               
               <Separator />
               
               <div>
-                <h3 className="text-sm font-medium mb-2">{t('analytics.positiveHabits') || 'Positive Habits (by performance)'}</h3>
+                <h3 className="text-sm font-medium mb-2">Positive Habits (by performance)</h3>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">had a game plan</span>
-                    <div className="flex items-center text-green-500">
-                      <ArrowUpRight className="h-4 w-4 mr-1" />
-                      <span>+$980.00 avg.</span>
+                  {habitData.map((habit, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md">
+                      <span className="text-sm flex items-center">
+                        {habit.name}
+                        <span className="text-xs text-gray-500 ml-2">({habit.occurrences} occurrences)</span>
+                      </span>
+                      <div className="flex items-center text-green-500">
+                        <ArrowUpRight className="h-4 w-4 mr-1" />
+                        <span>+${habit.impact.toFixed(2)} avg.</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">slept well</span>
-                    <div className="flex items-center text-green-500">
-                      <ArrowUpRight className="h-4 w-4 mr-1" />
-                      <span>+$750.00 avg.</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
