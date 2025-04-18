@@ -20,6 +20,7 @@ import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
 import TagSelectors from '@/components/analytics/TagSelectors';
+import { useTagsState } from '@/hooks/useTagsState';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +32,7 @@ const AddTrade: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showAddPairDialog, setShowAddPairDialog] = useState(false);
   const { playbooks } = usePlaybooks();
+  const { mistakes, setups, habits } = useTagsState();
   
   const [pair, setPair] = useState('');
   const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
@@ -95,7 +97,6 @@ const AddTrade: React.FC = () => {
         setPlaybook(data.playbook || undefined);
         setFollowedRules(data.followed_rules || []);
         
-        // Set the categorized tags
         const tags = data.tags || [];
         setSelectedMistakes(tags.filter((tag: string) => mistakes.includes(tag)));
         setSelectedSetups(tags.filter((tag: string) => setups.includes(tag)));
@@ -158,7 +159,6 @@ const AddTrade: React.FC = () => {
 
   const handlePlaybookChange = (value: string) => {
     setPlaybook(value);
-    // Reset followed rules when changing playbook
     setFollowedRules([]);
   };
 
@@ -234,7 +234,6 @@ const AddTrade: React.FC = () => {
     }
   };
 
-  // Get the selected playbook's rules
   const selectedPlaybookRules = playbook 
     ? playbooks.find(p => p.id === playbook)?.rules || []
     : [];
