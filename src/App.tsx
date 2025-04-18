@@ -20,6 +20,7 @@ import { LanguageProvider } from './contexts/LanguageContext'; // Changed from d
 // Remove Shared import since the file doesn't exist
 import PublicTrade from './pages/PublicTrade';
 import PublicPlaybook from './pages/PublicPlaybook';
+import EmailVerify from './pages/EmailVerify';
 
 // Create a simple PrivateRoute component since it's missing
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -30,16 +31,17 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   return (
-    <AuthProvider>
-      <LanguageProvider>
-        <TradeProvider>
-          <Router>
+    <Router>
+      <AuthProvider>
+        <LanguageProvider>
+          <TradeProvider>
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route path="/verify" element={<EmailVerify />} />
 
               {/* Private Routes */}
               <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
@@ -56,10 +58,10 @@ function App() {
               <Route path="/public/trade/:id" element={<PublicTrade />} />
               <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
             </Routes>
-          </Router>
-        </TradeProvider>
-      </LanguageProvider>
-    </AuthProvider>
+          </TradeProvider>
+        </LanguageProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
