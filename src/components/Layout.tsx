@@ -12,11 +12,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useToast } from "@/hooks/use-toast";
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-
 interface LayoutProps {
   children: React.ReactNode;
 }
-
 const Layout: React.FC<LayoutProps> = ({
   children
 }) => {
@@ -40,7 +38,6 @@ const Layout: React.FC<LayoutProps> = ({
     toggleTheme
   } = useTheme();
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
-
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
@@ -48,69 +45,54 @@ const Layout: React.FC<LayoutProps> = ({
       setSidebarOpen(true);
     }
   }, [isMobile]);
-
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
-
-  const navigation = [
-    {
-      name: 'Dashboard',
-      icon: Home,
-      href: '/dashboard'
-    },
-    {
-      name: 'Add Trade',
-      icon: PlusCircle,
-      href: '/add-trade'
-    },
-    {
-      name: 'Trades',
-      icon: BookText,
-      href: '/trades'
-    },
-    {
-      name: 'Journal',
-      icon: Calendar,
-      href: '/journal'
-    },
-    {
-      name: 'Notebook',
-      icon: Scroll,
-      href: '/notebook'
-    },
-    {
-      name: 'Reports',
-      icon: BarChart,
-      href: '/reports'
-    },
-    {
-      name: 'Insights',
-      icon: Sparkles,
-      href: '/insights'
-    },
-    {
-      name: 'Analytics',
-      icon: BarChart2,
-      href: '/analytics'
-    },
-    {
-      name: 'Chart',
-      icon: LineChart3,
-      href: '/chart'
-    },
-    {
-      name: 'الترقية',
-      icon: CreditCard,
-      href: '/subscriptions'
-    },
-    {
-      name: 'User Profile',
-      icon: UserCog,
-      href: '/user-profile'
-    }
-  ];
-
+  const navigation = [{
+    name: 'Dashboard',
+    icon: Home,
+    href: '/dashboard'
+  }, {
+    name: 'Add Trade',
+    icon: PlusCircle,
+    href: '/add-trade'
+  }, {
+    name: 'Trades',
+    icon: BookText,
+    href: '/trades'
+  }, {
+    name: 'Journal',
+    icon: Calendar,
+    href: '/journal'
+  }, {
+    name: 'Notebook',
+    icon: Scroll,
+    href: '/notebook'
+  }, {
+    name: 'Reports',
+    icon: BarChart,
+    href: '/reports'
+  }, {
+    name: 'Insights',
+    icon: Sparkles,
+    href: '/insights'
+  }, {
+    name: 'Analytics',
+    icon: BarChart2,
+    href: '/analytics'
+  }, {
+    name: 'Chart',
+    icon: LineChart3,
+    href: '/chart'
+  }, {
+    name: 'Subscriptions',
+    icon: CreditCard,
+    href: '/subscriptions'
+  }, {
+    name: 'User Profile',
+    icon: UserCog,
+    href: '/user-profile'
+  }];
   const handleLogout = async () => {
     try {
       await logout();
@@ -126,11 +108,9 @@ const Layout: React.FC<LayoutProps> = ({
       });
     }
   };
-
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-
   return <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <div className={cn("relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-64" : "w-16", "border-r", "dark:bg-indigo-900/90 dark:border-indigo-800")}>
         <div className="flex flex-col items-center py-4 px-4">
@@ -230,5 +210,4 @@ const Layout: React.FC<LayoutProps> = ({
       </main>
     </div>;
 };
-
 export default Layout;
