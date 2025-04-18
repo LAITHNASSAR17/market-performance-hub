@@ -29,7 +29,7 @@ interface DailyPLBarChartProps {
 
 const DailyPLBarChart: React.FC<DailyPLBarChartProps> = ({ 
   data,
-  trades,
+  trades = [],
   title = "Net Daily P&L",
   className 
 }) => {
