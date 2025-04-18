@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -135,13 +136,13 @@ const TradingTips: React.FC<TradingTipsProps> = ({
   const translateCategory = (category: string) => {
     switch (category) {
       case 'performance':
-        return t('Performance') || 'Performance';
+        return 'Performance';
       case 'risk':
-        return t('Risk') || 'Risk';
+        return 'Risk';
       case 'psychology':
-        return t('Psychology') || 'Psychology';
+        return 'Psychology';
       case 'strategy':
-        return t('Strategy') || 'Strategy';
+        return 'Strategy';
       default:
         return category;
     }
@@ -150,11 +151,11 @@ const TradingTips: React.FC<TradingTipsProps> = ({
   const translatePriority = (priority: string) => {
     switch (priority) {
       case 'high':
-        return t('High') || 'High';
+        return 'High';
       case 'medium':
-        return t('Medium') || 'Medium';
+        return 'Medium';
       case 'low':
-        return t('Low') || 'Low';
+        return 'Low';
       default:
         return priority;
     }
@@ -170,7 +171,78 @@ const TradingTips: React.FC<TradingTipsProps> = ({
     }
   }, []);
 
-  return;
+  return (
+    <Card className={`${className}`}>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-lg flex items-center">
+          <Lightbulb className="h-5 w-5 mr-2 text-yellow-500" />
+          Trading Tips
+        </CardTitle>
+        <Button variant="ghost" size="sm" onClick={refreshTips} disabled={loading || loadingAdvice}>
+          <RefreshCw className={`h-4 w-4 ${loading || loadingAdvice ? 'animate-spin' : ''}`} />
+        </Button>
+      </CardHeader>
+      
+      <CardContent>
+        {error ? (
+          <div className="flex items-center text-red-500 gap-2">
+            <AlertCircle className="h-5 w-5" />
+            <p>{error}</p>
+          </div>
+        ) : loading ? (
+          <div className="space-y-3">
+            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-full bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        ) : tips.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground">
+              Add more trades to get personalized tips
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              {tips[currentTip] && (
+                <>
+                  <Badge className={getCategoryColor(tips[currentTip].category)}>
+                    {translateCategory(tips[currentTip].category)}
+                  </Badge>
+                  <Badge className={getPriorityColor(tips[currentTip].priority)}>
+                    {translatePriority(tips[currentTip].priority)}
+                  </Badge>
+                </>
+              )}
+            </div>
+            
+            {tips[currentTip] && (
+              <>
+                <h3 className="text-xl font-medium">{tips[currentTip].title}</h3>
+                <p className="text-muted-foreground">
+                  {tips[currentTip].content}
+                </p>
+              </>
+            )}
+          </div>
+        )}
+      </CardContent>
+      
+      {tips.length > 1 && (
+        <CardFooter className="flex justify-between pt-0">
+          <Button variant="ghost" size="sm" onClick={handlePrevious}>
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous Tip
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleNext}>
+            Next Tip
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  );
 };
 
 export default TradingTips;
