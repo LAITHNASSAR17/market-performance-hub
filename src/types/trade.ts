@@ -1,3 +1,4 @@
+
 import { ITrade } from '@/services/tradeService';
 
 export interface Trade {
@@ -24,10 +25,10 @@ export interface Trade {
   createdAt: string;
   commission: number;
   rating: number;
-  total: number;  // New field for net profit/loss after fees
+  total: number;  // Net profit/loss after fees
 }
 
-// Update mapDBTradeToTrade to calculate total
+// Update mapDBTradeToTrade to calculate total correctly
 export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   id: dbTrade.id,
   userId: dbTrade.userId,
@@ -53,10 +54,11 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   createdAt: dbTrade.createdAt.toISOString(),
   commission: dbTrade.fees || 0,
   rating: dbTrade.rating || 0,
+  // Calculate total as profit/loss minus fees
   total: (dbTrade.profitLoss || 0) - (dbTrade.fees || 0)
 });
 
-// Update mapTradeToDBTrade to handle the total field
+// Make sure mapTradeToDBTrade passes the correct values
 export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => ({
   userId: '', // Will be set by the service
   symbol: trade.pair,
@@ -66,7 +68,9 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   direction: trade.type === 'Buy' ? 'long' : 'short',
   entryDate: new Date(trade.date),
   exitDate: trade.exit ? new Date(trade.date) : null,
+  // Here we use the raw profit/loss WITHOUT subtracting commission
   profitLoss: trade.profitLoss,
+  // Commission is stored separately as fees
   fees: trade.commission || 0,
   notes: trade.notes || '',
   tags: trade.hashtags || [],
