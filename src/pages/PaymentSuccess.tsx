@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,12 @@ import Layout from '@/components/Layout';
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
+  const selectedTier = sessionStorage.getItem('selected_subscription_tier') || 'premium';
+
+  useEffect(() => {
+    // Clean up the stored tier
+    return () => sessionStorage.removeItem('selected_subscription_tier');
+  }, []);
 
   return (
     <Layout>
@@ -21,11 +27,11 @@ const PaymentSuccess = () => {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              شكراً لك. تمت معالجة دفعتك بنجاح وتم تحديث حسابك.
+              شكراً لك. تم تفعيل اشتراكك في الباقة {selectedTier === 'premium' ? 'المميزة' : 'المتقدمة'} بنجاح.
             </p>
             <div className="bg-gray-50 p-4 rounded-md mb-4">
               <p className="text-sm text-gray-500">
-                تم إرسال إيصال الدفع إلى بريدك الإلكتروني.
+                تم إرسال تفاصيل الاشتراك إلى بريدك الإلكتروني.
               </p>
             </div>
           </CardContent>
