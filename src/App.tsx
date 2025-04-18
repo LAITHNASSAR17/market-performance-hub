@@ -21,6 +21,8 @@ import { LanguageProvider } from './contexts/LanguageContext'; // Changed from d
 import PublicTrade from './pages/PublicTrade';
 import PublicPlaybook from './pages/PublicPlaybook';
 import EmailVerify from './pages/EmailVerify';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { Toaster } from './components/ui/toaster';
 
 // Create a simple PrivateRoute component since it's missing
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -33,33 +35,36 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <LanguageProvider>
-          <TradeProvider>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password/:token" element={<ResetPassword />} />
-              <Route path="/verify" element={<EmailVerify />} />
+        <ThemeProvider>
+          <LanguageProvider>
+            <TradeProvider>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/verify" element={<EmailVerify />} />
 
-              {/* Private Routes */}
-              <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-              <Route path="/trades" element={<PrivateRoute><Trades /></PrivateRoute>} />
-              <Route path="/trade/:id" element={<PrivateRoute><TradeTracking /></PrivateRoute>} />
-              <Route path="/add-trade" element={<PrivateRoute><AddTrade /></PrivateRoute>} />
-              {/* Remove edit-trade route since EditTrade component doesn't exist */}
-              <Route path="/journal" element={<PrivateRoute><Journal /></PrivateRoute>} />
-              <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
-              {/* Remove settings route since Settings component doesn't exist */}
-              {/* Remove shared route since Shared component doesn't exist */}
-        
-              {/* Public Routes */}
-              <Route path="/public/trade/:id" element={<PublicTrade />} />
-              <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
-            </Routes>
-          </TradeProvider>
-        </LanguageProvider>
+                {/* Private Routes */}
+                <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                <Route path="/trades" element={<PrivateRoute><Trades /></PrivateRoute>} />
+                <Route path="/trade/:id" element={<PrivateRoute><TradeTracking /></PrivateRoute>} />
+                <Route path="/add-trade" element={<PrivateRoute><AddTrade /></PrivateRoute>} />
+                {/* Remove edit-trade route since EditTrade component doesn't exist */}
+                <Route path="/journal" element={<PrivateRoute><Journal /></PrivateRoute>} />
+                <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
+                {/* Remove settings route since Settings component doesn't exist */}
+                {/* Remove shared route since Shared component doesn't exist */}
+          
+                {/* Public Routes */}
+                <Route path="/public/trade/:id" element={<PublicTrade />} />
+                <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
+              </Routes>
+              <Toaster />
+            </TradeProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </AuthProvider>
     </Router>
   );
