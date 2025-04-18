@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -32,7 +31,7 @@ const AddTrade: React.FC = () => {
   const [showAddPairDialog, setShowAddPairDialog] = useState(false);
   
   const [pair, setPair] = useState('');
-  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
+  const [type, setType<'Buy' | 'Sell'>>('Buy');
   const [entry, setEntry] = useState('');
   const [exit, setExit] = useState('');
   const [lotSize, setLotSize] = useState('');
