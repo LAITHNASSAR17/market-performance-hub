@@ -38,10 +38,10 @@ import ImportTrades from "./pages/ImportTrades";
 
 function App() {
   return (
-    <ThemeProvider>
+    <AuthProvider>
       <Toaster />
       <LanguageProvider>
-        <AuthProvider>
+        <ThemeProvider>
           <TradeProvider>
             <NotebookProvider>
               <Routes>
@@ -77,9 +77,9 @@ function App() {
               </Routes>
             </NotebookProvider>
           </TradeProvider>
-        </AuthProvider>
+        </ThemeProvider>
       </LanguageProvider>
-    </ThemeProvider>
+    </AuthProvider>
   );
 }
 

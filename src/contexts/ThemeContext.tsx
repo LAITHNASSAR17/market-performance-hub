@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -37,9 +37,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             setTheme(data.theme as Theme);
           } else {
             // Create initial preference if it doesn't exist
-            await supabase
-              .from('user_preferences')
-              .insert({ user_id: user.id, theme });
+            try {
+              await supabase
+                .from('user_preferences')
+                .insert({ user_id: user.id, theme });
+            } catch (insertError) {
+              console.error('Error creating theme preference:', insertError);
+            }
           }
         } catch (error) {
           console.error('Error loading theme preference:', error);
