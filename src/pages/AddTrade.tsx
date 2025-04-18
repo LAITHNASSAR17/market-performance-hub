@@ -18,7 +18,6 @@ import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
-import { useTradeTags } from '@/hooks/useTradeTags';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +30,7 @@ const AddTrade: React.FC = () => {
   const [showAddPairDialog, setShowAddPairDialog] = useState(false);
   
   const [pair, setPair] = useState('');
-  const [type, setType<'Buy' | 'Sell'>>('Buy');
+  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
   const [entry, setEntry] = useState('');
   const [exit, setExit] = useState('');
   const [lotSize, setLotSize] = useState('');
@@ -201,8 +200,6 @@ const AddTrade: React.FC = () => {
       });
     }
   };
-  
-  const { allTradeTags } = useTradeTags();
 
   return (
     <Layout>
@@ -512,7 +509,7 @@ const AddTrade: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Hashtags</Label>
+                  <Label>الوسوم</Label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {hashtags.map(tag => (
                       <Badge key={tag} variant="secondary" className="flex items-center gap-1">
@@ -545,28 +542,24 @@ const AddTrade: React.FC = () => {
                     </Button>
                   </div>
                   
-                  <div className="space-y-4 mt-6">
-                    {Object.entries(allTradeTags).map(([key, section]) => (
-                      <div key={key} className="space-y-2">
-                        <h4 className={`text-sm font-medium ${section.color}`}>{section.title}</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {section.tags.map(tag => (
-                            <Badge 
-                              key={tag} 
-                              variant="outline" 
-                              className="cursor-pointer hover:bg-secondary"
-                              onClick={() => {
-                                if (!hashtags.includes(tag)) {
-                                  setHashtags([...hashtags, tag]);
-                                }
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground mb-2">وسوم مقترحة:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {allHashtags.slice(0, 10).map(tag => (
+                        <Badge 
+                          key={tag} 
+                          variant="outline" 
+                          className="cursor-pointer hover:bg-secondary"
+                          onClick={() => {
+                            if (!hashtags.includes(tag)) {
+                              setHashtags([...hashtags, tag]);
+                            }
+                          }}
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </CardContent>
