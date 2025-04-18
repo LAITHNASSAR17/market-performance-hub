@@ -5,13 +5,6 @@ import { Trade } from '@/contexts/TradeContext';
 import { TradeStats } from '@/hooks/useAnalyticsStats';
 import { useToast } from "@/hooks/use-toast";
 
-interface UseInsightsProps {
-  trades: Trade[];
-  stats: TradeStats;
-  playbooks: any[];
-  timeRange?: string;
-}
-
 export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: UseInsightsProps) => {
   const [insights, setInsights] = useState<TradingInsight[]>([]);
   const [currentInsight, setCurrentInsight] = useState(0);
@@ -20,7 +13,15 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
   const { toast } = useToast();
 
   const loadInsights = useCallback(async () => {
+    console.log('Loading insights with:', { 
+      tradesCount: trades.length, 
+      statsAvailable: !!stats, 
+      playbooksCount: playbooks.length,
+      timeRange 
+    });
+    
     if (trades.length === 0 || !stats) {
+      console.log('Not enough data to generate insights');
       return;
     }
     
@@ -28,14 +29,17 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
     setError(null);
     
     try {
+      console.log('Calling generateTradingInsights with data');
       const newInsights = await generateTradingInsights(trades, stats, playbooks, timeRange);
+      
+      console.log('Received insights:', newInsights);
       
       // Validate insights
       if (Array.isArray(newInsights) && newInsights.length > 0) {
         setInsights(newInsights);
         setCurrentInsight(0);
       } else {
-        // No insights available, set a default message
+        console.warn('No insights generated, setting default message');
         setInsights([{
           id: 'no-data',
           title: 'لا توجد رؤى متاحة',
@@ -53,7 +57,7 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
         variant: "destructive"
       });
       
-      // Set fallback insights
+      // Set fallback insights with more detailed error logging
       setInsights([{
         id: 'error-fallback',
         title: 'خطأ في التحليل',
