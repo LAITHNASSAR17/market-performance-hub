@@ -3,11 +3,15 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Star, TrendingUp, Percent, ArrowRightLeft, BarChart, Coins, Hash } from 'lucide-react';
+import { 
+  Pencil, Trash2, Star, TrendingUp, Percent, ArrowRightLeft, 
+  BarChart, Coins, Hash, Lock, Unlock, Trophy, AlertTriangle 
+} from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PlaybookEntry } from '@/hooks/usePlaybooks';
+import { PlaybookEntry, PlaybookRule } from '@/hooks/usePlaybooks';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface PlaybookCardProps {
   playbook: PlaybookEntry;
@@ -37,124 +41,155 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
   
   return (
     <>
-      <Card className="transition-all hover:shadow-md flex flex-col h-full">
+      <Card className="h-full flex flex-col shadow-sm hover:shadow-md transition-all">
         <CardHeader className="pb-2 space-y-0">
           <div className="flex justify-between items-start gap-2">
-            <div className="flex flex-col min-w-0">
-              <CardTitle className="text-lg flex items-center">
+            <div className="flex-grow min-w-0">
+              <div className="flex items-center">
                 <div className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${getCategoryColor(playbook.category)}`}></div>
-                <span className="truncate">{playbook.name}</span>
-              </CardTitle>
-              <span className="text-xs text-muted-foreground capitalize truncate">
-                {playbook.category || 'uncategorized'}
-              </span>
-            </div>
-            <div className="flex flex-shrink-0">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
-                  key={star} 
-                  className={`h-4 w-4 ${
-                    star <= Math.round(playbook.rating) 
-                      ? "fill-yellow-400 text-yellow-400" 
-                      : "text-muted-foreground"
-                  }`}
-                  onClick={() => onEdit && onEdit({ rating: star })}
-                />
-              ))}
+                <CardTitle className="text-lg truncate pr-1">
+                  {playbook.name}
+                </CardTitle>
+                {playbook.isPrivate ? (
+                  <Lock className="h-4 w-4 ml-1 text-muted-foreground flex-shrink-0" />
+                ) : (
+                  <Unlock className="h-4 w-4 ml-1 text-muted-foreground flex-shrink-0" />
+                )}
+              </div>
+              <div className="flex items-center text-xs text-muted-foreground">
+                <span className="capitalize truncate mr-2">
+                  {playbook.category || 'uncategorized'}
+                </span>
+                <span className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star 
+                      key={star} 
+                      className={`h-3 w-3 flex-shrink-0 ${
+                        star <= Math.round(playbook.rating) 
+                          ? "fill-yellow-400 text-yellow-400" 
+                          : "text-muted-foreground"
+                      }`}
+                      onClick={() => onEdit && onEdit({ rating: star })}
+                    />
+                  ))}
+                </span>
+              </div>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="flex-grow">
+        <CardContent className="flex-grow px-4 pb-0">
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {playbook.description}
           </p>
           
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="flex flex-col items-center p-2 border rounded-md">
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="flex flex-col p-2 border rounded-md">
               <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <TrendingUp className="h-3 w-3 mr-1 flex-shrink-0" />
                 <span className="truncate">R Multiple</span>
               </div>
-              <div className="text-lg font-semibold truncate">{playbook.rMultiple || 0}R</div>
+              <div className="text-base font-semibold truncate text-center">{playbook.rMultiple || 0}R</div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md">
+            <div className="flex flex-col p-2 border rounded-md">
               <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <Percent className="h-3 w-3 mr-1 flex-shrink-0" />
                 <span className="truncate">Win Rate</span>
               </div>
-              <div className="text-lg font-semibold truncate">{playbook.winRate || 0}%</div>
+              <div className="text-base font-semibold truncate text-center">{playbook.winRate || 0}%</div>
             </div>
-            
-            <div className="flex flex-col items-center p-2 border rounded-md">
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="flex flex-col p-2 border rounded-md">
               <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <ArrowRightLeft className="h-3 w-3 mr-1 flex-shrink-0" />
                 <span className="truncate">Exp. Value</span>
               </div>
-              <div className={`text-lg font-semibold truncate ${
+              <div className={`text-sm font-semibold truncate text-center ${
                 (playbook.expectedValue || 0) > 0 ? 'text-green-500' : 
                 (playbook.expectedValue || 0) < 0 ? 'text-red-500' : ''
               }`}>
                 {playbook.expectedValue || 0}
               </div>
             </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="flex flex-col items-center p-2 border rounded-md">
+            
+            <div className="flex flex-col p-2 border rounded-md">
               <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <BarChart className="h-3 w-3 mr-1 flex-shrink-0" />
                 <span className="truncate">Profit Factor</span>
               </div>
-              <div className={`text-lg font-semibold truncate ${
+              <div className={`text-sm font-semibold truncate text-center ${
                 (playbook.profitFactor || 0) > 1 ? 'text-green-500' : 'text-red-500'
               }`}>
                 {playbook.profitFactor?.toFixed(2) || '0.00'}
               </div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md">
-              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
-                <Hash className="h-3 w-3 mr-1 flex-shrink-0" />
-                <span className="truncate">Total Trades</span>
-              </div>
-              <div className="text-lg font-semibold truncate">{playbook.totalTrades || 0}</div>
-            </div>
-            
-            <div className="flex flex-col items-center p-2 border rounded-md">
+            <div className="flex flex-col p-2 border rounded-md">
               <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <Coins className="h-3 w-3 mr-1 flex-shrink-0" />
-                <span className="truncate">Avg. Profit</span>
+                <span className="truncate">Net P/L</span>
               </div>
-              <div className={`text-lg font-semibold truncate ${
-                (playbook.averageProfit || 0) > 0 ? 'text-green-500' : 
-                (playbook.averageProfit || 0) < 0 ? 'text-red-500' : ''
+              <div className={`text-sm font-semibold truncate text-center ${
+                (playbook.netProfitLoss || 0) > 0 ? 'text-green-500' : 
+                (playbook.netProfitLoss || 0) < 0 ? 'text-red-500' : ''
               }`}>
-                ${playbook.averageProfit?.toFixed(2) || '0.00'}
+                ${playbook.netProfitLoss?.toFixed(2) || '0.00'}
               </div>
             </div>
           </div>
           
-          <div className="flex flex-wrap gap-1">
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="flex flex-col p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
+                <Hash className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="truncate">Trades</span>
+              </div>
+              <div className="text-sm font-semibold truncate text-center">{playbook.totalTrades || 0}</div>
+            </div>
+            
+            <div className="flex flex-col p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
+                <Trophy className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="truncate">Avg Winner</span>
+              </div>
+              <div className="text-sm font-semibold truncate text-center text-green-500">
+                ${playbook.avgWinner?.toFixed(2) || '0.00'}
+              </div>
+            </div>
+            
+            <div className="flex flex-col p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
+                <AlertTriangle className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="truncate">Avg Loser</span>
+              </div>
+              <div className="text-sm font-semibold truncate text-center text-red-500">
+                ${playbook.avgLoser?.toFixed(2) || '0.00'}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-wrap gap-1 mb-4">
             {playbook.tags.map((tag, i) => (
-              <Badge key={i} variant="outline" className="truncate max-w-[150px]">{tag}</Badge>
+              <Badge key={i} variant="outline" className="truncate max-w-[100px]">{tag}</Badge>
             ))}
           </div>
         </CardContent>
 
-        <CardFooter className="pt-0 justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowDetails(true)}>
+        <CardFooter className="pt-0 mt-auto justify-end gap-2 px-4 pb-4">
+          <Button variant="outline" size="sm" onClick={() => setShowDetails(true)} className="flex-shrink-0">
             View Details
           </Button>
           {onEdit && (
-            <Button variant="outline" size="sm" onClick={() => onEdit({})}>
+            <Button variant="outline" size="sm" onClick={() => onEdit({})} className="flex-shrink-0">
               <Pencil className="h-3 w-3 mr-1" />
               {t('edit') || 'Edit'}
             </Button>
           )}
           {onDelete && (
-            <Button variant="outline" size="sm" className="text-destructive" onClick={onDelete}>
+            <Button variant="outline" size="sm" className="text-destructive flex-shrink-0" onClick={onDelete}>
               <Trash2 className="h-3 w-3 mr-1" />
               {t('delete') || 'Delete'}
             </Button>
@@ -164,49 +199,127 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
 
       {/* Detailed Playbook Dialog */}
       <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center">
               <div className={`w-3 h-3 rounded-full mr-2 ${getCategoryColor(playbook.category)}`}></div>
               {playbook.name}
+              <span className="ml-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star 
+                    key={star} 
+                    className={`inline-block h-4 w-4 ${
+                      star <= Math.round(playbook.rating) 
+                        ? "fill-yellow-400 text-yellow-400" 
+                        : "text-muted-foreground"
+                    }`}
+                  />
+                ))}
+              </span>
+              {playbook.isPrivate ? (
+                <Badge variant="outline" className="ml-2 gap-1">
+                  <Lock className="h-3 w-3" /> Private
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="ml-2 gap-1">
+                  <Unlock className="h-3 w-3" /> Shared
+                </Badge>
+              )}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <h3 className="font-semibold mb-2">Strategy Description</h3>
               <p className="text-sm text-muted-foreground">{playbook.description}</p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {playbook.tags.map((tag, i) => (
+                  <Badge key={i} variant="secondary">{tag}</Badge>
+                ))}
+              </div>
             </div>
             
             <div>
-              <h3 className="font-semibold mb-2">Performance Statistics</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <h3 className="font-semibold mb-3">Performance Metrics</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground">Win Rate</div>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <Percent className="h-3 w-3 mr-1" /> Win Rate
+                  </div>
                   <div className="text-xl font-bold">{playbook.winRate || 0}%</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground">R-Multiple</div>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <TrendingUp className="h-3 w-3 mr-1" /> R-Multiple
+                  </div>
                   <div className="text-xl font-bold">{playbook.rMultiple || 0}R</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground">Profit Factor</div>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <BarChart className="h-3 w-3 mr-1" /> Profit Factor
+                  </div>
                   <div className="text-xl font-bold">{playbook.profitFactor?.toFixed(2) || '0.00'}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground">Expected Value</div>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <ArrowRightLeft className="h-3 w-3 mr-1" /> Expectancy
+                  </div>
                   <div className="text-xl font-bold">{playbook.expectedValue || 0}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground">Total Trades</div>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <Hash className="h-3 w-3 mr-1" /> Total Trades
+                  </div>
                   <div className="text-xl font-bold">{playbook.totalTrades || 0}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm text-muted-foreground">Avg. Profit/Trade</div>
-                  <div className="text-xl font-bold">${playbook.averageProfit?.toFixed(2) || '0.00'}</div>
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <AlertTriangle className="h-3 w-3 mr-1" /> Missed Trades
+                  </div>
+                  <div className="text-xl font-bold">{playbook.missedTrades || 0}</div>
+                </div>
+                <div className="p-3 bg-muted rounded-md">
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <Trophy className="h-3 w-3 mr-1" /> Avg. Winner
+                  </div>
+                  <div className="text-xl font-bold text-green-500">${playbook.avgWinner?.toFixed(2) || '0.00'}</div>
+                </div>
+                <div className="p-3 bg-muted rounded-md">
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <AlertTriangle className="h-3 w-3 mr-1" /> Avg. Loser
+                  </div>
+                  <div className="text-xl font-bold text-red-500">${playbook.avgLoser?.toFixed(2) || '0.00'}</div>
                 </div>
               </div>
             </div>
+            
+            {playbook.rules && playbook.rules.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-2">Playbook Rules</h3>
+                <div className="space-y-3">
+                  {['entry', 'exit', 'risk', 'custom'].map((ruleType) => {
+                    const rules = playbook.rules?.filter(r => r.type === ruleType);
+                    if (!rules || rules.length === 0) return null;
+                    
+                    return (
+                      <div key={ruleType} className="space-y-1">
+                        <h4 className="text-sm font-medium capitalize">{ruleType} Rules</h4>
+                        <div className="space-y-1 pl-1">
+                          {rules.map((rule) => (
+                            <div key={rule.id} className="flex items-start space-x-2">
+                              <Checkbox id={rule.id} className="mt-0.5" />
+                              <label htmlFor={rule.id} className="text-sm">
+                                {rule.description}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             
             <div>
               <h3 className="font-semibold mb-2">Linked Trades</h3>
@@ -217,14 +330,14 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                       <TableHead>Symbol</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Direction</TableHead>
-                      <TableHead>P/L</TableHead>
                       <TableHead>R-Multiple</TableHead>
+                      <TableHead>P/L</TableHead>
+                      <TableHead>Rules Followed</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {/* This would be populated with actual linked trades */}
                     <TableRow>
-                      <TableCell className="text-muted-foreground italic" colSpan={5}>
+                      <TableCell className="text-muted-foreground italic" colSpan={6}>
                         No trades linked to this playbook yet.
                       </TableCell>
                     </TableRow>
