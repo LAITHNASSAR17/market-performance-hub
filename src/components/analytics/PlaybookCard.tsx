@@ -38,10 +38,10 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
   return (
     <>
       <Card className="transition-all hover:shadow-md flex flex-col h-full">
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col truncate">
-              <CardTitle className="text-lg flex items-center truncate">
+        <CardHeader className="pb-2 space-y-0">
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex flex-col min-w-0">
+              <CardTitle className="text-lg flex items-center">
                 <div className={`w-3 h-3 rounded-full mr-2 flex-shrink-0 ${getCategoryColor(playbook.category)}`}></div>
                 <span className="truncate">{playbook.name}</span>
               </CardTitle>
@@ -49,11 +49,11 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 {playbook.category || 'uncategorized'}
               </span>
             </div>
-            <div className="flex ml-2">
+            <div className="flex flex-shrink-0">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star 
                   key={star} 
-                  className={`h-4 w-4 flex-shrink-0 ${
+                  className={`h-4 w-4 ${
                     star <= Math.round(playbook.rating) 
                       ? "fill-yellow-400 text-yellow-400" 
                       : "text-muted-foreground"
@@ -64,32 +64,33 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
             </div>
           </div>
         </CardHeader>
+
         <CardContent className="flex-grow">
-          <p className="text-sm text-muted-foreground mb-4 h-12 overflow-hidden text-ellipsis">
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {playbook.description}
           </p>
           
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
-              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+            <div className="flex flex-col items-center p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <TrendingUp className="h-3 w-3 mr-1 flex-shrink-0" />
-                {t('analytics.rMultiple') || 'R-Multiple'}
+                <span className="truncate">R Multiple</span>
               </div>
               <div className="text-lg font-semibold truncate">{playbook.rMultiple || 0}R</div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
-              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+            <div className="flex flex-col items-center p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <Percent className="h-3 w-3 mr-1 flex-shrink-0" />
-                {t('analytics.winRate') || 'Win Rate'}
+                <span className="truncate">Win Rate</span>
               </div>
               <div className="text-lg font-semibold truncate">{playbook.winRate || 0}%</div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
-              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+            <div className="flex flex-col items-center p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <ArrowRightLeft className="h-3 w-3 mr-1 flex-shrink-0" />
-                {t('analytics.ev') || 'Exp. Value'}
+                <span className="truncate">Exp. Value</span>
               </div>
               <div className={`text-lg font-semibold truncate ${
                 (playbook.expectedValue || 0) > 0 ? 'text-green-500' : 
@@ -101,10 +102,10 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
           </div>
           
           <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
-              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+            <div className="flex flex-col items-center p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <BarChart className="h-3 w-3 mr-1 flex-shrink-0" />
-                Profit Factor
+                <span className="truncate">Profit Factor</span>
               </div>
               <div className={`text-lg font-semibold truncate ${
                 (playbook.profitFactor || 0) > 1 ? 'text-green-500' : 'text-red-500'
@@ -113,18 +114,18 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
               </div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
-              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+            <div className="flex flex-col items-center p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <Hash className="h-3 w-3 mr-1 flex-shrink-0" />
-                Total Trades
+                <span className="truncate">Total Trades</span>
               </div>
               <div className="text-lg font-semibold truncate">{playbook.totalTrades || 0}</div>
             </div>
             
-            <div className="flex flex-col items-center p-2 border rounded-md overflow-hidden">
-              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate">
+            <div className="flex flex-col items-center p-2 border rounded-md">
+              <div className="flex items-center text-xs text-muted-foreground mb-1 truncate w-full justify-center">
                 <Coins className="h-3 w-3 mr-1 flex-shrink-0" />
-                Avg. Profit
+                <span className="truncate">Avg. Profit</span>
               </div>
               <div className={`text-lg font-semibold truncate ${
                 (playbook.averageProfit || 0) > 0 ? 'text-green-500' : 
@@ -137,10 +138,11 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
           
           <div className="flex flex-wrap gap-1">
             {playbook.tags.map((tag, i) => (
-              <Badge key={i} variant="outline" className="truncate max-w-full">{tag}</Badge>
+              <Badge key={i} variant="outline" className="truncate max-w-[150px]">{tag}</Badge>
             ))}
           </div>
         </CardContent>
+
         <CardFooter className="pt-0 justify-end gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowDetails(true)}>
             View Details
