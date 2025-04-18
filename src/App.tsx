@@ -53,7 +53,7 @@ function App() {
                   <Route path="/journal" element={<PrivateRoute><Journal /></PrivateRoute>} />
                   <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
             
-                  {/* Public Routes */}
+                  {/* Public Shared Routes */}
                   <Route path="/public/trade/:id" element={<PublicTrade />} />
                   <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
                   

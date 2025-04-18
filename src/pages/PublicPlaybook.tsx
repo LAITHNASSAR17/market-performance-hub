@@ -1,21 +1,38 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
+import { PlaybookEntry } from '@/hooks/usePlaybooks';
 
 const PublicPlaybook = () => {
   const { id } = useParams();
-  const [playbook, setPlaybook] = React.useState<any>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [playbook, setPlaybook] = useState<PlaybookEntry | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchPlaybook = async () => {
       try {
+        setLoading(true);
+        
+        // Check if this is a public playbook first
+        const { data: isPublic, error: publicCheckError } = await supabase
+          .rpc('is_playbook_public', { playbook_id: id });
+          
+        if (publicCheckError) {
+          console.error('Error checking playbook public status:', publicCheckError);
+          throw new Error('Could not verify playbook access');
+        }
+        
+        if (!isPublic) {
+          throw new Error('This playbook is not publicly shared');
+        }
+        
+        // Now fetch the playbook details
         const { data, error } = await supabase
           .from('playbooks')
           .select('*')
@@ -23,8 +40,14 @@ const PublicPlaybook = () => {
           .single();
 
         if (error) throw error;
+        
+        if (!data) {
+          throw new Error('Playbook not found');
+        }
+        
         setPlaybook(data);
       } catch (error: any) {
+        console.error('Error fetching public playbook:', error);
         toast({
           title: "خطأ",
           description: "لم نتمكن من العثور على الـ Playbook",
@@ -36,7 +59,7 @@ const PublicPlaybook = () => {
     };
 
     if (id) fetchPlaybook();
-  }, [id]);
+  }, [id, toast]);
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">جاري التحميل...</div>;
@@ -65,17 +88,17 @@ const PublicPlaybook = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-muted/50 p-3 rounded-lg">
               <div className="text-sm font-medium mb-1">نسبة الربح</div>
-              <div className="text-2xl font-bold">{playbook.win_rate}%</div>
+              <div className="text-2xl font-bold">{playbook.winRate}%</div>
             </div>
             
             <div className="bg-muted/50 p-3 rounded-lg">
               <div className="text-sm font-medium mb-1">معامل الربح</div>
-              <div className="text-2xl font-bold">{playbook.profit_factor}</div>
+              <div className="text-2xl font-bold">{playbook.profitFactor}</div>
             </div>
             
             <div className="bg-muted/50 p-3 rounded-lg">
               <div className="text-sm font-medium mb-1">إجمالي الصفقات</div>
-              <div className="text-2xl font-bold">{playbook.total_trades}</div>
+              <div className="text-2xl font-bold">{playbook.totalTrades}</div>
             </div>
           </div>
 
