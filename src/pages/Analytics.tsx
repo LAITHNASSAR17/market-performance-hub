@@ -8,7 +8,7 @@ import { ChartLine, Target, BookMarked, LineChart, Lightbulb, Hash, Clock } from
 // Import custom hooks
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
 import { usePlData } from '@/hooks/usePlData';
-import { useTagsState } from '@/hooks/useTagsState';
+import { useTags } from '@/contexts/TagsContext';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
 
 // Import tab components
@@ -26,7 +26,7 @@ const Analytics: React.FC = () => {
   // Use our custom hooks to manage state
   const stats = useAnalyticsStats();
   const plData = usePlData();
-  const { mistakes, setMistakes, setups, setSetups, habits, setHabits, tradingDays } = useTagsState();
+  const { mistakes, setMistakes, setups, setSetups, habits, setHabits, tradingDays } = useTags();
   const { playbooks, addPlaybook, updatePlaybook, deletePlaybook } = usePlaybooks();
   
   return (

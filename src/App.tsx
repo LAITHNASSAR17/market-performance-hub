@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -41,20 +40,23 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import Payment from './pages/Payment';
 import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
+import { TagsProvider } from './contexts/TagsContext';
 
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
         <LanguageProvider>
-          <TradeProvider>
-            <NotebookProvider>
-              <TooltipProvider>
-                <Toaster />
-                <AnimatedRoutes />
-              </TooltipProvider>
-            </NotebookProvider>
-          </TradeProvider>
+          <TagsProvider>
+            <TradeProvider>
+              <NotebookProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <AnimatedRoutes />
+                </TooltipProvider>
+              </NotebookProvider>
+            </TradeProvider>
+          </TagsProvider>
         </LanguageProvider>
       </ThemeProvider>
     </AuthProvider>
