@@ -1,679 +1,420 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { useTrade } from '@/contexts/TradeContext';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Plus, X, BookMarked } from "lucide-react";
-import { format } from 'date-fns';
-import { useLanguage } from '@/contexts/LanguageContext';
-import StarRating from '@/components/StarRating';
-import { supabase } from '@/lib/supabase';
-import AddPairDialog from '@/components/AddPairDialog';
-import ImageUpload from '@/components/ImageUpload';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
-import { Checkbox } from "@/components/ui/checkbox";
+import { useTrade } from '@/contexts/TradeContext';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { PlaybookEntry, PlaybookRule } from '@/hooks/usePlaybooks';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon } from '@radix-ui/react-icons';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Symbol } from '@/contexts/TradeContext';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Slider } from "@/components/ui/slider"
+import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { useToast } from "@/components/ui/use-toast"
 
 const AddTrade: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag } = useTrade();
-  const { toast } = useToast();
-  const { t } = useLanguage();
-  const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showAddPairDialog, setShowAddPairDialog] = useState(false);
-  
-  // Playbook integration
   const { playbooks } = usePlaybooks();
-  const [selectedPlaybook, setSelectedPlaybook] = useState<string>('');
-  const [followedRules, setFollowedRules] = useState<string[]>([]);
-  
+  const { addTrade, pairs, symbols, addSymbol, allHashtags, addHashtag, calculateProfitLoss } = useTrade();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   const [pair, setPair] = useState('');
   const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
-  const [entry, setEntry] = useState('');
-  const [exit, setExit] = useState('');
-  const [lotSize, setLotSize] = useState('');
-  const [stopLoss, setStopLoss] = useState('');
-  const [takeProfit, setTakeProfit] = useState('');
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [durationMinutes, setDurationMinutes] = useState('');
+  const [entry, setEntry] = useState<number | null>(null);
+  const [exit, setExit] = useState<number | null>(null);
+  const [lotSize, setLotSize] = useState<number | null>(null);
+  const [stopLoss, setStopLoss] = useState<number | null>(null);
+  const [takeProfit, setTakeProfit] = useState<number | null>(null);
+  const [riskPercentage, setRiskPercentage] = useState<number | null>(null);
+  const [returnPercentage, setReturnPercentage] = useState<number | null>(null);
+  const [profitLoss, setProfitLoss] = useState<number | null>(null);
+  const [durationMinutes, setDurationMinutes] = useState<number | null>(null);
   const [notes, setNotes] = useState('');
+  const [date, setDate] = useState<Date | null>(null);
   const [account, setAccount] = useState('');
-  const [hashtags, setHashtags] = useState<string[]>([]);
-  const [newHashtag, setNewHashtag] = useState('');
-  const [profitLoss, setProfitLoss] = useState<string>('0');
-  const [commission, setCommission] = useState('0');
-  const [rating, setRating] = useState(0);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
   const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
-  const [total, setTotal] = useState<string>('0');
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [commission, setCommission] = useState<number | null>(null);
+  const [rating, setRating] = useState<number | null>(null);
 
-  // Get the selected playbook's rules
-  const selectedPlaybookRules = playbooks.find(p => p.id === selectedPlaybook)?.rules || [];
+  const [selectedPlaybook, setSelectedPlaybook] = useState<string | null>(null);
+  const [selectedPlaybookRules, setSelectedPlaybookRules] = useState<PlaybookRule[]>([]);
+  const [followedRules, setFollowedRules] = useState<string[]>([]);
 
-  const fetchTradeFromDb = async (tradeId: string) => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('trades')
-        .select('*')
-        .eq('id', tradeId)
-        .single();
-      
-      if (error) throw error;
-      
-      if (data) {
-        setPair(data.symbol || '');
-        setType(data.direction === 'long' ? 'Buy' : 'Sell');
-        setEntry(data.entry_price?.toString() || '');
-        setExit(data.exit_price?.toString() || '');
-        setLotSize(data.quantity?.toString() || '');
-        
-        if (data.entry_date) {
-          setDate(data.entry_date.split('T')[0]);
-        }
-        
-        setStopLoss(data.stop_loss?.toString() || '');
-        setTakeProfit(data.take_profit?.toString() || '');
-        setDurationMinutes(data.duration_minutes?.toString() || '');
-        setNotes(data.notes || '');
-        setHashtags(data.tags || []);
-        setProfitLoss(data.profit_loss?.toString() || '0');
-        setCommission(data.fees?.toString() || '0');
-        setRating(data.rating || 0);
-        setImageUrl(data.image_url || null);
-        setBeforeImageUrl(data.before_image_url || null);
-        setAfterImageUrl(data.after_image_url || null);
-        setSelectedPlaybook(data.playbook || '');
-        setFollowedRules(data.followed_rules || []);
-        
-        setAccount(accounts[0] || '');
-        setIsEditing(true);
-        console.log("Trade data loaded:", data);
-      }
-    } catch (error) {
-      console.error('Error fetching trade:', error);
+  const [open, setOpen] = React.useState(false)
+  const [commandValue, setCommandValue] = React.useState("")
+
+  const handlePlaybookChange = (value: string) => {
+    const playbook = playbooks.find(p => p.id === value);
+    setSelectedPlaybook(value);
+    setSelectedPlaybookRules(playbook?.rules || []);
+  };
+
+  const handleRuleToggle = (ruleId: string) => {
+    setFollowedRules(prev => 
+      prev.includes(ruleId) 
+        ? prev.filter(id => id !== ruleId) 
+        : [...prev, ruleId]
+    );
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    
+    if (!pair || !type || !entry || !exit || !lotSize || !date) {
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب بيانات التداول",
-        variant: "destructive"
-      });
-      navigate('/trades');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (id) {
-      fetchTradeFromDb(id);
-    } else {
-      setAccount(accounts[0] || '');
-    }
-  }, [id, accounts]);
-
-  const handleAddHashtag = () => {
-    if (newHashtag && !hashtags.includes(newHashtag)) {
-      setHashtags([...hashtags, newHashtag]);
-      addHashtag(newHashtag);
-      setNewHashtag('');
-    }
-  };
-
-  const handleRemoveHashtag = (tag: string) => {
-    setHashtags(hashtags.filter(t => t !== tag));
-  };
-
-  const handleCommissionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newCommission = e.target.value;
-    setCommission(newCommission);
-    
-    const rawPL = parseFloat(profitLoss) || 0;
-    const fees = parseFloat(newCommission) || 0;
-    setTotal((rawPL - fees).toString());
-  };
-
-  const handleProfitLossChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newPL = e.target.value;
-    setProfitLoss(newPL);
-    
-    const rawPL = parseFloat(newPL) || 0;
-    const fees = parseFloat(commission) || 0;
-    setTotal((rawPL - fees).toString());
-  };
-
-  const handleRuleChange = (ruleId: string, checked: boolean) => {
-    if (checked) {
-      setFollowedRules([...followedRules, ruleId]);
-    } else {
-      setFollowedRules(followedRules.filter(id => id !== ruleId));
-    }
-  };
-
-  const handlePlaybookChange = (playbookId: string) => {
-    setSelectedPlaybook(playbookId);
-    // Reset followed rules when changing playbook
-    setFollowedRules([]);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!pair || !type || !entry || !date || !account) {
-      toast({
-        title: "بيانات ناقصة",
-        description: "يرجى ملء جميع الحقول المطلوبة",
-        variant: "destructive"
-      });
+        title: "Required Fields Missing",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      })
       return;
     }
 
     try {
-      const tradeData = {
-        pair,
-        type,
-        entry: parseFloat(entry),
-        exit: exit ? parseFloat(exit) : null,
-        lotSize: parseFloat(lotSize),
-        stopLoss: stopLoss ? parseFloat(stopLoss) : null,
-        takeProfit: takeProfit ? parseFloat(takeProfit) : null,
-        date,
-        durationMinutes: durationMinutes ? parseInt(durationMinutes) : 0,
-        notes,
-        account,
-        hashtags,
-        profitLoss: parseFloat(profitLoss),
-        commission: parseFloat(commission) || 0,
-        total: parseFloat(total),
-        rating,
-        riskPercentage: 0,
-        returnPercentage: 0,
+      await addTrade({
+        pair: pair,
+        type: type,
+        entry: entry,
+        exit: exit,
+        lotSize: lotSize,
+        stopLoss: stopLoss,
+        takeProfit: takeProfit,
+        riskPercentage: riskPercentage || 0,
+        returnPercentage: returnPercentage || 0,
+        profitLoss: profitLoss || 0,
+        durationMinutes: durationMinutes || 0,
+        notes: notes,
+        date: format(date, 'yyyy-MM-dd'),
+        account: account,
         imageUrl: imageUrl,
         beforeImageUrl: beforeImageUrl,
         afterImageUrl: afterImageUrl,
-        playbook: selectedPlaybook || undefined,
+        hashtags: hashtags,
+        commission: commission || 0,
+        rating: rating || 0,
+        playbook: selectedPlaybook === 'none' ? null : selectedPlaybook,
         followedRules: followedRules
-      };
-
-      if (isEditing && id) {
-        await updateTrade(id, tradeData);
-        toast({
-          title: "تم التحديث",
-          description: "تم تحديث التداول بنجاح",
-        });
-      } else {
-        await addTrade(tradeData);
-        toast({
-          title: "تمت الإضافة",
-          description: "تمت إضافة التداول بنجاح",
-        });
-      }
+      });
       
       navigate('/trades');
     } catch (error) {
-      console.error('Error saving trade:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء حفظ التداول",
-        variant: "destructive"
-      });
+      console.error('Error adding trade:', error);
+    }
+  };
+
+  const handleSymbolSelect = (symbol: Symbol) => {
+    setPair(symbol.symbol);
+    setOpen(false);
+  };
+
+  const filteredSymbols = symbols.filter((symbol) =>
+    symbol.symbol.toLowerCase().includes(commandValue.toLowerCase()) ||
+    symbol.name.toLowerCase().includes(commandValue.toLowerCase())
+  );
+
+  const handleHashtagAddition = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      const hashtag = (event.target as HTMLInputElement).value.trim();
+      if (hashtag && !hashtags.includes(hashtag)) {
+        setHashtags([...hashtags, hashtag]);
+        addHashtag(hashtag);
+        (event.target as HTMLInputElement).value = '';
+      }
+    }
+  };
+
+  const handleRemoveHashtag = (hashtagToRemove: string) => {
+    setHashtags(hashtags.filter(hashtag => hashtag !== hashtagToRemove));
+  };
+
+  const handleCalculateProfitLoss = () => {
+    if (entry !== null && exit !== null && lotSize !== null && type) {
+      const calculatedProfitLoss = calculateProfitLoss(entry, exit, lotSize, type, pair);
+      setProfitLoss(calculatedProfitLoss);
     }
   };
 
   return (
     <Layout>
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="mb-2" 
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          العودة
-        </Button>
-        <h1 className="text-2xl font-bold">{isEditing ? 'تعديل التداول' : 'إضافة تداول جديد'}</h1>
-        <p className="text-gray-500">
-          {isEditing 
-            ? 'قم بتحديث تفاصيل التداول الخاص بك' 
-            : 'سجل تداول جديد مع جميع التفاصيل ذات الصلة'}
-        </p>
-      </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <p>جاري تحميل بيانات التداول...</p>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-6">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">تفاصيل التداول</CardTitle>
-                <CardDescription>أدخل المعلومات الأساسية حول التداول الخاص بك</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="pair">زوج التداول/الرمز</Label>
-                    {isEditing ? (
-                      <Input 
-                        id="pair" 
-                        value={pair} 
-                        readOnly 
-                        className="bg-gray-100 border border-gray-300"
-                      />
-                    ) : (
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <Select value={pair} onValueChange={setPair} required>
-                            <SelectTrigger id="pair">
-                              <SelectValue placeholder="اختر الزوج" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {pairs.map(p => (
-                                <SelectItem key={p} value={p}>{p}</SelectItem>
-                              ))}
-                              <SelectItem value="add-new" className="text-primary font-semibold">
-                                + إضافة زوج جديد
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="px-3" 
-                          onClick={() => setShowAddPairDialog(true)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="account">حساب التداول</Label>
-                    <Select value={account} onValueChange={setAccount} required>
-                      <SelectTrigger id="account">
-                        <SelectValue placeholder="اختر الحساب" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.map(a => (
-                          <SelectItem key={a} value={a}>{a}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="type">نوع التداول</Label>
-                    <Select value={type} onValueChange={(value: 'Buy' | 'Sell') => setType(value)} required>
-                      <SelectTrigger id="type">
-                        <SelectValue placeholder="اختر النوع" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Buy">شراء (طويل)</SelectItem>
-                        <SelectItem value="Sell">بيع (قصير)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="date">تاريخ التداول</Label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                      <Input 
-                        id="date" 
-                        type="date" 
-                        value={date} 
-                        onChange={(e) => setDate(e.target.value)} 
-                        className="pl-9"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">معلومات السعر</CardTitle>
-                <CardDescription>أدخل سعر الدخول والخروج وتفاصيل إدارة المخاطر</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="entry">سعر الدخول</Label>
-                    <Input 
-                      id="entry" 
-                      type="number" 
-                      step="any" 
-                      value={entry} 
-                      onChange={(e) => setEntry(e.target.value)} 
-                      required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="exit">سعر الخروج</Label>
-                    <Input 
-                      id="exit" 
-                      type="number" 
-                      step="any" 
-                      value={exit} 
-                      onChange={(e) => setExit(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="lotSize">حجم العقد</Label>
-                    <Input 
-                      id="lotSize" 
-                      type="number" 
-                      step="any" 
-                      value={lotSize} 
-                      onChange={(e) => setLotSize(e.target.value)} 
-                      required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="stopLoss">وقف الخسارة</Label>
-                    <Input 
-                      id="stopLoss" 
-                      type="number" 
-                      step="any" 
-                      value={stopLoss} 
-                      onChange={(e) => setStopLoss(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="takeProfit">هدف الربح</Label>
-                    <Input 
-                      id="takeProfit" 
-                      type="number" 
-                      step="any" 
-                      value={takeProfit} 
-                      onChange={(e) => setTakeProfit(e.target.value)} 
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="profitLoss">الربح/الخسارة</Label>
-                    <Input 
-                      id="profitLoss" 
-                      type="number" 
-                      step="any" 
-                      value={profitLoss} 
-                      onChange={handleProfitLossChange}
-                      required
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="durationMinutes">المدة (بالدقائق)</Label>
-                    <Input 
-                      id="durationMinutes" 
-                      type="number" 
-                      value={durationMinutes} 
-                      onChange={(e) => setDurationMinutes(e.target.value)}
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="commission">العمولة/الرسوم</Label>
-                    <Input 
-                      id="commission" 
-                      type="number" 
-                      step="any" 
-                      value={commission} 
-                      onChange={handleCommissionChange}
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="total">المجموع (صافي الربح/الخسارة)</Label>
-                    <Input 
-                      id="total" 
-                      type="number" 
-                      value={total}
-                      readOnly
-                      className="bg-gray-100 border border-gray-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">صور التداول</CardTitle>
-                <CardDescription>أضف صورًا للإعداد والدخول والخروج من التداول</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label>صورة قبل الدخول</Label>
-                    <ImageUpload 
-                      value={beforeImageUrl} 
-                      onChange={setBeforeImageUrl}
-                      className="min-h-[200px]"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>صورة بعد الخروج</Label>
-                    <ImageUpload 
-                      value={afterImageUrl} 
-                      onChange={setAfterImageUrl}
-                      className="min-h-[200px]"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>صورة أخرى</Label>
-                    <ImageUpload 
-                      value={imageUrl} 
-                      onChange={setImageUrl}
-                      className="min-h-[200px]"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">تقييم التداول</CardTitle>
-                <CardDescription>قيّم جودة تنفيذ هذا التداول</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">كيف تقيّم هذا التداول؟</p>
-                  <StarRating 
-                    value={rating} 
-                    onChange={setRating}
-                    size="large"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Playbook Card */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center">
-                  <BookMarked className="h-5 w-5 mr-2" />
-                  استراتيجية التداول (Playbook)
-                </CardTitle>
-                <CardDescription>اختر استراتيجية تداول لتصنيف هذا التداول وتتبع أداء استراتيجياتك</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="playbook">استراتيجية التداول</Label>
-                  <Select value={selectedPlaybook} onValueChange={handlePlaybookChange}>
-                    <SelectTrigger id="playbook">
-                      <SelectValue placeholder="اختر استراتيجية" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">بدون استراتيجية</SelectItem>
-                      {playbooks.map(playbook => (
-                        <SelectItem key={playbook.id} value={playbook.id}>
-                          {playbook.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {selectedPlaybook && selectedPlaybook !== 'none' && selectedPlaybookRules.length > 0 && (
-                  <div className="space-y-2 border rounded-md p-4">
-                    <Label>القواعد المتبعة في هذا التداول</Label>
-                    <div className="space-y-2 mt-2">
-                      {selectedPlaybookRules.map(rule => (
-                        <div key={rule.id} className="flex items-start space-x-2 rtl:space-x-reverse">
-                          <Checkbox 
-                            id={`rule-${rule.id}`} 
-                            checked={followedRules.includes(rule.id)}
-                            onCheckedChange={(checked) => handleRuleChange(rule.id, checked as boolean)}
-                          />
-                          <Label htmlFor={`rule-${rule.id}`} className="text-sm leading-tight">
-                            <span className="font-medium">{rule.type === 'entry' ? 'دخول: ' : 
-                                                    rule.type === 'exit' ? 'خروج: ' : 
-                                                    rule.type === 'risk' ? 'إدارة المخاطر: ' : 
-                                                    'قاعدة: '}</span>
-                            {rule.description}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Notes and Tags Card */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">الملاحظات والوسوم</CardTitle>
-                <CardDescription>أضف ملاحظات وصنّف تداولك</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="notes">ملاحظات التداول</Label>
-                  <Textarea 
-                    id="notes" 
-                    placeholder="أضف ملاحظات حول تداولك، الاستراتيجية المستخدمة، والملاحظات..." 
-                    value={notes} 
-                    onChange={(e) => setNotes(e.target.value)} 
-                    className="min-h-[100px]"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>الوسوم</Label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {hashtags.map(tag => (
-                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                        {tag}
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-4 w-4 p-0 hover:bg-transparent" 
-                          onClick={() => handleRemoveHashtag(tag)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
+      <div className="container mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-4">Add New Trade</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          
+          <div>
+            <Label htmlFor="pair">الزوج</Label>
+            <Command open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between"
+                >
+                  {pair
+                    ? symbols.find((symbol) => symbol.symbol === pair)?.name
+                    : "Select symbol..."}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0">
+                <CommandInput
+                  placeholder="Search symbol..."
+                  value={commandValue}
+                  onValueChange={setCommandValue}
+                />
+                <CommandList>
+                  <CommandEmpty>No symbol found.</CommandEmpty>
+                  <CommandGroup heading="Symbols">
+                    {filteredSymbols.map((symbol) => (
+                      <CommandItem
+                        key={symbol.symbol}
+                        value={symbol.symbol}
+                        onSelect={() => handleSymbolSelect(symbol)}
+                      >
+                        {symbol.name}
+                      </CommandItem>
                     ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Input 
-                      placeholder="أضف وسمًا..." 
-                      value={newHashtag} 
-                      onChange={(e) => setNewHashtag(e.target.value)} 
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddHashtag())}
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={handleAddHashtag} 
-                      variant="outline"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      إضافة
-                    </Button>
-                  </div>
-                  
-                  <div className="mt-4">
-                    <p className="text-sm text-muted-foreground mb-2">وسوم مقترحة:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {allHashtags.slice(0, 10).map(tag => (
-                        <Badge 
-                          key={tag} 
-                          variant="outline" 
-                          className="cursor-pointer hover:bg-secondary"
-                          onClick={() => {
-                            if (!hashtags.includes(tag)) {
-                              setHashtags([...hashtags, tag]);
-                            }
-                          }}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CommandGroup>
+                  <CommandSeparator />
+                  <CommandGroup heading="Settings">
+                    <CommandItem onSelect={() => alert("Add new symbol.")}>
+                      Add symbol
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </PopoverContent>
+            </Command>
           </div>
           
-          <div className="flex justify-end gap-4 mb-10">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => navigate('/trades')}
-            >
-              إلغاء
-            </Button>
-            <Button 
-              type="submit"
-            >
-              {isEditing ? 'تحديث التداول' : 'إضافة التداول'}
-            </Button>
+          <div>
+            <Label htmlFor="type">النوع</Label>
+            <Select value={type} onValueChange={(value) => setType(value as 'Buy' | 'Sell')}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select trade type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Buy">شراء</SelectItem>
+                <SelectItem value="Sell">بيع</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          
+          <div>
+            <Label htmlFor="entry">سعر الدخول</Label>
+            <Input
+              type="number"
+              id="entry"
+              value={entry !== null ? entry.toString() : ''}
+              onChange={(e) => setEntry(e.target.value ? parseFloat(e.target.value) : null)}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="exit">سعر الخروج</Label>
+            <Input
+              type="number"
+              id="exit"
+              value={exit !== null ? exit.toString() : ''}
+              onChange={(e) => setExit(e.target.value ? parseFloat(e.target.value) : null)}
+              onBlur={handleCalculateProfitLoss}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="lotSize">حجم اللوت</Label>
+            <Input
+              type="number"
+              id="lotSize"
+              value={lotSize !== null ? lotSize.toString() : ''}
+              onChange={(e) => setLotSize(e.target.value ? parseFloat(e.target.value) : null)}
+              onBlur={handleCalculateProfitLoss}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="stopLoss">وقف الخسارة</Label>
+            <Input
+              type="number"
+              id="stopLoss"
+              value={stopLoss !== null ? stopLoss.toString() : ''}
+              onChange={(e) => setStopLoss(e.target.value ? parseFloat(e.target.value) : null)}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="takeProfit">جني الأرباح</Label>
+            <Input
+              type="number"
+              id="takeProfit"
+              value={takeProfit !== null ? takeProfit.toString() : ''}
+              onChange={(e) => setTakeProfit(e.target.value ? parseFloat(e.target.value) : null)}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="profitLoss">الربح / الخسارة</Label>
+            <Input
+              type="number"
+              id="profitLoss"
+              value={profitLoss !== null ? profitLoss.toString() : ''}
+              readOnly
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="commission">العمولة</Label>
+            <Input
+              type="number"
+              id="commission"
+              value={commission !== null ? commission.toString() : ''}
+              onChange={(e) => setCommission(e.target.value ? parseFloat(e.target.value) : null)}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="durationMinutes">المدة بالدقائق</Label>
+            <Input
+              type="number"
+              id="durationMinutes"
+              value={durationMinutes !== null ? durationMinutes.toString() : ''}
+              onChange={(e) => setDurationMinutes(e.target.value ? parseFloat(e.target.value) : null)}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="notes">ملاحظات</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </div>
+          
+          <div>
+            <Label>تاريخ التداول</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "yyyy-MM-dd") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  disabled={(date) =>
+                    date > new Date()
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          
+          <div>
+            <Label htmlFor="hashtags">الهاشتاجات</Label>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="text"
+                id="hashtags"
+                placeholder="أضف هاشتاج واضغط Enter"
+                onKeyDown={handleHashtagAddition}
+              />
+            </div>
+            <div className="flex flex-wrap mt-2">
+              {hashtags.map(hashtag => (
+                <Badge key={hashtag} className="mr-2 mb-2 rounded-full px-3 py-1 text-sm font-medium bg-secondary hover:bg-muted">
+                  {hashtag}
+                  <button onClick={() => handleRemoveHashtag(hashtag)} className="ml-1">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        
+        <div className="mb-4">
+          <Label>الاستراتيجية</Label>
+          <Select 
+            value={selectedPlaybook || ''} 
+            onValueChange={handlePlaybookChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="اختر استراتيجية" />
+            </SelectTrigger>
+            <SelectContent>
+              {playbooks.map(playbook => (
+                <SelectItem 
+                  key={playbook.id} 
+                  value={playbook.id}
+                >
+                  {playbook.name}
+                </SelectItem>
+              ))}
+              <SelectItem value="none">بدون استراتيجية</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {selectedPlaybook && selectedPlaybook !== 'none' && selectedPlaybookRules.length > 0 && (
+          <div className="space-y-2 border rounded-md p-4">
+            <Label>القواعد المتبعة في هذا التداول</Label>
+            <div className="space-y-2 mt-2">
+              {selectedPlaybookRules.map(rule => (
+                <div key={rule.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={rule.id}
+                    checked={followedRules.includes(rule.id)}
+                    onCheckedChange={() => handleRuleToggle(rule.id)}
+                  />
+                  <Label htmlFor={rule.id}>{rule.description}</Label>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+          <Button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700">
+            إضافة التداول
+          </Button>
         </form>
-      )}
-      
-      <AddPairDialog 
-        isOpen={showAddPairDialog}
-        onClose={() => setShowAddPairDialog(false)}
-        onPairAdded={(newSymbol) => {
-          setPair(newSymbol);
-          setShowAddPairDialog(false);
-        }}
-      />
+      </div>
     </Layout>
   );
 };

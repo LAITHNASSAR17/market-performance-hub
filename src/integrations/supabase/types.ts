@@ -120,6 +120,78 @@ export type Database = {
         }
         Relationships: []
       }
+      playbooks: {
+        Row: {
+          average_profit: number | null
+          avg_loser: number | null
+          avg_winner: number | null
+          category: string | null
+          created_at: string
+          description: string | null
+          expected_value: number | null
+          id: string
+          is_private: boolean | null
+          missed_trades: number | null
+          name: string
+          net_profit_loss: number | null
+          profit_factor: number | null
+          r_multiple: number | null
+          rating: number | null
+          rules: Json | null
+          tags: string[] | null
+          total_trades: number | null
+          updated_at: string
+          user_id: string | null
+          win_rate: number | null
+        }
+        Insert: {
+          average_profit?: number | null
+          avg_loser?: number | null
+          avg_winner?: number | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          expected_value?: number | null
+          id?: string
+          is_private?: boolean | null
+          missed_trades?: number | null
+          name: string
+          net_profit_loss?: number | null
+          profit_factor?: number | null
+          r_multiple?: number | null
+          rating?: number | null
+          rules?: Json | null
+          tags?: string[] | null
+          total_trades?: number | null
+          updated_at?: string
+          user_id?: string | null
+          win_rate?: number | null
+        }
+        Update: {
+          average_profit?: number | null
+          avg_loser?: number | null
+          avg_winner?: number | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          expected_value?: number | null
+          id?: string
+          is_private?: boolean | null
+          missed_trades?: number | null
+          name?: string
+          net_profit_loss?: number | null
+          profit_factor?: number | null
+          r_multiple?: number | null
+          rating?: number | null
+          rules?: Json | null
+          tags?: string[] | null
+          total_trades?: number | null
+          updated_at?: string
+          user_id?: string | null
+          win_rate?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -178,9 +250,11 @@ export type Database = {
           exit_date: string | null
           exit_price: number | null
           fees: number | null
+          followed_rules: string[] | null
           id: string
           image_url: string | null
           notes: string | null
+          playbook: string | null
           profit_loss: number | null
           quantity: number
           rating: number | null
@@ -203,9 +277,11 @@ export type Database = {
           exit_date?: string | null
           exit_price?: number | null
           fees?: number | null
+          followed_rules?: string[] | null
           id?: string
           image_url?: string | null
           notes?: string | null
+          playbook?: string | null
           profit_loss?: number | null
           quantity: number
           rating?: number | null
@@ -228,9 +304,11 @@ export type Database = {
           exit_date?: string | null
           exit_price?: number | null
           fees?: number | null
+          followed_rules?: string[] | null
           id?: string
           image_url?: string | null
           notes?: string | null
+          playbook?: string | null
           profit_loss?: number | null
           quantity?: number
           rating?: number | null
@@ -247,6 +325,13 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "trading_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trades_playbook_fkey"
+            columns: ["playbook"]
+            isOneToOne: false
+            referencedRelation: "playbooks"
             referencedColumns: ["id"]
           },
         ]
