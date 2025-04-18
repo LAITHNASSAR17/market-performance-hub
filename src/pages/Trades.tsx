@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Search, Grid, List, Eye, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Grid, List, Eye, Edit, Trash2, Share } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import HashtagBadge from '@/components/HashtagBadge';
 import { useToast } from '@/components/ui/use-toast';
+import ShareDialog from '@/components/ShareDialog';
 
 const Trades: React.FC = () => {
   const { trades, deleteTrade, pairs } = useTrade();
@@ -23,6 +24,7 @@ const Trades: React.FC = () => {
   const [accountFilter, setAccountFilter] = useState('all');
   const [tradeToDelete, setTradeToDelete] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [selectedTradeForShare, setSelectedTradeForShare] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -73,6 +75,11 @@ const Trades: React.FC = () => {
 
   const handleViewTrade = (id: string) => {
     navigate(`/trade/${id}`);
+  };
+
+  const handleShare = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedTradeForShare(id);
   };
 
   return (
@@ -238,6 +245,15 @@ const Trades: React.FC = () => {
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8" 
+                            onClick={(e) => handleShare(trade.id, e)}
+                            title="Share trade"
+                          >
+                            <Share className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
                             onClick={() => handleViewTrade(trade.id)}
                             title="View trade details"
                           >
@@ -306,6 +322,14 @@ const Trades: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ShareDialog
+        isOpen={!!selectedTradeForShare}
+        onClose={() => setSelectedTradeForShare(null)}
+        itemId={selectedTradeForShare || ''}
+        itemType="trade"
+        itemTitle={trades.find(t => t.id === selectedTradeForShare)?.pair}
+      />
     </Layout>
   );
 };
