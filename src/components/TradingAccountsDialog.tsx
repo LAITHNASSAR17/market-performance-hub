@@ -8,16 +8,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTrade } from '@/contexts/TradeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const TradingAccountsDialog = () => {
   const [name, setName] = React.useState('');
   const [accountType, setAccountType] = React.useState('live');
   const [balance, setBalance] = React.useState('');
+  const [isOpen, setIsOpen] = React.useState(false);
   const { toast } = useToast();
-  const { tradingAccounts, createTradingAccount } = useTrade();
+  const { tradingAccounts, fetchTradingAccounts } = useTrade();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول أولاً",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (!name.trim()) {
       toast({
@@ -29,12 +42,32 @@ const TradingAccountsDialog = () => {
     }
 
     try {
-      await createTradingAccount(name, parseFloat(balance) || 0, accountType);
+      // مباشرة استخدام supabase لإضافة الحساب
+      const { data, error } = await supabase
+        .from('trading_accounts')
+        .insert({
+          user_id: user.id,
+          name: name.trim(),
+          balance: parseFloat(balance) || 0,
+          account_type: accountType || 'live',
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
       
-      // Reset form
+      if (error) {
+        console.error('Error creating account:', error);
+        throw error;
+      }
+      
+      // تحديث قائمة الحسابات
+      await fetchTradingAccounts();
+      
+      // إعادة تعيين النموذج
       setName('');
       setAccountType('live');
       setBalance('');
+      setIsOpen(false);
       
       toast({
         title: "تم إنشاء الحساب",
@@ -51,7 +84,7 @@ const TradingAccountsDialog = () => {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="px-3">
           <Plus className="h-4 w-4" />

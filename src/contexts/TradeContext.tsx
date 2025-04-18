@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -253,7 +252,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         detectedType = 'forex';
       } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
         detectedType = 'crypto';
-      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
+      } else if (/^(sr|sa)$/i.test(instrumentType)) {
         detectedType = 'stock';
       } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
         detectedType = 'index';
@@ -559,7 +558,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const createTradingAccount = async (name: string, balance: number, accountType: string = 'live'): Promise<TradingAccount> => {
+  const createTradingAccount = async (name: string, balance: number, accountType?: string): Promise<TradingAccount> => {
     if (!user) throw new Error('User not authenticated');
 
     if (!name.trim()) {
@@ -572,6 +571,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     try {
+      console.log('Current user:', user);
+      
       const { data, error } = await supabase
         .from('trading_accounts')
         .insert({
@@ -584,7 +585,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Insertion error details:', error);
+        throw error;
+      }
       
       if (!data) {
         throw new Error('Failed to create trading account, no data returned');
@@ -624,6 +628,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return;
 
     try {
+      console.log('Fetching trading accounts for user:', user.id);
       const { data, error } = await supabase
         .from('trading_accounts')
         .select('*')
