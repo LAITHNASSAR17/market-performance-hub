@@ -18,6 +18,9 @@ export interface ITradingAccount {
   name: string;
   balance: number;
   createdAt: string;
+  accountType?: string;
+  broker?: string;
+  accountNumber?: string;
 }
 
 export const userService = {
@@ -112,11 +115,7 @@ export const userService = {
     try {
       console.log('Creating trading account with params:', { userId, name, balance: parsedBalance, accountType });
       
-      // First, ensure the user exists in auth
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      // Create the account directly without checking for user existence in the users table
-      // since we've disabled RLS and removed the foreign key constraint
+      // Create the account directly
       const { data, error } = await supabase
         .from('trading_accounts')
         .insert({
@@ -129,8 +128,8 @@ export const userService = {
         .select();
       
       if (error) {
-        console.error('Error creating trading account:', error);
-        throw error;
+        console.error('Supabase error creating trading account:', error);
+        throw new Error(`Database error: ${error.message}`);
       }
       
       if (!data || data.length === 0) {
@@ -138,12 +137,15 @@ export const userService = {
       }
       
       const account = data[0];
+      console.log('Created account:', account);
+      
       return {
         id: account.id,
         userId: account.user_id,
         name: account.name,
         balance: Number(account.balance),
-        createdAt: account.created_at
+        createdAt: account.created_at,
+        accountType: account.account_type
       };
     } catch (error) {
       console.error('Detailed error in createTradingAccount:', error);
@@ -171,12 +173,17 @@ export const userService = {
       
       if (!data) return [];
       
+      console.log('Trading accounts data from DB:', data);
+      
       return data.map(account => ({
         id: account.id,
         userId: account.user_id,
         name: account.name,
         balance: Number(account.balance),
-        createdAt: account.created_at
+        createdAt: account.created_at,
+        accountType: account.account_type,
+        broker: account.broker,
+        accountNumber: account.account_number
       }));
     } catch (error) {
       console.error('Detailed error in getTradingAccounts:', error);

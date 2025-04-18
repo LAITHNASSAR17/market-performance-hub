@@ -9,7 +9,6 @@ import { Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTrade } from '@/contexts/TradeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { userService } from '@/services/userService';
 
 const TradingAccountsDialog = () => {
   const [name, setName] = React.useState('');
@@ -18,7 +17,7 @@ const TradingAccountsDialog = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { toast } = useToast();
-  const { fetchTradingAccounts } = useTrade();
+  const { fetchTradingAccounts, createTradingAccount } = useTrade();
   const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,18 +46,8 @@ const TradingAccountsDialog = () => {
     try {
       console.log('Creating account with user ID:', user.id);
       
-      // Use the userService to create a trading account
-      const newAccount = await userService.createTradingAccount(
-        user.id,
-        name.trim(),
-        parseFloat(balance) || 0,
-        accountType
-      );
-      
-      console.log('Account created successfully:', newAccount);
-      
-      // Refresh the accounts list
-      await fetchTradingAccounts();
+      // Use the createTradingAccount function from the context
+      await createTradingAccount(name.trim(), parseFloat(balance) || 0, accountType);
       
       // Reset form
       setName('');

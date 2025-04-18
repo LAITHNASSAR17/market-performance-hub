@@ -572,6 +572,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     try {
       console.log('Current user:', user);
+      console.log('Creating account with parameters:', { name, balance, accountType });
       
       const newAccount = await userService.createTradingAccount(
         user.id,
@@ -579,6 +580,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         balance,
         accountType || 'live'
       );
+      
+      console.log('New account created:', newAccount);
       
       setTradingAccounts(prev => [...prev, newAccount]);
       
@@ -592,7 +595,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Error creating trading account:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء إنشاء الحساب",
+        description: `حدث خطأ أثناء إنشاء الحساب: ${error.message || 'خطأ غير معروف'}`,
         variant: "destructive"
       });
       throw error;
@@ -600,7 +603,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const fetchTradingAccounts = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('No user found, cannot fetch trading accounts');
+      return;
+    }
 
     try {
       console.log('Fetching trading accounts for user:', user.id);
@@ -622,8 +628,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     if (user) {
+      console.log('User detected, fetching trading accounts');
       fetchTradingAccounts();
     } else {
+      console.log('No user detected, clearing trading accounts');
       setTradingAccounts([]);
     }
   }, [user]);
@@ -656,6 +664,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 export const useTrade = () => {
   const context = useContext(TradeContext);
   if (context === undefined) {
+    console.error('useTrade hook was called outside of a TradeProvider component hierarchy');
     throw new Error('useTrade must be used within a TradeProvider');
   }
   return context;
