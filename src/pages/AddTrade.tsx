@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -536,7 +537,7 @@ const AddTrade: React.FC = () => {
                       <SelectValue placeholder="اختر استراتيجية" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">بدون استراتيجية</SelectItem>
+                      <SelectItem value="none">بدون استراتيجية</SelectItem>
                       {playbooks.map(playbook => (
                         <SelectItem key={playbook.id} value={playbook.id}>
                           {playbook.name}
@@ -546,7 +547,7 @@ const AddTrade: React.FC = () => {
                   </Select>
                 </div>
                 
-                {selectedPlaybook && selectedPlaybookRules.length > 0 && (
+                {selectedPlaybook && selectedPlaybook !== 'none' && selectedPlaybookRules.length > 0 && (
                   <div className="space-y-2 border rounded-md p-4">
                     <Label>القواعد المتبعة في هذا التداول</Label>
                     <div className="space-y-2 mt-2">
