@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -12,8 +11,7 @@ import Analytics from './pages/Analytics';
 import Journal from './pages/Journal';
 import Insights from './pages/Insights';
 import NotFound from './pages/NotFound';
-import ProfileSettings from './pages/ProfileSettings';
-import Settings from './pages/Settings';
+import UserProfileSettings from './pages/UserProfileSettings';
 import './App.css';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from './components/ui/toaster';
@@ -40,7 +38,6 @@ import Reports from './pages/Reports';
 import Subscriptions from './pages/Subscriptions';
 import PaymentSuccess from './pages/PaymentSuccess';
 import Payment from './pages/Payment';
-import UserProfileSettings from './pages/UserProfileSettings';
 import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -94,8 +91,6 @@ function AnimatedRoutes() {
         <Route path="/insights" element={<Insights />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/chart" element={<TradingChart />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/profile" element={<ProfileSettings />} />
         <Route path="/user-profile" element={<UserProfileSettings />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/payment" element={<Payment />} />

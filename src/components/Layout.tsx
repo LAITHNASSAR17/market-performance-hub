@@ -96,10 +96,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       icon: LineChart3,
       href: '/chart'
     }, {
-      name: 'Settings',
-      icon: Settings,
-      href: '/settings'
-    }, {
       name: 'Subscriptions',
       icon: CreditCard,
       href: '/subscriptions'
