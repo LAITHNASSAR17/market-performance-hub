@@ -4,9 +4,8 @@ import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LineChart, BarChart, PieChart } from '@/components/ui/chart';
 import TradeChart from '@/components/TradeChart';
-import { ArrowUp, ArrowDown, DollarSign, BarChart3, LineChart as LineChartIcon, PieChart as PieChartIcon, Calendar, TrendingUp, Clock } from 'lucide-react';
+import { ArrowUp, ArrowDown, DollarSign, BarChart3, PieChart, TrendingUp, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -184,7 +183,7 @@ const Dashboard: React.FC = () => {
               title="نسبة الربح" 
               value={`${stats.winRate.toFixed(1)}%`} 
               trend={stats.winRate > 50 ? "up" : "down"}
-              icon={<PieChartIcon />}
+              icon={<PieChart />}
               className={stats.winRate > 50 ? "bg-profit/10" : "bg-loss/10"}
               textClass={stats.winRate > 50 ? "text-profit" : "text-loss"}
             />
