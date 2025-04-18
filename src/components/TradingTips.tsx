@@ -8,9 +8,11 @@ import { useTrade } from '@/contexts/TradeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
 import { useToast } from "@/hooks/use-toast";
+
 interface TradingTipsProps {
   className?: string;
 }
+
 const TradingTips: React.FC<TradingTipsProps> = ({
   className = ''
 }) => {
@@ -30,13 +32,14 @@ const TradingTips: React.FC<TradingTipsProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [aiAdvice, setAiAdvice] = useState<string>('');
   const [loadingAdvice, setLoadingAdvice] = useState(false);
+
   useEffect(() => {
-    // Load tips when data changes and there are trades
     if (trades.length > 0 && stats && !loading) {
       loadTips();
       loadAIAdvice();
     }
   }, [trades, stats]);
+
   const loadTips = async () => {
     setLoading(true);
     setError(null);
@@ -48,16 +51,17 @@ const TradingTips: React.FC<TradingTipsProps> = ({
       }
     } catch (error) {
       console.error("Error loading tips:", error);
-      setError("حدث خطأ أثناء تحميل النصائح");
+      setError("Error loading tips");
       toast({
-        title: "خطأ في التحليل",
-        description: "تعذر توليد النصائح. يرجى المحاولة مرة أخرى لاحقاً.",
+        title: "Analysis Error",
+        description: "Failed to generate tips. Please try again later.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
+
   const loadAIAdvice = async () => {
     setLoadingAdvice(true);
     try {
@@ -66,14 +70,15 @@ const TradingTips: React.FC<TradingTipsProps> = ({
     } catch (error) {
       console.error("Error loading AI advice:", error);
       toast({
-        title: "خطأ في التحليل",
-        description: "تعذر توليد التحليل المفصل. يرجى المحاولة مرة أخرى لاحقاً.",
+        title: "Analysis Error",
+        description: "Failed to generate detailed analysis. Please try again later.",
         variant: "destructive"
       });
     } finally {
       setLoadingAdvice(false);
     }
   };
+
   const handleNext = () => {
     if (currentTip < tips.length - 1) {
       setCurrentTip(currentTip + 1);
@@ -81,6 +86,7 @@ const TradingTips: React.FC<TradingTipsProps> = ({
       setCurrentTip(0);
     }
   };
+
   const handlePrevious = () => {
     if (currentTip > 0) {
       setCurrentTip(currentTip - 1);
@@ -88,14 +94,16 @@ const TradingTips: React.FC<TradingTipsProps> = ({
       setCurrentTip(tips.length - 1);
     }
   };
+
   const refreshTips = () => {
     loadTips();
     loadAIAdvice();
     toast({
-      title: "جارٍ تحديث التحليل",
-      description: "يتم تحديث النصائح والتحليلات"
+      title: "Updating Analysis",
+      description: "Updating tips and analysis"
     });
   };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -108,6 +116,7 @@ const TradingTips: React.FC<TradingTipsProps> = ({
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
     }
   };
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'performance':
@@ -122,6 +131,7 @@ const TradingTips: React.FC<TradingTipsProps> = ({
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     }
   };
+
   const translateCategory = (category: string) => {
     switch (category) {
       case 'performance':
@@ -136,6 +146,7 @@ const TradingTips: React.FC<TradingTipsProps> = ({
         return category;
     }
   };
+
   const translatePriority = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -148,17 +159,18 @@ const TradingTips: React.FC<TradingTipsProps> = ({
         return priority;
     }
   };
+
   useEffect(() => {
-    // Load tips when component first loads
     if (tips.length === 0 && !loading) {
       loadTips();
     }
 
-    // Load AI advice
     if (aiAdvice === '' && !loadingAdvice) {
       loadAIAdvice();
     }
   }, []);
+
   return;
 };
+
 export default TradingTips;

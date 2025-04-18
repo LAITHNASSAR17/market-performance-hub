@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -17,16 +16,14 @@ serve(async (req) => {
   try {
     const { trades, stats, playbooks = [], timeRange = 'all', purpose = 'insights' } = await req.json();
 
-    // Use different minimum trade thresholds depending on purpose
     const minimumTrades = purpose === 'insights' ? 5 : 3;
 
     if (!trades || trades.length < minimumTrades) {
       console.log(`Not enough trades for ${purpose}, returning default response`);
       
-      // Return appropriate fallback response based on purpose
       if (purpose === 'advice') {
         return new Response(
-          JSON.stringify({ analysis: `أضف المزيد من الصفقات للحصول على تحليل مفصل لأدائك. نحتاج على الأقل ${minimumTrades} صفقات.` }),
+          JSON.stringify({ analysis: `Add more trades to get detailed analysis. We need at least ${minimumTrades} trades.` }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -35,8 +32,8 @@ serve(async (req) => {
         JSON.stringify({ 
           insights: [{
             id: 'data-1',
-            title: 'نحتاج المزيد من البيانات',
-            content: `أضف المزيد من الصفقات للحصول على تحليل أكثر دقة. نحتاج على الأقل ${minimumTrades} صفقات.`,
+            title: 'More Data Needed',
+            content: `Add more trades to get accurate analysis. We need at least ${minimumTrades} trades.`,
             category: 'data',
             importance: 'high'
           }]
@@ -45,15 +42,14 @@ serve(async (req) => {
       );
     }
 
-    // Verify API key exists
     if (!deepseekApiKey) {
       console.error('Missing Deepseek API key');
       return new Response(
         JSON.stringify({ 
           insights: [{
             id: 'error',
-            title: 'خطأ في تكوين API',
-            content: 'لم يتم تكوين مفتاح API بشكل صحيح. يرجى الاتصال بمسؤول النظام.',
+            title: 'API Configuration Error',
+            content: 'API key not properly configured. Please contact system administrator.',
             category: 'error',
             importance: 'high'
           }]
@@ -68,7 +64,6 @@ serve(async (req) => {
     try {
       console.log(`Calling Deepseek API for ${purpose}`);
       
-      // Construct different prompts based on purpose
       let userPrompt = '';
       let responseFormat = { type: "json_object" };
       
@@ -83,7 +78,7 @@ serve(async (req) => {
           - Largest win: $${stats.largestWin}
           - Largest loss: $${stats.largestLoss}
 
-          Generate a comprehensive trading analysis in Arabic (300-400 words) that provides:
+          Generate a comprehensive trading analysis (300-400 words) that provides:
           - An assessment of overall trading performance
           - Specific strengths and weaknesses
           - Clear, actionable recommendations for improvement
@@ -101,7 +96,7 @@ serve(async (req) => {
           - Largest win: $${stats.largestWin}
           - Largest loss: $${stats.largestLoss}
 
-          Generate 3-5 specific trading tips in Arabic, focusing on:
+          Generate 3-5 specific trading tips in English, focusing on:
           - Performance improvement
           - Risk management
           - Trading psychology
@@ -109,13 +104,12 @@ serve(async (req) => {
 
           Return the response as a JSON object with an "insights" array, where each item has:
           - id: unique string
-          - title: short tip title in Arabic
-          - content: detailed explanation in Arabic
+          - title: short tip title
+          - content: detailed explanation
           - category: one of ["performance", "risk", "psychology", "strategy"]
           - importance: one of ["high", "medium", "low"]
         `;
       } else {
-        // Default: insights
         userPrompt = `
           Based on these trading statistics from the ${timeRange} timeframe:
           - Number of trades: ${trades.length}
@@ -126,7 +120,7 @@ serve(async (req) => {
           - Largest win: $${stats.largestWin}
           - Largest loss: $${stats.largestLoss}
 
-          Generate 4-6 specific trading insights in Arabic, focusing on:
+          Generate 4-6 specific trading insights in English, focusing on:
           - Performance patterns
           - Risk management opportunities
           - Psychological aspects
@@ -137,8 +131,8 @@ serve(async (req) => {
 
           Return the response as a JSON object with an "insights" array, where each item has:
           - id: unique string
-          - title: short insight title in Arabic
-          - content: detailed explanation in Arabic (50-100 words)
+          - title: short insight title
+          - content: detailed explanation (50-100 words)
           - category: one of ["performance", "psychology", "risk", "strategy", "pattern", "data"]
           - importance: one of ["high", "medium", "low"]
         `;
@@ -155,7 +149,7 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: 'You are a professional trading advisor. Analyze the trading data and provide actionable insights in Arabic.'
+              content: 'You are a professional trading advisor. Analyze the trading data and provide actionable insights.'
             },
             {
               role: 'user',
@@ -174,17 +168,14 @@ serve(async (req) => {
         throw new Error(data.error.message || 'Error calling Deepseek API');
       }
 
-      // Parse the JSON response from Deepseek
       const parsedContent = JSON.parse(data.choices[0].message.content);
       
-      // If this was an advice request and the response doesn't have insights
       if (purpose === 'advice' && !parsedContent.insights) {
-        return new Response(JSON.stringify({ analysis: parsedContent.analysis || "عذراً، حدث خطأ في تحليل البيانات" }), {
+        return new Response(JSON.stringify({ analysis: parsedContent.analysis || "Sorry, an error occurred while analyzing the data" }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       
-      // For tips and insights requests
       return new Response(JSON.stringify({ 
         insights: parsedContent.insights || [],
         analysis: parsedContent.analysis
@@ -195,33 +186,32 @@ serve(async (req) => {
     } catch (error) {
       console.error(`Error generating ${purpose}:`, error);
       
-      // Return appropriate fallback response
       const fallbackInsights = [
         {
           id: 'fallback-1',
-          title: 'تحسين نسبة الربح',
-          content: 'حاول زيادة حجم الصفقات الرابحة وتقليل حجم الصفقات الخاسرة للحصول على نتائج أفضل.',
+          title: 'Improve Win Rate',
+          content: 'Focus on increasing profitable trades while minimizing losses for better overall results.',
           category: 'performance',
           importance: 'high'
         },
         {
           id: 'fallback-2',
-          title: 'تحليل جلسات التداول',
-          content: 'ركز على الجلسات التي تحقق فيها أفضل النتائج وتجنب الجلسات التي تسبب خسائر متكررة.',
+          title: 'Session Analysis',
+          content: 'Focus on trading sessions that yield the best results and avoid sessions with recurring losses.',
           category: 'strategy',
           importance: 'medium'
         },
         {
           id: 'fallback-3',
-          title: 'إدارة المخاطر',
-          content: 'تأكد من تحديد نقاط الدخول والخروج بشكل واضح قبل الدخول في أي صفقة لتحسين إدارة المخاطر.',
+          title: 'Risk Management',
+          content: 'Ensure clear entry and exit points are defined before entering any trade to improve risk management.',
           category: 'risk',
           importance: 'high'
         },
         {
           id: 'fallback-4',
-          title: 'الانضباط النفسي',
-          content: 'حافظ على الانضباط النفسي وتجنب اتخاذ قرارات عاطفية أثناء التداول.',
+          title: 'Trading Psychology',
+          content: 'Maintain psychological discipline and avoid emotional decision-making while trading.',
           category: 'psychology',
           importance: 'medium'
         }
@@ -229,7 +219,7 @@ serve(async (req) => {
       
       if (purpose === 'advice') {
         return new Response(JSON.stringify({ 
-          analysis: "عذراً، حدث خطأ أثناء تحليل البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى."
+          analysis: "Sorry, an error occurred while analyzing the data. Please check your internet connection and try again."
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -245,8 +235,8 @@ serve(async (req) => {
       JSON.stringify({ 
         insights: [{
           id: 'error',
-          title: 'عذراً، حدث خطأ',
-          content: 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى لاحقاً.',
+          title: 'Sorry, an error occurred',
+          content: 'An error occurred while processing your request. Please try again later.',
           category: 'error',
           importance: 'high'
         }]

@@ -77,19 +77,19 @@ export const InsightCardContent: React.FC<InsightCardContentProps> = ({
   const translateCategory = (category: string) => {
     switch (category) {
       case 'performance':
-        return 'الأداء';
+        return 'Performance';
       case 'risk':
-        return 'المخاطر';
+        return 'Risk';
       case 'psychology':
-        return 'النفسية';
+        return 'Psychology';
       case 'strategy':
-        return 'الاستراتيجية';
+        return 'Strategy';
       case 'pattern':
-        return 'الأنماط';
+        return 'Pattern';
       case 'data':
-        return 'البيانات';
+        return 'Data';
       case 'error':
-        return 'خطأ';
+        return 'Error';
       default:
         return category;
     }
@@ -98,11 +98,11 @@ export const InsightCardContent: React.FC<InsightCardContentProps> = ({
   const translateImportance = (importance: string) => {
     switch (importance) {
       case 'high':
-        return 'مرتفعة';
+        return 'High';
       case 'medium':
-        return 'متوسطة';
+        return 'Medium';
       case 'low':
-        return 'منخفضة';
+        return 'Low';
       default:
         return importance;
     }
@@ -125,8 +125,8 @@ export const InsightCardContent: React.FC<InsightCardContentProps> = ({
       <div className="text-center py-4">
         <p className="text-muted-foreground">
           {tradesCount < 5 
-            ? 'أضف المزيد من الصفقات للحصول على رؤى مخصصة'
-            : 'اضغط على زر التحديث للحصول على رؤى تداول ذكية'}
+            ? 'Add more trades to get personalized insights'
+            : 'Click refresh to get smart trading insights'}
         </p>
       </div>
     );
