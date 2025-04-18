@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Trade } from '@/types/trade';
 import { useNavigate } from 'react-router-dom';
 
 const TradeCalendar = () => {
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const { trades } = useTrade();
   const navigate = useNavigate();
 
