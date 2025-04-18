@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -33,13 +32,13 @@ const AddTrade: React.FC = () => {
   const { playbooks } = usePlaybooks();
   
   const [pair, setPair] = useState('');
-  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
+  const [type, setType<'Buy' | 'Sell'>('Buy');
   const [entry, setEntry] = useState('');
   const [exit, setExit] = useState('');
   const [lotSize, setLotSize] = useState('');
   const [stopLoss, setStopLoss] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [date, setDate(format(new Date(), 'yyyy-MM-dd'));
   const [durationMinutes, setDurationMinutes] = useState('');
   const [notes, setNotes] = useState('');
   const [account, setAccount] = useState('');
@@ -98,8 +97,8 @@ const AddTrade: React.FC = () => {
     } catch (error) {
       console.error('Error fetching trade:', error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب بيانات التداول",
+        title: "Error",
+        description: "An error occurred while fetching trade data",
         variant: "destructive"
       });
       navigate('/trades');
@@ -165,8 +164,8 @@ const AddTrade: React.FC = () => {
     
     if (!pair || !type || !entry || !date || !account) {
       toast({
-        title: "بيانات ناقصة",
-        description: "يرجى ملء جميع الحقول المطلوبة",
+        title: "Missing Data",
+        description: "Please fill in all required fields",
         variant: "destructive"
       });
       return;
@@ -202,14 +201,14 @@ const AddTrade: React.FC = () => {
       if (isEditing && id) {
         await updateTrade(id, tradeData);
         toast({
-          title: "تم التحديث",
-          description: "تم تحديث التداول بنجاح",
+          title: "Updated",
+          description: "Trade updated successfully",
         });
       } else {
         await addTrade(tradeData);
         toast({
-          title: "تمت الإضافة",
-          description: "تمت إضافة التداول بنجاح",
+          title: "Added",
+          description: "Trade added successfully",
         });
       }
       
@@ -217,8 +216,8 @@ const AddTrade: React.FC = () => {
     } catch (error) {
       console.error('Error saving trade:', error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء حفظ التداول",
+        title: "Error",
+        description: "An error occurred while saving the trade",
         variant: "destructive"
       });
     }
@@ -239,32 +238,32 @@ const AddTrade: React.FC = () => {
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          العودة
+          Back
         </Button>
-        <h1 className="text-2xl font-bold">{isEditing ? 'تعديل التداول' : 'إضافة تداول جديد'}</h1>
+        <h1 className="text-2xl font-bold">{isEditing ? 'Edit Trade' : 'Add New Trade'}</h1>
         <p className="text-gray-500">
           {isEditing 
-            ? 'قم بتحديث تفاصيل التداول الخاص بك' 
-            : 'سجل تداول جديد مع جميع التفاصيل ذات الصلة'}
+            ? 'Update your trade details' 
+            : 'Record a new trade with all relevant details'}
         </p>
       </div>
       
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <p>جاري تحميل بيانات التداول...</p>
+          <p>Loading trade data...</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">تفاصيل التداول</CardTitle>
-                <CardDescription>أدخل المعلومات الأساسية حول التداول الخاص بك</CardDescription>
+                <CardTitle className="text-lg">Trade Details</CardTitle>
+                <CardDescription>Enter the basic information about your trade</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
-                    <Label htmlFor="pair">زوج التداول/الرمز</Label>
+                    <Label htmlFor="pair">Trading Pair/Symbol</Label>
                     {isEditing ? (
                       <Input 
                         id="pair" 
@@ -277,14 +276,14 @@ const AddTrade: React.FC = () => {
                         <div className="flex-1">
                           <Select value={pair} onValueChange={setPair} required>
                             <SelectTrigger id="pair">
-                              <SelectValue placeholder="اختر الزوج" />
+                              <SelectValue placeholder="Select pair" />
                             </SelectTrigger>
                             <SelectContent>
                               {pairs.map(p => (
                                 <SelectItem key={p} value={p}>{p}</SelectItem>
                               ))}
                               <SelectItem value="add-new" className="text-primary font-semibold">
-                                + إضافة زوج جديد
+                                + Add new pair
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -302,10 +301,10 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="account">حساب التداول</Label>
+                    <Label htmlFor="account">Trading Account</Label>
                     <Select value={account} onValueChange={setAccount} required>
                       <SelectTrigger id="account">
-                        <SelectValue placeholder="اختر الحساب" />
+                        <SelectValue placeholder="Select account" />
                       </SelectTrigger>
                       <SelectContent>
                         {accounts.map(a => (
@@ -316,20 +315,20 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="type">نوع التداول</Label>
+                    <Label htmlFor="type">Trade Type</Label>
                     <Select value={type} onValueChange={(value: 'Buy' | 'Sell') => setType(value)} required>
                       <SelectTrigger id="type">
-                        <SelectValue placeholder="اختر النوع" />
+                        <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Buy">شراء (طويل)</SelectItem>
-                        <SelectItem value="Sell">بيع (قصير)</SelectItem>
+                        <SelectItem value="Buy">Buy (Long)</SelectItem>
+                        <SelectItem value="Sell">Sell (Short)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="date">تاريخ التداول</Label>
+                    <Label htmlFor="date">Trade Date</Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
                       <Input 
@@ -344,16 +343,16 @@ const AddTrade: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="playbook">دليل التداول</Label>
+                    <Label htmlFor="playbook">Playbook</Label>
                     <Select 
                       value={playbook} 
                       onValueChange={handlePlaybookChange}
                     >
                       <SelectTrigger id="playbook">
-                        <SelectValue placeholder="اختر دليل التداول (اختياري)" />
+                        <SelectValue placeholder="Select playbook (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">لا يوجد</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {playbooks.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                         ))}
@@ -364,7 +363,7 @@ const AddTrade: React.FC = () => {
 
                 {playbook && playbook !== 'none' && selectedPlaybookRules.length > 0 && (
                   <div className="mt-4 border rounded-md p-4 bg-muted/30">
-                    <h3 className="font-medium mb-2">قواعد دليل التداول التي تم اتباعها:</h3>
+                    <h3 className="font-medium mb-2">Followed Playbook Rules:</h3>
                     <div className="space-y-2">
                       {selectedPlaybookRules.map((rule: any) => (
                         <div key={rule.id} className="flex items-center gap-2">
@@ -388,13 +387,13 @@ const AddTrade: React.FC = () => {
             
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">معلومات السعر</CardTitle>
-                <CardDescription>أدخل سعر الدخول والخروج وتفاصيل إدارة المخاطر</CardDescription>
+                <CardTitle className="text-lg">Price Information</CardTitle>
+                <CardDescription>Enter entry, exit prices and risk management details</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                   <div className="space-y-2">
-                    <Label htmlFor="entry">سعر الدخول</Label>
+                    <Label htmlFor="entry">Entry Price</Label>
                     <Input 
                       id="entry" 
                       type="number" 
@@ -407,7 +406,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="exit">سعر الخروج</Label>
+                    <Label htmlFor="exit">Exit Price</Label>
                     <Input 
                       id="exit" 
                       type="number" 
@@ -419,7 +418,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="lotSize">حجم العقد</Label>
+                    <Label htmlFor="lotSize">Position Size</Label>
                     <Input 
                       id="lotSize" 
                       type="number" 
@@ -432,7 +431,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="stopLoss">وقف الخسارة</Label>
+                    <Label htmlFor="stopLoss">Stop Loss</Label>
                     <Input 
                       id="stopLoss" 
                       type="number" 
@@ -444,7 +443,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="takeProfit">هدف الربح</Label>
+                    <Label htmlFor="takeProfit">Take Profit</Label>
                     <Input 
                       id="takeProfit" 
                       type="number" 
@@ -456,7 +455,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="profitLoss">الربح/الخسارة</Label>
+                    <Label htmlFor="profitLoss">Profit/Loss</Label>
                     <Input 
                       id="profitLoss" 
                       type="number" 
@@ -469,7 +468,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="durationMinutes">المدة (بالدقائق)</Label>
+                    <Label htmlFor="durationMinutes">Duration (minutes)</Label>
                     <Input 
                       id="durationMinutes" 
                       type="number" 
@@ -480,7 +479,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="commission">العمولة/الرسوم</Label>
+                    <Label htmlFor="commission">Commission/Fees</Label>
                     <Input 
                       id="commission" 
                       type="number" 
@@ -492,7 +491,7 @@ const AddTrade: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="total">المجموع (صافي الربح/الخسارة)</Label>
+                    <Label htmlFor="total">Total (Net P/L)</Label>
                     <Input 
                       id="total" 
                       type="number" 
@@ -507,13 +506,13 @@ const AddTrade: React.FC = () => {
             
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">صور التداول</CardTitle>
-                <CardDescription>أضف صورًا للإعداد والدخول والخروج من التداول</CardDescription>
+                <CardTitle className="text-lg">Trade Images</CardTitle>
+                <CardDescription>Add images for trade setup, entry and exit</CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label>صورة قبل الدخول</Label>
+                    <Label>Pre-Entry Image</Label>
                     <ImageUpload 
                       value={beforeImageUrl} 
                       onChange={setBeforeImageUrl}
@@ -522,7 +521,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>صورة بعد الخروج</Label>
+                    <Label>Post-Exit Image</Label>
                     <ImageUpload 
                       value={afterImageUrl} 
                       onChange={setAfterImageUrl}
@@ -531,7 +530,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label>صورة أخرى</Label>
+                    <Label>Additional Image</Label>
                     <ImageUpload 
                       value={imageUrl} 
                       onChange={setImageUrl}
@@ -544,12 +543,12 @@ const AddTrade: React.FC = () => {
             
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">تقييم التداول</CardTitle>
-                <CardDescription>قيّم جودة تنفيذ هذا التداول</CardDescription>
+                <CardTitle className="text-lg">Trade Rating</CardTitle>
+                <CardDescription>Rate the execution quality of this trade</CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">كيف تقيّم هذا التداول؟</p>
+                  <p className="text-sm text-muted-foreground">How would you rate this trade?</p>
                   <StarRating 
                     value={rating} 
                     onChange={setRating}
@@ -561,15 +560,15 @@ const AddTrade: React.FC = () => {
             
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">الملاحظات والوسوم</CardTitle>
-                <CardDescription>أضف ملاحظات وصنّف تداولك</CardDescription>
+                <CardTitle className="text-lg">Notes & Tags</CardTitle>
+                <CardDescription>Add notes and categorize your trade</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="notes">ملاحظات التداول</Label>
+                  <Label htmlFor="notes">Trade Notes</Label>
                   <Textarea 
                     id="notes" 
-                    placeholder="أضف ملاحظات حول تداولك، الاستراتيجية المستخدمة، والملاحظات..." 
+                    placeholder="Add notes about your trade, strategy used, observations..." 
                     value={notes} 
                     onChange={(e) => setNotes(e.target.value)} 
                     className="min-h-[100px]"
@@ -577,7 +576,7 @@ const AddTrade: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>الوسوم</Label>
+                  <Label>Tags</Label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {hashtags.map(tag => (
                       <Badge key={tag} variant="secondary" className="flex items-center gap-1">
@@ -595,7 +594,7 @@ const AddTrade: React.FC = () => {
                   </div>
                   <div className="flex gap-2">
                     <Input 
-                      placeholder="أضف وسمًا..." 
+                      placeholder="Add a tag..." 
                       value={newHashtag} 
                       onChange={(e) => setNewHashtag(e.target.value)} 
                       onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddHashtag())}
@@ -606,12 +605,12 @@ const AddTrade: React.FC = () => {
                       variant="outline"
                     >
                       <Plus className="h-4 w-4 mr-1" />
-                      إضافة
+                      Add
                     </Button>
                   </div>
                   
                   <div className="mt-4">
-                    <p className="text-sm text-muted-foreground mb-2">وسوم مقترحة:</p>
+                    <p className="text-sm text-muted-foreground mb-2">Suggested tags:</p>
                     <div className="flex flex-wrap gap-1">
                       {allHashtags.slice(0, 10).map(tag => (
                         <Badge 
@@ -640,12 +639,12 @@ const AddTrade: React.FC = () => {
               variant="outline" 
               onClick={() => navigate('/trades')}
             >
-              إلغاء
+              Cancel
             </Button>
             <Button 
               type="submit"
             >
-              {isEditing ? 'تحديث التداول' : 'إضافة التداول'}
+              {isEditing ? 'Update Trade' : 'Add Trade'}
             </Button>
           </div>
         </form>
