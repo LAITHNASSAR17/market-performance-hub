@@ -21,6 +21,7 @@ export interface ITrade {
   takeProfit: number | null;
   durationMinutes: number | null;
   playbook?: string;
+  followedRules?: string[]; // Added this property
 }
 
 export const tradeService = {
@@ -156,6 +157,7 @@ function formatTrade(data: any): ITrade {
     stopLoss: data.stop_loss,
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
-    playbook: data.playbook
+    playbook: data.playbook,
+    followedRules: data.followedRules
   };
 }

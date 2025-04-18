@@ -4,11 +4,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   PlusCircle, Filter, ArrowDownUp, Calendar, Lock, Unlock, 
-  BookOpen, Users, Star, TrendingUp, BarChart4, Percent 
+  BookOpen, Users, Star, TrendingUp, BarChart4, Percent, Coins
 } from 'lucide-react';
 import { usePlaybooks, PlaybookEntry, PlaybookRule } from '@/hooks/usePlaybooks';
 import PlaybookCard from './PlaybookCard';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { 
+  Dialog, DialogContent, DialogDescription, DialogFooter, 
+  DialogHeader, DialogTitle, DialogTrigger, DialogClose 
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
