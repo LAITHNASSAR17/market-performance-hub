@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ITrade } from '@/services/tradeService';
@@ -28,6 +27,8 @@ export interface PlaybookEntry {
   missedTrades?: number;
   netProfitLoss?: number;
   rules?: PlaybookRule[];
+  is_public?: boolean;
+  public_token?: string;
 }
 
 export const usePlaybooks = () => {
@@ -46,6 +47,7 @@ export const usePlaybooks = () => {
       averageProfit: 125.75,
       category: 'trend',
       isPrivate: false,
+      is_public: false,
       avgWinner: 250.30,
       avgLoser: -75.20,
       missedTrades: 5,
@@ -71,6 +73,7 @@ export const usePlaybooks = () => {
       averageProfit: 98.30,
       category: 'breakout',
       isPrivate: true,
+      is_public: false,
       avgWinner: 210.50,
       avgLoser: -85.40,
       missedTrades: 8,
@@ -95,6 +98,7 @@ export const usePlaybooks = () => {
       averageProfit: 87.15,
       category: 'breakout',
       isPrivate: false,
+      is_public: false,
       avgWinner: 190.30,
       avgLoser: -95.20,
       missedTrades: 3,
@@ -119,6 +123,7 @@ export const usePlaybooks = () => {
       averageProfit: 143.50,
       category: 'trend',
       isPrivate: false,
+      is_public: false,
       avgWinner: 235.40,
       avgLoser: -69.80,
       missedTrades: 6,
@@ -147,7 +152,6 @@ export const usePlaybooks = () => {
     setPlaybooks(playbooks.filter(p => p.id !== id));
   };
 
-  // Get trades linked to a specific playbook
   const getPlaybookTrades = async (playbookId: string): Promise<ITrade[]> => {
     try {
       const { data, error } = await supabase
@@ -163,7 +167,6 @@ export const usePlaybooks = () => {
     }
   };
 
-  // Calculate performance metrics for a playbook based on linked trades
   const calculatePlaybookMetrics = async (playbookId: string) => {
     try {
       const trades = await getPlaybookTrades(playbookId);
@@ -182,7 +185,6 @@ export const usePlaybooks = () => {
       const avgWinner = winningTrades.length > 0 ? totalProfit / winningTrades.length : 0;
       const avgLoser = losingTrades.length > 0 ? totalLoss / losingTrades.length * -1 : 0;
       
-      // Calculate expectancy: (Win% × Average Win) - (Loss% × Average Loss)
       const expectancy = ((winRate / 100) * avgWinner) + ((1 - winRate / 100) * avgLoser);
       
       updatePlaybook(playbookId, {
