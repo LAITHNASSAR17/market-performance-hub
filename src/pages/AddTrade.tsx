@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -20,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
+import TagSelectors from '@/components/analytics/TagSelectors';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,6 +54,10 @@ const AddTrade: React.FC = () => {
   const [total, setTotal] = useState<string>('0');
   const [playbook, setPlaybook] = useState<string | undefined>(undefined);
   const [followedRules, setFollowedRules] = useState<string[]>([]);
+
+  const [selectedMistakes, setSelectedMistakes] = useState<string[]>([]);
+  const [selectedSetups, setSelectedSetups] = useState<string[]>([]);
+  const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
 
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
@@ -90,6 +94,12 @@ const AddTrade: React.FC = () => {
         setAfterImageUrl(data.after_image_url || null);
         setPlaybook(data.playbook || undefined);
         setFollowedRules(data.followed_rules || []);
+        
+        // Set the categorized tags
+        const tags = data.tags || [];
+        setSelectedMistakes(tags.filter((tag: string) => mistakes.includes(tag)));
+        setSelectedSetups(tags.filter((tag: string) => setups.includes(tag)));
+        setSelectedHabits(tags.filter((tag: string) => habits.includes(tag)));
         
         setAccount(accounts[0] || '');
         setIsEditing(true);
@@ -185,7 +195,7 @@ const AddTrade: React.FC = () => {
         durationMinutes: durationMinutes ? parseInt(durationMinutes) : 0,
         notes,
         account,
-        hashtags,
+        hashtags: [...hashtags, ...selectedMistakes, ...selectedSetups, ...selectedHabits],
         profitLoss: parseFloat(profitLoss),
         commission: parseFloat(commission) || 0,
         total: parseFloat(total),
@@ -556,6 +566,29 @@ const AddTrade: React.FC = () => {
                     size="large"
                   />
                 </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Trade Categories</CardTitle>
+                <CardDescription>Categorize your trade with predefined tags</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <TagSelectors
+                  mistakes={mistakes}
+                  setups={setups}
+                  habits={habits}
+                  selectedMistakes={selectedMistakes}
+                  selectedSetups={selectedSetups}
+                  selectedHabits={selectedHabits}
+                  onAddMistake={(tag) => setSelectedMistakes([...selectedMistakes, tag])}
+                  onAddSetup={(tag) => setSelectedSetups([...selectedSetups, tag])}
+                  onAddHabit={(tag) => setSelectedHabits([...selectedHabits, tag])}
+                  onRemoveMistake={(tag) => setSelectedMistakes(selectedMistakes.filter(t => t !== tag))}
+                  onRemoveSetup={(tag) => setSelectedSetups(selectedSetups.filter(t => t !== tag))}
+                  onRemoveHabit={(tag) => setSelectedHabits(selectedHabits.filter(t => t !== tag))}
+                />
               </CardContent>
             </Card>
             
