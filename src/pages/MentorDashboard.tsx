@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useMentor } from '@/contexts/MentorContext';
@@ -41,6 +40,7 @@ import {
   Tooltip, 
   Legend, 
   ResponsiveContainer,
+  TooltipProps
 } from 'recharts';
 import { 
   UsersRound, 
@@ -89,8 +89,8 @@ const MentorPerformanceChart = ({ acceptedMentees }) => {
   
   const performanceData = generatePerformanceData();
 
-  // Custom tooltip component
-  const CustomTooltip = ({ active, payload, label }) => {
+  // Custom tooltip component with proper type annotations
+  const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-3 border rounded shadow-lg">
