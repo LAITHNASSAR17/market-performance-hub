@@ -168,7 +168,12 @@ const AddTrade: React.FC = () => {
         profitLoss: parseFloat(profitLoss),
         commission: parseFloat(commission) || 0,
         total: parseFloat(total),
-        rating
+        rating,
+        riskPercentage: 0,
+        returnPercentage: 0,
+        imageUrl: imageUrl,
+        beforeImageUrl: beforeImageUrl,
+        afterImageUrl: afterImageUrl
       };
 
       if (isEditing && id) {
