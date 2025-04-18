@@ -53,12 +53,12 @@ function App() {
                   <Route path="/journal" element={<PrivateRoute><Journal /></PrivateRoute>} />
                   <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
             
-                  {/* Public Shared Routes */}
+                  {/* Public Shared Routes - Note the pattern /public/{type}/{id} */}
                   <Route path="/public/trade/:id" element={<PublicTrade />} />
                   <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
                   
-                  {/* Redirect old format to new format */}
-                  <Route path="/playbook/:id" element={<PrivateRoute><NotFound /></PrivateRoute>} />
+                  {/* Redirect old format to the 404 page with helpful message */}
+                  <Route path="/playbook/:id" element={<NotFound />} />
                   
                   {/* 404 Not Found */}
                   <Route path="*" element={<NotFound />} />

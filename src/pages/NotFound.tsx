@@ -15,6 +15,9 @@ const NotFound = () => {
     );
   }, [location.pathname]);
 
+  // Check if this is an old playbook URL format that needs to be handled
+  const isOldPlaybookFormat = location.pathname.includes('/playbook/') && !location.pathname.includes('/public/playbook/');
+  
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">
       <div className="text-center max-w-md p-6">
@@ -24,7 +27,7 @@ const NotFound = () => {
         <h1 className="text-4xl font-bold mb-4">404</h1>
         <p className="text-xl text-muted-foreground mb-6">الصفحة غير موجودة</p>
         <p className="text-muted-foreground mb-8">
-          {location.pathname.includes('/playbook/') 
+          {isOldPlaybookFormat 
             ? 'تم تغيير تنسيق الروابط، الرجاء استخدام زر المشاركة للحصول على الرابط الصحيح' 
             : 'عذراً، لا يمكن العثور على الصفحة التي تبحث عنها'}
         </p>
