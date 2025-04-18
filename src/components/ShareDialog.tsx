@@ -58,7 +58,8 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
     }
   };
 
-  const shareLink = `${window.location.origin}/${itemType}/${itemId}`;
+  // Updated to use the correct public URL format
+  const shareLink = `${window.location.origin}/public/${itemType}/${itemId}`;
 
   const copyLink = async () => {
     try {

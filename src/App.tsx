@@ -20,6 +20,7 @@ import EmailVerify from './pages/EmailVerify';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from './components/ui/toaster';
 import { TooltipProvider } from './components/ui/tooltip';
+import NotFound from './pages/NotFound';
 
 // Create a simple PrivateRoute component since it's missing
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -55,6 +56,12 @@ function App() {
                   {/* Public Routes */}
                   <Route path="/public/trade/:id" element={<PublicTrade />} />
                   <Route path="/public/playbook/:id" element={<PublicPlaybook />} />
+                  
+                  {/* Redirect old format to new format */}
+                  <Route path="/playbook/:id" element={<PrivateRoute><NotFound /></PrivateRoute>} />
+                  
+                  {/* 404 Not Found */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
                 <Toaster />
               </TradeProvider>
