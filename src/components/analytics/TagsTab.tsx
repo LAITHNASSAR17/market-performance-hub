@@ -24,6 +24,19 @@ const TagsTab: React.FC<TagsTabProps> = ({
 }) => {
   const { t } = useLanguage();
   
+  // Create wrapper functions to handle adding tags
+  const handleAddMistake = (tag: string) => {
+    setMistakes(prev => [...prev, tag]);
+  };
+  
+  const handleAddSetup = (tag: string) => {
+    setSetups(prev => [...prev, tag]);
+  };
+  
+  const handleAddHabit = (tag: string) => {
+    setHabits(prev => [...prev, tag]);
+  };
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <TagList
@@ -31,7 +44,7 @@ const TagsTab: React.FC<TagsTabProps> = ({
         icon={<CircleX className="h-4 w-4" />}
         color="bg-red-500"
         tags={mistakes}
-        onAddTag={setMistakes}
+        onAddTag={handleAddMistake}
         onRemoveTag={(tag) => setMistakes(mistakes.filter(t => t !== tag))}
       />
       
@@ -40,7 +53,7 @@ const TagsTab: React.FC<TagsTabProps> = ({
         icon={<Target className="h-4 w-4" />}
         color="bg-blue-500"
         tags={setups}
-        onAddTag={setSetups}
+        onAddTag={handleAddSetup}
         onRemoveTag={(tag) => setSetups(setups.filter(t => t !== tag))}
       />
       
@@ -49,7 +62,7 @@ const TagsTab: React.FC<TagsTabProps> = ({
         icon={<Lightbulb className="h-4 w-4" />}
         color="bg-purple-500"
         tags={habits}
-        onAddTag={setHabits}
+        onAddTag={handleAddHabit}
         onRemoveTag={(tag) => setHabits(habits.filter(t => t !== tag))}
       />
     </div>
