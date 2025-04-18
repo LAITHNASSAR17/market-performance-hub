@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { Button } from "@/components/ui/button";
@@ -153,7 +154,8 @@ const AddTrade = () => {
 
     if (entry !== undefined && exit !== undefined && lotSize !== undefined && type && pair) {
       const profitLoss = calculateProfitLoss(entry, exit, lotSize, type, pair);
-      form.setValue('profitLoss', profitLoss, { shouldDirty: false });
+      // Remove this line that was causing the error - don't set profitLoss directly
+      // form.setValue('profitLoss', profitLoss, { shouldDirty: false });
     }
   }, [form.watch('entry'), form.watch('exit'), form.watch('lotSize'), form.watch('type'), form.watch('pair')]);
 
@@ -410,14 +412,20 @@ const AddTrade = () => {
                         </FormItem>
                       )}
                     />
-                    <HashtagInput hashtags={hashtags} setHashtags={setHashtags} />
+                    <HashtagInput 
+                      value={hashtags} 
+                      onChange={setHashtags} 
+                    />
                     <FormField
                       control={form.control}
                       name="rating"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Rating</FormLabel>
-                          <StarRating rating={field.value || 0} setRating={field.onChange} />
+                          <StarRating 
+                            value={field.value || 0} 
+                            onChange={field.onChange} 
+                          />
                           <FormMessage />
                         </FormItem>
                       )}
