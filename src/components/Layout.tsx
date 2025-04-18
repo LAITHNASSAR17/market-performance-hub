@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, Settings, Scroll, CreditCard } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, CreditCard, Scroll } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -215,14 +215,20 @@ const Layout: React.FC<LayoutProps> = ({
             <TooltipTrigger asChild>
               <Link 
                 to="/subscriptions" 
-                className="w-full flex flex-col items-center justify-center text-center"
+                className="w-full flex items-center bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors group"
               >
-                <span className="text-sm font-medium mb-1">Upgrade</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {currentTier === 'free' ? 'Free Plan' : 
-                   currentTier === 'premium' ? 'Premium Plan' : 
-                   currentTier === 'enterprise' ? 'Enterprise Plan' : 'Free Plan'}
-                </span>
+                <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 group-hover:scale-110 transition-transform" />
+                <div className="flex-1">
+                  <span className="block text-sm font-semibold text-blue-800 dark:text-blue-200">Upgrade</span>
+                  <span className="block text-xs text-blue-600 dark:text-blue-300">
+                    {user?.subscription_tier ? 
+                      (user.subscription_tier === 'free' ? 'Free Plan' : 
+                       user.subscription_tier === 'premium' ? 'Premium Plan' : 
+                       user.subscription_tier === 'enterprise' ? 'Enterprise Plan' : 'Free Plan') 
+                     : 'Free Plan'}
+                  </span>
+                </div>
+                <ChevronDown className="h-4 w-4 text-blue-600 dark:text-blue-400 opacity-50 group-hover:opacity-100 transition-opacity" />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right">
