@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,7 +35,7 @@ const Analytics: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t('analytics.title') || 'Analytics'}</h1>
             <p className="text-muted-foreground mt-1 dark:text-gray-300">
-              {t('analytics.subtitle') || 'Track your trading performance and insights'}
+              {t('analytics.subtitle') || 'Track the metrics that matter for your trading journey'}
             </p>
           </div>
         </div>
