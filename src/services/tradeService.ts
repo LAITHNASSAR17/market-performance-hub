@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -21,7 +22,8 @@ export interface ITrade {
   takeProfit: number | null;
   durationMinutes: number | null;
   playbook?: string;
-  followedRules?: string[]; // Added this property
+  followedRules?: string[];
+  marketSession?: string;
 }
 
 export const tradeService = {
@@ -66,7 +68,8 @@ export const tradeService = {
         rating: tradeData.rating || 0,
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
-        duration_minutes: tradeData.durationMinutes
+        duration_minutes: tradeData.durationMinutes,
+        market_session: tradeData.marketSession
       })
       .select()
       .single();
@@ -98,6 +101,7 @@ export const tradeService = {
     if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
+    if (tradeData.marketSession !== undefined) updateObject.market_session = tradeData.marketSession;
     
     const { data, error } = await supabase
       .from('trades')
@@ -158,6 +162,7 @@ function formatTrade(data: any): ITrade {
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
     playbook: data.playbook,
-    followedRules: data.followedRules
+    followedRules: data.followedRules,
+    marketSession: data.market_session
   };
 }
