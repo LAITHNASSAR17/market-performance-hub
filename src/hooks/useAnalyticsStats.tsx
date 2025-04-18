@@ -14,6 +14,9 @@ export interface TradeStats {
   losingTrades: number;
   profitFactor: string;
   winLossRatio: string;
+  expectancy: string;
+  avgTradeLength: string;
+  avgRiskReward: string;
 }
 
 export const useAnalyticsStats = (): TradeStats => {
@@ -29,7 +32,10 @@ export const useAnalyticsStats = (): TradeStats => {
     winningTrades: 0,
     losingTrades: 0,
     profitFactor: '0.00',
-    winLossRatio: '0.00'
+    winLossRatio: '0.00',
+    expectancy: '$0.00',
+    avgTradeLength: '0 min',
+    avgRiskReward: '0.00'
   });
 
   useEffect(() => {
@@ -39,7 +45,6 @@ export const useAnalyticsStats = (): TradeStats => {
   return stats;
 };
 
-// Calculate stats from trades
 const calculateStats = (trades: Trade[]): TradeStats => {
   if (!trades.length) {
     return {
@@ -53,42 +58,62 @@ const calculateStats = (trades: Trade[]): TradeStats => {
       winningTrades: 0,
       losingTrades: 0,
       profitFactor: '0.00',
-      winLossRatio: '0.00'
+      winLossRatio: '0.00',
+      expectancy: '$0.00',
+      avgTradeLength: '0 min',
+      avgRiskReward: '0.00'
     };
   }
   
-  const totalPL = trades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const winningTrades = trades.filter(trade => trade.profitLoss > 0);
-  const losingTrades = trades.filter(trade => trade.profitLoss < 0);
+  const totalPL = trades.reduce((sum, trade) => sum + trade.total, 0);
+  const winningTrades = trades.filter(trade => trade.total > 0);
+  const losingTrades = trades.filter(trade => trade.total < 0);
   
   const winRate = (winningTrades.length / trades.length) * 100;
   
   const avgWin = winningTrades.length ? 
-    winningTrades.reduce((sum, trade) => sum + trade.profitLoss, 0) / winningTrades.length : 
+    winningTrades.reduce((sum, trade) => sum + trade.total, 0) / winningTrades.length : 
     0;
     
   const avgLoss = losingTrades.length ? 
-    losingTrades.reduce((sum, trade) => sum + trade.profitLoss, 0) / losingTrades.length : 
+    losingTrades.reduce((sum, trade) => sum + trade.total, 0) / losingTrades.length : 
     0;
     
   const largestWin = winningTrades.length ? 
-    Math.max(...winningTrades.map(trade => trade.profitLoss)) : 
+    Math.max(...winningTrades.map(trade => trade.total)) : 
     0;
     
   const largestLoss = losingTrades.length ? 
-    Math.min(...losingTrades.map(trade => trade.profitLoss)) : 
+    Math.min(...losingTrades.map(trade => trade.total)) : 
     0;
   
   // Calculate profit factor (ratio of gross profit to gross loss)
-  const grossProfit = winningTrades.reduce((sum, trade) => sum + trade.profitLoss, 0);
-  const grossLoss = Math.abs(losingTrades.reduce((sum, trade) => sum + trade.profitLoss, 0));
+  const grossProfit = winningTrades.reduce((sum, trade) => sum + trade.total, 0);
+  const grossLoss = Math.abs(losingTrades.reduce((sum, trade) => sum + trade.total, 0));
   const profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : (winningTrades.length > 0 ? "∞" : "0.00");
   
   // Calculate win/loss ratio
   const winLossRatio = losingTrades.length > 0 ? 
     (winningTrades.length / losingTrades.length).toFixed(2) : 
     (winningTrades.length > 0 ? "∞" : "0.00");
-  
+
+  // Calculate expectancy (average amount you can expect to win/lose per trade)
+  const expectancy = (avgWin * (winRate / 100)) + (avgLoss * (1 - winRate / 100));
+
+  // Calculate average trade duration
+  const avgTradeLength = trades
+    .filter(trade => trade.durationMinutes)
+    .reduce((sum, trade) => sum + (trade.durationMinutes || 0), 0) / trades.length;
+
+  // Calculate average risk/reward ratio
+  const tradesWithRR = trades.filter(trade => trade.stopLoss && trade.takeProfit);
+  const avgRiskReward = tradesWithRR.length ? 
+    tradesWithRR.reduce((sum, trade) => {
+      const risk = Math.abs(trade.entry - (trade.stopLoss || trade.entry));
+      const reward = Math.abs(trade.entry - (trade.takeProfit || trade.entry));
+      return sum + (reward / risk);
+    }, 0) / tradesWithRR.length : 0;
+
   return {
     totalPL: `$${totalPL.toFixed(2)}`,
     winRate: `${winRate.toFixed(1)}%`,
@@ -100,6 +125,9 @@ const calculateStats = (trades: Trade[]): TradeStats => {
     winningTrades: winningTrades.length,
     losingTrades: losingTrades.length,
     profitFactor,
-    winLossRatio
+    winLossRatio,
+    expectancy: `$${expectancy.toFixed(2)}`,
+    avgTradeLength: `${Math.round(avgTradeLength)} min`,
+    avgRiskReward: avgRiskReward.toFixed(2)
   };
 };

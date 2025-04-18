@@ -3,9 +3,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTrade } from '@/contexts/TradeContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const HashtagsTab = () => {
   const { trades } = useTrade();
+  const { theme } = useTheme();
 
   // Calculate hashtag statistics
   const hashtagStats = React.useMemo(() => {
@@ -18,7 +20,7 @@ const HashtagsTab = () => {
         }
         const tagStats = stats.get(tag)!;
         tagStats.count += 1;
-        tagStats.profitLoss += trade.profitLoss;
+        tagStats.profitLoss += trade.total;
       });
     });
 
@@ -35,6 +37,12 @@ const HashtagsTab = () => {
   
   // Sort hashtags by profit/loss
   const sortedByProfitLoss = [...hashtagStats].sort((a, b) => b.profitLoss - a.profitLoss);
+
+  const chartColors = {
+    positive: theme === 'dark' ? '#22c55e' : '#16a34a',
+    negative: theme === 'dark' ? '#ef4444' : '#dc2626',
+    neutral: theme === 'dark' ? '#3b82f6' : '#2563eb'
+  };
 
   return (
     <div className="space-y-6">
@@ -54,11 +62,11 @@ const HashtagsTab = () => {
                     name === 'count' ? 'Usage Count' : 'Average P/L'
                   ]}
                 />
-                <Bar dataKey="count" fill="#3b82f6" name="Usage Count">
+                <Bar dataKey="count" name="Usage Count">
                   {sortedByCount.slice(0, 10).map((entry, index) => (
                     <Cell 
                       key={index}
-                      fill={entry.profitLoss >= 0 ? '#22c55e' : '#ef4444'}
+                      fill={entry.profitLoss >= 0 ? chartColors.positive : chartColors.negative}
                     />
                   ))}
                 </Bar>
@@ -81,11 +89,11 @@ const HashtagsTab = () => {
                 <Tooltip 
                   formatter={(value) => [`$${value}`, 'Total P/L']}
                 />
-                <Bar dataKey="profitLoss" fill="#3b82f6" name="Total P/L">
+                <Bar dataKey="profitLoss" name="Total P/L">
                   {sortedByProfitLoss.slice(0, 10).map((entry, index) => (
                     <Cell 
                       key={index}
-                      fill={entry.profitLoss >= 0 ? '#22c55e' : '#ef4444'}
+                      fill={entry.profitLoss >= 0 ? chartColors.positive : chartColors.negative}
                     />
                   ))}
                 </Bar>
