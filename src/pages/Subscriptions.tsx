@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Crown, Star, Zap, ArrowRight } from 'lucide-react';
+import { Check, X, Crown, Star, Zap, ArrowRight, CreditCard } from 'lucide-react';
 import PaymentButton from '@/components/PaymentButton';
 
 const Subscriptions: React.FC = () => {
@@ -16,8 +15,17 @@ const Subscriptions: React.FC = () => {
     <Layout>
       <div className="container py-10">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">خطط الاشتراك</h1>
-          <p className="text-gray-500 mb-10">اختر الخطة المناسبة لرحلة التداول الخاصة بك</p>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">الترقية</h1>
+            <div className="text-sm text-gray-500">
+              خطتك الحالية: 
+              <span className="font-semibold ms-2">
+                {currentTier === 'free' ? 'المجانية' : 
+                 currentTier === 'premium' ? 'المميزة' : 
+                 currentTier === 'enterprise' ? 'المتقدمة' : 'المجانية'}
+              </span>
+            </div>
+          </div>
           
           <div className="grid md:grid-cols-3 gap-6">
             {/* Free Plan */}
