@@ -34,6 +34,8 @@ type TradeContextType = {
   tradingAccounts: TradingAccount[];
   createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
   fetchTradingAccounts: () => Promise<void>;
+  selectedAccount: string;
+  setSelectedAccount: (account: string) => void;
 };
 
 export type Symbol = {
@@ -230,6 +232,14 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { toast } = useToast();
   const { user } = useAuth();
   const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<string>(() => {
+    const savedAccount = localStorage.getItem('selectedTradingAccount');
+    return savedAccount || sampleAccounts[0];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('selectedTradingAccount', selectedAccount);
+  }, [selectedAccount]);
 
   const calculateProfitLoss = (
     entry: number, 
@@ -630,6 +640,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tradingAccounts,
       createTradingAccount,
       fetchTradingAccounts,
+      selectedAccount,
+      setSelectedAccount,
     }}>
       {children}
     </TradeContext.Provider>

@@ -16,7 +16,7 @@ import HashtagBadge from '@/components/HashtagBadge';
 import { useToast } from '@/components/ui/use-toast';
 
 const Trades: React.FC = () => {
-  const { trades, deleteTrade, pairs } = useTrade();
+  const { trades, deleteTrade, pairs, selectedAccount } = useTrade();
   const [searchTerm, setSearchTerm] = useState('');
   const [pairFilter, setPairFilter] = useState('all');
   const [tradeTypeFilter, setTradeTypeFilter] = useState('all');
@@ -28,7 +28,9 @@ const Trades: React.FC = () => {
 
   const accounts = Array.from(new Set(trades.map(trade => trade.account)));
 
-  const filteredTrades = trades.filter(trade => {
+  const accountFilteredTrades = trades.filter(trade => trade.account === selectedAccount);
+  
+  const filteredTrades = accountFilteredTrades.filter(trade => {
     const matchesSearch = searchTerm === '' || 
       trade.pair.toLowerCase().includes(searchTerm.toLowerCase()) || 
       trade.notes.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,9 +38,8 @@ const Trades: React.FC = () => {
     
     const matchesPair = pairFilter === 'all' || trade.pair === pairFilter;
     const matchesType = tradeTypeFilter === 'all' || trade.type === tradeTypeFilter;
-    const matchesAccount = accountFilter === 'all' || trade.account === accountFilter;
     
-    return matchesSearch && matchesPair && matchesType && matchesAccount;
+    return matchesSearch && matchesPair && matchesType;
   });
 
   const sortedTrades = [...filteredTrades].sort((a, b) => 

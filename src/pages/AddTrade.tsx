@@ -22,7 +22,7 @@ import ImageUpload from '@/components/ImageUpload';
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag } = useTrade();
+  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag, selectedAccount } = useTrade();
   const { toast } = useToast();
   const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
@@ -105,9 +105,9 @@ const AddTrade: React.FC = () => {
     if (id) {
       fetchTradeFromDb(id);
     } else {
-      setAccount(accounts[0] || '');
+      setAccount(selectedAccount || accounts[0] || '');
     }
-  }, [id, accounts]);
+  }, [id, accounts, selectedAccount]);
 
   const handleAddHashtag = () => {
     if (newHashtag && !hashtags.includes(newHashtag)) {
