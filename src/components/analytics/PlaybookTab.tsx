@@ -3,19 +3,19 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from 'lucide-react';
-import { usePlaybooks } from '@/hooks/usePlaybooks';
+import { usePlaybooks, PlaybookEntry } from '@/hooks/usePlaybooks';
 import PlaybookCard from './PlaybookCard';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 
 interface PlaybookFormData {
   name: string;
   description: string;
-  rules: string[];
+  tags: string[];
 }
 
 const PlaybookTab = () => {
@@ -28,8 +28,8 @@ const PlaybookTab = () => {
     try {
       await addPlaybook({
         ...data,
-        rules: data.rules || [],
-        trades: []
+        tags: data.tags || [],
+        rating: 0
       });
       
       toast({
@@ -104,8 +104,8 @@ const PlaybookTab = () => {
           <PlaybookCard
             key={playbook.id}
             playbook={playbook}
-            onUpdate={updatePlaybook}
-            onDelete={deletePlaybook}
+            onEdit={(updatedData) => updatePlaybook(playbook.id, updatedData)}
+            onDelete={() => deletePlaybook(playbook.id)}
           />
         ))}
       </div>

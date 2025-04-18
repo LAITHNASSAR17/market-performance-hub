@@ -39,7 +39,7 @@ const OverviewTab = () => {
         <TradeStatsCard
           title="Total P&L"
           value={stats.totalPL}
-          icon={LineChart}
+          icon={<LineChart />}
           description="Net profit/loss after fees"
           className={Number(stats.totalPL.replace('$', '')) >= 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}
         />
@@ -47,21 +47,21 @@ const OverviewTab = () => {
         <TradeStatsCard
           title="Win Rate"
           value={stats.winRate}
-          icon={BarChart}
+          icon={<BarChart />}
           description={`${stats.winningTrades} wins, ${stats.losingTrades} losses`}
         />
         
         <TradeStatsCard
           title="Profit Factor"
           value={stats.profitFactor}
-          icon={LineChart}
+          icon={<LineChart />}
           description="Gross profit / Gross loss"
         />
         
         <TradeStatsCard
           title="Avg Trade"
           value={Number(stats.avgWin.replace('$', '')) >= 0 ? stats.avgWin : stats.avgLoss}
-          icon={BarChart}
+          icon={<BarChart />}
           description="Average trade P&L"
           className={Number(stats.avgWin.replace('$', '')) >= 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}
         />

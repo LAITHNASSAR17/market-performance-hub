@@ -70,7 +70,7 @@ const Analytics: React.FC = () => {
           
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-0">
-            <OverviewTab stats={stats} />
+            <OverviewTab />
           </TabsContent>
           
           {/* Tags Tab */}
@@ -92,12 +92,7 @@ const Analytics: React.FC = () => {
           
           {/* Playbook Tab */}
           <TabsContent value="playbook" className="mt-0">
-            <PlaybookTab 
-              playbooks={playbooks} 
-              onAddPlaybook={addPlaybook}
-              onUpdatePlaybook={updatePlaybook}
-              onDeletePlaybook={deletePlaybook}
-            />
+            <PlaybookTab />
           </TabsContent>
           
           {/* Chart Tab */}

@@ -14,6 +14,7 @@ interface TradeStatsCardProps {
     label: string;
     value: string | number;
   }[];
+  className?: string;
 }
 
 const TradeStatsCard: React.FC<TradeStatsCardProps> = ({
@@ -22,12 +23,13 @@ const TradeStatsCard: React.FC<TradeStatsCardProps> = ({
   description,
   type = 'neutral',
   icon,
-  additionalStats
+  additionalStats,
+  className
 }) => {
   const { t } = useLanguage();
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-sm font-medium">{title}</CardTitle>

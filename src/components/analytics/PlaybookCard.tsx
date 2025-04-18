@@ -9,7 +9,7 @@ import { PlaybookEntry } from '@/hooks/usePlaybooks';
 
 interface PlaybookCardProps {
   playbook: PlaybookEntry;
-  onEdit?: (playbook: Partial<PlaybookEntry>) => void;
+  onEdit?: (updatedData: Partial<PlaybookEntry>) => void;
   onDelete?: () => void;
 }
 
