@@ -34,6 +34,25 @@ serve(async (req) => {
       );
     }
 
+    // Check if OpenAI API key is available
+    if (!openAIApiKey) {
+      console.error('OpenAI API key is not available');
+      return new Response(
+        JSON.stringify({
+          insights: [
+            {
+              id: 'error-api-key',
+              title: 'مفتاح API غير متوفر',
+              content: 'مفتاح API الخاص بـ OpenAI غير متوفر. يرجى التحقق من إعدادات المشروع.',
+              category: 'error',
+              importance: 'high'
+            }
+          ]
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Extract trade patterns and key metrics
     const tradeTags = trades.flatMap(trade => trade.hashtags || []);
     const uniqueTags = [...new Set(tradeTags)];
@@ -121,55 +140,73 @@ serve(async (req) => {
       قدم توصيات عملية قابلة للتنفيذ بناءً على الأنماط التي تلاحظها في البيانات.
     `;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        response_format: { type: "json_object" }
-      }),
-    });
-
-    const data = await response.json();
-    console.log('OpenAI Response:', data);
-    
-    if (data.error) {
-      console.error('OpenAI API Error:', data.error);
-      throw new Error(data.error.message);
-    }
-
-    // Parse the OpenAI response
-    const content = data.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('No content in OpenAI response');
-    }
-
-    let insights;
     try {
-      const parsedContent = JSON.parse(content);
-      insights = parsedContent.insights || [];
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          response_format: { type: "json_object" }
+        }),
+      });
+
+      const data = await response.json();
+      console.log('OpenAI Response:', data);
       
-      // Ensure each insight has an id
-      insights = insights.map((insight, index) => ({
-        ...insight,
-        id: insight.id || `insight-${index + 1}`
-      }));
-    } catch (e) {
-      console.error('Error parsing OpenAI response:', e);
-      throw new Error('Invalid response format from OpenAI');
+      if (data.error) {
+        console.error('OpenAI API Error:', data.error);
+        throw new Error(data.error.message);
+      }
+
+      // Parse the OpenAI response
+      const content = data.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('No content in OpenAI response');
+      }
+
+      let insights;
+      try {
+        const parsedContent = JSON.parse(content);
+        insights = parsedContent.insights || [];
+        
+        // Ensure each insight has an id
+        insights = insights.map((insight, index) => ({
+          ...insight,
+          id: insight.id || `insight-${index + 1}`
+        }));
+      } catch (e) {
+        console.error('Error parsing OpenAI response:', e);
+        throw new Error('Invalid response format from OpenAI');
+      }
+      
+      return new Response(JSON.stringify({ insights }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Error calling OpenAI API:', error);
+      return new Response(JSON.stringify({ 
+        insights: [
+          {
+            id: 'error-api-call',
+            title: 'خطأ في الاتصال بـ OpenAI',
+            content: `حدث خطأ أثناء الاتصال بخدمة OpenAI: ${error.message}. يرجى المحاولة مرة أخرى لاحقاً.`,
+            category: 'error',
+            importance: 'high'
+          }
+        ]
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-    
-    return new Response(JSON.stringify({ insights }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error generating insights:', error);
     return new Response(JSON.stringify({ 

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TradingInsight, generateTradingInsights } from '@/services/aiService';
 import { Trade } from '@/contexts/TradeContext';
 import { TradeStats } from '@/hooks/useAnalyticsStats';
@@ -18,7 +18,11 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const loadInsights = async () => {
+  const loadInsights = useCallback(async () => {
+    if (trades.length === 0 || !stats) {
+      return;
+    }
+    
     setLoading(true);
     try {
       const newInsights = await generateTradingInsights(trades, stats, playbooks, timeRange);
@@ -36,7 +40,7 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
     } finally {
       setLoading(false);
     }
-  };
+  }, [trades, stats, playbooks, timeRange, toast]);
 
   const handleNext = () => {
     if (currentInsight < insights.length - 1) {
@@ -64,17 +68,19 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
     }
   };
 
+  // Load insights when trades or stats change
   useEffect(() => {
     if (trades.length > 0 && stats) {
       loadInsights();
     }
-  }, [trades, stats, timeRange]);
+  }, [trades, stats, timeRange, loadInsights]);
 
+  // Initial load
   useEffect(() => {
-    if (insights.length === 0 && !loading) {
+    if (insights.length === 0 && !loading && trades.length > 0) {
       loadInsights();
     }
-  }, []);
+  }, [insights.length, loading, trades.length, loadInsights]);
 
   return {
     insights,
