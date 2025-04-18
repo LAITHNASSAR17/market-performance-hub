@@ -9,7 +9,7 @@ import { Plus } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTrade } from '@/contexts/TradeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { userService } from '@/services/userService';
 
 const TradingAccountsDialog = () => {
   const [name, setName] = React.useState('');
@@ -47,24 +47,15 @@ const TradingAccountsDialog = () => {
     try {
       console.log('Creating account with user ID:', user.id);
       
-      // Simplified insert now that RLS is disabled
-      const { data, error } = await supabase
-        .from('trading_accounts')
-        .insert({
-          user_id: user.id,
-          name: name.trim(),
-          balance: parseFloat(balance) || 0,
-          account_type: accountType || 'live',
-          created_at: new Date().toISOString()
-        })
-        .select();
+      // Use the userService to create a trading account
+      const newAccount = await userService.createTradingAccount(
+        user.id,
+        name.trim(),
+        parseFloat(balance) || 0,
+        accountType
+      );
       
-      if (error) {
-        console.error('Error details:', error);
-        throw error;
-      }
-      
-      console.log('Account created successfully:', data);
+      console.log('Account created successfully:', newAccount);
       
       // Refresh the accounts list
       await fetchTradingAccounts();

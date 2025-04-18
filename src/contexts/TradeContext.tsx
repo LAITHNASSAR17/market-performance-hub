@@ -573,37 +573,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       console.log('Current user:', user);
       
-      const { data, error } = await supabase
-        .from('trading_accounts')
-        .insert({
-          user_id: user.id,
-          name: name.trim(),
-          balance,
-          account_type: accountType || 'live',
-          created_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Insertion error details:', error);
-        throw error;
-      }
-      
-      if (!data) {
-        throw new Error('Failed to create trading account, no data returned');
-      }
-      
-      const newAccount: TradingAccount = {
-        id: data.id,
-        userId: data.user_id,
-        name: data.name,
-        balance: Number(data.balance),
-        createdAt: data.created_at,
-        broker: data.broker,
-        accountNumber: data.account_number,
-        accountType: data.account_type
-      };
+      const newAccount = await userService.createTradingAccount(
+        user.id,
+        name.trim(),
+        balance,
+        accountType || 'live'
+      );
       
       setTradingAccounts(prev => [...prev, newAccount]);
       
@@ -630,40 +605,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       console.log('Fetching trading accounts for user:', user.id);
       
-      const { data: sessionData } = await supabase.auth.getSession();
+      const accounts = await userService.getTradingAccounts(user.id);
       
-      if (!sessionData.session) {
-        console.log('No active session found when fetching accounts');
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from('trading_accounts')
-        .select('*')
-        .eq('user_id', user.id);
-      
-      if (error) {
-        console.error('Error fetching trading accounts:', error);
-        return;
-      }
-      
-      if (!data) {
-        console.log('No accounts found');
-        return;
-      }
-      
-      console.log('Fetched accounts:', data);
-      
-      const accounts: TradingAccount[] = data.map(acc => ({
-        id: acc.id,
-        userId: acc.user_id,
-        name: acc.name,
-        balance: Number(acc.balance),
-        createdAt: acc.created_at,
-        broker: acc.broker,
-        accountNumber: acc.account_number,
-        accountType: acc.account_type
-      }));
+      console.log('Fetched accounts:', accounts);
       
       setTradingAccounts(accounts);
     } catch (error) {

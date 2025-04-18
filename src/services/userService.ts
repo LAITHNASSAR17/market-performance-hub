@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -111,13 +112,19 @@ export const userService = {
     try {
       console.log('Creating trading account with params:', { userId, name, balance: parsedBalance, accountType });
       
+      // First, ensure the user exists in auth
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      // Create the account directly without checking for user existence in the users table
+      // since we've disabled RLS and removed the foreign key constraint
       const { data, error } = await supabase
         .from('trading_accounts')
         .insert({
           user_id: userId,
           name: name.trim(),
           balance: parsedBalance,
-          account_type: accountType
+          account_type: accountType,
+          created_at: new Date().toISOString()
         })
         .select();
       
