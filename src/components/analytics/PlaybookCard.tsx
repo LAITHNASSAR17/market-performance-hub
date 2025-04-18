@@ -1,17 +1,17 @@
+
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Pencil, Trash2, Star, TrendingUp, Percent, ArrowRightLeft, 
-  BarChart, Coins, Hash, Lock, Unlock, Trophy, AlertTriangle, Share2 
+  BarChart, Coins, Hash, Lock, Unlock, Trophy, AlertTriangle 
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PlaybookEntry, PlaybookRule } from '@/hooks/usePlaybooks';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import SharePlaybookDialog from './SharePlaybookDialog';
 
 interface PlaybookCardProps {
   playbook: PlaybookEntry;
@@ -28,7 +28,6 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
 }) => {
   const { t } = useLanguage();
   const [showDetails, setShowDetails] = React.useState(false);
-  const [showShareDialog, setShowShareDialog] = React.useState(false);
   
   // Get category colors
   const getCategoryColor = (category?: string) => {
@@ -37,16 +36,6 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
       case 'breakout': return 'bg-green-500';
       case 'reversal': return 'bg-purple-500';
       default: return 'bg-gray-500';
-    }
-  };
-
-  const handleUpdatePlaybook = (updatedData: Partial<PlaybookEntry>) => {
-    if (onEdit) {
-      onEdit({
-        ...updatedData,
-        is_public: updatedData.is_public,
-        public_token: updatedData.public_token
-      });
     }
   };
   
@@ -61,15 +50,10 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <CardTitle className="text-lg truncate pr-1">
                   {playbook.name}
                 </CardTitle>
-                {playbook.is_private ? (
+                {playbook.isPrivate ? (
                   <Lock className="h-4 w-4 ml-1 text-muted-foreground flex-shrink-0" />
                 ) : (
                   <Unlock className="h-4 w-4 ml-1 text-muted-foreground flex-shrink-0" />
-                )}
-                {playbook.is_public && (
-                  <Badge variant="outline" className="ml-1 text-xs bg-green-50 text-green-700 border-green-200">
-                    Public
-                  </Badge>
                 )}
               </div>
               <div className="flex items-center text-xs text-muted-foreground">
@@ -195,15 +179,6 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
         </CardContent>
 
         <CardFooter className="pt-0 mt-auto justify-end gap-2 px-4 pb-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setShowShareDialog(true)}
-            className="flex-shrink-0"
-          >
-            <Share2 className="h-3 w-3 mr-1" />
-            {t('share') || 'Share'}
-          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowDetails(true)} className="flex-shrink-0">
             View Details
           </Button>
@@ -241,7 +216,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                   />
                 ))}
               </span>
-              {playbook.is_private ? (
+              {playbook.isPrivate ? (
                 <Badge variant="outline" className="ml-2 gap-1">
                   <Lock className="h-3 w-3" /> Private
                 </Badge>
@@ -392,14 +367,6 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Share Playbook Dialog */}
-      <SharePlaybookDialog
-        isOpen={showShareDialog}
-        onClose={() => setShowShareDialog(false)}
-        playbook={playbook}
-        onPlaybookUpdated={handleUpdatePlaybook}
-      />
     </>
   );
 };
