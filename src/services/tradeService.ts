@@ -21,7 +21,7 @@ export interface ITrade {
   stopLoss: number | null;
   takeProfit: number | null;
   durationMinutes: number | null;
-  playbook?: string | null;
+  playbook?: string;
   followedRules?: string[];
 }
 
@@ -68,7 +68,7 @@ export const tradeService = {
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
         duration_minutes: tradeData.durationMinutes,
-        playbook: tradeData.playbook || null,
+        playbook: tradeData.playbook,
         followed_rules: tradeData.followedRules || []
       })
       .select()
@@ -101,7 +101,7 @@ export const tradeService = {
     if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
-    if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook || null;
+    if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
     if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
     
     const { data, error } = await supabase
