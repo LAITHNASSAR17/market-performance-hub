@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,7 +19,8 @@ import {
   ChevronDown, 
   Settings,
   Scroll,
-  CreditCard
+  CreditCard,
+  UserCog
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -59,51 +59,58 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  const navigation = [{
-    name: 'Dashboard',
-    icon: Home,
-    href: '/dashboard'
-  }, {
-    name: 'Add Trade',
-    icon: PlusCircle,
-    href: '/add-trade'
-  }, {
-    name: 'Trades',
-    icon: BookText,
-    href: '/trades'
-  }, {
-    name: 'Journal',
-    icon: Calendar,
-    href: '/journal'
-  }, {
-    name: 'Notebook',
-    icon: Scroll,
-    href: '/notebook'
-  }, {
-    name: 'Reports',
-    icon: BarChart,
-    href: '/reports'
-  }, {
-    name: 'Insights',
-    icon: Sparkles,
-    href: '/insights'
-  }, {
-    name: 'Analytics',
-    icon: BarChart2,
-    href: '/analytics'
-  }, {
-    name: 'Chart',
-    icon: LineChart3,
-    href: '/chart'
-  }, {
-    name: 'Settings',
-    icon: Settings,
-    href: '/settings'
-  }, {
-    name: 'Subscriptions',
-    icon: CreditCard,
-    href: '/subscriptions'
-  }];
+  const navigation = [
+    {
+      name: 'Dashboard',
+      icon: Home,
+      href: '/dashboard'
+    }, {
+      name: 'Add Trade',
+      icon: PlusCircle,
+      href: '/add-trade'
+    }, {
+      name: 'Trades',
+      icon: BookText,
+      href: '/trades'
+    }, {
+      name: 'Journal',
+      icon: Calendar,
+      href: '/journal'
+    }, {
+      name: 'Notebook',
+      icon: Scroll,
+      href: '/notebook'
+    }, {
+      name: 'Reports',
+      icon: BarChart,
+      href: '/reports'
+    }, {
+      name: 'Insights',
+      icon: Sparkles,
+      href: '/insights'
+    }, {
+      name: 'Analytics',
+      icon: BarChart2,
+      href: '/analytics'
+    }, {
+      name: 'Chart',
+      icon: LineChart3,
+      href: '/chart'
+    }, {
+      name: 'Settings',
+      icon: Settings,
+      href: '/settings'
+    }, {
+      name: 'Subscriptions',
+      icon: CreditCard,
+      href: '/subscriptions'
+    },
+    {
+      name: 'User Profile',
+      icon: UserCog,
+      href: '/user-profile'
+    }
+  ];
 
   const handleLogout = async () => {
     try {

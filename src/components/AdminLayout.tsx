@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,7 +9,9 @@ import {
   Hash, 
   FileText, 
   Settings, 
-  LogOut 
+  LogOut,
+  CreditCard,
+  UserCog
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -24,10 +25,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { toast } = useToast();
   const { t } = useLanguage();
   
-  // Get site name from localStorage or default
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
   
-  // Redirect non-admin users to dashboard
   if (!isAdmin) {
     toast({
       title: "Access Denied",
@@ -52,11 +51,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { icon: <Hash className="w-5 h-5" />, label: "Hashtags", path: "/admin/hashtags" },
     { icon: <FileText className="w-5 h-5" />, label: "Notes", path: "/admin/notes" },
     { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/admin/settings" },
+    { icon: <CreditCard className="w-5 h-5" />, label: "Subscriptions", path: "/admin/subscriptions" },
+    { icon: <UserCog className="w-5 h-5" />, label: "Profile Settings", path: "/admin/profile" }
   ];
 
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Admin Sidebar */}
       <div className="w-64 hidden md:block bg-white dark:bg-gray-800 shadow-md">
         <div className="flex flex-col h-full">
           <div className="p-4 border-b dark:border-gray-700">
@@ -103,9 +103,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
       </div>
       
-      {/* Admin Content */}
       <div className="flex-1 overflow-auto">
-        {/* Mobile Header */}
         <div className="md:hidden bg-white dark:bg-gray-800 shadow-sm p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-5 w-5 text-purple-600" />
@@ -121,7 +119,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           </div>
         </div>
         
-        {/* Page Content */}
         <div className="p-4">
           {children}
         </div>
