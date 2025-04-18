@@ -48,7 +48,8 @@ const AddTrade: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
   const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
-  
+  const [total, setTotal] = useState<string>('0');
+
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
     try {
@@ -99,7 +100,7 @@ const AddTrade: React.FC = () => {
       setIsLoading(false);
     }
   };
-  
+
   useEffect(() => {
     if (id) {
       fetchTradeFromDb(id);
@@ -121,31 +122,30 @@ const AddTrade: React.FC = () => {
   };
 
   const handleCommissionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newCommission = parseFloat(e.target.value) || 0;
-    setCommission(e.target.value);
+    const newCommission = e.target.value;
+    setCommission(newCommission);
     
     const rawPL = parseFloat(profitLoss) || 0;
-    const oldCommission = parseFloat(commission) || 0;
-    
-    const basePL = rawPL + oldCommission;
-    const adjustedPL = basePL - newCommission;
-    
-    setProfitLoss(adjustedPL.toString());
+    const fees = parseFloat(newCommission) || 0;
+    setTotal((rawPL - fees).toString());
   };
 
   const handleProfitLossChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawPL = parseFloat(e.target.value) || 0;
-    const currentCommission = parseFloat(commission) || 0;
-    setProfitLoss((rawPL - currentCommission).toString());
+    const newPL = e.target.value;
+    setProfitLoss(newPL);
+    
+    const rawPL = parseFloat(newPL) || 0;
+    const fees = parseFloat(commission) || 0;
+    setTotal((rawPL - fees).toString());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!pair || !type || !entry || !date || !account || !profitLoss) {
+    if (!pair || !type || !entry || !date || !account) {
       toast({
         title: "بيانات ناقصة",
-        description: "يرجى ملء جميع الحقول المطلوبة، خاصة الربح/الخسارة",
+        description: "يرجى ملء جميع الحقول المطلوبة",
         variant: "destructive"
       });
       return;
@@ -166,12 +166,8 @@ const AddTrade: React.FC = () => {
         account,
         hashtags,
         profitLoss: parseFloat(profitLoss),
-        riskPercentage: 0,
-        returnPercentage: 0,
-        imageUrl,
-        beforeImageUrl,
-        afterImageUrl,
         commission: parseFloat(commission) || 0,
+        total: parseFloat(total),
         rating
       };
 
@@ -419,6 +415,17 @@ const AddTrade: React.FC = () => {
                       value={commission} 
                       onChange={handleCommissionChange}
                       className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="total">المجموع (صافي الربح/الخسارة)</Label>
+                    <Input 
+                      id="total" 
+                      type="number" 
+                      value={total}
+                      readOnly
+                      className="bg-gray-100 border border-gray-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 </div>

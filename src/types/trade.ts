@@ -24,9 +24,10 @@ export interface Trade {
   createdAt: string;
   commission: number;
   rating: number;
+  total: number;  // New field for net profit/loss after fees
 }
 
-// Update mapDBTradeToTrade to include all fields
+// Update mapDBTradeToTrade to calculate total
 export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   id: dbTrade.id,
   userId: dbTrade.userId,
@@ -51,10 +52,11 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   hashtags: dbTrade.tags || [],
   createdAt: dbTrade.createdAt.toISOString(),
   commission: dbTrade.fees || 0,
-  rating: dbTrade.rating || 0
+  rating: dbTrade.rating || 0,
+  total: (dbTrade.profitLoss || 0) - (dbTrade.fees || 0)
 });
 
-// Update mapTradeToDBTrade to include all fields
+// Update mapTradeToDBTrade to handle the total field
 export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => ({
   userId: '', // Will be set by the service
   symbol: trade.pair,

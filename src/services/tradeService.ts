@@ -44,11 +44,6 @@ export const tradeService = {
   },
 
   async createTrade(tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>): Promise<ITrade> {
-    const adjustedProfitLoss = tradeData.profitLoss !== null 
-      ? (tradeData.profitLoss - (tradeData.fees || 0)) 
-      : null;
-
-    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('trades')
       .insert({
@@ -60,12 +55,12 @@ export const tradeService = {
         direction: tradeData.direction,
         entry_date: tradeData.entryDate.toISOString(),
         exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
-        profit_loss: adjustedProfitLoss,
+        profit_loss: tradeData.profitLoss,
         fees: tradeData.fees || 0,
         notes: tradeData.notes || '',
         tags: tradeData.tags || [],
-        created_at: now,
-        updated_at: now,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         rating: tradeData.rating || 0,
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
@@ -79,26 +74,12 @@ export const tradeService = {
   },
 
   async updateTrade(id: string, tradeData: Partial<ITrade>): Promise<ITrade | null> {
-    const now = new Date().toISOString();
     const updateObject: any = {
-      updated_at: now
+      updated_at: new Date().toISOString()
     };
     
-    if (tradeData.profitLoss !== undefined || tradeData.fees !== undefined) {
-      const currentTrade = await this.getTradeById(id);
-      if (currentTrade) {
-        const currentProfitLoss = currentTrade.profitLoss || 0;
-        const currentFees = currentTrade.fees || 0;
-        const newProfitLoss = tradeData.profitLoss !== undefined 
-          ? tradeData.profitLoss 
-          : currentProfitLoss;
-        const newFees = tradeData.fees !== undefined 
-          ? tradeData.fees 
-          : currentFees;
-        
-        updateObject.profit_loss = newProfitLoss - newFees;
-      }
-    }
+    if (tradeData.profitLoss !== undefined) updateObject.profit_loss = tradeData.profitLoss;
+    if (tradeData.fees !== undefined) updateObject.fees = tradeData.fees;
     
     if (tradeData.symbol !== undefined) updateObject.symbol = tradeData.symbol;
     if (tradeData.entryPrice !== undefined) updateObject.entry_price = tradeData.entryPrice;
