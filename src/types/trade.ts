@@ -26,6 +26,7 @@ export interface Trade {
   commission: number;
   rating: number;
   total: number;  // Net profit/loss after fees
+  playbook?: string; // New field to link to a playbook
 }
 
 // Update mapDBTradeToTrade to calculate total correctly
@@ -55,7 +56,8 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   commission: dbTrade.fees || 0,
   rating: dbTrade.rating || 0,
   // Calculate total as profit/loss minus fees
-  total: (dbTrade.profitLoss || 0) - (dbTrade.fees || 0)
+  total: (dbTrade.profitLoss || 0) - (dbTrade.fees || 0),
+  playbook: dbTrade.playbook
 });
 
 // Make sure mapTradeToDBTrade passes the correct values
@@ -77,5 +79,7 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   rating: trade.rating || 0,
   stopLoss: trade.stopLoss || null,
   takeProfit: trade.takeProfit || null,
-  durationMinutes: trade.durationMinutes || null
+  durationMinutes: trade.durationMinutes || null,
+  playbook: trade.playbook
 });
+

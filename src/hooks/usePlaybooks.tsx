@@ -1,5 +1,7 @@
 
 import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { ITrade } from '@/services/tradeService';
 
 export interface PlaybookEntry {
   id: string;
@@ -10,6 +12,10 @@ export interface PlaybookEntry {
   rMultiple?: number;
   winRate?: number;
   expectedValue?: number;
+  profitFactor?: number;
+  totalTrades?: number;
+  averageProfit?: number;
+  category?: 'trend' | 'reversal' | 'breakout' | 'other';
 }
 
 export const usePlaybooks = () => {
@@ -22,7 +28,11 @@ export const usePlaybooks = () => {
       tags: ['pullback', 'retracement', 'trend'],
       rMultiple: 2.8,
       winRate: 65,
-      expectedValue: 1.52
+      expectedValue: 1.52,
+      profitFactor: 1.8,
+      totalTrades: 28,
+      averageProfit: 125.75,
+      category: 'trend'
     },
     {
       id: '2',
@@ -32,7 +42,11 @@ export const usePlaybooks = () => {
       tags: ['breakout', 'momentum', 'volume'],
       rMultiple: 2.1,
       winRate: 58,
-      expectedValue: 1.02
+      expectedValue: 1.02,
+      profitFactor: 1.45,
+      totalTrades: 35,
+      averageProfit: 98.30,
+      category: 'breakout'
     },
     {
       id: '3',
@@ -42,7 +56,11 @@ export const usePlaybooks = () => {
       tags: ['gap', 'opening range', 'momentum'],
       rMultiple: 2.5,
       winRate: 52,
-      expectedValue: 0.98
+      expectedValue: 0.98,
+      profitFactor: 1.32,
+      totalTrades: 22,
+      averageProfit: 87.15,
+      category: 'breakout'
     },
     {
       id: '4',
@@ -52,7 +70,11 @@ export const usePlaybooks = () => {
       tags: ['trend', 'consolidation', 'momentum'],
       rMultiple: 3.2,
       winRate: 61,
-      expectedValue: 1.73
+      expectedValue: 1.73,
+      profitFactor: 2.1,
+      totalTrades: 31,
+      averageProfit: 143.50,
+      category: 'trend'
     }
   ]);
   
@@ -71,11 +93,28 @@ export const usePlaybooks = () => {
   const deletePlaybook = (id: string) => {
     setPlaybooks(playbooks.filter(p => p.id !== id));
   };
+
+  // Get trades linked to a specific playbook
+  const getPlaybookTrades = async (playbookId: string): Promise<ITrade[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('trades')
+        .select('*')
+        .contains('tags', [playbooks.find(p => p.id === playbookId)?.name]);
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching playbook trades:', error);
+      return [];
+    }
+  };
   
   return {
     playbooks,
     addPlaybook,
     updatePlaybook,
-    deletePlaybook
+    deletePlaybook,
+    getPlaybookTrades
   };
 };

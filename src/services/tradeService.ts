@@ -20,6 +20,7 @@ export interface ITrade {
   stopLoss: number | null;
   takeProfit: number | null;
   durationMinutes: number | null;
+  playbook?: string;
 }
 
 export const tradeService = {
@@ -154,6 +155,7 @@ function formatTrade(data: any): ITrade {
     rating: data.rating || 0,
     stopLoss: data.stop_loss,
     takeProfit: data.take_profit,
-    durationMinutes: data.duration_minutes
+    durationMinutes: data.duration_minutes,
+    playbook: data.playbook
   };
 }
