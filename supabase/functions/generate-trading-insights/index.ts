@@ -15,15 +15,28 @@ serve(async (req) => {
   }
 
   try {
-    const { trades, stats, playbooks, timeRange } = await req.json();
+    const { trades, stats, playbooks = [], timeRange = 'all', purpose = 'insights' } = await req.json();
 
-    if (!trades || trades.length < 5) {
+    // Use different minimum trade thresholds depending on purpose
+    const minimumTrades = purpose === 'insights' ? 5 : 3;
+
+    if (!trades || trades.length < minimumTrades) {
+      console.log(`Not enough trades for ${purpose}, returning default response`);
+      
+      // Return appropriate fallback response based on purpose
+      if (purpose === 'advice') {
+        return new Response(
+          JSON.stringify({ analysis: `أضف المزيد من الصفقات للحصول على تحليل مفصل لأدائك. نحتاج على الأقل ${minimumTrades} صفقات.` }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({
+        JSON.stringify({ 
           insights: [{
-            id: '1',
+            id: 'data-1',
             title: 'نحتاج المزيد من البيانات',
-            content: 'أضف المزيد من الصفقات للحصول على تحليل أكثر دقة. نحتاج على الأقل 5 صفقات.',
+            content: `أضف المزيد من الصفقات للحصول على تحليل أكثر دقة. نحتاج على الأقل ${minimumTrades} صفقات.`,
             category: 'data',
             importance: 'high'
           }]
@@ -34,100 +47,103 @@ serve(async (req) => {
 
     // Verify API key exists
     if (!deepseekApiKey) {
-      console.error('Deepseek API key is not available');
+      console.error('Missing Deepseek API key');
       return new Response(
-        JSON.stringify({
+        JSON.stringify({ 
           insights: [{
-            id: 'error-api-key',
-            title: 'مفتاح API غير متوفر',
-            content: 'مفتاح API الخاص بـ Deepseek غير متوفر. يرجى التحقق من إعدادات المشروع وإضافة مفتاح صالح.',
+            id: 'error',
+            title: 'خطأ في تكوين API',
+            content: 'لم يتم تكوين مفتاح API بشكل صحيح. يرجى الاتصال بمسؤول النظام.',
             category: 'error',
             importance: 'high'
           }]
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
       );
     }
 
-    // Extract trade patterns and key metrics
-    const tradeTags = trades.flatMap(trade => trade.hashtags || []);
-    const uniqueTags = [...new Set(tradeTags)];
-    
-    const sessionDistribution = trades.reduce((acc, trade) => {
-      const hour = new Date(trade.date + 'T' + (trade.entryTime || '00:00:00')).getHours();
-      if (hour >= 8 && hour < 16) acc.london += 1;
-      else if (hour >= 16 && hour < 24) acc.newyork += 1;
-      else if (hour >= 0 && hour < 8) acc.asia += 1;
-      return acc;
-    }, { london: 0, newyork: 0, asia: 0 });
-    
-    const tagPerformance = uniqueTags.map(tag => {
-      const tagTrades = trades.filter(trade => (trade.hashtags || []).includes(tag));
-      const winRate = tagTrades.length > 0 
-        ? (tagTrades.filter(t => t.total > 0).length / tagTrades.length) * 100 
-        : 0;
-      const avgProfit = tagTrades.length > 0
-        ? tagTrades.reduce((sum, t) => sum + t.total, 0) / tagTrades.length
-        : 0;
-      
-      return { tag, winRate, avgProfit, count: tagTrades.length };
-    });
-
-    const systemPrompt = `
-      أنت مستشار تداول محترف متخصص في تحليل أداء المتداولين. مهمتك هي:
-      
-      1. تحليل بيانات التداول للمتداول وتقديم رؤى عميقة وتوصيات قابلة للتنفيذ.
-      2. تحديد أنماط السلوك، نقاط الضعف والقوة، واستراتيجيات التداول الأكثر فعالية.
-      3. التركيز على تحسين الأداء من خلال إبراز العلاقات بين عوامل مختلفة مثل:
-         - الأزواج المتداولة وأداء المتداول
-         - العلامات المرتبطة بالصفقات وتأثيرها على النتائج
-         - جلسات التداول وفعالية الاستراتيجيات
-         - الأنماط النفسية وأثرها على الأداء
-      
-      يجب أن يكون تحليلك:
-      1. معتمداً على البيانات المقدمة
-      2. مصاغاً باللغة العربية بشكل واضح ومباشر
-      3. مرتباً من حيث الأهمية (الأكثر أهمية أولاً)
-      4. قابل للتنفيذ عملياً من قبل المتداول
-    `;
-
-    const userPrompt = `
-      بيانات المتداول:
-      
-      إحصائيات الأداء:
-      - عدد الصفقات: ${trades.length}
-      - نسبة الربح: ${stats.winRate}
-      - متوسط الربح: ${stats.avgWin}
-      - متوسط الخسارة: ${stats.avgLoss}
-      - معامل الربح: ${stats.profitFactor}
-      - أكبر ربح: ${stats.largestWin}
-      - أكبر خسارة: ${stats.largestLoss}
-      
-      توزيع العلامات الأكثر استخداماً:
-      ${tagPerformance.sort((a, b) => b.count - a.count).slice(0, 10).map(t => 
-        `- ${t.tag}: ${t.count} صفقة، نسبة ربح ${t.winRate.toFixed(1)}%، متوسط ربح ${t.avgProfit.toFixed(2)}`
-      ).join('\n')}
-      
-      توزيع الصفقات على جلسات التداول:
-      - جلسة لندن: ${sessionDistribution.london} صفقة
-      - جلسة نيويورك: ${sessionDistribution.newyork} صفقة
-      - جلسة آسيا: ${sessionDistribution.asia} صفقة
-      
-      ${playbooks && playbooks.length > 0 ? `
-      كتب الاستراتيجيات:
-      ${playbooks.map(p => 
-        `- ${p.name}: نسبة ربح ${p.winRate}%، متوسط ربح ${p.averageProfit || 0}، عدد صفقات ${p.totalTrades || 0}`
-      ).join('\n')}
-      ` : ''}
-      
-      الفترة الزمنية للتحليل: ${timeRange || 'all'}
-      
-      قم بتحليل هذه البيانات وإنتاج رؤى تحليلية (insights) مرتبة حسب الأهمية، تركز على تحسين أداء المتداول.
-      قدم توصيات عملية قابلة للتنفيذ بناءً على الأنماط التي تلاحظها في البيانات.
-    `;
-
     try {
-      console.log('Calling Deepseek API for trading insights');
+      console.log(`Calling Deepseek API for ${purpose}`);
+      
+      // Construct different prompts based on purpose
+      let userPrompt = '';
+      let responseFormat = { type: "json_object" };
+      
+      if (purpose === 'advice') {
+        userPrompt = `
+          Based on these trading statistics:
+          - Number of trades: ${trades.length}
+          - Win rate: ${stats.winRate}%
+          - Average win: $${stats.avgWin}
+          - Average loss: $${stats.avgLoss}
+          - Profit factor: ${stats.profitFactor}
+          - Largest win: $${stats.largestWin}
+          - Largest loss: $${stats.largestLoss}
+
+          Generate a comprehensive trading analysis in Arabic (300-400 words) that provides:
+          - An assessment of overall trading performance
+          - Specific strengths and weaknesses
+          - Clear, actionable recommendations for improvement
+          
+          Return the response as a JSON object with an "analysis" field containing the text.
+        `;
+      } else if (purpose === 'tips') {
+        userPrompt = `
+          Based on these trading statistics:
+          - Number of trades: ${trades.length}
+          - Win rate: ${stats.winRate}%
+          - Average win: $${stats.avgWin}
+          - Average loss: $${stats.avgLoss}
+          - Profit factor: ${stats.profitFactor}
+          - Largest win: $${stats.largestWin}
+          - Largest loss: $${stats.largestLoss}
+
+          Generate 3-5 specific trading tips in Arabic, focusing on:
+          - Performance improvement
+          - Risk management
+          - Trading psychology
+          - Strategy optimization
+
+          Return the response as a JSON object with an "insights" array, where each item has:
+          - id: unique string
+          - title: short tip title in Arabic
+          - content: detailed explanation in Arabic
+          - category: one of ["performance", "risk", "psychology", "strategy"]
+          - importance: one of ["high", "medium", "low"]
+        `;
+      } else {
+        // Default: insights
+        userPrompt = `
+          Based on these trading statistics from the ${timeRange} timeframe:
+          - Number of trades: ${trades.length}
+          - Win rate: ${stats.winRate}%
+          - Average win: $${stats.avgWin}
+          - Average loss: $${stats.avgLoss}
+          - Profit factor: ${stats.profitFactor}
+          - Largest win: $${stats.largestWin}
+          - Largest loss: $${stats.largestLoss}
+
+          Generate 4-6 specific trading insights in Arabic, focusing on:
+          - Performance patterns
+          - Risk management opportunities
+          - Psychological aspects
+          - Strategy improvements
+          - Trading patterns
+          
+          ${playbooks.length > 0 ? `Consider these existing trading playbooks: ${JSON.stringify(playbooks.map(p => p.title))}` : ''}
+
+          Return the response as a JSON object with an "insights" array, where each item has:
+          - id: unique string
+          - title: short insight title in Arabic
+          - content: detailed explanation in Arabic (50-100 words)
+          - category: one of ["performance", "psychology", "risk", "strategy", "pattern", "data"]
+          - importance: one of ["high", "medium", "low"]
+        `;
+      }
+
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -137,112 +153,108 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "deepseek-chat",
           messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
+            {
+              role: 'system',
+              content: 'You are a professional trading advisor. Analyze the trading data and provide actionable insights in Arabic.'
+            },
+            {
+              role: 'user',
+              content: userPrompt
+            }
           ],
-          response_format: { type: "json_object" }
+          response_format: responseFormat
         }),
       });
 
       const data = await response.json();
       console.log('Deepseek Response:', data);
-      
+
       if (data.error) {
         console.error('Deepseek API Error:', data.error);
-        return new Response(
-          JSON.stringify({ insights: generateFallbackInsights() }), 
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        throw new Error(data.error.message || 'Error calling Deepseek API');
       }
 
-      // Parse the Deepseek response
-      const content = data.choices[0]?.message?.content;
-      if (!content) {
-        console.error('No content in Deepseek response');
-        return new Response(
-          JSON.stringify({ insights: generateFallbackInsights() }), 
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      let insights;
-      try {
-        const parsedContent = JSON.parse(content);
-        insights = parsedContent.insights || [];
-        
-        // Ensure each insight has an id
-        insights = insights.map((insight, index) => ({
-          ...insight,
-          id: insight.id || `insight-${index + 1}`
-        }));
-        
-        console.log('Successfully parsed insights:', insights.length);
-      } catch (e) {
-        console.error('Error parsing Deepseek response:', e);
-        return new Response(
-          JSON.stringify({ insights: generateFallbackInsights() }), 
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      // Parse the JSON response from Deepseek
+      const parsedContent = JSON.parse(data.choices[0].message.content);
+      
+      // If this was an advice request and the response doesn't have insights
+      if (purpose === 'advice' && !parsedContent.insights) {
+        return new Response(JSON.stringify({ analysis: parsedContent.analysis || "عذراً، حدث خطأ في تحليل البيانات" }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
       
-      return new Response(JSON.stringify({ insights }), {
+      // For tips and insights requests
+      return new Response(JSON.stringify({ 
+        insights: parsedContent.insights || [],
+        analysis: parsedContent.analysis
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+
     } catch (error) {
-      console.error('Error calling Deepseek API:', error);
+      console.error(`Error generating ${purpose}:`, error);
       
-      return new Response(
-        JSON.stringify({ insights: generateFallbackInsights() }), 
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      // Return appropriate fallback response
+      const fallbackInsights = [
+        {
+          id: 'fallback-1',
+          title: 'تحسين نسبة الربح',
+          content: 'حاول زيادة حجم الصفقات الرابحة وتقليل حجم الصفقات الخاسرة للحصول على نتائج أفضل.',
+          category: 'performance',
+          importance: 'high'
+        },
+        {
+          id: 'fallback-2',
+          title: 'تحليل جلسات التداول',
+          content: 'ركز على الجلسات التي تحقق فيها أفضل النتائج وتجنب الجلسات التي تسبب خسائر متكررة.',
+          category: 'strategy',
+          importance: 'medium'
+        },
+        {
+          id: 'fallback-3',
+          title: 'إدارة المخاطر',
+          content: 'تأكد من تحديد نقاط الدخول والخروج بشكل واضح قبل الدخول في أي صفقة لتحسين إدارة المخاطر.',
+          category: 'risk',
+          importance: 'high'
+        },
+        {
+          id: 'fallback-4',
+          title: 'الانضباط النفسي',
+          content: 'حافظ على الانضباط النفسي وتجنب اتخاذ قرارات عاطفية أثناء التداول.',
+          category: 'psychology',
+          importance: 'medium'
+        }
+      ];
+      
+      if (purpose === 'advice') {
+        return new Response(JSON.stringify({ 
+          analysis: "عذراً، حدث خطأ أثناء تحليل البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى."
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      return new Response(JSON.stringify({ insights: fallbackInsights }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
   } catch (error) {
-    console.error('Error generating insights:', error);
-    
-    return new Response(JSON.stringify({ 
-      insights: [{
-        id: 'error',
-        title: 'عذراً، حدث خطأ',
-        content: 'حدث خطأ أثناء تحليل بياناتك. يرجى المحاولة مرة أخرى لاحقاً.',
-        category: 'error',
-        importance: 'high'
-      }]
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error in generate-trading-insights function:', error);
+    return new Response(
+      JSON.stringify({ 
+        insights: [{
+          id: 'error',
+          title: 'عذراً، حدث خطأ',
+          content: 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى لاحقاً.',
+          category: 'error',
+          importance: 'high'
+        }]
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
-
-function generateFallbackInsights() {
-  return [
-    {
-      id: 'fallback-1',
-      title: 'تحسين نسبة الربح',
-      content: 'حاول زيادة حجم الصفقات الرابحة وتقليل حجم الصفقات الخاسرة للحصول على نتائج أفضل.',
-      category: 'performance',
-      importance: 'high'
-    },
-    {
-      id: 'fallback-2',
-      title: 'تحليل جلسات التداول',
-      content: 'ركز على الجلسات التي تحقق فيها أفضل النتائج وتجنب الجلسات التي تسبب خسائر متكررة.',
-      category: 'strategy',
-      importance: 'medium'
-    },
-    {
-      id: 'fallback-3',
-      title: 'إدارة المخاطر',
-      content: 'تأكد من تحديد نقاط الدخول والخروج بشكل واضح قبل الدخول في أي صفقة لتحسين إدارة المخاطر.',
-      category: 'risk',
-      importance: 'high'
-    },
-    {
-      id: 'fallback-4',
-      title: 'الانضباط النفسي',
-      content: 'حافظ على الانضباط النفسي وتجنب اتخاذ قرارات عاطفية أثناء التداول.',
-      category: 'psychology',
-      importance: 'medium'
-    }
-  ];
-}
