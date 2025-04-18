@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,86 +19,75 @@ serve(async (req) => {
 
     if (!trades || trades.length < 3) {
       return new Response(
-        JSON.stringify({
-          analysis: 'أضف المزيد من الصفقات للحصول على تحليل مفصل لأدائك'
-        }),
+        JSON.stringify({ analysis: 'أضف المزيد من الصفقات للحصول على تحليل مفصل لأدائك' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const systemPrompt = `
-      أنت مستشار تداول محترف متخصص في تحليل أداء المتداولين. مهمتك هي:
-      1. تحليل بيانات التداول الخاصة بالمتداول بدقة
-      2. تقديم تحليل شامل ومفصل باللغة العربية عن أداء المتداول
-      3. التركيز على الإيجابيات والسلبيات في طريقة التداول
-      4. تقديم توصيات عملية لتحسين الأداء
-      5. تلخيص النقاط الرئيسية في تحليلك
-      
-      اجعل تحليلك:
-      - مخصصاً لبيانات المتداول المحددة
-      - مدعوماً بالأرقام من بيانات المتداول
-      - واضحاً ومنظماً
-      - يتضمن تقييم إدارة المخاطر، والجوانب النفسية، والاستراتيجيات المستخدمة
-    `;
+    try {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          system: 'You are a professional trading advisor. Analyze the trading data and provide detailed advice in Arabic.',
+          messages: [
+            {
+              role: 'user',
+              content: `
+                Based on these trading statistics:
+                - Number of trades: ${trades.length}
+                - Win rate: ${stats.winRate}%
+                - Average win: $${stats.avgWin}
+                - Average loss: $${stats.avgLoss}
+                - Profit factor: ${stats.profitFactor}
+                - Largest win: $${stats.largestWin}
+                - Largest loss: $${stats.largestLoss}
 
-    const userPrompt = `
-      بيانات التداول:
-      
-      - عدد الصفقات: ${trades.length}
-      - نسبة الربح: ${stats.winRate}%
-      - متوسط الربح: ${stats.avgWin}
-      - متوسط الخسارة: ${stats.avgLoss}
-      - معامل الربح: ${stats.profitFactor}
-      
-      قم بإنشاء تحليل مفصل لأداء المتداول. التحليل يجب أن يكون باللغة العربية ومناسباً لعرضه في لوحة التحكم الخاصة بالمتداول.
-      
-      يجب أن يتضمن التحليل:
-      1. نظرة عامة على الأداء.
-      2. تحليل للنقاط القوية والضعيفة.
-      3. توصيات واضحة لتحسين الأداء.
-      4. تعليق على إدارة المخاطر وتوازن الربح/الخسارة.
-      
-      كن دقيقاً ومفيداً. اجعل التحليل محفزاً وبناءً.
-    `;
+                Provide a detailed analysis and advice in Arabic, focusing on:
+                - Overall performance assessment
+                - Strengths and weaknesses
+                - Areas for improvement
+                - Specific recommendations
+                - Risk management suggestions
+                - Psychological aspects
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500
-      }),
-    });
+                Keep the response focused and actionable.
+              `
+            }
+          ]
+        }),
+      });
 
-    const data = await response.json();
-    console.log('OpenAI Response:', data);
-    
-    if (data.error) {
-      console.error('OpenAI API Error:', data.error);
-      throw new Error(data.error.message);
+      const data = await response.json();
+      console.log('Deepseek Response:', data);
+
+      if (data.error) {
+        console.error('Deepseek API Error:', data.error);
+        throw new Error(data.error.message);
+      }
+
+      return new Response(
+        JSON.stringify({ analysis: data.choices[0].message.content }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
+    } catch (error) {
+      console.error('Error generating advice:', error);
+      throw error;
     }
-
-    const analysis = data.choices[0]?.message?.content || 
-      "عذراً، لم أتمكن من توليد تحليل في هذا الوقت. يرجى المحاولة مرة أخرى لاحقاً.";
-    
-    return new Response(JSON.stringify({ analysis }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
-    console.error('Error generating advice:', error);
-    return new Response(JSON.stringify({ 
-      analysis: "عذراً، حدث خطأ في توليد التحليل. يرجى المحاولة مرة أخرى لاحقاً." 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error in generate-trading-advice function:', error);
+    return new Response(
+      JSON.stringify({ 
+        analysis: 'عذراً، حدث خطأ أثناء توليد التحليل. يرجى المحاولة مرة أخرى لاحقاً.'
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });

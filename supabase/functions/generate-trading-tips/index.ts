@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,91 +30,78 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `
-      أنت مستشار تداول محترف متخصص في تحليل أداء المتداولين. مهمتك هي:
-      1. تحليل بيانات التداول الخاصة بالمتداول بدقة
-      2. تقديم نصائح محددة وعملية باللغة العربية
-      3. التركيز على إدارة المخاطر، الجوانب النفسية، وتحسين الاستراتيجية
-      4. تقديم توصيات مبنية على البيانات الفعلية للمتداول
-      
-      اجعل نصائحك:
-      - عملية وقابلة للتنفيذ
-      - مدعومة بالأرقام من بيانات المتداول
-      - مخصصة لنمط تداول المتداول
-      - موجهة لتحسين نقاط الضعف وتعزيز نقاط القوة
-    `;
-
-    const userPrompt = `
-      تحليل أداء المتداول:
-      
-      البيانات:
-      - عدد الصفقات: ${trades.length}
-      - نسبة الربح: ${stats.winRate}%
-      - متوسط الربح: ${stats.avgWin}
-      - متوسط الخسارة: ${stats.avgLoss}
-      - معامل الربح: ${stats.profitFactor}
-      
-      قم بتقديم 3 نصائح مهمة بناءً على هذه البيانات. اجعل النصائح متنوعة بين فئات:
-      - الأداء (performance)
-      - إدارة المخاطر (risk)
-      - الجانب النفسي (psychology)
-      - الاستراتيجية (strategy)
-      
-      أرجع النصائح بتنسيق JSON بالضبط كما يلي:
-      [
-        {
-          "id": "1",
-          "title": "عنوان النصيحة",
-          "content": "محتوى النصيحة",
-          "category": "performance|risk|psychology|strategy",
-          "priority": "high|medium|low"
-        }
-      ]
-    `;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-        response_format: { type: "json_object" }
-      }),
-    });
-
-    const data = await response.json();
-    console.log('OpenAI Response:', data);
-    
-    if (data.error) {
-      console.error('OpenAI API Error:', data.error);
-      throw new Error(data.error.message);
-    }
-
-    let tips;
     try {
-      const content = data.choices[0].message.content;
-      tips = JSON.parse(content).tips || [];
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          system: 'You are a professional trading advisor. Analyze the trading data and provide actionable tips in Arabic.',
+          messages: [
+            {
+              role: 'user',
+              content: `
+                Based on these trading statistics:
+                - Number of trades: ${trades.length}
+                - Win rate: ${stats.winRate}%
+                - Average win: $${stats.avgWin}
+                - Average loss: $${stats.avgLoss}
+                - Profit factor: ${stats.profitFactor}
+                - Largest win: $${stats.largestWin}
+                - Largest loss: $${stats.largestLoss}
+
+                Generate 3-5 specific trading tips in Arabic, focusing on:
+                - Performance improvement
+                - Risk management
+                - Trading psychology
+                - Strategy optimization
+
+                Return the response as a JSON array of tips, each with:
+                - id: unique string
+                - title: short tip title in Arabic
+                - content: detailed explanation in Arabic
+                - category: one of ["performance", "risk", "psychology", "strategy"]
+                - priority: one of ["high", "medium", "low"]
+              `
+            }
+          ],
+          response_format: { type: "json_object" }
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Deepseek Response:', data);
+
+      if (data.error) {
+        console.error('Deepseek API Error:', data.error);
+        throw new Error(data.error.message);
+      }
+
+      const tips = JSON.parse(data.choices[0].message.content).tips;
+      return new Response(JSON.stringify(tips), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+
     } catch (error) {
-      console.error('Error parsing OpenAI response:', error);
-      throw new Error('Invalid response format from OpenAI');
+      console.error('Error generating tips:', error);
+      throw error;
     }
-    
-    return new Response(JSON.stringify(tips), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
-    console.error('Error generating tips:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Error in generate-trading-tips function:', error);
+    return new Response(
+      JSON.stringify([{
+        id: 'error',
+        title: 'عذراً، حدث خطأ',
+        content: 'حدث خطأ أثناء توليد النصائح. يرجى المحاولة مرة أخرى لاحقاً.',
+        category: 'error',
+        priority: 'high'
+      }]),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
