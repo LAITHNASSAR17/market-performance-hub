@@ -29,46 +29,61 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
     
     try {
       const newInsights = await generateTradingInsights(trades, stats, playbooks, timeRange);
-      setInsights(newInsights);
-      if (newInsights.length > 0) {
+      
+      // Validate insights
+      if (Array.isArray(newInsights) && newInsights.length > 0) {
+        setInsights(newInsights);
         setCurrentInsight(0);
+      } else {
+        // No insights available, set a default message
+        setInsights([{
+          id: 'no-data',
+          title: 'لا توجد رؤى متاحة',
+          content: 'أضف المزيد من الصفقات للحصول على تحليل أكثر تفصيلاً.',
+          category: 'data',
+          importance: 'medium'
+        }]);
       }
     } catch (error) {
       console.error("Error loading insights:", error);
-      setError("حدث خطأ أثناء تحليل البيانات");
+      setError("حدث خطأ أثناء توليد الرؤى التحليلية");
       toast({
-        title: "خطأ في تحليل البيانات",
-        description: "حدث خطأ أثناء تحليل بياناتك. يرجى المحاولة مرة أخرى لاحقاً.",
+        title: "خطأ في التحليل",
+        description: "تعذر توليد الرؤى التحليلية. يرجى التحقق من إعدادات API.",
         variant: "destructive"
       });
+      
+      // Set fallback insights
+      setInsights([{
+        id: 'error-fallback',
+        title: 'خطأ في التحليل',
+        content: 'تعذر الاتصال بخدمة التحليل. يرجى المحاولة مرة أخرى أو التحقق من الإعدادات.',
+        category: 'error',
+        importance: 'high'
+      }]);
     } finally {
       setLoading(false);
     }
   }, [trades, stats, playbooks, timeRange, toast]);
 
   const handleNext = () => {
-    if (currentInsight < insights.length - 1) {
-      setCurrentInsight(currentInsight + 1);
-    } else {
-      setCurrentInsight(0);
-    }
+    setCurrentInsight(prev => 
+      prev < insights.length - 1 ? prev + 1 : 0
+    );
   };
 
   const handlePrevious = () => {
-    if (currentInsight > 0) {
-      setCurrentInsight(currentInsight - 1);
-    } else {
-      setCurrentInsight(insights.length - 1);
-    }
+    setCurrentInsight(prev => 
+      prev > 0 ? prev - 1 : insights.length - 1
+    );
   };
 
   const refreshInsights = () => {
-    if (!loading) {
-      setError(null);
+    if (!loading && trades.length > 0) {
       loadInsights();
       toast({
-        title: "جاري تحديث التحليل",
-        description: "يتم الآن تحليل بياناتك وتوليد رؤى جديدة.",
+        title: "جارٍ تحديث التحليل",
+        description: "يتم تحديث الرؤى التحليلية للصفقات",
       });
     }
   };
@@ -79,13 +94,6 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
       loadInsights();
     }
   }, [trades, stats, timeRange, loadInsights]);
-
-  // Initial load
-  useEffect(() => {
-    if (insights.length === 0 && !loading && trades.length > 0) {
-      loadInsights();
-    }
-  }, [insights.length, loading, trades.length, loadInsights]);
 
   return {
     insights,
