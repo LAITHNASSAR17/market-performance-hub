@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, RefreshCw, AlertCircle } from 'lucide-react';
+import { Brain, RefreshCw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTrade } from '@/contexts/TradeContext';
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
@@ -67,31 +67,11 @@ const TradingInsights: React.FC<TradingInsightsProps> = ({
       </CardHeader>
       
       <CardContent>
-        {error ? (
-          <div className="text-center py-4 space-y-3">
-            <div className="flex justify-center mb-2">
-              <AlertCircle className="h-10 w-10 text-red-500" />
-            </div>
-            <h3 className="text-xl font-medium text-red-500">{t('عذراً، حدث خطأ')}</h3>
-            <p className="text-muted-foreground">
-              {t('حدث خطأ أثناء تحليل بياناتك. يرجى المحاولة مرة أخرى لاحقاً.')}
-            </p>
-            <Button 
-              onClick={refreshInsights} 
-              variant="outline"
-              className="mt-2"
-              disabled={loading}
-            >
-              {t('إعادة المحاولة')}
-            </Button>
-          </div>
-        ) : (
-          <InsightCardContent 
-            insight={currentInsightData}
-            loading={loading}
-            tradesCount={trades.length}
-          />
-        )}
+        <InsightCardContent 
+          insight={currentInsightData}
+          loading={loading}
+          tradesCount={trades.length}
+        />
       </CardContent>
       
       {!error && insights.length > 0 && (
