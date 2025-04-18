@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -77,6 +78,8 @@ const Dashboard: React.FC = () => {
   const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.total, 0);
   const winningTrades = filteredTrades.filter(trade => trade.total > 0).length;
   const losingTrades = filteredTrades.filter(trade => trade.total < 0).length;
+  const totalTradesCount = filteredTrades.length;
+  const winRateValue = totalTradesCount > 0 ? (winningTrades / totalTradesCount) * 100 : 0;
   
   const bestTrade = filteredTrades.length > 0 ? filteredTrades.reduce(
     (best, trade) => (trade.total > best.total ? trade : best),
@@ -244,7 +247,7 @@ const Dashboard: React.FC = () => {
           trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
           icon={<DollarSign className="h-5 w-5" />}
           color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
-          description={`Trades in total: ${totalTrades}`}
+          description={`Trades in total: ${totalTradesCount}`}
         />
         <StatCard
           title="Profit factor"
@@ -346,7 +349,7 @@ const Dashboard: React.FC = () => {
             <div className="h-[250px] sm:h-[300px] flex flex-col sm:flex-row items-center justify-center">
               <div className="relative w-[180px] sm:w-[220px] h-[180px] sm:h-[220px]">
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-3xl sm:text-4xl font-bold text-emerald-500">{winRate.toFixed(0)}%</span>
+                  <span className="text-3xl sm:text-4xl font-bold text-emerald-500">{winRateValue.toFixed(0)}%</span>
                   <span className="text-sm text-gray-500">winrate</span>
                 </div>
                 <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -365,7 +368,7 @@ const Dashboard: React.FC = () => {
                     fill="none"
                     stroke="#36B37E"
                     strokeWidth="15"
-                    strokeDasharray={`${winRate * 2.512} ${(100 - winRate) * 2.512}`}
+                    strokeDasharray={`${winRateValue * 2.512} ${(100 - winRateValue) * 2.512}`}
                     strokeDashoffset="0"
                     transform="rotate(-90, 50, 50)"
                   />
