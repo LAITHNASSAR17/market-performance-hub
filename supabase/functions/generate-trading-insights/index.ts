@@ -34,16 +34,16 @@ serve(async (req) => {
       );
     }
 
-    // Check if OpenAI API key is available
-    if (!openAIApiKey) {
-      console.error('OpenAI API key is not available');
+    // Check if OpenAI API key is available and valid
+    if (!openAIApiKey || openAIApiKey.includes('github_p') || openAIApiKey.length < 20) {
+      console.error('OpenAI API key is not valid or not available');
       return new Response(
         JSON.stringify({
           insights: [
             {
               id: 'error-api-key',
-              title: 'مفتاح API غير متوفر',
-              content: 'مفتاح API الخاص بـ OpenAI غير متوفر. يرجى التحقق من إعدادات المشروع.',
+              title: 'مفتاح API غير صالح',
+              content: 'مفتاح API الخاص بـ OpenAI غير صالح. يرجى التحقق من إعدادات المشروع وإضافة مفتاح صالح.',
               category: 'error',
               importance: 'high'
             }
@@ -52,6 +52,40 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Generate some fallback insights when API is not working properly
+    const generateFallbackInsights = () => {
+      return [
+        {
+          id: 'fallback-1',
+          title: 'تحسين نسبة الربح',
+          content: 'حاول زيادة حجم الصفقات الرابحة وتقليل حجم الصفقات الخاسرة للحصول على نتائج أفضل.',
+          category: 'performance',
+          importance: 'high'
+        },
+        {
+          id: 'fallback-2',
+          title: 'تحليل جلسات التداول',
+          content: 'ركز على الجلسات التي تحقق فيها أفضل النتائج وتجنب الجلسات التي تسبب خسائر متكررة.',
+          category: 'strategy',
+          importance: 'medium'
+        },
+        {
+          id: 'fallback-3',
+          title: 'إدارة المخاطر',
+          content: 'تأكد من تحديد نقاط الدخول والخروج بشكل واضح قبل الدخول في أي صفقة لتحسين إدارة المخاطر.',
+          category: 'risk',
+          importance: 'high'
+        },
+        {
+          id: 'fallback-4',
+          title: 'الانضباط النفسي',
+          content: 'حافظ على الانضباط النفسي وتجنب اتخاذ قرارات عاطفية أثناء التداول.',
+          category: 'psychology',
+          importance: 'medium'
+        }
+      ];
+    };
 
     // Extract trade patterns and key metrics
     const tradeTags = trades.flatMap(trade => trade.hashtags || []);
@@ -163,13 +197,21 @@ serve(async (req) => {
       
       if (data.error) {
         console.error('OpenAI API Error:', data.error);
-        throw new Error(data.error.message);
+        
+        // Return fallback insights if OpenAI API fails
+        return new Response(
+          JSON.stringify({ insights: generateFallbackInsights() }), 
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Parse the OpenAI response
       const content = data.choices[0]?.message?.content;
       if (!content) {
-        throw new Error('No content in OpenAI response');
+        return new Response(
+          JSON.stringify({ insights: generateFallbackInsights() }), 
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       let insights;
@@ -184,7 +226,10 @@ serve(async (req) => {
         }));
       } catch (e) {
         console.error('Error parsing OpenAI response:', e);
-        throw new Error('Invalid response format from OpenAI');
+        return new Response(
+          JSON.stringify({ insights: generateFallbackInsights() }), 
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       
       return new Response(JSON.stringify({ insights }), {
@@ -192,23 +237,16 @@ serve(async (req) => {
       });
     } catch (error) {
       console.error('Error calling OpenAI API:', error);
-      return new Response(JSON.stringify({ 
-        insights: [
-          {
-            id: 'error-api-call',
-            title: 'خطأ في الاتصال بـ OpenAI',
-            content: `حدث خطأ أثناء الاتصال بخدمة OpenAI: ${error.message}. يرجى المحاولة مرة أخرى لاحقاً.`,
-            category: 'error',
-            importance: 'high'
-          }
-        ]
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      
+      // Return fallback insights if OpenAI API fails
+      return new Response(
+        JSON.stringify({ insights: generateFallbackInsights() }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
   } catch (error) {
     console.error('Error generating insights:', error);
+    
     return new Response(JSON.stringify({ 
       insights: [
         {

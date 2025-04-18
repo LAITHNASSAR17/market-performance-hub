@@ -16,6 +16,7 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
   const [insights, setInsights] = useState<TradingInsight[]>([]);
   const [currentInsight, setCurrentInsight] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const loadInsights = useCallback(async () => {
@@ -24,6 +25,8 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
     }
     
     setLoading(true);
+    setError(null);
+    
     try {
       const newInsights = await generateTradingInsights(trades, stats, playbooks, timeRange);
       setInsights(newInsights);
@@ -32,6 +35,7 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
       }
     } catch (error) {
       console.error("Error loading insights:", error);
+      setError("حدث خطأ أثناء تحليل البيانات");
       toast({
         title: "خطأ في تحليل البيانات",
         description: "حدث خطأ أثناء تحليل بياناتك. يرجى المحاولة مرة أخرى لاحقاً.",
@@ -60,6 +64,7 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
 
   const refreshInsights = () => {
     if (!loading) {
+      setError(null);
       loadInsights();
       toast({
         title: "جاري تحديث التحليل",
@@ -86,6 +91,7 @@ export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: Use
     insights,
     currentInsight,
     loading,
+    error,
     handleNext,
     handlePrevious,
     refreshInsights,
