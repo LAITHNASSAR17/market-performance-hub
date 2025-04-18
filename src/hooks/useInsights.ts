@@ -5,6 +5,13 @@ import { Trade } from '@/contexts/TradeContext';
 import { TradeStats } from '@/hooks/useAnalyticsStats';
 import { useToast } from "@/hooks/use-toast";
 
+export interface UseInsightsProps {
+  trades: Trade[];
+  stats: TradeStats;
+  playbooks: any[];
+  timeRange?: string;
+}
+
 export const useInsights = ({ trades, stats, playbooks, timeRange = 'all' }: UseInsightsProps) => {
   const [insights, setInsights] = useState<TradingInsight[]>([]);
   const [currentInsight, setCurrentInsight] = useState(0);
