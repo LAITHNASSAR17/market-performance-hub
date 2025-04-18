@@ -14,6 +14,12 @@ const tradeSchema = new mongoose.Schema({
   fees: { type: Number, default: 0 },
   notes: { type: String },
   tags: [{ type: String }],
+  rating: { type: Number, default: 0 },
+  stopLoss: { type: Number },
+  takeProfit: { type: Number },
+  durationMinutes: { type: Number },
+  playbook: { type: String },
+  followedRules: [{ type: String }]
 }, { timestamps: true });
 
 export const Trade = mongoose.model('Trade', tradeSchema);

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -18,6 +19,7 @@ import StarRating from '@/components/StarRating';
 import { supabase } from '@/lib/supabase';
 import AddPairDialog from '@/components/AddPairDialog';
 import ImageUpload from '@/components/ImageUpload';
+import { usePlaybooks } from '@/hooks/usePlaybooks';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +30,7 @@ const AddTrade: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddPairDialog, setShowAddPairDialog] = useState(false);
+  const { playbooks } = usePlaybooks();
   
   const [pair, setPair] = useState('');
   const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
@@ -49,6 +52,8 @@ const AddTrade: React.FC = () => {
   const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
   const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
   const [total, setTotal] = useState<string>('0');
+  const [playbook, setPlaybook] = useState<string | undefined>(undefined);
+  const [followedRules, setFollowedRules] = useState<string[]>([]);
 
   const fetchTradeFromDb = async (tradeId: string) => {
     setIsLoading(true);
@@ -83,6 +88,8 @@ const AddTrade: React.FC = () => {
         setImageUrl(data.image_url || null);
         setBeforeImageUrl(data.before_image_url || null);
         setAfterImageUrl(data.after_image_url || null);
+        setPlaybook(data.playbook || undefined);
+        setFollowedRules(data.followed_rules || []);
         
         setAccount(accounts[0] || '');
         setIsEditing(true);
@@ -139,6 +146,20 @@ const AddTrade: React.FC = () => {
     setTotal((rawPL - fees).toString());
   };
 
+  const handlePlaybookChange = (value: string) => {
+    setPlaybook(value);
+    // Reset followed rules when changing playbook
+    setFollowedRules([]);
+  };
+
+  const toggleRuleSelection = (ruleText: string) => {
+    if (followedRules.includes(ruleText)) {
+      setFollowedRules(followedRules.filter(rule => rule !== ruleText));
+    } else {
+      setFollowedRules([...followedRules, ruleText]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -173,7 +194,9 @@ const AddTrade: React.FC = () => {
         returnPercentage: 0,
         imageUrl: imageUrl,
         beforeImageUrl: beforeImageUrl,
-        afterImageUrl: afterImageUrl
+        afterImageUrl: afterImageUrl,
+        playbook,
+        followedRules
       };
 
       if (isEditing && id) {
@@ -200,6 +223,11 @@ const AddTrade: React.FC = () => {
       });
     }
   };
+
+  // Get the selected playbook's rules
+  const selectedPlaybookRules = playbook 
+    ? playbooks.find(p => p.id === playbook)?.rules || []
+    : [];
 
   return (
     <Layout>
@@ -314,7 +342,47 @@ const AddTrade: React.FC = () => {
                       />
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="playbook">دليل التداول</Label>
+                    <Select 
+                      value={playbook} 
+                      onValueChange={handlePlaybookChange}
+                    >
+                      <SelectTrigger id="playbook">
+                        <SelectValue placeholder="اختر دليل التداول (اختياري)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">لا يوجد</SelectItem>
+                        {playbooks.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
+                {playbook && playbook !== 'none' && selectedPlaybookRules.length > 0 && (
+                  <div className="mt-4 border rounded-md p-4 bg-muted/30">
+                    <h3 className="font-medium mb-2">قواعد دليل التداول التي تم اتباعها:</h3>
+                    <div className="space-y-2">
+                      {selectedPlaybookRules.map((rule: any) => (
+                        <div key={rule.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`rule-${rule.id}`}
+                            checked={followedRules.includes(rule.description)}
+                            onChange={() => toggleRuleSelection(rule.description)}
+                            className="rounded border-gray-300"
+                          />
+                          <label htmlFor={`rule-${rule.id}`} className="text-sm">
+                            {rule.description}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
             

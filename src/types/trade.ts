@@ -26,7 +26,7 @@ export interface Trade {
   commission: number;
   rating: number;
   total: number;  // Net profit/loss after fees
-  playbook?: string; // New field to link to a playbook
+  playbook?: string; // Field to link to a playbook
   followedRules?: string[]; // Rules that were followed in this trade
 }
 
