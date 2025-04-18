@@ -31,6 +31,7 @@ export const getAITradingTips = async (trades: Trade[], stats: TradeStats): Prom
   }
 
   try {
+    console.log('Calling generate-trading-tips function');
     const { data, error } = await supabase.functions.invoke('generate-trading-tips', {
       body: { trades, stats }
     });
@@ -41,6 +42,7 @@ export const getAITradingTips = async (trades: Trade[], stats: TradeStats): Prom
     }
 
     if (!data || !Array.isArray(data)) {
+      console.error("Invalid response format from AI service:", data);
       throw new Error("Invalid response format from AI service");
     }
 
@@ -63,6 +65,7 @@ export const generateAIAdvice = async (trades: Trade[], stats: TradeStats): Prom
   }
 
   try {
+    console.log('Calling generate-trading-advice function');
     const { data, error } = await supabase.functions.invoke('generate-trading-advice', {
       body: { trades, stats }
     });
@@ -96,6 +99,7 @@ export const generateTradingInsights = async (
   }
 
   try {
+    console.log('Calling generate-trading-insights function with', trades.length, 'trades');
     const { data, error } = await supabase.functions.invoke('generate-trading-insights', {
       body: { trades, stats, playbooks, timeRange }
     });
@@ -106,6 +110,7 @@ export const generateTradingInsights = async (
     }
 
     if (!data || !data.insights || !Array.isArray(data.insights)) {
+      console.error("Invalid response format from AI service:", data);
       throw new Error("Invalid response format from AI service");
     }
 

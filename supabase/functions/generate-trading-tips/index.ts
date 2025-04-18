@@ -30,7 +30,26 @@ serve(async (req) => {
       );
     }
 
+    // Verify API key exists
+    if (!deepseekApiKey) {
+      console.error('Missing Deepseek API key');
+      return new Response(
+        JSON.stringify([{
+          id: 'error',
+          title: 'خطأ في تكوين API',
+          content: 'لم يتم تكوين مفتاح API بشكل صحيح. يرجى الاتصال بمسؤول النظام.',
+          category: 'error',
+          priority: 'high'
+        }]),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     try {
+      console.log('Calling Deepseek API for trading tips');
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -76,7 +95,7 @@ serve(async (req) => {
 
       if (data.error) {
         console.error('Deepseek API Error:', data.error);
-        throw new Error(data.error.message);
+        throw new Error(data.error.message || 'Error calling Deepseek API');
       }
 
       const tips = JSON.parse(data.choices[0].message.content).tips;

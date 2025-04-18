@@ -32,15 +32,15 @@ serve(async (req) => {
       );
     }
 
-    // Check if Deepseek API key is available and valid
-    if (!deepseekApiKey || deepseekApiKey.length < 20) {
-      console.error('Deepseek API key is not valid or not available');
+    // Verify API key exists and is valid
+    if (!deepseekApiKey) {
+      console.error('Deepseek API key is not available');
       return new Response(
         JSON.stringify({
           insights: [{
             id: 'error-api-key',
-            title: 'مفتاح API غير صالح',
-            content: 'مفتاح API الخاص بـ Deepseek غير صالح. يرجى التحقق من إعدادات المشروع وإضافة مفتاح صالح.',
+            title: 'مفتاح API غير متوفر',
+            content: 'مفتاح API الخاص بـ Deepseek غير متوفر. يرجى التحقق من إعدادات المشروع وإضافة مفتاح صالح.',
             category: 'error',
             importance: 'high'
           }]
@@ -127,6 +127,7 @@ serve(async (req) => {
     `;
 
     try {
+      console.log('Calling Deepseek API for trading insights');
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -155,6 +156,7 @@ serve(async (req) => {
       // Parse the Deepseek response
       const content = data.choices[0]?.message?.content;
       if (!content) {
+        console.error('No content in Deepseek response');
         return new Response(
           JSON.stringify({ insights: generateFallbackInsights() }), 
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -171,6 +173,8 @@ serve(async (req) => {
           ...insight,
           id: insight.id || `insight-${index + 1}`
         }));
+        
+        console.log('Successfully parsed insights:', insights.length);
       } catch (e) {
         console.error('Error parsing Deepseek response:', e);
         return new Response(
