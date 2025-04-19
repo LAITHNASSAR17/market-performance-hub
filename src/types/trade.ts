@@ -60,7 +60,7 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   // Calculate total as profit/loss minus fees
   total: (dbTrade.profitLoss || 0) - (dbTrade.fees || 0),
   playbook: dbTrade.playbook,
-  followedRules: dbTrade.followedRules,
+  followedRules: dbTrade.followedRules || [],
   marketSession: dbTrade.marketSession
 });
 
@@ -85,6 +85,6 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   takeProfit: trade.takeProfit || null,
   durationMinutes: trade.durationMinutes || null,
   playbook: trade.playbook,
-  followedRules: trade.followedRules,
+  followedRules: trade.followedRules || [],
   marketSession: trade.marketSession
 });

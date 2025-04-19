@@ -69,7 +69,8 @@ export const tradeService = {
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
         duration_minutes: tradeData.durationMinutes,
-        market_session: tradeData.marketSession
+        market_session: tradeData.marketSession,
+        followed_rules: tradeData.followedRules
       })
       .select()
       .single();
@@ -102,6 +103,7 @@ export const tradeService = {
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
     if (tradeData.marketSession !== undefined) updateObject.market_session = tradeData.marketSession;
+    if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
     
     const { data, error } = await supabase
       .from('trades')
@@ -162,7 +164,7 @@ function formatTrade(data: any): ITrade {
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
     playbook: data.playbook,
-    followedRules: data.followedRules,
+    followedRules: data.followed_rules || [],
     marketSession: data.market_session
   };
 }
