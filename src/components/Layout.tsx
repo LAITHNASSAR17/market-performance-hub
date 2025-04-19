@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, Settings, Scroll, CreditCard } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, Settings, Scroll, CreditCard, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -14,6 +14,7 @@ import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { MenteeViewBanner } from './MenteeViewBanner';
 import { useMenteeView } from '@/contexts/MenteeViewContext';
+import { useMentorship } from '@/contexts/MentorshipContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -42,6 +43,7 @@ const Layout: React.FC<LayoutProps> = ({
     toggleTheme
   } = useTheme();
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
+  const { isMentor } = useMentorship();
 
   useEffect(() => {
     if (isMobile) {
@@ -98,6 +100,16 @@ const Layout: React.FC<LayoutProps> = ({
     icon: CreditCard,
     href: '/subscriptions'
   }];
+
+  const mentorNavItems = isMentor ? [
+    {
+      name: 'Mentor Dashboard',
+      icon: Users,
+      href: '/mentor-dashboard'
+    }
+  ] : [];
+
+  const allNavigation = [...navigation, ...mentorNavItems];
 
   const handleLogout = async () => {
     try {
@@ -181,7 +193,7 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
 
         <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-          {navigation.map(item => {
+          {allNavigation.map(item => {
           const isActive = location.pathname === item.href;
           return <Tooltip key={item.href}>
                 <TooltipTrigger asChild>
