@@ -1,23 +1,29 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTrade } from '@/contexts/TradeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { calculateProfitLoss, calculateReturnPercentage, calculateRiskPercentage } from '@/utils/tradeUtils';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import ImageUploader from '@/components/ImageUploader';
-import { Trade } from '@/types/settings';
+import { Trade } from '@/types/trade';
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TradePairSelector from '@/components/trade/TradePairSelector';
+import TradeTypeSelector from '@/components/trade/TradeTypeSelector';
+import TradePriceInputs from '@/components/trade/TradePriceInputs';
+import TradeSizeAndCommission from '@/components/trade/TradeSizeAndCommission';
+import TradeStopLossAndTarget from '@/components/trade/TradeStopLossAndTarget';
+import { TradingSessionSelector } from '@/components/TradingSessionSelector';
+import ImageUploader from '@/components/ImageUploader';
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Listbox } from '@headlessui/react';
 
 const marketSessions = [
@@ -195,110 +201,35 @@ const AddTrade: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="pair">Trading Pair</Label>
-                <div className="flex items-center space-x-2">
-                  <Select onValueChange={(value) => handleSelectChange('pair', value)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select pair" defaultValue={tradeData.pair} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {pairs.map((pair) => (
-                        <SelectItem key={pair} value={pair}>{pair}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button type="button" size="sm" onClick={handleAddSymbol}>
-                    Add Pair
-                  </Button>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <Select onValueChange={(value) => handleSelectChange('type', value)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select type" defaultValue={tradeData.type} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Buy">Buy</SelectItem>
-                    <SelectItem value="Sell">Sell</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <TradePairSelector
+                pairs={pairs}
+                selectedPair={tradeData.pair}
+                onPairChange={(value) => handleSelectChange('pair', value)}
+                onAddPair={handleAddSymbol}
+              />
+              <TradeTypeSelector
+                selectedType={tradeData.type}
+                onTypeChange={(value) => handleSelectChange('type', value)}
+              />
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="entry">Entry Price</Label>
-                <Input
-                  type="number"
-                  id="entry"
-                  name="entry"
-                  value={tradeData.entry.toString()}
-                  onChange={handleInputChange}
-                />
-              </div>
+            <TradePriceInputs
+              entry={tradeData.entry}
+              exit={tradeData.exit}
+              onInputChange={handleInputChange}
+            />
 
-              <div>
-                <Label htmlFor="exit">Exit Price</Label>
-                <Input
-                  type="number"
-                  id="exit"
-                  name="exit"
-                  value={tradeData.exit.toString()}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
+            <TradeSizeAndCommission
+              lotSize={tradeData.lotSize}
+              commission={tradeData.commission}
+              onInputChange={handleInputChange}
+            />
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="lotSize">Lot Size</Label>
-                <Input
-                  type="number"
-                  id="lotSize"
-                  name="lotSize"
-                  value={tradeData.lotSize.toString()}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="commission">Commission</Label>
-                <Input
-                  type="number"
-                  id="commission"
-                  name="commission"
-                  value={tradeData.commission.toString()}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="stopLoss">Stop Loss</Label>
-                <Input
-                  type="number"
-                  id="stopLoss"
-                  name="stopLoss"
-                  value={tradeData.stopLoss.toString()}
-                  onChange={handleInputChange}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="takeProfit">Take Profit</Label>
-                <Input
-                  type="number"
-                  id="takeProfit"
-                  name="takeProfit"
-                  value={tradeData.takeProfit.toString()}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
+            <TradeStopLossAndTarget
+              stopLoss={tradeData.stopLoss}
+              takeProfit={tradeData.takeProfit}
+              onInputChange={handleInputChange}
+            />
 
             <div>
               <Label htmlFor="notes">Notes</Label>
