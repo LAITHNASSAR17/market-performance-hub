@@ -19,6 +19,15 @@ export interface ITradingAccount {
   createdAt: string;
 }
 
+export interface IUserProfile {
+  id: string;
+  userId: string;
+  country?: string;
+  avatar_url?: string;
+  updatedAt: string;
+  createdAt: string;
+}
+
 export const userService = {
   async getUserById(id: string): Promise<IUser | null> {
     const { data, error } = await supabase
@@ -160,6 +169,70 @@ export const userService = {
       balance: Number(account.balance),
       createdAt: account.created_at
     }));
+  },
+
+  async getUserProfile(userId: string): Promise<IUserProfile | null> {
+    if (!userId) {
+      throw new Error('User ID is required to fetch user profile');
+    }
+    
+    // Use user_preferences as a fallback since profiles doesn't exist
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+    
+    if (!data) return null;
+    
+    // Format as IUserProfile for compatibility
+    return {
+      id: data.id,
+      userId: data.user_id,
+      country: 'Unknown', // Default since it's not stored
+      avatar_url: '', // Default since it's not stored
+      updatedAt: data.updated_at,
+      createdAt: data.updated_at // Use updated_at as fallback
+    };
+  },
+  
+  async updateUserProfile(userId: string, profileData: Partial<IUserProfile>): Promise<IUserProfile | null> {
+    if (!userId) {
+      throw new Error('User ID is required to update user profile');
+    }
+    
+    // Use user_preferences as a fallback since profiles doesn't exist
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .upsert({
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+        // User preferences doesn't store avatar or country, so these will be ignored
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating user profile:', error);
+      return null;
+    }
+    
+    if (!data) return null;
+    
+    // Format as IUserProfile for compatibility, including the requested changes
+    return {
+      id: data.id,
+      userId: data.user_id,
+      country: profileData.country || 'Unknown',
+      avatar_url: profileData.avatar_url || '',
+      updatedAt: data.updated_at,
+      createdAt: data.updated_at
+    };
   }
 };
 

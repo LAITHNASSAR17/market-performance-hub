@@ -24,7 +24,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Set initial authenticated state to true and provide a mock user
   const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>({
@@ -39,7 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check for active session on mount
     checkSession();
   }, []);
 
@@ -67,8 +65,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      // Since we don't have direct access to profiles table, we'll use user_preferences
-      // or just return a mock user with default values
       try {
         const { data: prefsData, error: prefsError } = await supabase
           .from('user_preferences')
@@ -80,8 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.warn('No user preferences found, returning default user data');
         }
 
-        // Try to get user data from auth.admin.getUserById - this may not be available
-        // in client-side code, so we'll handle the error gracefully
         const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
         
         if (userError) {
@@ -113,7 +107,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Error fetching user data, using default values', err);
       }
       
-      // Return default user if other methods fail
       return {
         id: userId,
         name: 'User',
@@ -131,8 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getUser = async (userId: string) => {
     try {
-      // We can't use "profiles" since it doesn't exist in the database
-      // Instead we'll use user_preferences to check if user exists
       const { data, error } = await supabase
         .from('user_preferences')
         .select('*')
@@ -144,13 +135,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
-      // Get user data from auth.user - we can't directly query this
-      // So we'll create a user object with default values
       const user: User = {
         id: userId,
-        name: 'User', // Default name
-        email: '', // We don't have access to email from preferences
-        role: 'user', // Default role
+        name: 'User',
+        email: '',
+        role: 'user',
         isAdmin: false,
         isBlocked: false,
         subscription_tier: 'free'
@@ -165,19 +154,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getAllUsers = async (): Promise<User[]> => {
     try {
-      // Since we don't have direct access to auth.users, we'll simulate this
-      // In a real application, you would use a cloud function or server-side logic
-      // to retrieve users from auth.users
-      
-      // For simulation purposes, we're returning the stored users or mock data
       if (users.length > 0) {
         return users;
       }
       
-      // Since profiles table doesn't exist, we'll use mock data
-      // In a real app, you would need to create a profiles table
-      
-      // Create mock users for development
       const mockUsers: User[] = [
         {
           id: '1',
@@ -262,7 +242,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
 
-      // Don't automatically log in since email verification may be required
       toast({
         title: "Registration Success",
         description: "Please check your email to verify your account",
@@ -317,14 +296,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (!user) throw new Error('No user logged in');
       
-      // Update user metadata in auth
       const { error } = await supabase.auth.updateUser({
         data: userData
       });
 
       if (error) throw error;
 
-      // Update local user state
       setUser({ ...user, ...userData });
       
       toast({
@@ -424,7 +401,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       await getAllUsers();
       
-      // Update current user if it's the same
       if (user?.id === updatedUser.id) {
         setUser(updatedUser);
       }
