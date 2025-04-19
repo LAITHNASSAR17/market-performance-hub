@@ -1,11 +1,9 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 
-// Extend the User type from Supabase to include our custom fields
 interface ExtendedUser extends User {
   name?: string;
   subscription_tier?: string;
@@ -20,12 +18,12 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>; // Alias for signIn
+  login: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  logout: () => Promise<void>; // Alias for signOut for compatibility
+  logout: () => Promise<void>;
   handleRegister: (formData: any) => Promise<void>;
   handleForgotPassword: (email: string) => Promise<void>;
-  sendPasswordResetEmail: (email: string) => Promise<void>; // Alias for backward compatibility
+  sendPasswordResetEmail: (email: string) => Promise<void>;
   handleUpdatePassword: (accessToken: string, newPassword: string) => Promise<void>;
   handleVerifyEmail: (token: string, type: string) => Promise<void>;
   getAllUsers: () => Promise<void>;
@@ -56,14 +54,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         
         if (session?.user) {
-          // Get user profile from profiles table
           const { data: profileData } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
             
-          // Combine auth user with profile data
           const extendedUser: ExtendedUser = {
             ...session.user,
             name: profileData?.name || '',
@@ -99,14 +95,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         try {
-          // Get user profile from profiles table
           const { data: profileData } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
             
-          // Combine auth user with profile data
           const extendedUser: ExtendedUser = {
             ...session.user,
             name: profileData?.name || '',
@@ -128,13 +122,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // Cleanup subscription on unmount
     return () => {
       subscription.unsubscribe();
     };
   }, [toast]);
 
-  // Fix 1: Add proper login method with email and password
   const signIn = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
@@ -154,7 +146,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "مرحباً بك مرة أخرى",
       });
       
-      // Navigate only if login was successful
       if (data.session) {
         navigate('/dashboard');
       }
@@ -180,8 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
-  
-  // Alias for backward compatibility
+
   const login = signIn;
 
   const signOut = async (): Promise<void> => {
@@ -207,7 +197,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Alias for backward compatibility
   const logout = signOut;
 
   const handleRegister = async (formData: any): Promise<void> => {
@@ -227,51 +216,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('User not found after signup');
       }
 
-      // Create profile for the new user
-      try {
-        // Generate UUID for the new user to match the auth.users id
-        const userId = data.user?.id;
-        
-        if (!userId) {
-          throw new Error('User ID not available');
-        }
-
-        // Fix 2: Add the user ID to the profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            name: formData.name,
-            email: formData.email,
-            role: 'user',
-            is_blocked: false,
-            email_verified: false,
-            subscription_tier: 'free'
-          });
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          throw profileError;
-        }
-
-        toast({
-          title: "نجاح",
-          description: "تم التسجيل بنجاح! تحقق من بريدك الإلكتروني للتحقق من حسابك",
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user?.id,
+          name: formData.name,
+          email: formData.email,
+          role: 'user',
+          is_blocked: false,
+          email_verified: false,
+          subscription_tier: 'free'
         });
-        navigate('/verify-email');
-      } catch (error: any) {
-        console.error('Error during post-registration:', error);
-        toast({
-          title: "خطأ",
-          description: error.message || "فشل إنشاء الملف الشخصي",
-          variant: "destructive",
-        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        throw profileError;
       }
+
+      toast({
+        title: "نجاح",
+        description: "تم التسجيل بنجاح! تحقق من بريدك الإلكتروني للتحقق من حسابك",
+      });
+      navigate('/verify-email');
     } catch (error: any) {
       console.error('Exception signing up:', error);
       toast({
         title: "خطأ",
-        description: error.message || "فشل التسجيل",
+        description: error.message || "فشل إنشاء الملف الشخصي",
         variant: "destructive",
       });
     } finally {
@@ -307,7 +278,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Alias for backward compatibility
   const sendPasswordResetEmail = handleForgotPassword;
 
   const handleUpdatePassword = async (accessToken: string, newPassword: string): Promise<void> => {
@@ -338,43 +308,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fix 3: Update the verification method
-  const handleVerifyEmail = async (token: string, type: string): Promise<void> => {
-    setIsLoading(true);
+  const handleVerifyEmail = async (token: string, type: string) => {
     try {
-      // Convert type string to EmailOtpType
-      const otpType = (type === 'email') ? 'email' : 'phone_change';
-      
-      const { error } = await supabase.auth.verifyOtp({
-        token,
-        type: otpType,
-      });
-
-      if (error) {
-        console.error('Error verifying email:', error);
-        throw error;
+      if (type === 'email') {
+        const { error } = await supabase.auth.verifyOtp({
+          token,
+          type: 'email',
+          email: ''
+        });
+        
+        if (error) throw error;
+        
+        return { success: true };
+      } else if (type === 'phone_change') {
+        const { error } = await supabase.auth.verifyOtp({
+          token,
+          type: 'phone_change',
+          phone: ''
+        });
+        
+        if (error) throw error;
+        
+        return { success: true };
+      } else {
+        throw new Error('Invalid verification type');
       }
-
-      toast({
-        description: "تم التحقق من البريد الإلكتروني بنجاح!",
-      });
-      navigate('/login');
-    } catch (error: any) {
-      console.error('Exception verifying email:', error);
-      toast({
-        title: "خطأ",
-        description: error.message || "فشل التحقق من البريد الإلكتروني",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error('Error verifying email:', error);
+      throw error;
     }
   };
 
-  // Admin functions
   const getAllUsers = async (): Promise<void> => {
     try {
-      // Get users from the profiles table (not auth.users which isn't accessible via API)
       const { data, error } = await supabase
         .from('profiles')
         .select('*');
@@ -400,7 +366,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
-      // Refresh users list
       getAllUsers();
       
       toast({
@@ -426,7 +391,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
-      // Refresh users list
       getAllUsers();
       
       toast({
@@ -444,8 +408,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const changePassword = async (userId: string, newPassword: string): Promise<void> => {
-    // Note: In a real application, this would need to be handled by a server function
-    // as client-side code can't change other users' passwords directly
     toast({
       title: "العملية غير مدعومة",
       description: "تغيير كلمات المرور للمستخدمين الآخرين يتطلب تنفيذ على جانب الخادم",
@@ -468,7 +430,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
-      // Refresh users list
       getAllUsers();
       
       toast({

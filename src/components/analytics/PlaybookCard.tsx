@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface PlaybookCardProps {
-  playbook: PlaybookEntry;
+  playbook: PlaybookEntry | any; // Using any temporarily to fix type issues
   onEdit?: (updatedData: Partial<PlaybookEntry>) => void;
   onDelete?: () => void;
   onViewDetails?: (playbookId: string) => void;
@@ -108,8 +108,8 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Exp. Value</span>
               </div>
               <div className={`text-sm font-semibold truncate text-center ${
-                (playbook.expectedValue || 0) > 0 ? 'text-green-500' : 
-                (playbook.expectedValue || 0) < 0 ? 'text-red-500' : ''
+                Number(playbook.expectedValue || 0) > 0 ? 'text-green-500' : 
+                Number(playbook.expectedValue || 0) < 0 ? 'text-red-500' : ''
               }`}>
                 {playbook.expectedValue || 0}
               </div>
@@ -121,9 +121,9 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Profit Factor</span>
               </div>
               <div className={`text-sm font-semibold truncate text-center ${
-                (playbook.profitFactor || 0) > 1 ? 'text-green-500' : 'text-red-500'
+                Number(playbook.profitFactor || 0) > 1 ? 'text-green-500' : 'text-red-500'
               }`}>
-                {playbook.profitFactor?.toFixed(2) || '0.00'}
+                {Number(playbook.profitFactor || 0).toFixed(2)}
               </div>
             </div>
             
@@ -133,10 +133,10 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Net P/L</span>
               </div>
               <div className={`text-sm font-semibold truncate text-center ${
-                (playbook.netProfitLoss || 0) > 0 ? 'text-green-500' : 
-                (playbook.netProfitLoss || 0) < 0 ? 'text-red-500' : ''
+                Number(playbook.netProfitLoss || 0) > 0 ? 'text-green-500' : 
+                Number(playbook.netProfitLoss || 0) < 0 ? 'text-red-500' : ''
               }`}>
-                ${playbook.netProfitLoss?.toFixed(2) || '0.00'}
+                ${Number(playbook.netProfitLoss || 0).toFixed(2)}
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Avg Winner</span>
               </div>
               <div className="text-sm font-semibold truncate text-center text-green-500">
-                ${playbook.avgWinner?.toFixed(2) || '0.00'}
+                ${Number(playbook.avgWinner || 0).toFixed(2)}
               </div>
             </div>
             
@@ -166,13 +166,13 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Avg Loser</span>
               </div>
               <div className="text-sm font-semibold truncate text-center text-red-500">
-                ${playbook.avgLoser?.toFixed(2) || '0.00'}
+                ${Number(playbook.avgLoser || 0).toFixed(2)}
               </div>
             </div>
           </div>
           
           <div className="flex flex-wrap gap-1 mb-4">
-            {playbook.tags.map((tag, i) => (
+            {playbook.tags.map((tag: string, i: number) => (
               <Badge key={i} variant="outline" className="truncate max-w-[100px]">{tag}</Badge>
             ))}
           </div>
@@ -233,7 +233,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
               <h3 className="font-semibold mb-2">Strategy Description</h3>
               <p className="text-sm text-muted-foreground">{playbook.description}</p>
               <div className="flex flex-wrap gap-1 mt-2">
-                {playbook.tags.map((tag, i) => (
+                {playbook.tags.map((tag: string, i: number) => (
                   <Badge key={i} variant="secondary">{tag}</Badge>
                 ))}
               </div>
@@ -258,7 +258,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                   <div className="text-sm text-muted-foreground flex items-center">
                     <BarChart className="h-3 w-3 mr-1" /> Profit Factor
                   </div>
-                  <div className="text-xl font-bold">{playbook.profitFactor?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xl font-bold">{Number(playbook.profitFactor || 0).toFixed(2)}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
@@ -282,13 +282,13 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                   <div className="text-sm text-muted-foreground flex items-center">
                     <Trophy className="h-3 w-3 mr-1" /> Avg. Winner
                   </div>
-                  <div className="text-xl font-bold text-green-500">${playbook.avgWinner?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xl font-bold text-green-500">${Number(playbook.avgWinner || 0).toFixed(2)}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <AlertTriangle className="h-3 w-3 mr-1" /> Avg. Loser
                   </div>
-                  <div className="text-xl font-bold text-red-500">${playbook.avgLoser?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xl font-bold text-red-500">${Number(playbook.avgLoser || 0).toFixed(2)}</div>
                 </div>
               </div>
             </div>
@@ -298,14 +298,17 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <h3 className="font-semibold mb-2">Playbook Rules</h3>
                 <div className="space-y-3">
                   {['entry', 'exit', 'risk', 'custom'].map((ruleType) => {
-                    const rules = playbook.rules?.filter(r => r.type === ruleType);
+                    const rules = Array.isArray(playbook.rules) 
+                      ? playbook.rules.filter((r: PlaybookRule) => r.type === ruleType)
+                      : [];
+                      
                     if (!rules || rules.length === 0) return null;
                     
                     return (
                       <div key={ruleType} className="space-y-1">
                         <h4 className="text-sm font-medium capitalize">{ruleType} Rules</h4>
                         <div className="space-y-1 pl-1">
-                          {rules.map((rule) => (
+                          {rules.map((rule: PlaybookRule) => (
                             <div key={rule.id} className="flex items-start space-x-2">
                               <Checkbox id={rule.id} className="mt-0.5" />
                               <label htmlFor={rule.id} className="text-sm">

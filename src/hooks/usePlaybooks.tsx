@@ -7,19 +7,19 @@ export interface IPlaybook {
   name: string;
   description: string;
   winRate: number;
-  rMultiple: string | number;
-  expectedValue: string | number;
+  rMultiple: number; // Changed from string | number to number
+  expectedValue: number; // Changed from string | number to number
   rating: number;
   tags: string[];
   isPrivate?: boolean;
   category?: string;
   netProfitLoss?: number;
   totalTrades?: number;
-  rules?: string[];
+  rules?: PlaybookRule[]; // Changed from string[] to PlaybookRule[]
   success_criteria?: string[];
   avgWinner?: number;
   avgLoser?: number;
-  profitFactor?: string;
+  profitFactor?: number; // Changed from string to number
   missedTrades?: number;
 }
 
@@ -81,10 +81,14 @@ export const usePlaybooks = () => {
         category: "Momentum",
         netProfitLoss: 1250,
         totalTrades: 35,
-        profitFactor: "1.8",
+        profitFactor: 1.8, // Changed from string to number
         avgWinner: 120,
         avgLoser: -67,
-        rules: ["Follow the trend", "Wait for pullback", "Confirm with volume"],
+        rules: [
+          { id: "tf1", description: "Follow the trend", isRequired: true, type: "entry" },
+          { id: "tf2", description: "Wait for pullback", isRequired: true, type: "entry" },
+          { id: "tf3", description: "Confirm with volume", isRequired: false, type: "entry" }
+        ],
         success_criteria: ["Trend continues", "2:1 reward to risk ratio"]
       },
       {
@@ -100,10 +104,14 @@ export const usePlaybooks = () => {
         category: "Breakout",
         netProfitLoss: 980,
         totalTrades: 28,
-        profitFactor: "1.5",
+        profitFactor: 1.5, // Changed from string to number
         avgWinner: 140,
         avgLoser: -72,
-        rules: ["Identify clear range", "Wait for volume confirmation", "Avoid trading into news"],
+        rules: [
+          { id: "rb1", description: "Identify clear range", isRequired: true, type: "entry" },
+          { id: "rb2", description: "Wait for volume confirmation", isRequired: true, type: "entry" },
+          { id: "rb3", description: "Avoid trading into news", isRequired: false, type: "risk" }
+        ],
         success_criteria: ["Price makes new high/low", "Volume increases on breakout"]
       },
       {
@@ -119,10 +127,14 @@ export const usePlaybooks = () => {
         category: "Technical",
         netProfitLoss: 1750,
         totalTrades: 42,
-        profitFactor: "2.0",
+        profitFactor: 2.0, // Changed from string to number
         avgWinner: 110,
         avgLoser: -60,
-        rules: ["Draw Fibonacci levels on major moves", "Wait for price to respect level", "Look for confluence with other indicators"],
+        rules: [
+          { id: "fib1", description: "Draw Fibonacci levels on major moves", isRequired: true, type: "entry" },
+          { id: "fib2", description: "Wait for price to respect level", isRequired: true, type: "entry" },
+          { id: "fib3", description: "Look for confluence with other indicators", isRequired: false, type: "entry" }
+        ],
         success_criteria: ["Price bounces from key level", "Trend continuation"]
       }
     ];
