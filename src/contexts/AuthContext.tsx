@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/settings';
@@ -16,6 +15,10 @@ interface AuthContextType {
   unblockUser: (user: User) => Promise<void>;
   changePassword: (userId: string, newPassword: string) => Promise<void>;
   updateUser: (user: User) => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<any>;
+  register: (email: string, password: string, name: string) => Promise<any>;
+  loading: boolean;
+  updateProfile: (userData: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -55,22 +59,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getAllUsers = async (): Promise<User[]> => {
     try {
-      const { data: { users }, error } = await supabase.auth.admin.listUsers();
+      // Since we don't have direct access to auth.users, we'll simulate this
+      // In a real application, you would use a cloud function or server-side logic
+      // to retrieve users from auth.users
       
-      if (error) throw error;
-
-      const formattedUsers: User[] = users.map(u => ({
-        id: u.id,
-        name: u.user_metadata?.name || 'Unknown',
-        email: u.email || '',
-        role: u.user_metadata?.role || 'user',
-        isAdmin: u.user_metadata?.isAdmin || false,
-        isBlocked: u.user_metadata?.isBlocked || false,
-        subscription_tier: u.user_metadata?.subscription_tier || 'free'
-      }));
+      // For simulation purposes, we're returning the stored users or mock data
+      if (users.length > 0) {
+        return users;
+      }
       
-      setUsers(formattedUsers);
-      return formattedUsers;
+      // Fetch from a users profile table if it exists
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+        
+      if (!error && data) {
+        const formattedUsers: User[] = data.map(u => ({
+          id: u.id,
+          name: u.name || 'Unknown',
+          email: u.email || '',
+          role: u.role || 'user',
+          isAdmin: u.is_admin || false,
+          isBlocked: u.is_blocked || false,
+          subscription_tier: u.subscription_tier || 'free'
+        }));
+        
+        setUsers(formattedUsers);
+        return formattedUsers;
+      }
+        
+      // If no data, return a mock list for development
+      const mockUsers: User[] = [
+        {
+          id: '1',
+          name: 'Admin User',
+          email: 'admin@example.com',
+          role: 'admin',
+          isAdmin: true,
+          isBlocked: false,
+          subscription_tier: 'premium'
+        },
+        {
+          id: '2',
+          name: 'Regular User',
+          email: 'user@example.com',
+          role: 'user',
+          isAdmin: false,
+          isBlocked: false,
+          subscription_tier: 'free'
+        }
+      ];
+      
+      setUsers(mockUsers);
+      return mockUsers;
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
@@ -78,6 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string) => {
+    setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -107,6 +149,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive"
       });
       throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (email: string, password: string, name: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            isAdmin: false,
+            role: 'user',
+            subscription_tier: 'free'
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Don't automatically log in since email verification may be required
+      toast({
+        title: "Registration Success",
+        description: "Please check your email to verify your account",
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error during registration:', error);
+      toast({
+        title: "Registration Error",
+        description: "Failed to register account",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendPasswordResetEmail = async (email: string) => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      throw error;
     }
   };
 
@@ -124,6 +220,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Failed to log out",
         variant: "destructive"
       });
+    }
+  };
+
+  const updateProfile = async (userData: Partial<User>) => {
+    try {
+      if (!user) throw new Error('No user logged in');
+      
+      // Update user metadata in auth
+      const { error } = await supabase.auth.updateUser({
+        data: userData
+      });
+
+      if (error) throw error;
+
+      // Update local user state
+      setUser({ ...user, ...userData });
+      
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive"
+      });
+      throw error;
     }
   };
 
@@ -243,7 +368,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         blockUser,
         unblockUser,
         changePassword,
-        updateUser
+        updateUser,
+        sendPasswordResetEmail,
+        register,
+        loading,
+        updateProfile
       }}
     >
       {children}

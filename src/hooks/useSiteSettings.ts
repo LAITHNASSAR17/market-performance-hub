@@ -1,155 +1,98 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useEffect } from 'react';
-
-interface SiteSettings {
-  site_name: string;
-  company_email: string;
-  support_phone?: string;
-  copyright_text?: string;
-}
+import { SiteSettings } from '@/types/settings';
+import { useToast } from '@/hooks/use-toast';
 
 export const useSiteSettings = () => {
-  const queryClient = useQueryClient();
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['siteSettings'],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('site_settings')
-          .select('*')
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching site settings:', error);
-          throw error;
-        }
-        
-        if (!data) {
-          // No records found, return default values
-          return {
-            site_name: 'TradeTracker',
-            company_email: 'support@tradetracker.com'
-          } as SiteSettings;
-        }
-        
-        return data as SiteSettings;
-      } catch (error) {
-        console.error('Error fetching site settings:', error);
-        // Return default values in case of error
-        return {
-          site_name: 'TradeTracker',
-          company_email: 'support@tradetracker.com'
-        } as SiteSettings;
-      }
-    }
-  });
-
-  // Use useEffect to update document title when settings are loaded
   useEffect(() => {
-    if (settings?.site_name) {
-      localStorage.setItem('siteName', settings.site_name);
-      document.title = settings.site_name;
-      
-      // Update favicon if it exists in localStorage
-      const favicon = localStorage.getItem('favicon');
-      if (favicon) {
-        updateFavicon(favicon);
-      }
-    }
-  }, [settings]);
+    fetchSettings();
+  }, []);
 
-  const updateSettings = useMutation({
-    mutationFn: async (newSettings: Partial<SiteSettings>) => {
-      console.log('Updating settings with:', newSettings);
-      
-      // Check if a record already exists
-      const { data: existingSettings } = await supabase
+  const fetchSettings = async () => {
+    try {
+      const { data, error } = await supabase
         .from('site_settings')
         .select('*')
+        .order('created_at', { ascending: false })
         .limit(1)
-        .maybeSingle();
+        .single();
+
+      if (error) throw error;
+
+      // Convert database response to match our SiteSettings type
+      // We need to add company_email if it doesn't exist
+      const formattedSettings: SiteSettings = {
+        id: data.id,
+        site_name: data.site_name,
+        theme: data.theme || 'light',
+        language: data.language || 'en',
+        company_email: 'support@example.com', // Add default value since it's required by type
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      setSettings(formattedSettings);
+    } catch (error) {
+      console.error('Error fetching site settings:', error);
+      setError('Failed to fetch site settings');
       
-      if (existingSettings) {
-        console.log('Existing settings found, updating...');
-        // Update existing record
-        const { data, error } = await supabase
-          .from('site_settings')
-          .update(newSettings)
-          .eq('site_name', existingSettings.site_name)
-          .select();
-
-        if (error) {
-          console.error('Error updating settings:', error);
-          throw error;
-        }
-        
-        return data?.[0] || existingSettings;
-      } else {
-        console.log('No existing settings found, creating new record...');
-        // Insert a new record
-        const fullSettings = {
-          site_name: newSettings.site_name || 'TradeTracker',
-          company_email: newSettings.company_email || 'support@tradetracker.com',
-          ...newSettings
-        };
-        
-        const { data, error } = await supabase
-          .from('site_settings')
-          .insert([fullSettings])
-          .select();
-
-        if (error) {
-          console.error('Error creating settings:', error);
-          throw error;
-        }
-
-        return data?.[0] || fullSettings;
-      }
-    },
-    onSuccess: (data) => {
-      console.log('Settings updated successfully:', data);
-      // Update localStorage and document title when settings are updated
-      if (data?.site_name) {
-        localStorage.setItem('siteName', data.site_name);
-        document.title = data.site_name;
-      }
-      queryClient.invalidateQueries({ queryKey: ['siteSettings'] });
-    },
-    onError: (error) => {
-      console.error('Error in updateSettings mutation:', error);
-    }
-  });
-
-  // Function to update favicon
-  const updateFavicon = (iconUrl: string) => {
-    const linkElements = document.querySelectorAll("link[rel*='icon']");
-    
-    if (linkElements.length > 0) {
-      // Update existing favicon links
-      linkElements.forEach(link => {
-        (link as HTMLLinkElement).href = iconUrl;
+      // Create default settings object for fallback
+      setSettings({
+        id: 'default',
+        site_name: 'Trading Platform',
+        theme: 'light',
+        language: 'en',
+        company_email: 'support@example.com',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       });
-    } else {
-      // Create a new favicon link if none exists
-      const link = document.createElement('link');
-      link.rel = 'icon';
-      link.href = iconUrl;
-      document.head.appendChild(link);
+    } finally {
+      setLoading(false);
     }
-    
-    // Save to localStorage
-    localStorage.setItem('favicon', iconUrl);
   };
 
-  return {
-    settings,
-    isLoading,
-    updateSettings: updateSettings.mutate,
-    isUpdating: updateSettings.isPending,
-    updateFavicon
+  const updateSettings = async (newSettings: Partial<SiteSettings>) => {
+    try {
+      if (!settings) throw new Error('No settings to update');
+
+      const { error } = await supabase
+        .from('site_settings')
+        .update({
+          site_name: newSettings.site_name || settings.site_name,
+          theme: newSettings.theme || settings.theme,
+          language: newSettings.language || settings.language,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', settings.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setSettings({
+        ...settings,
+        ...newSettings,
+        updated_at: new Date().toISOString()
+      });
+
+      toast({
+        title: "Success",
+        description: "Site settings updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating site settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update site settings",
+        variant: "destructive"
+      });
+    }
   };
+
+  return { settings, loading, error, updateSettings };
 };

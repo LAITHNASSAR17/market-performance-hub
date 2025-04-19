@@ -1,8 +1,10 @@
+
 export interface SiteSettings {
   id: string;
   site_name: string;
   theme?: string;
   language?: string;
+  company_email?: string; // Added this as it's required by some components
   created_at: string;
   updated_at: string;
 }
@@ -49,7 +51,7 @@ export interface Trade {
   id: string;
   userId: string;
   pair: string;
-  symbol: string;
+  symbol: string; // Make sure this exists for type consistency
   type: 'Buy' | 'Sell';
   entry: number;
   exit: number | null;

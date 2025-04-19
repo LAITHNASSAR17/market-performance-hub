@@ -14,6 +14,13 @@ interface TradeContextType {
   deleteTrade: (id: string) => Promise<void>;
   addHashtag: (hashtag: string) => void;
   removeHashtag: (hashtag: string) => void;
+  // Add missing properties
+  getTrade: (id: string) => Trade | undefined;
+  pairs: string[];
+  accounts: string[];
+  getAllTrades: () => Promise<Trade[]>;
+  addSymbol: (symbol: string) => void;
+  tradingAccounts: string[];
 }
 
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
@@ -24,6 +31,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const [pairs, setPairs] = useState<string[]>([]);
+  const [accounts, setAccounts] = useState<string[]>(['Demo', 'Main Trading', 'Practice']);
+  const tradingAccounts = accounts; // Alias for components expecting this name
 
   useEffect(() => {
     fetchTrades();
@@ -43,7 +53,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         userId: trade.user_id,
         pair: trade.symbol,
         symbol: trade.symbol,
-        type: trade.direction as 'Buy' | 'Sell',
+        type: trade.direction === 'long' ? 'Buy' : 'Sell',
         entry: trade.entry_price,
         exit: trade.exit_price,
         lotSize: trade.quantity,
@@ -54,7 +64,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         profitLoss: trade.profit_loss || 0,
         durationMinutes: trade.duration_minutes,
         notes: trade.notes || '',
-        date: trade.entry_date,
+        date: trade.entry_date.split('T')[0],
         account: 'Demo', // Get from trade or user preferences
         imageUrl: trade.image_url,
         beforeImageUrl: trade.before_image_url,
@@ -77,6 +87,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ));
       setAllHashtags(hashtags);
       
+      // Extract unique pairs/symbols
+      const uniquePairs = Array.from(new Set(
+        formattedTrades.map(trade => trade.symbol)
+      ));
+      setPairs(uniquePairs.length > 0 ? uniquePairs : ['EURUSD', 'GBPUSD', 'USDJPY']);
+      
     } catch (error) {
       console.error('Error fetching trades:', error);
       setError('Failed to fetch trades');
@@ -90,14 +106,74 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  // Get a single trade by ID
+  const getTrade = (id: string): Trade | undefined => {
+    return trades.find(trade => trade.id === id);
+  };
+
+  // Get all trades (for admin)
+  const getAllTrades = async (): Promise<Trade[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('trades')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedTrades: Trade[] = data.map(trade => ({
+        id: trade.id,
+        userId: trade.user_id,
+        pair: trade.symbol,
+        symbol: trade.symbol,
+        type: trade.direction === 'long' ? 'Buy' : 'Sell',
+        entry: trade.entry_price,
+        exit: trade.exit_price,
+        lotSize: trade.quantity,
+        stopLoss: trade.stop_loss,
+        takeProfit: trade.take_profit,
+        riskPercentage: 0,
+        returnPercentage: 0,
+        profitLoss: trade.profit_loss || 0,
+        durationMinutes: trade.duration_minutes,
+        notes: trade.notes || '',
+        date: trade.entry_date.split('T')[0],
+        account: 'Demo',
+        imageUrl: trade.image_url,
+        beforeImageUrl: trade.before_image_url,
+        afterImageUrl: trade.after_image_url,
+        hashtags: trade.tags || [],
+        createdAt: trade.created_at,
+        commission: trade.fees || 0,
+        rating: trade.rating || 0,
+        total: trade.profit_loss || 0,
+        playbook: trade.playbook,
+        followedRules: trade.followed_rules,
+        marketSession: trade.market_session
+      }));
+
+      return formattedTrades;
+    } catch (error) {
+      console.error('Error fetching all trades:', error);
+      return [];
+    }
+  };
+
+  // Add a new trading symbol
+  const addSymbol = (symbol: string) => {
+    if (!pairs.includes(symbol)) {
+      setPairs([...pairs, symbol]);
+    }
+  };
+
   const addTrade = async (trade: Omit<Trade, 'id' | 'createdAt'>) => {
     try {
       const { data, error } = await supabase
         .from('trades')
         .insert({
           user_id: trade.userId,
-          symbol: trade.symbol,
-          direction: trade.type,
+          symbol: trade.symbol || trade.pair, // Use either one
+          direction: trade.type === 'Buy' ? 'long' : 'short',
           entry_price: trade.entry,
           exit_price: trade.exit,
           quantity: trade.lotSize,
@@ -230,7 +306,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateTrade,
         deleteTrade,
         addHashtag,
-        removeHashtag
+        removeHashtag,
+        getTrade,
+        pairs,
+        accounts,
+        getAllTrades,
+        addSymbol,
+        tradingAccounts
       }}
     >
       {children}
