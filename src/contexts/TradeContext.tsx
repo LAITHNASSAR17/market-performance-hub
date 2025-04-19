@@ -351,7 +351,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               id: trade.id,
               userId: trade.user_id,
               account: trade.account_id ? 'Account ' + trade.account_id.substring(0, 5) : 'Main Trading',
-              date: trade.entry_date.split('T')[0],
+              date: trade.entry_date ? trade.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
               pair: trade.symbol,
               type: trade.direction === 'long' ? 'Buy' : 'Sell',
               entry: trade.entry_price,
@@ -448,10 +448,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         insertData['market_session'] = newTradeData.marketSession;
       }
       
+      console.log('Inserting trade with data:', insertData);
+      
       const { data, error } = await supabase
         .from('trades')
         .insert(insertData)
-        .select()
+        .select('*')
         .single();
 
       if (error) {
