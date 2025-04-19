@@ -27,6 +27,7 @@ import { useSubscriptionFeatures } from '@/hooks/useSubscriptionFeatures';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import { Trade } from '@/types/trade';
 
+// Updated interface to match what Yup schema will infer
 interface TradeFormValues {
   pair: string;
   account: string;
@@ -46,10 +47,11 @@ interface TradeFormValues {
   imageUrl?: string;
   beforeImageUrl?: string;
   afterImageUrl?: string;
-  rating: number;  // Changed from optional to required to match Trade type
+  rating: number;
   commission: number;
 }
 
+// Fixed Yup schema with correct validation types
 const tradeSchema = yup.object({
   pair: yup.string().required('Trading pair is required'),
   account: yup.string().required('Account is required'),
@@ -58,20 +60,20 @@ const tradeSchema = yup.object({
   durationMinutes: yup.number().required('Duration is required').min(1, 'Duration must be at least 1 minute'),
   entry: yup.number().required('Entry price is required'),
   exit: yup.number().required('Exit price is required'),
-  stopLoss: yup.number().notRequired(),
-  takeProfit: yup.number().notRequired(),
+  stopLoss: yup.number().nullable().optional(),
+  takeProfit: yup.number().nullable().optional(),
   lotSize: yup.number().required('Lot size is required').min(0.01, 'Lot size must be at least 0.01'),
   riskPercentage: yup.number().required('Risk percentage is required').min(0, 'Risk must be between 0 and 100').max(100, 'Risk must be between 0 and 100'),
   profitLoss: yup.number().required('Profit/Loss is required'),
   returnPercentage: yup.number().required('Return percentage is required'),
-  notes: yup.string().notRequired(),
-  hashtags: yup.array().of(yup.string()).notRequired(),
-  imageUrl: yup.string().notRequired(),
-  beforeImageUrl: yup.string().notRequired(),
-  afterImageUrl: yup.string().notRequired(),
-  rating: yup.number().required().default(0),  // Changed from optional to required with default
-  commission: yup.number().required().default(0),  // Made explicitly required with default
-});
+  notes: yup.string().optional(),
+  hashtags: yup.array().of(yup.string()).default([]),
+  imageUrl: yup.string().nullable().optional(),
+  beforeImageUrl: yup.string().nullable().optional(),
+  afterImageUrl: yup.string().nullable().optional(),
+  rating: yup.number().required().default(0),
+  commission: yup.number().required().default(0),
+}).required();
 
 const AddTrade: React.FC = () => {
   const { getImageLimit, canUseFeature } = useSubscriptionFeatures();
@@ -86,9 +88,21 @@ const AddTrade: React.FC = () => {
   } = useForm<TradeFormValues>({
     resolver: yupResolver(tradeSchema),
     defaultValues: {
+      pair: '',
+      account: '',
+      type: 'Buy',
+      date: new Date(),
+      durationMinutes: 0,
+      entry: 0,
+      exit: 0,
+      lotSize: 0,
+      riskPercentage: 0,
+      profitLoss: 0,
+      returnPercentage: 0,
+      notes: '',
+      hashtags: [],
       commission: 0,
-      rating: 0,  // Add default for rating
-      hashtags: []  // Add default for hashtags
+      rating: 0
     }
   });
   const { addTrade, updateTrade, getTrade } = useTrade();
@@ -125,7 +139,7 @@ const AddTrade: React.FC = () => {
         setValue('returnPercentage', existingTrade.returnPercentage);
         setValue('notes', existingTrade.notes);
         setValue('commission', existingTrade.commission || 0);
-        setValue('rating', existingTrade.rating || 0);  // Set default for rating
+        setValue('rating', existingTrade.rating || 0);
         setSelectedTags(existingTrade.hashtags || []);
         setImageUrl(existingTrade.imageUrl);
         setBeforeImageUrl(existingTrade.beforeImageUrl);
@@ -146,7 +160,7 @@ const AddTrade: React.FC = () => {
       stopLoss: isStopLossEnabled ? data.stopLoss : null,
       takeProfit: isTakeProfitEnabled ? data.takeProfit : null,
       commission: data.commission || 0,
-      rating: data.rating || 0,  // Ensure rating is always provided
+      rating: data.rating || 0,
       // Convert date to string format
       date: format(data.date, 'yyyy-MM-dd'),
       // Calculate the total (profit/loss minus commission)
@@ -160,7 +174,7 @@ const AddTrade: React.FC = () => {
         description: "Your trade has been updated successfully",
       });
     } else {
-      addTrade(tradeData);
+      addTrade(tradeData as Omit<Trade, 'id' | 'userId' | 'createdAt'>);
       toast({
         title: "Trade Added",
         description: "Your trade has been added successfully",
