@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -106,7 +105,7 @@ const AddTrade: React.FC = () => {
       accountId: account,
       date: tradeDate,
       entryDate: new Date(tradeDate),
-      direction: type === 'Buy' ? 'long' : 'short',
+      direction: type === 'long' ? 'long' : 'short',
       entryPrice: entry,
       exitPrice: exit,
       quantity: lotSize,
@@ -273,7 +272,10 @@ const AddTrade: React.FC = () => {
 
           <div className="mb-4">
             <Label htmlFor="type">Type</Label>
-            <Select value={type} onValueChange={setType}>
+            <Select 
+              value={type} 
+              onValueChange={(value: 'Buy' | 'Sell') => setType(value)}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select trade type" />
               </SelectTrigger>
