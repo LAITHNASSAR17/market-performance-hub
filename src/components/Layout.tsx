@@ -68,12 +68,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-accent hover:text-accent-foreground ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-base transition-colors hover:bg-accent hover:text-accent-foreground ${
                   location.pathname === item.path ? 'bg-accent text-accent-foreground' : ''
                 }`}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
-                <span>{item.label}</span>
+                <span className="line-clamp-1">{item.label}</span>
               </Link>
             ))}
           </nav>
@@ -111,7 +111,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link to="/profile">User Profile</Link>
+                      <Link to="/user-profile">User Profile</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
