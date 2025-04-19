@@ -9,7 +9,114 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      trades: {
+        Row: {
+          after_image_url: string | null
+          before_image_url: string | null
+          created_at: string
+          direction: string
+          duration_minutes: number | null
+          entry_date: string
+          entry_price: number
+          exit_date: string | null
+          exit_price: number | null
+          fees: number | null
+          followed_rules: string[] | null
+          id: string
+          image_url: string | null
+          market_session: string | null
+          notes: string | null
+          playbook: string | null
+          profit_loss: number | null
+          quantity: number
+          rating: number | null
+          stop_loss: number | null
+          symbol: string
+          tags: string[]
+          take_profit: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          after_image_url?: string | null
+          before_image_url?: string | null
+          created_at?: string
+          direction: string
+          duration_minutes?: number | null
+          entry_date: string
+          entry_price: number
+          exit_date?: string | null
+          exit_price?: number | null
+          fees?: number | null
+          followed_rules?: string[] | null
+          id?: string
+          image_url?: string | null
+          market_session?: string | null
+          notes?: string | null
+          playbook?: string | null
+          profit_loss?: number | null
+          quantity: number
+          rating?: number | null
+          stop_loss?: number | null
+          symbol: string
+          tags?: string[]
+          take_profit?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          after_image_url?: string | null
+          before_image_url?: string | null
+          created_at?: string
+          direction?: string
+          duration_minutes?: number | null
+          entry_date?: string
+          entry_price?: number
+          exit_date?: string | null
+          exit_price?: number | null
+          fees?: number | null
+          followed_rules?: string[] | null
+          id?: string
+          image_url?: string | null
+          market_session?: string | null
+          notes?: string | null
+          playbook?: string | null
+          profit_loss?: number | null
+          quantity?: number
+          rating?: number | null
+          stop_loss?: number | null
+          symbol?: string
+          tags?: string[]
+          take_profit?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trading_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -1,72 +1,61 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTrade } from '@/contexts/TradeContext';
 
-type AddPairDialogProps = {
+interface AddPairDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onPairAdded: (symbol: string) => void;
-};
+}
 
-const AddPairDialog: React.FC<AddPairDialogProps> = ({
-  isOpen,
-  onClose,
-  onPairAdded
-}) => {
-  const { addSymbol } = useTrade();
+const AddPairDialog: React.FC<AddPairDialogProps> = ({ isOpen, onClose, onPairAdded }) => {
   const [symbol, setSymbol] = useState('');
+  const [error, setError] = useState('');
+  const { addSymbol } = useTrade();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!symbol.trim()) return;
-    
-    // Only add the symbol, without additional details
-    const newSymbol = {
-      symbol,
-      name: symbol,
-      type: 'other' as const
-    };
-    
-    addSymbol(newSymbol);
-    onPairAdded(symbol);
+    if (!symbol) {
+      setError('Please enter a symbol');
+      return;
+    }
+
+    const formattedSymbol = symbol.toUpperCase();
+    addSymbol(formattedSymbol);
+    onPairAdded(formattedSymbol);
     setSymbol('');
-    onClose();
+    setError('');
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>إضافة زوج تداول جديد</DialogTitle>
-          <DialogDescription>
-            أدخل رمز التداول الجديد
-          </DialogDescription>
+          <DialogTitle>Add New Trading Pair</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="symbol">رمز التداول</Label>
-            <Input
-              id="symbol"
-              value={symbol}
-              onChange={(e) => setSymbol(e.target.value)}
-              placeholder="EUR/USD"
-              required
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="symbol">Symbol</Label>
+              <Input
+                id="symbol"
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value)}
+                placeholder="Enter trading pair (e.g., EURUSD)"
+              />
+              {error && <p className="text-sm text-red-500">{error}</p>}
+            </div>
           </div>
-          
-          <DialogFooter className="pt-4">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
-              إلغاء
+              Cancel
             </Button>
-            <Button type="submit">
-              إضافة
-            </Button>
+            <Button type="submit">Add Pair</Button>
           </DialogFooter>
         </form>
       </DialogContent>
