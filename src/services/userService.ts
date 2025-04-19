@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -47,7 +46,8 @@ export const userService = {
       .from('users')
       .insert({
         ...userData,
-        subscription_tier: 'starter', // Set default subscription tier to 'starter'
+        role: userData.role || 'user',
+        subscription_tier: 'starter',
         created_at: now,
         updated_at: now
       })
@@ -86,7 +86,6 @@ export const userService = {
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
     let query = supabase.from('users').select('*');
     
-    // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined) {
         query = query.eq(key, value);
