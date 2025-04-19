@@ -86,6 +86,7 @@ serve(async (req) => {
           - Clear, actionable recommendations for improvement
           
           Return the response as a JSON object with an "analysis" field containing the text.
+          Make it professional and insights-focused, aimed at helping traders improve their performance.
         `;
       } else if (purpose === 'tips') {
         userPrompt = `
@@ -99,17 +100,19 @@ serve(async (req) => {
           - Largest loss: $${stats.largestLoss}
 
           Generate 3-5 specific trading tips focusing on:
-          - Performance improvement
-          - Risk management
-          - Trading psychology
-          - Strategy optimization
+          - Performance improvement opportunities
+          - Risk management strategies
+          - Trading psychology insights
+          - Strategy optimization suggestions
 
           Return the response as a JSON object with an "insights" array, where each item has:
           - id: unique string
-          - title: short tip title
-          - content: detailed explanation
+          - title: short, actionable tip title
+          - content: detailed explanation with specific steps
           - category: one of ["performance", "risk", "psychology", "strategy"]
           - importance: one of ["high", "medium", "low"]
+
+          Make tips specific and actionable, focused on practical improvements.
         `;
       } else {
         userPrompt = `
@@ -124,28 +127,30 @@ serve(async (req) => {
 
           ${trades.length >= 10 ? `
           Analyze the trading patterns and provide 4-6 detailed insights focusing on:
-          - Performance trends and patterns
-          - Risk management effectiveness
-          - Psychological aspects of trading
-          - Strategy strengths and weaknesses
-          - Areas for improvement
-          - Potential optimization opportunities
+          - Performance trends and specific patterns in the data
+          - Risk management effectiveness and areas for improvement
+          - Psychological aspects impacting trading decisions
+          - Strategy strengths and potential optimization areas
+          - Key metrics that need attention
+          - Specific opportunities for performance enhancement
           ` : `
           Provide 3-4 initial insights about:
-          - Current trading approach
-          - Risk management
-          - Areas to focus on
-          - Next steps for improvement
+          - Current trading approach effectiveness
+          - Risk management observations
+          - Key areas requiring immediate focus
+          - Specific next steps for improvement
           `}
           
           ${playbooks.length > 0 ? `Consider these existing trading playbooks: ${JSON.stringify(playbooks.map(p => p.title))}` : ''}
 
           Return the response as a JSON object with an "insights" array, where each item has:
           - id: unique string
-          - title: short insight title
-          - content: detailed explanation (50-100 words)
+          - title: clear, specific insight title
+          - content: detailed explanation (50-100 words) with actionable recommendations
           - category: one of ["performance", "psychology", "risk", "strategy", "pattern", "data"]
           - importance: one of ["high", "medium", "low"]
+
+          Make insights specific, data-driven, and focused on actionable improvements.
         `;
       }
 
@@ -161,7 +166,7 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: 'You are an expert trading advisor specializing in technical analysis and trading psychology. Provide detailed insights. Be specific and actionable in your recommendations.'
+              content: 'You are an expert trading advisor specializing in technical analysis, risk management, and trading psychology. Provide detailed, actionable insights based on trading data. Focus on specific, implementable recommendations.'
             },
             {
               role: 'user',
@@ -185,7 +190,7 @@ serve(async (req) => {
       const parsedContent = JSON.parse(data.choices[0].message.content);
       
       if (purpose === 'advice' && !parsedContent.insights) {
-        return new Response(JSON.stringify({ analysis: parsedContent.analysis || "Sorry, there was an error analyzing the data" }), {
+        return new Response(JSON.stringify({ analysis: parsedContent.analysis || "Unable to generate analysis at this time" }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -203,29 +208,29 @@ serve(async (req) => {
       const fallbackInsights = [
         {
           id: 'fallback-1',
-          title: 'Improve Profit Rate',
-          content: 'Focus on increasing profitable trades while minimizing losses to get better results.',
+          title: 'Focus on Profit Optimization',
+          content: 'Review your trading strategy to identify patterns in profitable trades and replicate successful conditions.',
           category: 'performance',
           importance: 'high'
         },
         {
           id: 'fallback-2',
-          title: 'Analyze Sessions',
-          content: 'Focus on trading sessions that yield the best results and avoid sessions with recurring losses.',
+          title: 'Session Analysis',
+          content: 'Analyze your most successful trading sessions and avoid times with recurring losses.',
           category: 'strategy',
           importance: 'medium'
         },
         {
           id: 'fallback-3',
-          title: 'Risk Management',
-          content: 'Ensure clear entry and exit points are defined before entering any trade to improve risk management.',
+          title: 'Risk Management Review',
+          content: 'Ensure clear entry and exit points are defined before entering trades to improve risk management.',
           category: 'risk',
           importance: 'high'
         },
         {
           id: 'fallback-4',
-          title: 'Trading Psychology',
-          content: 'Maintain psychological discipline and avoid making emotional decisions during trading.',
+          title: 'Psychological Discipline',
+          content: 'Maintain consistent trading psychology and avoid emotional decision-making during market volatility.',
           category: 'psychology',
           importance: 'medium'
         }
@@ -233,7 +238,7 @@ serve(async (req) => {
       
       if (purpose === 'advice') {
         return new Response(JSON.stringify({ 
-          analysis: "Sorry, there was an error analyzing the data. Please check your internet connection and try again."
+          analysis: "Unable to generate analysis at this time. Please try again later."
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
