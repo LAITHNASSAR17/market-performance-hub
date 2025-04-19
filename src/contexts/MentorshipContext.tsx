@@ -27,11 +27,23 @@ export const MentorshipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const { toast } = useToast();
   const { user } = useAuth();
 
+  console.log("MentorshipContext: Current user", user); // Debug log
+  console.log("MentorshipContext: Current mentorships", mentorships); // Debug log
+
   const refreshMentorships = async () => {
+    if (!user) {
+      console.log("MentorshipContext: No user, skipping refresh"); // Debug log
+      setIsLoading(false);
+      return;
+    }
+    
     try {
+      console.log("MentorshipContext: Refreshing mentorships for user", user.id); // Debug log
       const data = await mentorshipService.getMentorshipsByUser();
+      console.log("MentorshipContext: Received mentorships", data); // Debug log
       setMentorships(data);
     } catch (error: any) {
+      console.error("MentorshipContext: Error refreshing mentorships", error); // Debug log
       toast({
         title: "Error loading mentorships",
         description: error.message,
@@ -43,8 +55,11 @@ export const MentorshipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   useEffect(() => {
+    console.log("MentorshipContext: useEffect triggered, user:", user); // Debug log
     if (user) {
       refreshMentorships();
+    } else {
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -140,8 +155,11 @@ export const MentorshipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return mentorships.filter(m => m.mentee_id === menteeId);
   };
 
-  const isMentor = mentorships.some(m => m.mentor_id === user?.id && m.status === 'accepted');
-  const isMentee = mentorships.some(m => m.mentee_id === user?.id && m.status === 'accepted');
+  const isMentor = user ? mentorships.some(m => m.mentor_id === user.id && m.status === 'accepted') : false;
+  const isMentee = user ? mentorships.some(m => m.mentee_id === user.id && m.status === 'accepted') : false;
+
+  console.log("MentorshipContext: isMentor =", isMentor); // Debug log
+  console.log("MentorshipContext: isMentee =", isMentee); // Debug log
 
   return (
     <MentorshipContext.Provider value={{

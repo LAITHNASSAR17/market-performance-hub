@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,6 +45,8 @@ const Layout: React.FC<LayoutProps> = ({
   } = useTheme();
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
   const { isMentor } = useMentorship();
+
+  console.log("Layout: User is mentor?", isMentor); // Debug log
 
   useEffect(() => {
     if (isMobile) {

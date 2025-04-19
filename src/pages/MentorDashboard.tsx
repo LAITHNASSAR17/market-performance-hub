@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -42,8 +43,10 @@ const CHART_COLORS = [
 ];
 
 const MentorDashboard: React.FC = () => {
+  console.log("MentorDashboard: Component rendering");
+  
   const { user } = useAuth();
-  const { mentorships, isLoading } = useMentorship();
+  const { mentorships, isLoading, isMentor } = useMentorship();
   const { enterMenteeView } = useMenteeView();
   const navigate = useNavigate();
   const [menteeStats, setMenteeStats] = useState<MenteeStats[]>([]);
@@ -53,42 +56,51 @@ const MentorDashboard: React.FC = () => {
   // Add extensive logging
   console.log('Mentor Dashboard: User', user);
   console.log('Mentor Dashboard: Mentorships', mentorships);
+  console.log('Mentor Dashboard: Is Mentor?', isMentor);
   console.log('Mentor Dashboard: Loading State', isLoading);
 
+  // First check - redirects if no user
   useEffect(() => {
-    console.log('MentorDashboard useEffect triggered');
+    console.log('MentorDashboard useEffect #1 triggered');
     if (!user) {
       console.warn('No user found, redirecting to login');
       navigate('/login');
-      return;
     }
+  }, [user, navigate]);
 
-    // Add explicit mentor check
-    const isMentor = mentorships.some(m => m.mentor_id === user.id);
-    console.log('Is User a Mentor?', isMentor);
-
-    if (!isMentor) {
+  // Second check - handles mentor status
+  useEffect(() => {
+    console.log('MentorDashboard useEffect #2 triggered');
+    console.log('Current user:', user);
+    console.log('Is loading:', isLoading);
+    console.log('Is mentor:', isMentor);
+    
+    if (user && !isLoading && !isMentor) {
       console.warn('User is not a mentor, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [user, mentorships, navigate]);
+  }, [user, isLoading, isMentor, navigate]);
 
+  // Third effect - loads data
   useEffect(() => {
+    console.log('MentorDashboard useEffect #3 triggered');
     if (!user) {
-      navigate('/login');
       return;
     }
 
     if (!isLoading && mentorships.length === 0) {
       setIsLoadingStats(false);
+      return;
     }
 
-    if (mentorships.some(m => m.mentor_id === user.id)) {
+    if (user && isMentor && !isLoading) {
+      console.log('Fetching mentee stats for mentor:', user.id);
       fetchMenteeStats();
     }
-  }, [user, mentorships, isLoading]);
+  }, [user, mentorships, isLoading, isMentor]);
 
   const fetchMenteeStats = async () => {
+    console.log('Starting fetchMenteeStats');
     setIsLoadingStats(true);
     
     try {
@@ -99,6 +111,9 @@ const MentorDashboard: React.FC = () => {
       const pendingMentorships = mentorships.filter(
         m => m.mentor_id === user?.id && m.status === 'pending'
       );
+
+      console.log('Accepted mentorships:', acceptedMentorships);
+      console.log('Pending mentorships:', pendingMentorships);
 
       const menteeStatsPromises = [...acceptedMentorships, ...pendingMentorships].map(async (mentorship, index) => {
         if (!mentorship.mentee_id) {
@@ -167,6 +182,7 @@ const MentorDashboard: React.FC = () => {
       });
 
       const stats = await Promise.all(menteeStatsPromises);
+      console.log('Mentee stats:', stats);
       setMenteeStats(stats.filter(Boolean) as MenteeStats[]);
     } catch (error) {
       console.error("Error fetching mentee stats:", error);
