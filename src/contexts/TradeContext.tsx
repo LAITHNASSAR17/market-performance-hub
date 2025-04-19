@@ -347,8 +347,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               take_profit, 
               duration_minutes, 
               playbook,
-              followed_rules,
-              market_session
+              followed_rules
             `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
@@ -392,7 +391,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             rating: trade.rating || 0,
             playbook: trade.playbook,
             followedRules: trade.followed_rules || [],
-            marketSession: trade.market_session
+            ...(trade.market_session && { marketSession: trade.market_session })
           }));
 
           console.log('Formatted trades:', formattedTrades);

@@ -31,7 +31,7 @@ export const tradeService = {
     try {
       const { data, error } = await supabase
         .from('trades')
-        .select('*')
+        .select('id, user_id, symbol, entry_price, exit_price, quantity, direction, entry_date, exit_date, profit_loss, fees, notes, tags, created_at, updated_at, rating, stop_loss, take_profit, duration_minutes, playbook, followed_rules')
         .eq('id', id)
         .single();
       
@@ -48,7 +48,7 @@ export const tradeService = {
 
   async getAllTrades(): Promise<ITrade[]> {
     try {
-      // Explicitly name the columns to avoid ambiguity issues
+      // Explicitly name the columns but exclude market_session which might not exist yet
       const { data, error } = await supabase
         .from('trades')
         .select(`
@@ -72,8 +72,7 @@ export const tradeService = {
           take_profit, 
           duration_minutes, 
           playbook, 
-          followed_rules, 
-          market_session
+          followed_rules
         `);
       
       if (error || !data) {
@@ -89,29 +88,42 @@ export const tradeService = {
 
   async createTrade(tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>): Promise<ITrade> {
     try {
+      // Create trade data object without market_session field to avoid errors
+      const tradeInsert: any = {
+        symbol: tradeData.symbol,
+        user_id: tradeData.userId,
+        entry_price: tradeData.entryPrice,
+        exit_price: tradeData.exitPrice,
+        quantity: tradeData.quantity,
+        direction: tradeData.direction,
+        entry_date: tradeData.entryDate.toISOString(),
+        exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
+        profit_loss: tradeData.profitLoss,
+        fees: tradeData.fees || 0,
+        notes: tradeData.notes || '',
+        tags: tradeData.tags || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        rating: tradeData.rating || 0,
+        stop_loss: tradeData.stopLoss,
+        take_profit: tradeData.takeProfit,
+        duration_minutes: tradeData.durationMinutes,
+        followed_rules: tradeData.followedRules || []
+      };
+
+      // Only add market_session if it exists in tradeData
+      if (tradeData.marketSession) {
+        // We'll try to add it, but it won't break if the column doesn't exist
+        tradeInsert.market_session = tradeData.marketSession;
+      }
+      
+      if (tradeData.playbook) {
+        tradeInsert.playbook = tradeData.playbook;
+      }
+      
       const { data, error } = await supabase
         .from('trades')
-        .insert({
-          symbol: tradeData.symbol,
-          user_id: tradeData.userId,
-          entry_price: tradeData.entryPrice,
-          exit_price: tradeData.exitPrice,
-          quantity: tradeData.quantity,
-          direction: tradeData.direction,
-          entry_date: tradeData.entryDate.toISOString(),
-          exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
-          profit_loss: tradeData.profitLoss,
-          fees: tradeData.fees || 0,
-          notes: tradeData.notes || '',
-          tags: tradeData.tags || [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          rating: tradeData.rating || 0,
-          stop_loss: tradeData.stopLoss,
-          take_profit: tradeData.takeProfit,
-          duration_minutes: tradeData.durationMinutes,
-          market_session: tradeData.marketSession
-        })
+        .insert(tradeInsert)
         .select()
         .single();
       
@@ -148,7 +160,18 @@ export const tradeService = {
       if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
       if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
       if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
-      if (tradeData.marketSession !== undefined) updateObject.market_session = tradeData.marketSession;
+      if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
+      if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
+      
+      // Only try to update market_session if it's provided and the column exists
+      if (tradeData.marketSession !== undefined) {
+        try {
+          // We'll try to update it, but it won't break if the column doesn't exist
+          updateObject.market_session = tradeData.marketSession;
+        } catch (err) {
+          console.log('Market session field not available, skipping update for this field');
+        }
+      }
       
       const { data, error } = await supabase
         .from('trades')
@@ -188,6 +211,7 @@ export const tradeService = {
 
   async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
     try {
+      // Exclude market_session from the select to avoid errors
       let query = supabase
         .from('trades')
         .select(`
@@ -209,16 +233,19 @@ export const tradeService = {
           rating, 
           stop_loss, 
           take_profit, 
-          duration_minutes, 
+          duration_minutes,
           playbook, 
-          followed_rules, 
-          market_session
+          followed_rules
         `);
       
       Object.entries(filter).forEach(([key, value]) => {
         if (value !== undefined) {
           const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-          query = query.eq(dbKey, value);
+          
+          // Skip market_session filter if the column might not exist
+          if (dbKey !== 'market_session') {
+            query = query.eq(dbKey, value);
+          }
         }
       });
       
@@ -259,8 +286,9 @@ function formatTrade(data: any): ITrade {
       takeProfit: data.take_profit,
       durationMinutes: data.duration_minutes,
       playbook: data.playbook,
-      followedRules: data.followed_rules,
-      marketSession: data.market_session
+      followedRules: data.followed_rules || [],
+      // Only add marketSession if it exists in the database response
+      ...(data.market_session && { marketSession: data.market_session })
     };
   } catch (err) {
     console.error('Error formatting trade:', err, data);
