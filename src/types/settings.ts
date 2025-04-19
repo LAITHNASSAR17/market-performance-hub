@@ -4,46 +4,9 @@ export interface SiteSettings {
   site_name: string;
   theme?: string;
   language?: string;
+  company_email?: string;  // Added to match existing uses
   created_at: string;
   updated_at: string;
-}
-
-export interface HomepageContent {
-  id: string;
-  title: string;
-  subtitle?: string;
-  description?: string;
-  features: Array<{
-    title: string;
-    description: string;
-  }>;
-  primary_button_text?: string;
-  primary_button_url?: string;
-  secondary_button_text?: string;
-  secondary_button_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role?: string;
-  isAdmin?: boolean;
-  isBlocked?: boolean;
-  subscription_tier?: string;
-}
-
-export interface Note {
-  id: string;
-  userId: string;
-  title: string;
-  content?: string;
-  tradeId?: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface Trade {
@@ -51,7 +14,7 @@ export interface Trade {
   userId: string;
   pair: string;
   symbol: string;
-  type: 'Buy' | 'Sell';
+  type: 'Buy' | 'Sell';  // Explicitly defined to match type constraints
   entry: number;
   exit: number | null;
   lotSize: number;
@@ -59,7 +22,7 @@ export interface Trade {
   takeProfit: number | null;
   riskPercentage: number;
   returnPercentage: number;
-  profitLoss: number;
+  profitLoss: number | null;
   durationMinutes: number | null;
   notes: string;
   date: string;
