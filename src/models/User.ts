@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, default: 'user' },
   isBlocked: { type: Boolean, default: false },
+  subscription_tier: { type: String, default: 'free' },
 }, { timestamps: true });
 
 export const User = mongoose.model('User', userSchema);

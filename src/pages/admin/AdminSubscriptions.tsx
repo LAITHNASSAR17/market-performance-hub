@@ -53,8 +53,8 @@ const AdminSubscriptions: React.FC = () => {
     } catch (error) {
       console.error('Error loading users:', error);
       toast({
-        title: "Error Loading Users",
-        description: "Failed to load user data",
+        title: "خطأ في تحميل المستخدمين",
+        description: "فشل في تحميل بيانات المستخدمين",
         variant: "destructive"
       });
     } finally {
@@ -89,8 +89,8 @@ const AdminSubscriptions: React.FC = () => {
       setShowUpgradeModal(false);
       
       toast({
-        title: "Subscription Updated",
-        description: `${selectedUser.name}'s subscription changed to ${newTier}`
+        title: "تم تحديث الاشتراك",
+        description: `تم تغيير اشتراك ${selectedUser.name} إلى ${getArabicTierName(newTier)}`
       });
       
       // Refresh user list
@@ -98,8 +98,8 @@ const AdminSubscriptions: React.FC = () => {
     } catch (error) {
       console.error('Error updating subscription:', error);
       toast({
-        title: "Update Failed",
-        description: "Could not update subscription tier",
+        title: "فشل التحديث",
+        description: "تعذر تحديث مستوى الاشتراك",
         variant: "destructive"
       });
     }
@@ -118,14 +118,27 @@ const AdminSubscriptions: React.FC = () => {
     }
   };
   
+  // Get Arabic tier name
+  const getArabicTierName = (tier: string) => {
+    switch (tier) {
+      case 'premium':
+        return "بريميوم";
+      case 'enterprise':
+        return "متقدم";
+      case 'free':
+      default:
+        return "مجاني";
+    }
+  };
+  
   return (
     <div>
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-          Subscription Management
+          إدارة الاشتراكات
         </h1>
         <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-          Manage and update user subscription plans.
+          إدارة وتحديث خطط اشتراك المستخدمين.
         </p>
       </header>
       
@@ -136,7 +149,7 @@ const AdminSubscriptions: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <Input
               className="pl-10 pr-4"
-              placeholder="Search users..."
+              placeholder="بحث عن مستخدمين..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -144,18 +157,18 @@ const AdminSubscriptions: React.FC = () => {
           
           <Select value={tierFilter} onValueChange={setTierFilter}>
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Filter by tier" />
+              <SelectValue placeholder="تصفية حسب الخطة" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Tiers</SelectItem>
-              <SelectItem value="free">Free</SelectItem>
-              <SelectItem value="premium">Premium</SelectItem>
-              <SelectItem value="enterprise">Enterprise</SelectItem>
+              <SelectItem value="all">جميع الخطط</SelectItem>
+              <SelectItem value="free">مجاني</SelectItem>
+              <SelectItem value="premium">بريميوم</SelectItem>
+              <SelectItem value="enterprise">متقدم</SelectItem>
             </SelectContent>
           </Select>
           
           <Button variant="outline" onClick={loadUsers} disabled={isLoading}>
-            {isLoading ? "Loading..." : "Refresh"}
+            {isLoading ? "جاري التحميل..." : "تحديث"}
           </Button>
         </div>
         
@@ -164,11 +177,11 @@ const AdminSubscriptions: React.FC = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Current Plan</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>المستخدم</TableHead>
+                <TableHead>البريد الإلكتروني</TableHead>
+                <TableHead>الخطة الحالية</TableHead>
+                <TableHead>الحالة</TableHead>
+                <TableHead className="text-right">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -179,21 +192,19 @@ const AdminSubscriptions: React.FC = () => {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={getTierBadgeColor(user.subscription_tier || 'free')}>
-                        {user.subscription_tier ? (
-                          user.subscription_tier.charAt(0).toUpperCase() + user.subscription_tier.slice(1)
-                        ) : 'Free'}
+                        {user.subscription_tier ? getArabicTierName(user.subscription_tier) : 'مجاني'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       {user.isBlocked ? (
                         <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
                           <X className="mr-1 h-3 w-3" />
-                          Blocked
+                          محظور
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
                           <Check className="mr-1 h-3 w-3" />
-                          Active
+                          نشط
                         </Badge>
                       )}
                     </TableCell>
@@ -205,7 +216,7 @@ const AdminSubscriptions: React.FC = () => {
                         className="text-blue-600 border-blue-200 hover:bg-blue-50"
                       >
                         <BadgeIcon className="mr-1 h-4 w-4" />
-                        Change Plan
+                        تغيير الخطة
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -214,8 +225,8 @@ const AdminSubscriptions: React.FC = () => {
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     {searchTerm || tierFilter !== 'all' 
-                      ? "No users match the current filters" 
-                      : "No users found"}
+                      ? "لا يوجد مستخدمين يطابقون عوامل التصفية الحالية" 
+                      : "لم يتم العثور على مستخدمين"}
                   </TableCell>
                 </TableRow>
               )}
@@ -228,32 +239,32 @@ const AdminSubscriptions: React.FC = () => {
       <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change Subscription Plan</DialogTitle>
+            <DialogTitle>تغيير خطة الاشتراك</DialogTitle>
             <DialogDescription>
-              Update the subscription plan for {selectedUser?.name}.
+              تحديث خطة الاشتراك لـ {selectedUser?.name}.
             </DialogDescription>
           </DialogHeader>
           
           <div className="py-4">
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Current Plan</label>
+              <label className="block text-sm font-medium mb-1">الخطة الحالية</label>
               <div className="text-lg font-semibold">
                 {selectedUser?.subscription_tier 
-                  ? selectedUser.subscription_tier.charAt(0).toUpperCase() + selectedUser.subscription_tier.slice(1)
-                  : 'Free'}
+                  ? getArabicTierName(selectedUser.subscription_tier)
+                  : 'مجاني'}
               </div>
             </div>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">New Plan</label>
+              <label className="block text-sm font-medium mb-2">الخطة الجديدة</label>
               <Select value={newTier} onValueChange={setNewTier}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a plan" />
+                  <SelectValue placeholder="اختر خطة" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
-                  <SelectItem value="enterprise">Enterprise</SelectItem>
+                  <SelectItem value="free">مجاني</SelectItem>
+                  <SelectItem value="premium">بريميوم</SelectItem>
+                  <SelectItem value="enterprise">متقدم</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -261,10 +272,10 @@ const AdminSubscriptions: React.FC = () => {
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowUpgradeModal(false)}>
-              Cancel
+              إلغاء
             </Button>
             <Button onClick={handleUpdateTier}>
-              Update Subscription
+              تحديث الاشتراك
             </Button>
           </DialogFooter>
         </DialogContent>

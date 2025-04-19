@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
@@ -15,47 +16,47 @@ const Subscriptions: React.FC = () => {
     <Layout>
       <div className="container py-10">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Subscription Plans</h1>
-          <p className="text-gray-500 mb-10">Choose the right plan for your trading journey</p>
+          <h1 className="text-3xl font-bold mb-2">خطط الاشتراك</h1>
+          <p className="text-gray-500 mb-10">اختر الخطة المناسبة لرحلة التداول الخاصة بك</p>
           
           <div className="grid md:grid-cols-3 gap-6">
             {/* Free Plan */}
             <Card className={`border-2 ${currentTier === 'free' ? 'border-blue-500' : 'border-transparent'}`}>
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-xl">Free</CardTitle>
+                  <CardTitle className="text-xl">مجاني</CardTitle>
                   {currentTier === 'free' && (
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      Current Plan
+                      الخطة الحالية
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Basic trading features</CardDescription>
+                <CardDescription>الميزات الأساسية للتداول</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
-                  $0<span className="text-sm font-normal text-gray-500">/month</span>
+                  $0<span className="text-sm font-normal text-gray-500">/شهر</span>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
+                <ul className="space-y-2 text-right">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Up to 10 trades per month</span>
+                    <span>حتى 10 صفقات شهرياً</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Basic trading journal</span>
+                    <span>دفتر تداول أساسي</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Basic analytics</span>
+                    <span>تحليلات أساسية</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>سجل قيود بسيط</span>
+                  </li>
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <X className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-500">Advanced analytics</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <X className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-500">Advanced notebook</span>
+                    <span className="text-gray-500">رؤى تداول متقدمة</span>
                   </li>
                 </ul>
               </CardContent>
@@ -65,7 +66,7 @@ const Subscriptions: React.FC = () => {
                   className="w-full"
                   disabled={currentTier === 'free'}
                 >
-                  {currentTier === 'free' ? 'Current Plan' : 'Start Now'}
+                  {currentTier === 'free' ? 'الخطة الحالية' : 'ابدأ الآن'}
                 </Button>
               </CardFooter>
             </Card>
@@ -74,47 +75,47 @@ const Subscriptions: React.FC = () => {
             <Card className={`border-2 ${currentTier === 'premium' ? 'border-purple-500' : 'border-transparent'} shadow-lg relative`}>
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                 <Star className="h-4 w-4" />
-                Most Popular
+                الأكثر شعبية
               </div>
               
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl flex items-center gap-1">
                     <Crown className="h-5 w-5 text-purple-500" />
-                    Premium
+                    بريميوم
                   </CardTitle>
                   {currentTier === 'premium' && (
                     <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                      Current Plan
+                      الخطة الحالية
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Advanced trading tools</CardDescription>
+                <CardDescription>أدوات تداول متقدمة</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
-                  $19<span className="text-sm font-normal text-gray-500">/month</span>
+                  $19<span className="text-sm font-normal text-gray-500">/شهر</span>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
+                <ul className="space-y-2 text-right">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Unlimited trades</span>
+                    <span>صفقات غير محدودة</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Advanced analytics</span>
+                    <span>تحليلات متقدمة</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Advanced notebook</span>
+                    <span>دفتر ملاحظات متقدم</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Advanced trading insights</span>
+                    <span>تقارير أداء مفصلة</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Priority support</span>
+                    <span>دعم أولوية</span>
                   </li>
                 </ul>
               </CardContent>
@@ -124,7 +125,7 @@ const Subscriptions: React.FC = () => {
                   variant={currentTier === 'premium' ? "outline" : "default"}
                   className={`w-full ${currentTier !== 'premium' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
                   disabled={currentTier === 'premium'}
-                  text={currentTier === 'premium' ? 'Current Plan' : 'Upgrade Now'}
+                  text={currentTier === 'premium' ? 'الخطة الحالية' : 'ترقية الآن'}
                 />
               </CardFooter>
             </Card>
@@ -135,40 +136,40 @@ const Subscriptions: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl flex items-center gap-1">
                     <Zap className="h-5 w-5 text-indigo-500" />
-                    Enterprise
+                    متقدم
                   </CardTitle>
                   {currentTier === 'enterprise' && (
                     <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
-                      Current Plan
+                      الخطة الحالية
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Complete solution for professionals</CardDescription>
+                <CardDescription>حل متكامل للمتداولين المحترفين</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
-                  $49<span className="text-sm font-normal text-gray-500">/month</span>
+                  $49<span className="text-sm font-normal text-gray-500">/شهر</span>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
-                <ul className="space-y-2">
-                  <li className="flex items-center gap-2">
+                <ul className="space-y-2 text-right">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>All Premium features</span>
+                    <span>جميع ميزات الخطة البريميوم</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>AI-powered trade analysis</span>
+                    <span>تحليل الصفقات بالذكاء الاصطناعي</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Custom dashboard</span>
+                    <span>لوحة تحكم مخصصة</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Custom reports</span>
+                    <span>تقارير مخصصة</span>
                   </li>
-                  <li className="flex items-center gap-2">
+                  <li className="flex items-center gap-2 flex-row-reverse">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>24/7 support</span>
+                    <span>دعم على مدار الساعة</span>
                   </li>
                 </ul>
               </CardContent>
@@ -178,17 +179,17 @@ const Subscriptions: React.FC = () => {
                   variant={currentTier === 'enterprise' ? "outline" : "default"}
                   className={`w-full ${currentTier !== 'enterprise' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
                   disabled={currentTier === 'enterprise'}
-                  text={currentTier === 'enterprise' ? 'Current Plan' : 'Upgrade Now'}
+                  text={currentTier === 'enterprise' ? 'الخطة الحالية' : 'ترقية الآن'}
                 />
               </CardFooter>
             </Card>
           </div>
           
           <div className="mt-12 text-center">
-            <h3 className="text-xl font-semibold mb-2">Need a Custom Solution?</h3>
-            <p className="text-gray-500 mb-4">Contact us for a custom trading platform experience</p>
+            <h3 className="text-xl font-semibold mb-2">تحتاج إلى حل مخصص؟</h3>
+            <p className="text-gray-500 mb-4">اتصل بنا للحصول على تجربة منصة تداول مخصصة</p>
             <Button variant="outline" className="gap-2">
-              Contact Sales <ArrowRight className="h-4 w-4" />
+              اتصل بالمبيعات <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
