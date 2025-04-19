@@ -63,11 +63,12 @@ const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { addTrade, updateTrade } = useTrade();
-  const { tags } = useTags();
+  const { mistakes, setups, habits } = useTags();
   const [trade, setTrade] = useState<any>(null);
   const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { toast } = useToast();
+  const allTags = [...mistakes, ...setups, ...habits];
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -159,42 +160,45 @@ const AddTrade: React.FC = () => {
       return;
     }
 
-    const tradeData: Partial<ITrade> = {
-      user_id: user.id,
+    // Prepare the trade data in the correct format
+    const tradeData = {
+      userId: user.id,
       symbol: values.symbol,
-      entry_price: parseFloat(values.entry_price),
-      exit_price: parseFloat(values.exit_price),
+      entryPrice: parseFloat(values.entry_price),
+      exitPrice: parseFloat(values.exit_price),
       quantity: parseFloat(values.quantity),
-      direction: values.direction, 
-      entry_date: values.entry_date.toISOString(),
-      exit_date: values.exit_date ? values.exit_date.toISOString() : null,
-      profit_loss: parseFloat(values.profit_loss),
+      direction: values.direction as 'long' | 'short',
+      entryDate: values.entry_date,
+      exitDate: values.exit_date,
+      profitLoss: parseFloat(values.profit_loss),
       fees: parseFloat(values.fees),
       notes: values.notes || '',
       tags: selectedTags,
-      rating: values.rating ? parseFloat(values.rating) : undefined,
-      stop_loss: values.stop_loss ? parseFloat(values.stop_loss) : undefined,
-      take_profit: values.take_profit ? parseFloat(values.take_profit) : undefined,
-      duration_minutes: values.duration_minutes ? parseFloat(values.duration_minutes) : undefined,
+      rating: values.rating ? parseFloat(values.rating) : 0,
+      stopLoss: values.stop_loss ? parseFloat(values.stop_loss) : 0,
+      takeProfit: values.take_profit ? parseFloat(values.take_profit) : 0,
+      durationMinutes: values.duration_minutes ? parseFloat(values.duration_minutes) : 0,
       playbook: values.playbook || '',
-      followed_rules: values.followed_rules || [],
-      market_session: values.market_session || '',
-      account_id: values.account_id || '',
-      risk_percentage: values.risk_percentage ? parseFloat(values.risk_percentage) : undefined,
-      return_percentage: values.return_percentage ? parseFloat(values.return_percentage) : undefined,
+      followedRules: values.followed_rules || [],
+      marketSession: values.market_session || '',
+      accountId: values.account_id || '',
+      riskPercentage: values.risk_percentage ? parseFloat(values.risk_percentage) : 0,
+      returnPercentage: values.return_percentage ? parseFloat(values.return_percentage) : 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     try {
       if (id) {
-        const { data, error } = await tradeService.updateTrade(id, tradeData);
-        if (error) {
+        // For updating existing trade
+        const result = await updateTrade(id, tradeData);
+        if (result.error) {
           toast({
             title: "Error updating trade",
             description: "Failed to update the trade. Please try again.",
             variant: "destructive",
           });
         } else {
-          updateTrade(data, id);
           toast({
             title: "Trade updated",
             description: "The trade has been updated successfully.",
@@ -202,15 +206,15 @@ const AddTrade: React.FC = () => {
           navigate('/trades');
         }
       } else {
-        const { data, error } = await tradeService.createTrade(tradeData as Omit<ITrade, 'id' | 'created_at' | 'updated_at'>);
-        if (error) {
+        // For creating new trade
+        const result = await addTrade(tradeData);
+        if (result.error) {
           toast({
             title: "Error adding trade",
             description: "Failed to add the trade. Please try again.",
             variant: "destructive",
           });
         } else {
-          addTrade(data);
           toast({
             title: "Trade added",
             description: "The trade has been added successfully.",
@@ -399,7 +403,7 @@ const AddTrade: React.FC = () => {
         <div>
           <Label htmlFor="tags">Tags</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
-            {tags && tags.map((tag) => (
+            {allTags.map((tag) => (
               <div key={tag} className="flex items-center space-x-2">
                 <Checkbox 
                   id={`tag-${tag}`}

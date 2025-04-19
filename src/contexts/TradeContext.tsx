@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -122,7 +123,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
       entryPrice: apiTrade.entry_price,
       exitPrice: apiTrade.exit_price || 0,
       quantity: apiTrade.quantity,
-      direction: apiTrade.direction,
+      direction: apiTrade.direction as 'long' | 'short', // Ensure correct type
       entryDate: new Date(apiTrade.entry_date),
       exitDate: apiTrade.exit_date ? new Date(apiTrade.exit_date) : null,
       profitLoss: apiTrade.profit_loss,
@@ -151,6 +152,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
       lotSize: apiTrade.quantity,
       hashtags: apiTrade.tags || [],
       commission: apiTrade.fees || 0,
+      imageUrl: apiTrade.image_url,
+      beforeImageUrl: apiTrade.before_image_url,
+      afterImageUrl: apiTrade.after_image_url
     };
   };
   
@@ -160,7 +164,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
       entry_price: trade.entryPrice,
       exit_price: trade.exitPrice,
       quantity: trade.quantity,
-      direction: trade.direction,
+      direction: trade.direction as 'long' | 'short',
       entry_date: trade.entryDate instanceof Date ? trade.entryDate.toISOString() : undefined,
       exit_date: trade.exitDate instanceof Date ? trade.exitDate.toISOString() : null,
       profit_loss: trade.profitLoss,
@@ -178,6 +182,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
       risk_percentage: trade.riskPercentage,
       return_percentage: trade.returnPercentage,
       user_id: trade.userId,
+      image_url: trade.imageUrl,
+      before_image_url: trade.beforeImageUrl,
+      after_image_url: trade.afterImageUrl
     };
     
     return apiTrade;
