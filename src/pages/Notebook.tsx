@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
-import { useNotebook, Note } from '@/contexts/NotebookContext';
+import { useNotebook } from '@/contexts/NotebookContext';
 import { useTrade } from '@/contexts/TradeContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,9 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, Search, Edit2, Trash2, BookOpen, Tag, BookText } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import { cn } from '@/lib/utils';
+import { Note } from '@/types/settings';
 
 const Notebook: React.FC = () => {
   const { notes, addNote, updateNote, deleteNote, noteTags } = useNotebook();
