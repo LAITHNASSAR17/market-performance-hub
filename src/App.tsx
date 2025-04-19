@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -19,7 +18,6 @@ import { Toaster } from './components/ui/toaster';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { TradeProvider } from './contexts/TradeContext';
 import { NotebookProvider } from './contexts/NotebookContext';
-import { MentorshipProvider } from './contexts/MentorshipContext';
 import TradeTracking from './pages/TradeTracking';
 import TradingChart from './pages/TradingChart';
 import Notebook from './pages/Notebook';
@@ -43,12 +41,8 @@ import Payment from './pages/Payment';
 import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
 import { TagsProvider } from './contexts/TagsContext';
-import MentorDashboard from './pages/MentorDashboard';
-import { MenteeViewProvider } from './contexts/MenteeViewContext';
 
 function App() {
-  console.log("App: Initializing application");
-  
   return (
     <AuthProvider>
       <ThemeProvider>
@@ -56,14 +50,10 @@ function App() {
           <TagsProvider>
             <TradeProvider>
               <NotebookProvider>
-                <MentorshipProvider>
-                  <MenteeViewProvider>
-                    <TooltipProvider>
-                      <Toaster />
-                      <AnimatedRoutes />
-                    </TooltipProvider>
-                  </MenteeViewProvider>
-                </MentorshipProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <AnimatedRoutes />
+                </TooltipProvider>
               </NotebookProvider>
             </TradeProvider>
           </TagsProvider>
@@ -75,7 +65,6 @@ function App() {
 
 function AnimatedRoutes() {
   const location = useLocation();
-  console.log("AnimatedRoutes: Current location", location.pathname);
   
   return (
     <PageTransition>
@@ -101,7 +90,6 @@ function AnimatedRoutes() {
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/payment" element={<Payment />} />
         <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/mentor-dashboard" element={<MentorDashboard />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin/users" element={<AdminUsers />} />

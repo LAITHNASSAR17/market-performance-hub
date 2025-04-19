@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
-import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight, Brain, Users } from 'lucide-react';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,6 @@ import { useToast } from '@/components/ui/use-toast';
 import AverageTradeCards from '@/components/AverageTradeCards';
 import TradingTips from '@/components/TradingTips';
 import TradingInsights from '@/components/TradingInsights';
-import { Link } from 'react-router-dom';
 
 const Dashboard: React.FC = () => {
   const { trades, deleteTrade } = useTrade();
@@ -40,8 +39,7 @@ const Dashboard: React.FC = () => {
   const [timeframeFilter, setTimeframeFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showTradeDetails, setShowTradeDetails] = useState(false);
-  const isMentor = user && user.role === 'mentor';
-
+  
   const exportReport = () => {
     toast({
       title: "Exporting report",
@@ -217,7 +215,7 @@ const Dashboard: React.FC = () => {
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold mb-1">لوحة التحكم</h1>
-          <p className="text-gray-500">نظرة ��امة على أداء التداول الخاص بك</p>
+          <p className="text-gray-500">نظرة عامة على أداء التداول الخاص بك</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
@@ -405,22 +403,6 @@ const Dashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-
-        {isMentor && (
-          <div className="col-span-1">
-            <Card className="h-full hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer">
-              <Link to="/mentor-dashboard" className="block h-full">
-                <CardContent className="p-6 flex flex-col items-center justify-center h-full text-center">
-                  <Users className="h-12 w-12 mb-4 text-primary" />
-                  <h3 className="text-lg font-semibold mb-1">Mentor Dashboard</h3>
-                  <p className="text-sm text-muted-foreground">
-                    View your mentees' performance and provide guidance
-                  </p>
-                </CardContent>
-              </Link>
-            </Card>
-          </div>
-        )}
 
         <div className="col-span-1">
           <TradingInsights className="h-full" timeRange={timeframeFilter} />

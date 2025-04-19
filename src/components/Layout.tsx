@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, Settings, Scroll, CreditCard, Users } from 'lucide-react';
+import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, Settings, Scroll, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,9 +12,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useToast } from "@/hooks/use-toast";
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { MenteeViewBanner } from './MenteeViewBanner';
-import { useMenteeView } from '@/contexts/MenteeViewContext';
-import { useMentorship } from '@/contexts/MentorshipContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -44,18 +40,6 @@ const Layout: React.FC<LayoutProps> = ({
     toggleTheme
   } = useTheme();
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
-  const { isMentor, refreshMentorships } = useMentorship();
-
-  console.log("Layout: User is mentor?", isMentor); // Debug log
-  console.log("Layout: Current location", location.pathname); // Debug log
-
-  // Force refresh mentorships when layout mounts
-  useEffect(() => {
-    console.log("Layout: Initial mount - refreshing mentorships");
-    if (user) {
-      refreshMentorships();
-    }
-  }, []);
 
   useEffect(() => {
     if (isMobile) {
@@ -64,8 +48,6 @@ const Layout: React.FC<LayoutProps> = ({
       setSidebarOpen(true);
     }
   }, [isMobile]);
-
-  const { isInMenteeView } = useMenteeView();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
@@ -112,17 +94,6 @@ const Layout: React.FC<LayoutProps> = ({
     icon: CreditCard,
     href: '/subscriptions'
   }];
-
-  // Add mentor dashboard link if the user is a mentor
-  const mentorNavItems = isMentor ? [
-    {
-      name: 'Mentor Dashboard',
-      icon: Users,
-      href: '/mentor-dashboard'
-    }
-  ] : [];
-
-  const allNavigation = [...navigation, ...mentorNavItems];
 
   const handleLogout = async () => {
     try {
@@ -176,6 +147,9 @@ const Layout: React.FC<LayoutProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
+                    
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link to="/user-profile" className="flex items-center">
                       <UserCog className="mr-2 h-4 w-4" />
                       User Profile
@@ -203,7 +177,7 @@ const Layout: React.FC<LayoutProps> = ({
         </div>
 
         <div className="mt-4 overflow-y-auto max-h-[calc(100vh-200px)]">
-          {allNavigation.map(item => {
+          {navigation.map(item => {
           const isActive = location.pathname === item.href;
           return <Tooltip key={item.href}>
                 <TooltipTrigger asChild>
@@ -236,7 +210,6 @@ const Layout: React.FC<LayoutProps> = ({
       {sidebarOpen && isMobile && <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={() => setSidebarOpen(false)} />}
 
       <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
-        {isInMenteeView && <MenteeViewBanner />}
         {children}
       </main>
     </div>;
