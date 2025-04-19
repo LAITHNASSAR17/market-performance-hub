@@ -1,8 +1,7 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
+const llamaApiKey = Deno.env.get('LLAMA_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,22 +16,13 @@ serve(async (req) => {
   try {
     const { trades, stats } = await req.json();
 
-    if (!trades || trades.length < 3) {
-      return new Response(
-        JSON.stringify([{
-          id: '1',
-          title: 'أضف المزيد من الصفقات',
-          content: 'نحتاج المزيد من الصفقات لتقديم تحليل دقيق لأدائك',
-          category: 'performance',
-          priority: 'medium'
-        }]),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Log input data for debugging
+    console.log('Received trading tips request');
+    console.log('Trades count:', trades.length);
+    console.log('API Key present:', !!llamaApiKey);
 
-    // Verify API key exists
-    if (!deepseekApiKey) {
-      console.error('Missing Deepseek API key');
+    if (!llamaApiKey) {
+      console.error('CRITICAL: LLAMA_API_KEY is not set');
       return new Response(
         JSON.stringify([{
           id: 'error',
@@ -49,15 +39,15 @@ serve(async (req) => {
     }
 
     try {
-      console.log('Calling Deepseek API for trading tips');
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      console.log('Calling Llama API for trading tips');
+      const response = await fetch('https://api.together.xyz/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Authorization': `Bearer ${llamaApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "deepseek-chat",
+          model: "meta-llama/llama-4-maverick:free",
           messages: [
             {
               role: 'system',
@@ -90,16 +80,18 @@ serve(async (req) => {
               `
             }
           ],
-          response_format: { type: "json_object" }
+          response_format: { type: "json_object" },
+          temperature: 0.7,
+          max_tokens: 1000
         }),
       });
 
       const data = await response.json();
-      console.log('Deepseek Response:', data);
+      console.log('Llama API Response:', data);
 
       if (data.error) {
-        console.error('Deepseek API Error:', data.error);
-        throw new Error(data.error.message || 'Error calling Deepseek API');
+        console.error('Llama API Error:', data.error);
+        throw new Error(data.error.message || 'Error calling Llama API');
       }
 
       const tips = JSON.parse(data.choices[0].message.content).tips;
@@ -112,12 +104,12 @@ serve(async (req) => {
       throw error;
     }
   } catch (error) {
-    console.error('Error in generate-trading-tips function:', error);
+    console.error('Comprehensive error in generate-trading-tips:', error);
     return new Response(
       JSON.stringify([{
         id: 'error',
         title: 'عذراً، حدث خطأ',
-        content: 'حدث خطأ أثناء توليد النصائح. يرجى المحاولة مرة أخرى لاحقاً.',
+        content: 'حدث خطأ غير متوقع أثناء توليد النصائح.',
         category: 'error',
         priority: 'high'
       }]),

@@ -5,7 +5,6 @@ import { useAuth } from './AuthContext';
 import { Trade } from '@/types/trade';
 import { tradeService } from '@/services/tradeService';
 import { userService } from '@/services/userService';
-import { mapDBTradeToTrade, mapTradeToDBTrade } from '@/types/trade';
 
 export type { Trade } from '@/types/trade';
 
@@ -324,63 +323,40 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (user) {
         setLoading(true);
         try {
-          console.log('Fetching trades for user:', user.id);
           const { data, error } = await supabase
             .from('trades')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
-          if (error) {
-            console.error('Error fetching trades:', error);
-            throw error;
-          }
+          if (error) throw error;
 
-          if (!data) {
-            console.log('No trade data returned');
-            setTrades([]);
-            setLoading(false);
-            return;
-          }
-
-          console.log('Fetched trades data:', data.length, 'trades');
-          
-          const formattedTrades: Trade[] = data.map(trade => {
-            try {
-              return {
-                id: trade.id,
-                userId: trade.user_id,
-                account: trade.account_id ? 'Main Trading' : 'Main Trading',
-                date: trade.entry_date ? trade.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
-                pair: trade.symbol || '',
-                type: trade.direction === 'long' ? 'Buy' : 'Sell',
-                entry: trade.entry_price || 0,
-                exit: trade.exit_price || null,
-                lotSize: trade.quantity || 0,
-                stopLoss: trade.stop_loss || null,
-                takeProfit: trade.take_profit || null,
-                riskPercentage: 0,
-                returnPercentage: 0,
-                profitLoss: trade.profit_loss || 0,
-                commission: trade.fees || 0,
-                total: (trade.profit_loss || 0) - (trade.fees || 0),
-                durationMinutes: trade.duration_minutes || 0,
-                notes: trade.notes || '',
-                imageUrl: trade.image_url || null,
-                beforeImageUrl: trade.before_image_url || null,
-                afterImageUrl: trade.after_image_url || null,
-                hashtags: trade.tags || [],
-                createdAt: trade.created_at || new Date().toISOString(),
-                rating: trade.rating || 0,
-                playbook: trade.playbook || undefined,
-                followedRules: trade.followed_rules || [],
-                marketSession: trade.market_session
-              };
-            } catch (e) {
-              console.error('Error formatting trade:', e, trade);
-              return null;
-            }
-          }).filter(Boolean) as Trade[];
+          const formattedTrades: Trade[] = data.map(trade => ({
+            id: trade.id,
+            userId: trade.user_id,
+            account: 'Main Trading',
+            date: trade.entry_date.split('T')[0],
+            pair: trade.symbol,
+            type: trade.direction === 'long' ? 'Buy' : 'Sell',
+            entry: trade.entry_price,
+            exit: trade.exit_price || 0,
+            lotSize: trade.quantity,
+            stopLoss: trade.stop_loss || null,
+            takeProfit: trade.take_profit || null,
+            riskPercentage: 0,
+            returnPercentage: 0,
+            profitLoss: trade.profit_loss || 0,
+            commission: trade.fees || 0,
+            total: (trade.profit_loss || 0) - (trade.fees || 0),
+            durationMinutes: trade.duration_minutes || 0,
+            notes: trade.notes || '',
+            imageUrl: null,
+            beforeImageUrl: null,
+            afterImageUrl: null,
+            hashtags: trade.tags || [],
+            createdAt: trade.created_at,
+            rating: trade.rating || 0
+          }));
 
           setTrades(formattedTrades);
 
@@ -394,15 +370,14 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } catch (error) {
           console.error('Error fetching trades:', error);
           toast({
-            title: "Error",
-            description: "Failed to fetch trades",
+            title: "خطأ",
+            description: "حدث خطأ أثناء جلب التداولات",
             variant: "destructive"
           });
         } finally {
           setLoading(false);
         }
       } else {
-        console.log('No user, clearing trades');
         setTrades([]);
         setLoading(false);
       }
@@ -455,14 +430,14 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTrades(prevTrades => [newTrade, ...prevTrades]);
       
       toast({
-        title: "Trade Added",
-        description: "Trade added successfully",
+        title: "تم إضافة التداول",
+        description: "تم إضافة التداول بنجاح",
       });
     } catch (error) {
       console.error('Error adding trade:', error);
       toast({
-        title: "Error",
-        description: "Failed to add trade",
+        title: "خطأ",
+        description: "حدث خطأ أثناء إضافة التداول",
         variant: "destructive"
       });
       throw error;
@@ -513,14 +488,14 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       );
 
       toast({
-        title: "Trade Updated",
-        description: "Trade updated successfully",
+        title: "تم تحديث التداول",
+        description: "تم تحديث التداول بنجاح",
       });
     } catch (error) {
       console.error('Error updating trade:', error);
       toast({
-        title: "Error",
-        description: "Failed to update trade",
+        title: "خطأ",
+        description: "حدث خطأ أثناء تحديث التداول",
         variant: "destructive"
       });
       throw error;
@@ -542,14 +517,14 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTrades(prevTrades => prevTrades.filter(trade => trade.id !== id));
 
       toast({
-        title: "Trade Deleted",
-        description: "Trade deleted successfully",
+        title: "تم حذف التداول",
+        description: "تم حذف التداول بنجاح",
       });
     } catch (error) {
       console.error('Error deleting trade:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete trade",
+        title: "خطأ",
+        description: "حدث خطأ أثناء حذف التداول",
         variant: "destructive"
       });
     }
@@ -589,8 +564,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch trading accounts",
+        title: "خطأ",
+        description: "حدث خطأ أثناء جلب الحسابات",
         variant: "destructive"
       });
     }
@@ -601,8 +576,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     if (!name.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter an account name",
+        title: "خطأ",
+        description: "الرجاء إدخال اسم الحساب",
         variant: "destructive"
       });
       throw new Error('Account name is required');
@@ -614,16 +589,16 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTradingAccounts(prev => [...prev, newAccount]);
       
       toast({
-        title: "New Account",
-        description: `Account ${name} created`,
+        title: "حساب جديد",
+        description: `تم إنشاء الحساب ${name}`,
       });
 
       return newAccount;
     } catch (error: any) {
       console.error('Error creating trading account:', error);
       toast({
-        title: "Error",
-        description: "Failed to create trading account",
+        title: "خطأ",
+        description: "حدث خطأ أثناء إنشاء الحساب",
         variant: "destructive"
       });
       throw error;

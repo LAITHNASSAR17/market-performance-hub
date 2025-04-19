@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, ButtonProps } from '@/components/ui/button';
@@ -26,8 +25,8 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   };
 
   // Don't show if user already has this tier or higher
-  if (user?.subscription_tier === 'enterprise' || 
-      (user?.subscription_tier === 'premium' && tier === 'premium')) {
+  if (user?.subscription_tier === tier || 
+      (user?.subscription_tier === 'enterprise' && tier === 'premium')) {
     return null;
   }
 

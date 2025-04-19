@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
@@ -15,22 +16,22 @@ const Subscriptions: React.FC = () => {
     <Layout>
       <div className="container py-10">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Subscription Plans</h1>
-          <p className="text-gray-500 mb-10">Choose the right plan for your trading journey</p>
+          <h1 className="text-3xl font-bold mb-2">Track Mind - Subscription Plans</h1>
+          <p className="text-gray-500 mb-10">Choose the plan that best fits your trading journey</p>
           
           <div className="grid md:grid-cols-3 gap-6">
             {/* Free Plan */}
             <Card className={`border-2 ${currentTier === 'free' ? 'border-blue-500' : 'border-transparent'}`}>
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-xl">Free</CardTitle>
+                  <CardTitle className="text-xl">Starter</CardTitle>
                   {currentTier === 'free' && (
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                       Current Plan
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Basic trading features</CardDescription>
+                <CardDescription>For beginner traders</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
                   $0<span className="text-sm font-normal text-gray-500">/month</span>
                 </div>
@@ -39,23 +40,31 @@ const Subscriptions: React.FC = () => {
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Up to 10 trades per month</span>
+                    <span>Max 10 trades per month</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Basic trading journal</span>
+                    <span>1 trading account only</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Basic analytics</span>
+                    <span>Basic trade list view</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>1 AI analysis per day</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Basic notebook only</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <X className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-500">Advanced analytics</span>
+                    <span className="text-gray-500">No reports or analytics</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <X className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-500">Advanced notebook</span>
+                    <span className="text-gray-500">No image uploads</span>
                   </li>
                 </ul>
               </CardContent>
@@ -65,12 +74,12 @@ const Subscriptions: React.FC = () => {
                   className="w-full"
                   disabled={currentTier === 'free'}
                 >
-                  {currentTier === 'free' ? 'Current Plan' : 'Start Now'}
+                  {currentTier === 'free' ? 'Current Plan' : 'Start Free'}
                 </Button>
               </CardFooter>
             </Card>
 
-            {/* Premium Plan */}
+            {/* Premium Plan (Previously Pro) */}
             <Card className={`border-2 ${currentTier === 'premium' ? 'border-purple-500' : 'border-transparent'} shadow-lg relative`}>
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                 <Star className="h-4 w-4" />
@@ -89,9 +98,9 @@ const Subscriptions: React.FC = () => {
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Advanced trading tools</CardDescription>
+                <CardDescription>For active traders</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
-                  $19<span className="text-sm font-normal text-gray-500">/month</span>
+                  $14.99<span className="text-sm font-normal text-gray-500">/month</span>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
@@ -102,19 +111,27 @@ const Subscriptions: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Advanced analytics</span>
+                    <span>1 image per trade</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Advanced notebook</span>
+                    <span>Access to Reports & Analytics</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Advanced trading insights</span>
+                    <span>Notes & Tags feature</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Priority support</span>
+                    <span>Export data (CSV/PDF)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Calendar & Chart views</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <X className="h-5 w-5 text-gray-400" />
+                    <span className="text-gray-500">No Playbooks access</span>
                   </li>
                 </ul>
               </CardContent>
@@ -129,7 +146,7 @@ const Subscriptions: React.FC = () => {
               </CardFooter>
             </Card>
 
-            {/* Enterprise Plan */}
+            {/* Enterprise Plan (Previously Elite) */}
             <Card className={`border-2 ${currentTier === 'enterprise' ? 'border-indigo-500' : 'border-transparent'}`}>
               <CardHeader>
                 <div className="flex justify-between items-center">
@@ -143,32 +160,40 @@ const Subscriptions: React.FC = () => {
                     </Badge>
                   )}
                 </div>
-                <CardDescription>Complete solution for professionals</CardDescription>
+                <CardDescription>For professional traders</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
-                  $49<span className="text-sm font-normal text-gray-500">/month</span>
+                  $24.99<span className="text-sm font-normal text-gray-500">/month</span>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>All Premium features</span>
+                    <span>Everything in Premium, plus:</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>AI-powered trade analysis</span>
+                    <span>Up to 3 images per trade</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Custom dashboard</span>
+                    <span>Trade Rating system</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Custom reports</span>
+                    <span>Playbooks creation & linking</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>24/7 support</span>
+                    <span>Emotion & Strategy tagging</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Advanced AI insights</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Priority support</span>
                   </li>
                 </ul>
               </CardContent>
@@ -186,7 +211,7 @@ const Subscriptions: React.FC = () => {
           
           <div className="mt-12 text-center">
             <h3 className="text-xl font-semibold mb-2">Need a Custom Solution?</h3>
-            <p className="text-gray-500 mb-4">Contact us for a custom trading platform experience</p>
+            <p className="text-gray-500 mb-4">Contact us for a customized trading platform experience</p>
             <Button variant="outline" className="gap-2">
               Contact Sales <ArrowRight className="h-4 w-4" />
             </Button>

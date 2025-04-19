@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { useTrade } from '@/contexts/TradeContext';
+import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
 import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight, Brain } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -214,32 +214,32 @@ const Dashboard: React.FC = () => {
     <Layout>
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold mb-1">Dashboard</h1>
-          <p className="text-gray-500">Overview of your trading performance</p>
+          <h1 className="text-xl sm:text-2xl font-bold mb-1">لوحة التحكم</h1>
+          <p className="text-gray-500">نظرة عامة على أداء التداول الخاص بك</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>
             <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="Select timeframe" />
+              <SelectValue placeholder="اختر إطار زمني" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All time</SelectItem>
-              <SelectItem value="week">Last 7 days</SelectItem>
-              <SelectItem value="month">Last 30 days</SelectItem>
-              <SelectItem value="quarter">Last 3 months</SelectItem>
-              <SelectItem value="year">Last year</SelectItem>
+              <SelectItem value="all">كل الوقت</SelectItem>
+              <SelectItem value="week">آخر 7 أيام</SelectItem>
+              <SelectItem value="month">آخر 30 يوم</SelectItem>
+              <SelectItem value="quarter">آخر 3 أشهر</SelectItem>
+              <SelectItem value="year">العام الماضي</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={exportReport} className="w-full sm:w-auto">
             <Calendar className="h-4 w-4 mr-2" />
-            Export Report
+            تصدير التقرير
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <StatCard
-          title="Total Profit/Loss"
+          title="إجمالي الربح/الخسارة"
           value={`$${totalProfit.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -247,10 +247,10 @@ const Dashboard: React.FC = () => {
           trend={totalProfit > 0 ? 'up' : totalProfit < 0 ? 'down' : 'neutral'}
           icon={<DollarSign className="h-5 w-5" />}
           color={totalProfit > 0 ? 'green' : totalProfit < 0 ? 'red' : 'default'}
-          description={`Total Trades: ${totalTradesCount}`}
+          description={`إجمالي الصفقات: ${totalTradesCount}`}
         />
         <StatCard
-          title="Winning Trades"
+          title="معامل الربح"
           value={profitFactor === Infinity ? "∞" : profitFactor.toFixed(2)}
           icon={<Activity className="h-5 w-5" />}
           description={`${profitFactor > 1 ? '+' : ''}${profitFactor === Infinity ? "" : (profitFactor - 1).toFixed(2)}`}
