@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
+const googleAiApiKey = Deno.env.get('GOOGLE_AI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -43,8 +43,8 @@ serve(async (req) => {
       );
     }
 
-    if (!perplexityApiKey) {
-      console.error('Missing Perplexity API key');
+    if (!googleAiApiKey) {
+      console.error('Missing Google AI API key');
       return new Response(
         JSON.stringify({ 
           insights: [{
@@ -63,7 +63,7 @@ serve(async (req) => {
     }
 
     try {
-      console.log(`Calling Perplexity API for ${purpose}`);
+      console.log(`Calling Google AI API for ${purpose}`);
       
       let userPrompt = '';
       
@@ -136,48 +136,54 @@ serve(async (req) => {
         `;
       }
 
-      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${perplexityApiKey}`,
           'Content-Type': 'application/json',
+          'x-goog-api-key': googleAiApiKey,
         },
         body: JSON.stringify({
-          model: 'llama-3.1-sonar-small-128k-online',
-          messages: [
+          contents: [
             {
-              role: 'system',
-              content: 'You are a professional trading advisor that provides analysis in Arabic. Be precise and actionable in your recommendations.'
+              role: 'user',
+              parts: [{ text: 'You are a professional trading advisor that provides analysis in Arabic. Be precise and actionable in your recommendations.' }]
+            },
+            {
+              role: 'model',
+              parts: [{ text: 'I understand. I will analyze trading data and provide precise, actionable recommendations in Arabic.' }]
             },
             {
               role: 'user',
-              content: userPrompt
+              parts: [{ text: userPrompt }]
             }
           ],
-          temperature: 0.2,
-          max_tokens: 1000
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 1000,
+          }
         }),
       });
 
       const data = await response.json();
-      console.log('Perplexity Response:', data);
+      console.log('Google AI Response:', data);
 
       if (data.error) {
-        console.error('Perplexity API Error:', data.error);
-        throw new Error(data.error.message || 'Error calling Perplexity API');
+        console.error('Google AI API Error:', data.error);
+        throw new Error(data.error.message || 'Error calling Google AI API');
       }
+
+      const content = data.candidates[0].content.parts[0].text;
 
       // Process the response based on purpose
       if (purpose === 'advice') {
         return new Response(JSON.stringify({ 
-          analysis: data.choices[0].message.content 
+          analysis: content
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
 
       // For tips and insights, parse the response and format it
-      const content = data.choices[0].message.content;
       const insights = content.split('\n\n').filter(Boolean).map((insight, index) => {
         const lines = insight.split('\n');
         return {
