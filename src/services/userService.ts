@@ -84,7 +84,6 @@ export const userService = {
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
     let query = supabase.from('users').select('*');
     
-    // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined) {
         query = query.eq(key, value);

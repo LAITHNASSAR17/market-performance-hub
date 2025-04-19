@@ -6,18 +6,18 @@ import { Trade as TradeType } from '@/types/trade';
 import { calculateProfitLoss } from '@/utils/tradeCalculations';
 import { defaultSymbols, defaultAccounts, defaultHashtags } from '@/data/defaultTradeData';
 import { useTradeOperations } from '@/hooks/useTradeOperations';
-import { userService } from '@/services/userService';
+import { userService, ITradingAccount } from '@/services/userService';
 
 // Export the Trade type to be used in other components
 export type Trade = TradeType;
 
-// Add these types that were previously missing
+// Update TradingAccount interface to match the ITradingAccount structure
 export interface TradingAccount {
   id: string;
   userId: string;
   name: string;
   balance: number;
-  currency: string;
+  currency?: string; // Made optional to match ITradingAccount
   createdAt: string;
 }
 
@@ -151,7 +151,16 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     try {
       const accounts = await userService.getTradingAccounts(user.id);
-      setTradingAccounts(accounts);
+      // Convert ITradingAccount[] to TradingAccount[]
+      const convertedAccounts: TradingAccount[] = accounts.map(acc => ({
+        id: acc.id,
+        userId: acc.userId,
+        name: acc.name,
+        balance: acc.balance,
+        createdAt: acc.createdAt,
+        currency: 'USD' // Default currency since it's required in TradingAccount
+      }));
+      setTradingAccounts(convertedAccounts);
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
       toast({
@@ -162,7 +171,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const createTradingAccount = async (name: string, balance: number) => {
+  const createTradingAccount = async (name: string, balance: number): Promise<TradingAccount> => {
     if (!user) throw new Error('User not authenticated');
 
     if (!name.trim()) {
@@ -176,12 +185,23 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     try {
       const newAccount = await userService.createTradingAccount(user.id, name, balance);
-      setTradingAccounts(prev => [...prev, newAccount]);
+      // Convert ITradingAccount to TradingAccount
+      const convertedAccount: TradingAccount = {
+        id: newAccount.id,
+        userId: newAccount.userId,
+        name: newAccount.name,
+        balance: newAccount.balance,
+        createdAt: newAccount.createdAt,
+        currency: 'USD' // Default currency since it's required in TradingAccount
+      };
+      
+      setTradingAccounts(prev => [...prev, convertedAccount]);
+      
       toast({
         title: "حساب جديد",
         description: `تم إنشاء الحساب ${name}`,
       });
-      return newAccount;
+      return convertedAccount;
     } catch (error: any) {
       console.error('Error creating trading account:', error);
       toast({
