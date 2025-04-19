@@ -109,10 +109,7 @@ const sampleTrades: Trade[] = [
     hashtags: ['momentum', 'news'],
     createdAt: '2025-04-10T15:30:00Z',
     commission: 15,
-    rating: 4,
-    playbook: 'trend following',
-    followedRules: ['wait for pullback', 'confirm with indicator'],
-    marketSession: 'New York'
+    rating: 4
   },
   {
     id: '2',
@@ -138,10 +135,7 @@ const sampleTrades: Trade[] = [
     hashtags: ['breakout', 'technical'],
     createdAt: '2025-04-09T12:15:00Z',
     commission: 10,
-    rating: 3,
-    playbook: 'breakout trading',
-    followedRules: ['wait for confirmation', 'trade with trend'],
-    marketSession: 'London'
+    rating: 3
   },
   {
     id: '3',
@@ -167,10 +161,7 @@ const sampleTrades: Trade[] = [
     hashtags: ['mistake', 'fakeout'],
     createdAt: '2025-04-08T09:45:00Z',
     commission: 15,
-    rating: 2,
-    playbook: 'breakout trading',
-    followedRules: [],
-    marketSession: 'Asia'
+    rating: 2
   },
   {
     id: '4',
@@ -196,10 +187,7 @@ const sampleTrades: Trade[] = [
     hashtags: ['retracement', 'setup'],
     createdAt: '2025-04-07T14:20:00Z',
     commission: 12,
-    rating: 5,
-    playbook: 'swing trading',
-    followedRules: ['wait for pullback', 'confirm with indicator'],
-    marketSession: 'New York'
+    rating: 5
   },
   {
     id: '5',
@@ -225,10 +213,7 @@ const sampleTrades: Trade[] = [
     hashtags: ['mistake', 'patience'],
     createdAt: '2025-04-06T10:30:00Z',
     commission: 10,
-    rating: 1,
-    playbook: 'counter trend',
-    followedRules: [],
-    marketSession: 'Asia'
+    rating: 1
   }
 ];
 
@@ -370,10 +355,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             afterImageUrl: null,
             hashtags: trade.tags || [],
             createdAt: trade.created_at,
-            rating: trade.rating || 0,
-            playbook: trade.playbook,
-            followedRules: trade.followed_rules || [],
-            marketSession: trade.market_session
+            rating: trade.rating || 0
           }));
 
           setTrades(formattedTrades);
@@ -424,17 +406,14 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           direction: newTradeData.type === 'Buy' ? 'long' : 'short',
           entry_date: entryDate.toISOString(),
           exit_date: newTradeData.exit ? entryDate.toISOString() : null,
-          profit_loss: newTradeData.profitLoss,
+          profit_loss: newTradeData.profitLoss - (newTradeData.commission || 0),
           fees: newTradeData.commission || 0,
           notes: newTradeData.notes || '',
           tags: newTradeData.hashtags || [],
           stop_loss: newTradeData.stopLoss || null,
           take_profit: newTradeData.takeProfit || null,
           duration_minutes: newTradeData.durationMinutes || null,
-          rating: newTradeData.rating || 0,
-          playbook: newTradeData.playbook,
-          followed_rules: newTradeData.followedRules,
-          market_session: newTradeData.marketSession
+          rating: newTradeData.rating || 0
         })
         .select()
         .single();
@@ -485,9 +464,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (tradeUpdate.stopLoss !== undefined) updateData.stop_loss = tradeUpdate.stopLoss;
       if (tradeUpdate.takeProfit !== undefined) updateData.take_profit = tradeUpdate.takeProfit;
       if (tradeUpdate.durationMinutes !== undefined) updateData.duration_minutes = tradeUpdate.durationMinutes;
-      if (tradeUpdate.playbook !== undefined) updateData.playbook = tradeUpdate.playbook;
-      if (tradeUpdate.followedRules !== undefined) updateData.followed_rules = tradeUpdate.followedRules;
-      if (tradeUpdate.marketSession !== undefined) updateData.market_session = tradeUpdate.marketSession;
       
       if (tradeUpdate.exit !== undefined && tradeUpdate.date) {
         updateData.exit_date = tradeUpdate.exit ? new Date(tradeUpdate.date).toISOString() : null;

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -40,26 +40,31 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import Payment from './pages/Payment';
 import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
-import { TagsProvider } from './contexts/TagsContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a new QueryClient instance
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <LanguageProvider>
-          <TagsProvider>
-            <TradeProvider>
-              <NotebookProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AnimatedRoutes />
-                </TooltipProvider>
-              </NotebookProvider>
-            </TradeProvider>
-          </TagsProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ThemeProvider>
+            <LanguageProvider>
+              <TradeProvider>
+                <NotebookProvider>
+                  <TooltipProvider>
+                    <Toaster />
+                    <AnimatedRoutes />
+                  </TooltipProvider>
+                </NotebookProvider>
+              </TradeProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
   );
 }
 

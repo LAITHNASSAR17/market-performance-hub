@@ -10,8 +10,6 @@ import { usePlaybooks } from '@/hooks/usePlaybooks';
 import { useInsights } from '@/hooks/useInsights';
 import { InsightCardContent } from './insights/InsightCardContent';
 import { InsightNavigation } from './insights/InsightNavigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SessionInsights from './insights/SessionInsights';
 
 interface TradingInsightsProps {
   className?: string;
@@ -49,7 +47,7 @@ const TradingInsights: React.FC<TradingInsightsProps> = ({
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg flex items-center">
             <Brain className="h-5 w-5 mr-2" />
-            {t('Trading Insights')}
+            {t('تحليل ذكي للتداول')}
           </CardTitle>
           <div className="flex space-x-2">
             <Button 
@@ -64,41 +62,26 @@ const TradingInsights: React.FC<TradingInsightsProps> = ({
           </div>
         </div>
         <CardDescription>
-          {t('Custom insights based on your trading patterns')}
+          {t('رؤى مخصصة بناءً على أنماط التداول الخاصة بك')}
         </CardDescription>
       </CardHeader>
       
-      <Tabs defaultValue="ai-insights">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="ai-insights">AI Insights</TabsTrigger>
-          <TabsTrigger value="session-analysis">Session Analysis</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="ai-insights">
-          <CardContent>
-            <InsightCardContent 
-              insight={currentInsightData}
-              loading={loading}
-              tradesCount={trades.length}
-            />
-          </CardContent>
-          
-          {!error && insights.length > 0 && (
-            <InsightNavigation
-              currentInsight={currentInsight}
-              totalInsights={insights.length}
-              onNext={handleNext}
-              onPrevious={handlePrevious}
-            />
-          )}
-        </TabsContent>
-        
-        <TabsContent value="session-analysis">
-          <CardContent className="p-0">
-            <SessionInsights trades={trades} />
-          </CardContent>
-        </TabsContent>
-      </Tabs>
+      <CardContent>
+        <InsightCardContent 
+          insight={currentInsightData}
+          loading={loading}
+          tradesCount={trades.length}
+        />
+      </CardContent>
+      
+      {!error && insights.length > 0 && (
+        <InsightNavigation
+          currentInsight={currentInsight}
+          totalInsights={insights.length}
+          onNext={handleNext}
+          onPrevious={handlePrevious}
+        />
+      )}
     </Card>
   );
 };

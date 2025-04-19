@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -22,8 +21,7 @@ export interface ITrade {
   takeProfit: number | null;
   durationMinutes: number | null;
   playbook?: string;
-  followedRules?: string[];
-  marketSession?: string;
+  followedRules?: string[]; // Added this property
 }
 
 export const tradeService = {
@@ -34,10 +32,7 @@ export const tradeService = {
       .eq('id', id)
       .single();
     
-    if (error || !data) {
-      console.error('Error fetching trade by ID:', error);
-      return null;
-    }
+    if (error || !data) return null;
     return formatTrade(data);
   },
 
@@ -46,10 +41,7 @@ export const tradeService = {
       .from('trades')
       .select('*');
     
-    if (error || !data) {
-      console.error('Error fetching all trades:', error);
-      return [];
-    }
+    if (error || !data) return [];
     return data.map(formatTrade);
   },
 
@@ -74,18 +66,12 @@ export const tradeService = {
         rating: tradeData.rating || 0,
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
-        duration_minutes: tradeData.durationMinutes,
-        market_session: tradeData.marketSession,
-        playbook: tradeData.playbook,
-        followed_rules: tradeData.followedRules
+        duration_minutes: tradeData.durationMinutes
       })
       .select()
       .single();
     
-    if (error || !data) {
-      console.error(`Error creating trade:`, error);
-      throw new Error(`Error creating trade: ${error?.message}`);
-    }
+    if (error || !data) throw new Error(`Error creating trade: ${error?.message}`);
     return formatTrade(data);
   },
 
@@ -112,9 +98,6 @@ export const tradeService = {
     if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
-    if (tradeData.marketSession !== undefined) updateObject.market_session = tradeData.marketSession;
-    if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
-    if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
     
     const { data, error } = await supabase
       .from('trades')
@@ -123,10 +106,7 @@ export const tradeService = {
       .select()
       .single();
     
-    if (error || !data) {
-      console.error('Error updating trade:', error);
-      return null;
-    }
+    if (error || !data) return null;
     return formatTrade(data);
   },
 
@@ -136,9 +116,6 @@ export const tradeService = {
       .delete()
       .eq('id', id);
     
-    if (error) {
-      console.error('Error deleting trade:', error);
-    }
     return !error;
   },
 
@@ -154,10 +131,7 @@ export const tradeService = {
     
     const { data, error } = await query;
     
-    if (error || !data) {
-      console.error('Error filtering trades:', error);
-      return [];
-    }
+    if (error || !data) return [];
     return data.map(formatTrade);
   }
 };
@@ -184,7 +158,6 @@ function formatTrade(data: any): ITrade {
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
     playbook: data.playbook,
-    followedRules: data.followed_rules,
-    marketSession: data.market_session
+    followedRules: data.followedRules
   };
 }
