@@ -108,7 +108,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar} />
+                        <AvatarImage src={user.avatar_url || ''} />
                         <AvatarFallback>
                           {user.name?.charAt(0) || 'U'}
                         </AvatarFallback>
