@@ -46,4 +46,3 @@ export const tradeSchema = yup.object({
   rating: yup.number().required().default(0),
   commission: yup.number().required().default(0),
 }).required();
-

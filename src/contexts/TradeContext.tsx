@@ -3,12 +3,29 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
-import { Trade, TradingAccount, Symbol } from '@/types/trade';
-import { tradeService } from '@/services/tradeService';
-import { userService } from '@/services/userService';
+import { Trade as TradeType } from '@/types/trade';
 import { calculateProfitLoss } from '@/utils/tradeCalculations';
 import { defaultSymbols, defaultAccounts, defaultHashtags } from '@/data/defaultTradeData';
 import { useTradeOperations } from '@/hooks/useTradeOperations';
+
+// Export the Trade type to be used in other components
+export type Trade = TradeType;
+
+// Add these types that were previously missing
+export interface TradingAccount {
+  id: string;
+  userId: string;
+  name: string;
+  balance: number;
+  currency: string;
+  createdAt: string;
+}
+
+export interface Symbol {
+  symbol: string;
+  name: string;
+  type: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity';
+}
 
 type TradeContextType = {
   trades: Trade[];

@@ -1,5 +1,5 @@
 
-import { Symbol, Trade } from '@/types/trade';
+import { Symbol, Trade } from '@/contexts/TradeContext';
 
 export const defaultSymbols: Symbol[] = [
   { symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
