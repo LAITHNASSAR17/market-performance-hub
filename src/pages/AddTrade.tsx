@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -19,10 +20,11 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
 import { useTrade } from '@/contexts/TradeContext';
-import { useTags } from '@/contexts/TagsContext';
+import { useTagsState } from '@/hooks/useTagsState';
 import HashtagBadge from '@/components/HashtagBadge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptionFeatures } from '@/hooks/useSubscriptionFeatures';
+import UpgradePrompt from '@/components/UpgradePrompt';
 
 interface TradeFormValues {
   pair: string;
@@ -44,6 +46,7 @@ interface TradeFormValues {
   beforeImageUrl?: string;
   afterImageUrl?: string;
   rating?: number;
+  commission?: number;
 }
 
 const tradeSchema = yup.object().shape({
@@ -66,6 +69,7 @@ const tradeSchema = yup.object().shape({
   beforeImageUrl: yup.string().notRequired(),
   afterImageUrl: yup.string().notRequired(),
   rating: yup.number().notRequired(),
+  commission: yup.number().notRequired().default(0),
 });
 
 const AddTrade: React.FC = () => {
@@ -80,9 +84,12 @@ const AddTrade: React.FC = () => {
     formState: { errors },
   } = useForm<TradeFormValues>({
     resolver: yupResolver(tradeSchema),
+    defaultValues: {
+      commission: 0
+    }
   });
   const { addTrade, updateTrade, getTrade } = useTrade();
-  const { tags, addTag } = useTags();
+  const { tags, addTag } = useTagsState();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAddingTag, setIsAddingTag] = useState(false);
@@ -104,22 +111,23 @@ const AddTrade: React.FC = () => {
         setValue('account', existingTrade.account);
         setValue('type', existingTrade.type);
         setValue('date', new Date(existingTrade.date));
-        setValue('durationMinutes', existingTrade.durationMinutes);
+        setValue('durationMinutes', existingTrade.durationMinutes || 0);
         setValue('entry', existingTrade.entry);
-        setValue('exit', existingTrade.exit);
-        setValue('stopLoss', existingTrade.stopLoss);
-        setValue('takeProfit', existingTrade.takeProfit);
+        setValue('exit', existingTrade.exit || 0);
+        setValue('stopLoss', existingTrade.stopLoss || undefined);
+        setValue('takeProfit', existingTrade.takeProfit || undefined);
         setValue('lotSize', existingTrade.lotSize);
         setValue('riskPercentage', existingTrade.riskPercentage);
         setValue('profitLoss', existingTrade.profitLoss);
         setValue('returnPercentage', existingTrade.returnPercentage);
         setValue('notes', existingTrade.notes);
-        setSelectedTags(existingTrade.hashtags);
+        setValue('commission', existingTrade.commission || 0);
+        setSelectedTags(existingTrade.hashtags || []);
         setImageUrl(existingTrade.imageUrl);
         setBeforeImageUrl(existingTrade.beforeImageUrl);
         setAfterImageUrl(existingTrade.afterImageUrl);
-        setIsStopLossEnabled(existingTrade.stopLoss !== undefined);
-        setIsTakeProfitEnabled(existingTrade.takeProfit !== undefined);
+        setIsStopLossEnabled(!!existingTrade.stopLoss);
+        setIsTakeProfitEnabled(!!existingTrade.takeProfit);
       }
     }
   }, [id, getTrade, setValue]);
@@ -128,11 +136,16 @@ const AddTrade: React.FC = () => {
     const tradeData = {
       ...data,
       hashtags: selectedTags,
-      imageUrl,
-      beforeImageUrl,
-      afterImageUrl,
-      stopLoss: isStopLossEnabled ? data.stopLoss : undefined,
-      takeProfit: isTakeProfitEnabled ? data.takeProfit : undefined,
+      imageUrl: imageUrl || null,
+      beforeImageUrl: beforeImageUrl || null,
+      afterImageUrl: afterImageUrl || null,
+      stopLoss: isStopLossEnabled ? data.stopLoss : null,
+      takeProfit: isTakeProfitEnabled ? data.takeProfit : null,
+      commission: data.commission || 0,
+      // Convert date to string format
+      date: format(data.date, 'yyyy-MM-dd'),
+      // Calculate the total (profit/loss minus commission)
+      total: (data.profitLoss || 0) - (data.commission || 0)
     };
 
     if (id) {
@@ -170,6 +183,15 @@ const AddTrade: React.FC = () => {
   const handleImageUpload = (type: 'before' | 'after' | 'chart') => {
     const imageLimit = getImageLimit();
     const currentImages = [beforeImageUrl, afterImageUrl, imageUrl].filter(Boolean).length;
+    
+    if (!canUseFeature('image_upload')) {
+      toast({
+        title: "Feature not available",
+        description: "Upgrade your subscription to access image upload features",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (currentImages >= imageLimit) {
       toast({
@@ -224,6 +246,9 @@ const AddTrade: React.FC = () => {
         break;
     }
   };
+
+  // Check if the user can upload images
+  const canUploadImages = canUseFeature('image_upload');
 
   return (
     <Layout>
@@ -434,6 +459,16 @@ const AddTrade: React.FC = () => {
                   {errors.profitLoss && <p className="text-red-500 text-sm mt-1">{errors.profitLoss.message}</p>}
                 </div>
                 <div>
+                  <Label htmlFor="commission">Commission/Fees</Label>
+                  <Input
+                    type="number"
+                    id="commission"
+                    placeholder="e.g., 5.00"
+                    {...register('commission', { valueAsNumber: true })}
+                  />
+                  {errors.commission && <p className="text-red-500 text-sm mt-1">{errors.commission.message}</p>}
+                </div>
+                <div>
                   <Label htmlFor="returnPercentage">Return Percentage</Label>
                   <Input
                     type="number"
@@ -464,7 +499,7 @@ const AddTrade: React.FC = () => {
 
                 <div>
                   <Label>Tags</Label>
-                  <div className="flex items-center space-x-2 mb-2">
+                  <div className="flex flex-wrap gap-2 mb-2">
                     {tags.map(tag => (
                       <HashtagBadge
                         key={tag}
@@ -500,71 +535,81 @@ const AddTrade: React.FC = () => {
                 <CardDescription>Upload before, after, and chart images for your trade.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Before Trade Image</Label>
-                  {beforeImageUrl ? (
-                    <div className="relative">
-                      <img src={beforeImageUrl} alt="Before Trade" className="rounded-md max-h-40 object-cover" />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="absolute top-2 right-2 rounded-full h-8 w-8 p-0"
-                        onClick={() => handleRemoveImage('before')}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                {!canUploadImages ? (
+                  <UpgradePrompt 
+                    title="Image Upload Unavailable"
+                    description="Upgrade your subscription to upload trade images"
+                    feature="Image Upload"
+                  />
+                ) : (
+                  <>
+                    <div>
+                      <Label>Before Trade Image</Label>
+                      {beforeImageUrl ? (
+                        <div className="relative">
+                          <img src={beforeImageUrl} alt="Before Trade" className="rounded-md max-h-40 object-cover" />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="absolute top-2 right-2 rounded-full h-8 w-8 p-0"
+                            onClick={() => handleRemoveImage('before')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button variant="outline" onClick={() => handleImageUpload('before')}>
+                          <ImagePlus className="h-4 w-4 mr-2" />
+                          Upload Before Image
+                        </Button>
+                      )}
                     </div>
-                  ) : (
-                    <Button variant="outline" onClick={() => handleImageUpload('before')}>
-                      <ImagePlus className="h-4 w-4 mr-2" />
-                      Upload Before Image
-                    </Button>
-                  )}
-                </div>
 
-                <div>
-                  <Label>After Trade Image</Label>
-                  {afterImageUrl ? (
-                    <div className="relative">
-                      <img src={afterImageUrl} alt="After Trade" className="rounded-md max-h-40 object-cover" />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="absolute top-2 right-2 rounded-full h-8 w-8 p-0"
-                        onClick={() => handleRemoveImage('after')}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div>
+                      <Label>After Trade Image</Label>
+                      {afterImageUrl ? (
+                        <div className="relative">
+                          <img src={afterImageUrl} alt="After Trade" className="rounded-md max-h-40 object-cover" />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="absolute top-2 right-2 rounded-full h-8 w-8 p-0"
+                            onClick={() => handleRemoveImage('after')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button variant="outline" onClick={() => handleImageUpload('after')}>
+                          <ImagePlus className="h-4 w-4 mr-2" />
+                          Upload After Image
+                        </Button>
+                      )}
                     </div>
-                  ) : (
-                    <Button variant="outline" onClick={() => handleImageUpload('after')}>
-                      <ImagePlus className="h-4 w-4 mr-2" />
-                      Upload After Image
-                    </Button>
-                  )}
-                </div>
 
-                <div>
-                  <Label>Chart Image</Label>
-                  {imageUrl ? (
-                    <div className="relative">
-                      <img src={imageUrl} alt="Chart" className="rounded-md max-h-40 object-cover" />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="absolute top-2 right-2 rounded-full h-8 w-8 p-0"
-                        onClick={() => handleRemoveImage('chart')}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div>
+                      <Label>Chart Image</Label>
+                      {imageUrl ? (
+                        <div className="relative">
+                          <img src={imageUrl} alt="Chart" className="rounded-md max-h-40 object-cover" />
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="absolute top-2 right-2 rounded-full h-8 w-8 p-0"
+                            onClick={() => handleRemoveImage('chart')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button variant="outline" onClick={() => handleImageUpload('chart')}>
+                          <ImagePlus className="h-4 w-4 mr-2" />
+                          Upload Chart Image
+                        </Button>
+                      )}
                     </div>
-                  ) : (
-                    <Button variant="outline" onClick={() => handleImageUpload('chart')}>
-                      <ImagePlus className="h-4 w-4 mr-2" />
-                      Upload Chart Image
-                    </Button>
-                  )}
-                </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
