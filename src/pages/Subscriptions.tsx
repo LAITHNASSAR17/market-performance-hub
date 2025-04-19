@@ -16,7 +16,7 @@ const Subscriptions: React.FC = () => {
     <Layout>
       <div className="container py-10">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Subscription Plans</h1>
+          <h1 className="text-3xl font-bold mb-2">Track Mind - Subscription Plans</h1>
           <p className="text-gray-500 mb-10">Choose the plan that best fits your trading journey</p>
           
           <div className="grid md:grid-cols-3 gap-6">
@@ -40,11 +40,11 @@ const Subscriptions: React.FC = () => {
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Up to 10 trades per month</span>
+                    <span>Max 10 trades per month</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>1 trading account</span>
+                    <span>1 trading account only</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
@@ -56,11 +56,15 @@ const Subscriptions: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Basic notebook</span>
+                    <span>Basic notebook only</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <X className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-500">Advanced analytics</span>
+                    <span className="text-gray-500">No reports or analytics</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <X className="h-5 w-5 text-gray-400" />
+                    <span className="text-gray-500">No image uploads</span>
                   </li>
                 </ul>
               </CardContent>
@@ -75,8 +79,8 @@ const Subscriptions: React.FC = () => {
               </CardFooter>
             </Card>
 
-            {/* Pro Plan */}
-            <Card className={`border-2 ${currentTier === 'pro' ? 'border-purple-500' : 'border-transparent'} shadow-lg relative`}>
+            {/* Premium Plan (Previously Pro) */}
+            <Card className={`border-2 ${currentTier === 'premium' ? 'border-purple-500' : 'border-transparent'} shadow-lg relative`}>
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                 <Star className="h-4 w-4" />
                 Most Popular
@@ -86,9 +90,9 @@ const Subscriptions: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl flex items-center gap-1">
                     <Crown className="h-5 w-5 text-purple-500" />
-                    Pro
+                    Premium
                   </CardTitle>
-                  {currentTier === 'pro' && (
+                  {currentTier === 'premium' && (
                     <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
                       Current Plan
                     </Badge>
@@ -111,42 +115,46 @@ const Subscriptions: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Full analytics access</span>
+                    <span>Access to Reports & Analytics</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Reports & insights</span>
+                    <span>Notes & Tags feature</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
                     <span>Export data (CSV/PDF)</span>
                   </li>
                   <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Calendar & Chart views</span>
+                  </li>
+                  <li className="flex items-center gap-2">
                     <X className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-500">Advanced trading tools</span>
+                    <span className="text-gray-500">No Playbooks access</span>
                   </li>
                 </ul>
               </CardContent>
               <CardFooter>
                 <PaymentButton
-                  tier="pro"
-                  variant={currentTier === 'pro' ? "outline" : "default"}
-                  className={`w-full ${currentTier !== 'pro' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
-                  disabled={currentTier === 'pro'}
-                  text={currentTier === 'pro' ? 'Current Plan' : 'Upgrade Now'}
+                  tier="premium"
+                  variant={currentTier === 'premium' ? "outline" : "default"}
+                  className={`w-full ${currentTier !== 'premium' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                  disabled={currentTier === 'premium'}
+                  text={currentTier === 'premium' ? 'Current Plan' : 'Upgrade Now'}
                 />
               </CardFooter>
             </Card>
 
-            {/* Elite Plan */}
-            <Card className={`border-2 ${currentTier === 'elite' ? 'border-indigo-500' : 'border-transparent'}`}>
+            {/* Enterprise Plan (Previously Elite) */}
+            <Card className={`border-2 ${currentTier === 'enterprise' ? 'border-indigo-500' : 'border-transparent'}`}>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl flex items-center gap-1">
                     <Zap className="h-5 w-5 text-indigo-500" />
-                    Elite
+                    Enterprise
                   </CardTitle>
-                  {currentTier === 'elite' && (
+                  {currentTier === 'enterprise' && (
                     <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
                       Current Plan
                     </Badge>
@@ -161,7 +169,7 @@ const Subscriptions: React.FC = () => {
                 <ul className="space-y-2">
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Everything in Pro, plus:</span>
+                    <span>Everything in Premium, plus:</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
@@ -169,11 +177,19 @@ const Subscriptions: React.FC = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Trade rating system</span>
+                    <span>Trade Rating system</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>Playbooks & strategy analysis</span>
+                    <span>Playbooks creation & linking</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Emotion & Strategy tagging</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Advanced AI insights</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
@@ -183,11 +199,11 @@ const Subscriptions: React.FC = () => {
               </CardContent>
               <CardFooter>
                 <PaymentButton
-                  tier="elite"
-                  variant={currentTier === 'elite' ? "outline" : "default"}
-                  className={`w-full ${currentTier !== 'elite' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
-                  disabled={currentTier === 'elite'}
-                  text={currentTier === 'elite' ? 'Current Plan' : 'Upgrade Now'}
+                  tier="enterprise"
+                  variant={currentTier === 'enterprise' ? "outline" : "default"}
+                  className={`w-full ${currentTier !== 'enterprise' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
+                  disabled={currentTier === 'enterprise'}
+                  text={currentTier === 'enterprise' ? 'Current Plan' : 'Upgrade Now'}
                 />
               </CardFooter>
             </Card>
