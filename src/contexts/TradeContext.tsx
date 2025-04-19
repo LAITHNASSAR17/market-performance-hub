@@ -114,22 +114,18 @@ const formatTrade = (data: any): Trade => {
       returnPercentage: data.return_percentage || 0,
     };
 
-    // Add playbook if it exists
     if (data.playbook) {
       formatBase.playbook = data.playbook;
     }
 
-    // Add followed_rules if it exists
     if (data.followed_rules) {
       formatBase.followedRules = data.followed_rules;
     }
     
-    // Add market_session if it exists
     if (data.market_session) {
       formatBase.marketSession = data.market_session;
     }
 
-    // Add backward compatibility fields
     formatBase.date = data.entry_date ? data.entry_date.split('T')[0] : new Date().toISOString().split('T')[0];
     formatBase.pair = data.symbol;
     formatBase.entry = data.entry_price;
@@ -169,6 +165,8 @@ const sampleTrades: Trade[] = [
     stopLoss: 1.1200,
     takeProfit: 1.1320,
     durationMinutes: 240,
+    riskPercentage: 2.5,
+    returnPercentage: 3.2,
     // Compatibility fields
     date: '2025-04-10',
     pair: 'EUR/USD',
@@ -179,6 +177,7 @@ const sampleTrades: Trade[] = [
     lotSize: 0.5,
     total: 285,
     hashtags: ['momentum', 'news'],
+    commission: 15,
   },
   {
     id: '2',
@@ -415,7 +414,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
           console.log('Fetching trades for user:', user.id);
           
-          // Use a simple query to avoid the ambiguous column issue
           const { data, error } = await supabase
             .from('trades')
             .select('*')
@@ -435,11 +433,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           console.log('Fetched trades data:', data);
           const formattedTrades: Trade[] = data.map(trade => {
-            // Create base trade object with required fields
             const formattedTrade: Trade = {
               id: trade.id,
               userId: trade.user_id,
-              // Use account_id for account name if available
               account: 'Main Trading',
               date: trade.entry_date ? trade.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
               pair: trade.symbol,
@@ -467,7 +463,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               accountId: trade.account_id
             };
             
-            // Only add marketSession if it exists in the response
             if (trade.market_session) {
               formattedTrade.marketSession = trade.market_session;
             }
@@ -512,6 +507,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!user) throw new Error('User not found');
       
       const dbTrade = {
+        user_id: user.id,
         symbol: trade.symbol || trade.pair,
         entry_price: trade.entryPrice || trade.entry,
         exit_price: trade.exitPrice || trade.exit,
@@ -530,15 +526,16 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         playbook: trade.playbook,
         followed_rules: trade.followedRules || [],
         market_session: trade.marketSession,
-        account_id: trade.accountId
+        account_id: trade.accountId,
+        risk_percentage: trade.riskPercentage || 0,
+        return_percentage: trade.returnPercentage || 0
       };
       
-      // API call to add trade
-      const { data, error } = await tradeService.createTrade(dbTrade);
+      const result = await tradeService.createTrade(dbTrade);
       
-      if (error) throw error;
+      if (result.error) throw result.error;
       
-      const newTrade = formatTrade(data);
+      const newTrade = formatTrade(result);
       setTrades(prev => [...prev, newTrade]);
       
       toast({
@@ -563,10 +560,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsLoading(true);
     
     try {
-      // Start with an empty update object
       const updateObj: any = {};
       
-      // Only add fields that are present in the trade object
       if (trade.symbol || trade.pair) updateObj.symbol = trade.symbol || trade.pair;
       if (trade.entryPrice || trade.entry) updateObj.entry_price = trade.entryPrice || trade.entry;
       if (trade.exitPrice || trade.exit) updateObj.exit_price = trade.exitPrice || trade.exit;
@@ -596,12 +591,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (trade.marketSession !== undefined) updateObj.market_session = trade.marketSession;
       if (trade.accountId !== undefined) updateObj.account_id = trade.accountId;
       
-      // API call to update trade
       const { error: updateError } = await tradeService.updateTrade(id, updateObj);
       
       if (updateError) throw updateError;
       
-      // Update local state
       setTrades(prev => prev.map(t => t.id === id ? { ...t, ...trade } : t));
       
       toast({

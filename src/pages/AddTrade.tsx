@@ -96,6 +96,16 @@ const AddTrade: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     const hashtags = data.hashtags || [];
     
+    // Calculate risk and return percentages
+    const entryPrice = data.entry;
+    const stopLoss = data.stopLoss || 0;
+    const riskAmount = Math.abs(entryPrice - stopLoss);
+    const riskPercentage = riskAmount > 0 ? (riskAmount / entryPrice) * 100 : 0;
+    
+    const exitPrice = data.exit;
+    const returnAmount = Math.abs(exitPrice - entryPrice);
+    const returnPercentage = entryPrice > 0 ? (returnAmount / entryPrice) * 100 : 0;
+    
     // Create a new trade with all the correct fields
     const newTrade: Omit<Trade, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
       // New format fields
@@ -118,6 +128,8 @@ const AddTrade: React.FC = () => {
       followedRules: data.followedRules,
       marketSession: data.marketSession,
       accountId: data.account === 'Main Trading' ? undefined : data.account,
+      riskPercentage: riskPercentage,
+      returnPercentage: returnPercentage,
       
       // Backward compatibility fields
       date: data.date,

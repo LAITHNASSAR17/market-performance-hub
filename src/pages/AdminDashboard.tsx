@@ -1,559 +1,251 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
-import { useTrade } from '@/contexts/TradeContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { 
-  UserCheck, 
-  UserX, 
-  Search, 
-  Lock, 
-  ShieldAlert, 
-  User, 
-  Users, 
-  BarChart3, 
-  TrendingUp, 
-  DollarSign, 
-  FileText, 
-  Hash, 
-  Calendar, 
-  Activity, 
-  Mail, 
-  Settings, 
-  FileUp, 
-  Bell, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  RefreshCw,
-  Percent,
-  Briefcase
-} from 'lucide-react';
-import Layout from '@/components/Layout';
-import StatCard from '@/components/StatCard';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
-import { hashPassword } from '@/utils/encryption';
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { format } from 'date-fns';
+import { CalendarDays, User2, CreditCard, Users } from 'lucide-react';
 
-// Import our new components
-import UserTable from '@/components/admin/UserTable';
-import TradeTable from '@/components/admin/TradeTable';
-import HashtagsTable from '@/components/admin/HashtagsTable';
-import SystemSettings from '@/components/admin/SystemSettings';
-import AdminCharts from '@/components/admin/AdminCharts';
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url: string;
+  created_at: string;
+  subscription_tier: string;
+}
 
-// Sample data for hashtags
-const sampleHashtags = [
-  { 
-    name: 'setup', 
-    count: 25, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-10' 
-  },
-  { 
-    name: 'momentum', 
-    count: 18, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-09' 
-  },
-  { 
-    name: 'breakout', 
-    count: 22, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-11' 
-  },
-  { 
-    name: 'technical', 
-    count: 15, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-08' 
-  },
-  { 
-    name: 'fundamental', 
-    count: 10, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-07' 
-  },
-];
+interface SubscriptionStats {
+  free: number;
+  basic: number;
+  premium: number;
+}
 
 const AdminDashboard: React.FC = () => {
-  const { user, isAdmin, users, getAllUsers, blockUser, unblockUser, changePassword, updateUser } = useAuth();
-  const { trades, getAllTrades, deleteTrade } = useTrade();
-  const { t } = useLanguage();
-  const isMobile = useIsMobile();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [hashtags, setHashtags] = useState(sampleHashtags);
-  const [allTrades, setAllTrades] = useState<any[]>([]);
-
-  // Load initial data
-  useEffect(() => {
-    if (isAdmin) {
-      handleRefreshData();
-    }
-  }, [isAdmin]);
-
-  // Statistics calculations - now derived from loaded data
-  const totalUsers = users ? users.length : 0;
-  const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
-  const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
-  
-  // All trades (from all users) for admin
-  const totalTrades = allTrades.length;
-  
-  // Calculate profit/loss and other trade statistics
-  const allProfitLoss = allTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
-  
-  const winningTrades = allTrades.filter(trade => (trade.profitLoss || 0) > 0).length;
-  const losingTrades = allTrades.filter(trade => (trade.profitLoss || 0) < 0).length;
-  const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
-  
-  // Today's trades
-  const today = new Date().toISOString().split('T')[0];
-  const todayTrades = allTrades.filter(trade => trade.date === today).length;
-  const todayProfit = allTrades
-    .filter(trade => trade.date === today)
-    .reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
-  
-  // Find most traded pair
-  const pairCount: Record<string, number> = {};
-  allTrades.forEach(trade => {
-    pairCount[trade.pair] = (pairCount[trade.pair] || 0) + 1;
+  const [recentUsers, setRecentUsers] = useState<User[]>([]);
+  const [subscriptionStats, setSubscriptionStats] = useState<SubscriptionStats>({
+    free: 0,
+    basic: 0,
+    premium: 0,
   });
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   
-  let mostTradedPair = '';
-  let highestCount = 0;
+  useEffect(() => {
+    if (!user?.isAdmin) {
+      navigate('/profile');
+    }
+  }, [user, navigate]);
   
-  for (const pair in pairCount) {
-    if (pairCount[pair] > highestCount) {
-      mostTradedPair = pair;
-      highestCount = pairCount[pair];
-    }
-  }
-
-  // Demo data
-  const linkedAccounts = 12;
-  const totalNotes = 87;
-
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" />;
-  }
-
-  const handleRefreshData = () => {
-    // Fetch users data
-    getAllUsers();
+  const getRecentUsers = async () => {
+    if (!user) return;
     
-    // Fetch ALL trades across users for admin dashboard
-    const allTradesData = trades || [];
-    setAllTrades(allTradesData);
-    
-    // Update refresh timestamp
-    setLastRefresh(new Date());
-    
-    toast({
-      title: "Data Refreshed",
-      description: "Admin dashboard data has been updated"
-    });
-  };
-
-  const handleBlockUser = (user: any) => {
-    blockUser({...user, password: '' });
-    toast({
-      title: "User Blocked",
-      description: `${user.name} has been blocked`
-    });
-  };
-
-  const handleUnblockUser = (user: any) => {
-    unblockUser(user);
-    toast({
-      title: "User Unblocked",
-      description: `${user.name} has been unblocked`
-    });
-  };
-
-  const handleSetAdminRole = async (user: any, isAdmin: boolean) => {
     try {
-      const updatedUser = {
-        ...user,
-        role: isAdmin ? 'admin' : 'user',
-        isAdmin: isAdmin
-      };
-
-      await updateUser(updatedUser);
-      
-      toast({
-        title: isAdmin ? "User promoted" : "User demoted",
-        description: isAdmin 
-          ? `${user.name} has been granted admin privileges` 
-          : `${user.name} admin privileges have been revoked`
-      });
-      
-      // Refresh users list
-      getAllUsers();
-    } catch (error) {
-      console.error('Error updating user role:', error);
-      toast({
-        title: "Error updating user role",
-        description: "Failed to update user role. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
-    try {
-      const hashedPassword = hashPassword(userData.password);
-      
       const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name: userData.name,
-          email: userData.email,
-          password: hashedPassword,
-          role: userData.isAdmin ? 'admin' : 'user',
-          is_blocked: false
-        })
-        .select();
+        .from('profiles')  // Use 'profiles' instead of 'users'
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+        
+      if (error) throw error;
       
-      if (error) throw new Error(error.message);
-      
-      toast({
-        title: "User Added",
-        description: `${userData.name} has been added successfully`
-      });
-      
-      // Refresh users list
-      getAllUsers();
+      setRecentUsers(data || []);
     } catch (error) {
-      console.error('Error adding user:', error);
+      console.error('Error fetching recent users:', error);
       toast({
-        title: "Error Adding User",
-        description: "Failed to add new user. Please try again.",
+        title: "خطأ",
+        description: "حدث خطأ أثناء جلب المستخدمين الجدد",
         variant: "destructive"
       });
-      throw error; // Rethrow for the component to handle
     }
   };
-
-  const handleAddHashtag = (name: string) => {
-    const newHashtag = {
-      name,
-      count: 0,
-      addedBy: user?.name || 'Admin',
-      lastUsed: new Date().toISOString().split('T')[0]
-    };
-    setHashtags([...hashtags, newHashtag]);
-    toast({
-      title: "Hashtag Added",
-      description: `#${name} has been added to the system`
-    });
+  
+  const getSubscriptionStats = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('subscription_tier');
+        
+      if (error) throw error;
+      
+      const stats: SubscriptionStats = { free: 0, basic: 0, premium: 0 };
+      data?.forEach(profile => {
+        switch (profile.subscription_tier) {
+          case 'free':
+            stats.free++;
+            break;
+          case 'basic':
+            stats.basic++;
+            break;
+          case 'premium':
+            stats.premium++;
+            break;
+        }
+      });
+      
+      setSubscriptionStats(stats);
+    } catch (error) {
+      console.error('Error fetching subscription stats:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء جلب إحصائيات الاشتراكات",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  const handleEditHashtag = (oldName: string, newName: string) => {
-    const updatedHashtags = hashtags.map(tag => 
-      tag.name === oldName ? { ...tag, name: newName } : tag
-    );
-    setHashtags(updatedHashtags);
-    toast({
-      title: "Hashtag Updated",
-      description: `#${oldName} has been renamed to #${newName}`
-    });
+  
+  const getTotalRevenue = async () => {
+    if (!user) return;
+    
+    try {
+      // This is a placeholder - replace with your actual revenue calculation logic
+      const revenue = (subscriptionStats.basic * 10) + (subscriptionStats.premium * 20);
+      setTotalRevenue(revenue);
+    } catch (error) {
+      console.error('Error calculating total revenue:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ أثناء حساب إجمالي الإيرادات",
+        variant: "destructive"
+      });
+    }
   };
-
-  const handleDeleteHashtag = (name: string) => {
-    const updatedHashtags = hashtags.filter(tag => tag.name !== name);
-    setHashtags(updatedHashtags);
-    toast({
-      title: "Hashtag Deleted",
-      description: `#${name} has been removed from the system`
-    });
-  };
-
-  const handleViewTrade = (id: string) => {
-    toast({
-      title: "View Trade",
-      description: `Viewing trade ${id}`
-    });
-    // Implementation would navigate to trade view
-  };
-
-  const handleEditTrade = (id: string) => {
-    toast({
-      title: "Edit Trade",
-      description: `Editing trade ${id}`
-    });
-    // Implementation would navigate to trade edit
-  };
-
-  const handleDeleteTrade = (id: string) => {
-    deleteTrade(id);
-    // Update local state to reflect the deletion
-    setAllTrades(allTrades.filter(trade => trade.id !== id));
-    toast({
-      title: "Trade Deleted",
-      description: `Trade ${id} has been deleted`
-    });
-  };
-
-  const handleExportTrades = () => {
-    toast({
-      title: "Export Initiated",
-      description: "Trades export started"
-    });
-    // Implementation would export trades
-  };
-
-  const handleViewUser = (userId: string) => {
-    toast({
-      title: "View User",
-      description: `Viewing user ${userId}`
-    });
-    // Implementation would navigate to user view
-  };
-
+  
+  useEffect(() => {
+    getRecentUsers();
+    getSubscriptionStats();
+    getTotalRevenue();
+  }, [user]);
+  
+  const chartData = [
+    { name: 'Free', users: subscriptionStats.free },
+    { name: 'Basic', users: subscriptionStats.basic },
+    { name: 'Premium', users: subscriptionStats.premium },
+  ];
+  
   return (
-    <Layout>
-      <div className="container mx-auto py-4 md:py-6 px-4 md:px-6">
-        <div className="flex flex-col space-y-6">
-          <header className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
-                <ShieldAlert className="mr-2 h-6 md:h-8 w-6 md:w-8 text-purple-600" />
-                Admin Dashboard
-              </h1>
-              <p className="mt-1 text-sm md:text-base text-gray-500">
-                Manage users, trades, and system settings.
-              </p>
-            </div>
-            <div className="mt-4 md:mt-0 flex items-center space-x-2 text-sm text-gray-500">
-              <span className="hidden md:inline">Last refreshed: {lastRefresh.toLocaleTimeString()}</span>
-              <Button 
-                variant="outline" 
-                size={isMobile ? "sm" : "default"} 
-                onClick={handleRefreshData}
-                className="flex items-center"
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                {isMobile ? "Refresh" : "Refresh Data"}
-              </Button>
-            </div>
-          </header>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            <StatCard
-              title="Total Users"
-              value={totalUsers}
-              icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-              description={`Active: ${activeUsers}`}
-            />
-            
-            <StatCard
-              title="Total Trades"
-              value={totalTrades}
-              icon={<Activity className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-              description={`Today: ${todayTrades}`}
-            />
-            
-            <StatCard
-              title="Total P&L"
-              value={`$${allProfitLoss.toFixed(2)}`}
-              icon={<DollarSign className="h-4 md:h-5 w-4 md:w-5" />}
-              color={allProfitLoss > 0 ? "green" : allProfitLoss < 0 ? "red" : "default"}
-              description={`Today: $${todayProfit.toFixed(2)}`}
-              trend={allProfitLoss > 0 ? 'up' : allProfitLoss < 0 ? 'down' : 'neutral'}
-            />
-            
-            <StatCard
-              title="Win Rate"
-              value={`${winRate}%`}
-              icon={<Percent className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-              description={`W: ${winningTrades} / L: ${losingTrades}`}
-            />
-            
-            <StatCard
-              title="Trading Accounts"
-              value={linkedAccounts}
-              icon={<Briefcase className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-            />
-            
-            <StatCard
-              title="Total Notes"
-              value={totalNotes}
-              icon={<FileText className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-            />
-            
-            <StatCard
-              title="Most Traded Pair"
-              value={mostTradedPair || 'N/A'}
-              icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
-              color="default"
-              description={highestCount > 0 ? `${highestCount} trades` : 'No trades yet'}
-            />
-            
-            <StatCard
-              title="Blocked Users"
-              value={blockedUsers}
-              icon={<UserX className="h-4 md:h-5 w-4 md:w-5" />}
-              color="red"
-              description={blockedUsers > 0 ? `${blockedUsers} of ${totalUsers}` : 'None'}
-            />
-          </div>
-
-          {/* Charts Section */}
-          <AdminCharts className="mt-4" />
-
-          {/* Main Content */}
-          <Tabs defaultValue="users" className="w-full mt-6">
-            <TabsList className="mb-6 bg-white p-1 rounded-md overflow-x-auto flex whitespace-nowrap">
-              <TabsTrigger value="users" className="flex items-center">
-                <User className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">User Management</span>
-                <span className="sm:hidden">Users</span>
-              </TabsTrigger>
-              <TabsTrigger value="trades" className="flex items-center">
-                <Activity className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Trade Management</span>
-                <span className="sm:hidden">Trades</span>
-              </TabsTrigger>
-              <TabsTrigger value="hashtags" className="flex items-center">
-                <Hash className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Hashtag Management</span>
-                <span className="sm:hidden">Tags</span>
-              </TabsTrigger>
-              <TabsTrigger value="notes" className="flex items-center">
-                <FileText className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Notes Management</span>
-                <span className="sm:hidden">Notes</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center">
-                <Settings className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">System Settings</span>
-                <span className="sm:hidden">Settings</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="users" className="mt-0">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>User Management</CardTitle>
-                  <CardDescription>View and manage user accounts.</CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <UserTable 
-                    users={users}
-                    onBlock={handleBlockUser}
-                    onUnblock={handleUnblockUser}
-                    onChangePassword={changePassword}
-                    onViewUser={handleViewUser}
-                    onSetAdmin={handleSetAdminRole}
-                    onAddUser={handleAddUser}
-                    searchTerm={searchTerm}
-                    setSearchTerm={setSearchTerm}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="trades" className="mt-0">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>Trade Management</CardTitle>
-                  <CardDescription>View and manage all trades across the platform.</CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <TradeTable 
-                    trades={allTrades}
-                    onViewTrade={handleViewTrade}
-                    onEditTrade={handleEditTrade}
-                    onDeleteTrade={handleDeleteTrade}
-                    onRefresh={handleRefreshData}
-                    onExport={handleExportTrades}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="hashtags" className="mt-0">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>Hashtag Management</CardTitle>
-                  <CardDescription>Manage hashtags used across the platform.</CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <HashtagsTable 
-                    hashtags={hashtags}
-                    onAddHashtag={handleAddHashtag}
-                    onEditHashtag={handleEditHashtag}
-                    onDeleteHashtag={handleDeleteHashtag}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="notes" className="mt-0">
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle>Notes Management</CardTitle>
-                  <CardDescription>View and manage all user notes.</CardDescription>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="flex flex-col sm:flex-row mb-4 gap-2">
-                    <div className="relative flex-grow">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <Input
-                        className="pl-10 pr-4"
-                        placeholder="Search notes..."
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="overflow-x-auto">
-                    <div className="p-8 text-center text-gray-500">
-                      <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Notes Module Coming Soon</h3>
-                      <p>The notes management functionality is under development and will be available in a future update.</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="settings" className="mt-0">
-              <SystemSettings />
-            </TabsContent>
-          </Tabs>
-        </div>
+    <div className="container py-10">
+      <header className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          Admin Dashboard
+        </h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Monitor platform statistics and manage users.
+        </p>
+      </header>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center"><Users className="mr-2 h-4 w-4" /> Total Users</CardTitle>
+            <CardDescription>Total number of registered users</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{subscriptionStats.free + subscriptionStats.basic + subscriptionStats.premium}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center"><CreditCard className="mr-2 h-4 w-4" /> Total Revenue</CardTitle>
+            <CardDescription>Estimated revenue from subscriptions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">${totalRevenue}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center"><CalendarDays className="mr-2 h-4 w-4" /> Users by Tier</CardTitle>
+            <CardDescription>Distribution of users across subscription tiers</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Area type="monotone" dataKey="users" stroke="#8884d8" fill="#8884d8" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
-    </Layout>
+      
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+        <header className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+            <User2 className="mr-2 h-5 w-5" /> Recent Users
+          </h2>
+          <Button variant="outline" size="sm" onClick={() => navigate('/admin/users')}>
+            View All
+          </Button>
+        </header>
+        
+        <Table>
+          <TableCaption>A list of your recent users.</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Avatar</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Subscription</TableHead>
+              <TableHead>Joined</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {recentUsers.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>
+                  <Avatar>
+                    <AvatarImage src={user.avatar_url} />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </TableCell>
+                <TableCell className="font-medium">{user.name}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>
+                  <Badge variant="secondary">{user.subscription_tier}</Badge>
+                </TableCell>
+                <TableCell>{format(new Date(user.created_at), 'MMM d, yyyy')}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 };
 

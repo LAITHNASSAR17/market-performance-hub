@@ -26,6 +26,8 @@ export interface ITrade {
   followed_rules?: string[];
   market_session?: string;
   account_id?: string;
+  risk_percentage?: number;
+  return_percentage?: number;
 }
 
 export const tradeService = {
@@ -60,7 +62,7 @@ export const tradeService = {
     }
   },
   
-  async createTrade(tradeData: Omit<ITrade, 'id' | 'created_at' | 'updated_at'>): Promise<ITrade> {
+  async createTrade(tradeData: Omit<ITrade, 'id' | 'created_at' | 'updated_at'>): Promise<{data: ITrade | null, error: any}> {
     try {
       const { data, error } = await supabase
         .from('trades')
@@ -72,15 +74,14 @@ export const tradeService = {
         .select()
         .single();
         
-      if (error) throw error;
-      return data;
+      return { data, error };
     } catch (error) {
       console.error('Error creating trade:', error);
-      throw error;
+      return { data: null, error };
     }
   },
   
-  async updateTrade(id: string, tradeData: Partial<ITrade>): Promise<ITrade> {
+  async updateTrade(id: string, tradeData: Partial<ITrade>): Promise<{data: ITrade | null, error: any}> {
     try {
       const { data, error } = await supabase
         .from('trades')
@@ -92,25 +93,24 @@ export const tradeService = {
         .select()
         .single();
         
-      if (error) throw error;
-      return data;
+      return { data, error };
     } catch (error) {
       console.error('Error updating trade:', error);
-      throw error;
+      return { data: null, error };
     }
   },
   
-  async deleteTrade(id: string): Promise<void> {
+  async deleteTrade(id: string): Promise<{ error: any }> {
     try {
       const { error } = await supabase
         .from('trades')
         .delete()
         .eq('id', id);
         
-      if (error) throw error;
+      return { error };
     } catch (error) {
       console.error('Error deleting trade:', error);
-      throw error;
+      return { error };
     }
   },
   

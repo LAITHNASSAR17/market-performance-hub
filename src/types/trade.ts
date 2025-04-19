@@ -27,6 +27,10 @@ export interface Trade {
   beforeImageUrl?: string;
   afterImageUrl?: string;
   
+  // Adding the missing properties referenced in TradeTracking.tsx
+  riskPercentage: number;
+  returnPercentage: number;
+  
   // Compatibility fields
   date?: string;
   pair?: string;
@@ -38,8 +42,4 @@ export interface Trade {
   total?: number;
   hashtags?: string[];
   commission?: number;
-  
-  // Added missing properties referenced in TradeTracking.tsx
-  riskPercentage: number;
-  returnPercentage: number;
 }
