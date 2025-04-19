@@ -21,9 +21,9 @@ export interface ITrade {
   stopLoss: number | null;
   takeProfit: number | null;
   durationMinutes: number | null;
-  playbook?: string;
+  playbook?: string | null;
   followedRules?: string[];
-  marketSession?: string;
+  marketSession?: string | null;
 }
 
 export const tradeService = {
@@ -66,9 +66,9 @@ export const tradeService = {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         rating: tradeData.rating || 0,
-        stop_loss: tradeData.stopLoss,
-        take_profit: tradeData.takeProfit,
-        duration_minutes: tradeData.durationMinutes,
+        stop_loss: tradeData.stopLoss || null,
+        take_profit: tradeData.takeProfit || null,
+        duration_minutes: tradeData.durationMinutes || null,
         market_session: tradeData.marketSession || null,
         followed_rules: tradeData.followedRules || [],
         playbook: tradeData.playbook || null
@@ -120,7 +120,10 @@ export const tradeService = {
       .select()
       .single();
     
-    if (error || !data) return null;
+    if (error || !data) {
+      console.error('Error updating trade:', error);
+      return null;
+    }
     return formatTrade(data);
   },
 

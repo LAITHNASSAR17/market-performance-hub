@@ -238,6 +238,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5 mb-6 sm:mb-8">
         <StatCard
           title="إجمالي الربح/الخسارة"
@@ -267,6 +268,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Calendar section */}
       <Card className="mb-6">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 gap-2">
           <CardTitle className="text-lg">{format(new Date(), 'MMMM yyyy')}</CardTitle>
