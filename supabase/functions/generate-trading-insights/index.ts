@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -136,8 +135,7 @@ serve(async (req) => {
         `;
       }
 
-      // الإصدار الصحيح لواجهة Google AI API
-      const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent', {
+      const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemma-27b:generateContent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +173,6 @@ serve(async (req) => {
 
       const content = data.candidates[0].content.parts[0].text;
 
-      // Process the response based on purpose
       if (purpose === 'advice') {
         return new Response(JSON.stringify({ 
           analysis: content
@@ -184,7 +181,6 @@ serve(async (req) => {
         });
       }
 
-      // For tips and insights, parse the response and format it
       const insights = content.split('\n\n').filter(Boolean).map((insight, index) => {
         const lines = insight.split('\n');
         return {
