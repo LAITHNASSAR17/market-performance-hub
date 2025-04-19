@@ -3,10 +3,12 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMentorship } from "@/contexts/MentorshipContext";
 
 const NotFound = () => {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { isMentor } = useMentorship();
 
   useEffect(() => {
     console.error(
@@ -25,9 +27,16 @@ const NotFound = () => {
         </p>
         <div className="space-x-4">
           {isAuthenticated ? (
-            <Button asChild variant="default">
-              <Link to="/dashboard">Return to Dashboard</Link>
-            </Button>
+            <>
+              <Button asChild variant="default">
+                <Link to="/dashboard">Return to Dashboard</Link>
+              </Button>
+              {isMentor && (
+                <Button asChild variant="outline">
+                  <Link to="/mentor-dashboard">Go to Mentor Dashboard</Link>
+                </Button>
+              )}
+            </>
           ) : (
             <Button asChild variant="default">
               <Link to="/">Return to Home</Link>
