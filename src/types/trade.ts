@@ -31,9 +31,6 @@ export interface Trade {
   marketSession?: string; // Market session when the trade was executed
 }
 
-// The Symbol interface is now moved to TradeContext.tsx
-// The TradingAccount interface is now moved to TradeContext.tsx
-
 // Update mapDBTradeToTrade to include marketSession
 export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   id: dbTrade.id,

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTrade } from '@/contexts/TradeContext';
-import { Symbol } from '@/contexts/TradeContext';
 
 type AddPairDialogProps = {
   isOpen: boolean;
@@ -26,11 +25,11 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({
     
     if (!symbol.trim()) return;
     
-    // Create a new symbol with a valid type
-    const newSymbol: Symbol = {
+    // Only add the symbol, without additional details
+    const newSymbol = {
       symbol,
       name: symbol,
-      type: 'forex' // Changed from 'other' to a valid type
+      type: 'other' as const
     };
     
     addSymbol(newSymbol);
