@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, Navigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, Settings, Scroll, CreditCard } from 'lucide-react';
@@ -50,7 +50,22 @@ const Layout: React.FC<LayoutProps> = ({
   }, [isMobile]);
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <div className="text-center max-w-md px-4">
+          <h1 className="text-2xl font-bold mb-4">تحتاج لتسجيل الدخول</h1>
+          <p className="mb-6">يرجى تسجيل الدخول للوصول إلى هذه الصفحة</p>
+          <div className="flex justify-center gap-4">
+            <Button asChild>
+              <Link to="/login">تسجيل الدخول</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/register">إنشاء حساب</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const navigation = [{

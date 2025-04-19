@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Route, Routes, useLocation } from 'react-router-dom';
+import { Route, Routes, useLocation, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -70,6 +71,11 @@ function AnimatedRoutes() {
     <PageTransition>
       <Routes location={location}>
         <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<EmailVerify />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/trades" element={<Trades />} />
         <Route path="/add-trade" element={<AddTrade />} />
@@ -82,6 +88,9 @@ function AnimatedRoutes() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/chart" element={<TradingChart />} />
         <Route path="/user-profile" element={<UserProfileSettings />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin/users" element={<AdminUsers />} />

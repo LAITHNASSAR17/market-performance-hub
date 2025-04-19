@@ -26,13 +26,12 @@ export const useSiteSettings = () => {
       if (error) throw error;
 
       // Convert database response to match our SiteSettings type
-      // We need to add company_email if it doesn't exist
       const formattedSettings: SiteSettings = {
         id: data.id,
         site_name: data.site_name,
         theme: data.theme || 'light',
         language: data.language || 'en',
-        company_email: 'support@example.com', // Add default value since it's required by type
+        company_email: 'support@example.com', // Add default value
         created_at: data.created_at,
         updated_at: data.updated_at
       };
