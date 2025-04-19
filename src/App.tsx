@@ -47,6 +47,8 @@ import MentorDashboard from './pages/MentorDashboard';
 import { MenteeViewProvider } from './contexts/MenteeViewContext';
 
 function App() {
+  console.log("App: Initializing application");
+  
   return (
     <AuthProvider>
       <ThemeProvider>
@@ -73,6 +75,7 @@ function App() {
 
 function AnimatedRoutes() {
   const location = useLocation();
+  console.log("AnimatedRoutes: Current location", location.pathname);
   
   return (
     <PageTransition>

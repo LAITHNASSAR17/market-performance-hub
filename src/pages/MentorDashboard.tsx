@@ -46,7 +46,7 @@ const MentorDashboard: React.FC = () => {
   console.log("MentorDashboard: Component rendering");
   
   const { user } = useAuth();
-  const { mentorships, isLoading, isMentor } = useMentorship();
+  const { mentorships, isLoading, isMentor, refreshMentorships } = useMentorship();
   const { enterMenteeView } = useMenteeView();
   const navigate = useNavigate();
   const [menteeStats, setMenteeStats] = useState<MenteeStats[]>([]);
@@ -58,6 +58,14 @@ const MentorDashboard: React.FC = () => {
   console.log('Mentor Dashboard: Mentorships', mentorships);
   console.log('Mentor Dashboard: Is Mentor?', isMentor);
   console.log('Mentor Dashboard: Loading State', isLoading);
+
+  // Force refresh mentorships when component mounts
+  useEffect(() => {
+    console.log('MentorDashboard: Initial load - forcing mentorship refresh');
+    if (user) {
+      refreshMentorships();
+    }
+  }, []);
 
   // First check - redirects if no user
   useEffect(() => {
@@ -75,6 +83,7 @@ const MentorDashboard: React.FC = () => {
     console.log('Is loading:', isLoading);
     console.log('Is mentor:', isMentor);
     
+    // Only redirect after loading is complete and we've determined they're not a mentor
     if (user && !isLoading && !isMentor) {
       console.warn('User is not a mentor, redirecting to dashboard');
       navigate('/dashboard');

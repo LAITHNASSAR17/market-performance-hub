@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { mentorshipService, IMentorship } from '@/services/mentorshipService';
 import { useToast } from '@/hooks/use-toast';
@@ -62,6 +61,12 @@ export const MentorshipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setIsLoading(false);
     }
   }, [user]);
+
+  const isMentor = user ? mentorships.some(m => m.mentor_id === user.id && m.status === 'accepted') : false;
+  const isMentee = user ? mentorships.some(m => m.mentee_id === user.id && m.status === 'accepted') : false;
+
+  console.log("MentorshipContext: isMentor =", isMentor); // Debug log
+  console.log("MentorshipContext: isMentee =", isMentee); // Debug log
 
   const createInvite = async (email: string) => {
     try {
@@ -146,7 +151,6 @@ export const MentorshipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
-  // New helper methods for the mentor dashboard
   const getMenteesByMentor = (mentorId: string) => {
     return mentorships.filter(m => m.mentor_id === mentorId);
   };
@@ -154,12 +158,6 @@ export const MentorshipProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const getMentorsByMentee = (menteeId: string) => {
     return mentorships.filter(m => m.mentee_id === menteeId);
   };
-
-  const isMentor = user ? mentorships.some(m => m.mentor_id === user.id && m.status === 'accepted') : false;
-  const isMentee = user ? mentorships.some(m => m.mentee_id === user.id && m.status === 'accepted') : false;
-
-  console.log("MentorshipContext: isMentor =", isMentor); // Debug log
-  console.log("MentorshipContext: isMentee =", isMentee); // Debug log
 
   return (
     <MentorshipContext.Provider value={{

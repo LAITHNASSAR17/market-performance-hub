@@ -44,9 +44,18 @@ const Layout: React.FC<LayoutProps> = ({
     toggleTheme
   } = useTheme();
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
-  const { isMentor } = useMentorship();
+  const { isMentor, refreshMentorships } = useMentorship();
 
   console.log("Layout: User is mentor?", isMentor); // Debug log
+  console.log("Layout: Current location", location.pathname); // Debug log
+
+  // Force refresh mentorships when layout mounts
+  useEffect(() => {
+    console.log("Layout: Initial mount - refreshing mentorships");
+    if (user) {
+      refreshMentorships();
+    }
+  }, []);
 
   useEffect(() => {
     if (isMobile) {
@@ -104,6 +113,7 @@ const Layout: React.FC<LayoutProps> = ({
     href: '/subscriptions'
   }];
 
+  // Add mentor dashboard link if the user is a mentor
   const mentorNavItems = isMentor ? [
     {
       name: 'Mentor Dashboard',
