@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 
-interface IPlaybook {
+export interface IPlaybook {
   id: string;
   name: string;
   description: string;
@@ -10,9 +11,26 @@ interface IPlaybook {
   expectedValue: string;
   rating: number;
   tags: string[];
+  isPrivate?: boolean;
+  category?: string;
+  netProfitLoss?: number;
+  totalTrades?: number;
 }
 
-interface ITrade {
+export interface PlaybookEntry {
+  id: string;
+  name: string;
+  entryConditions: string[];
+  exitConditions: string[];
+}
+
+export interface PlaybookRule {
+  id: string;
+  description: string;
+  isRequired: boolean;
+}
+
+export interface ITrade {
   id: string;
   userId: string;
   symbol: string;
@@ -43,7 +61,7 @@ export const usePlaybooks = () => {
   const { trades } = useTrade();
 
   useEffect(() => {
-    // Mock playbooks data
+    // Mock playbooks data with enhanced properties
     const mockPlaybooks: IPlaybook[] = [
       {
         id: "1",
@@ -53,7 +71,11 @@ export const usePlaybooks = () => {
         rMultiple: "2.0",
         expectedValue: "1.2",
         rating: 4,
-        tags: ["trend", "momentum", "moving average"]
+        tags: ["trend", "momentum", "moving average"],
+        isPrivate: false,
+        category: "Momentum",
+        netProfitLoss: 1250,
+        totalTrades: 35
       },
       {
         id: "2",
@@ -63,7 +85,11 @@ export const usePlaybooks = () => {
         rMultiple: "2.5",
         expectedValue: "1.4",
         rating: 3,
-        tags: ["range", "breakout", "consolidation"]
+        tags: ["range", "breakout", "consolidation"],
+        isPrivate: true,
+        category: "Breakout",
+        netProfitLoss: 980,
+        totalTrades: 28
       },
       {
         id: "3",
@@ -73,7 +99,11 @@ export const usePlaybooks = () => {
         rMultiple: "1.8",
         expectedValue: "1.2",
         rating: 5,
-        tags: ["fibonacci", "retracement", "trend"]
+        tags: ["fibonacci", "retracement", "trend"],
+        isPrivate: false,
+        category: "Technical",
+        netProfitLoss: 1750,
+        totalTrades: 42
       }
     ];
 
@@ -110,10 +140,36 @@ export const usePlaybooks = () => {
     };
   });
 
+  // Add playbook management functions
+  const addPlaybook = (playbook: Omit<IPlaybook, 'id'>) => {
+    const newPlaybook = {
+      ...playbook,
+      id: Math.random().toString(36).substr(2, 9),
+    };
+    setPlaybooks([...playbooks, newPlaybook]);
+  };
+
+  const updatePlaybook = (id: string, updatedPlaybook: Partial<IPlaybook>) => {
+    const updated = playbooks.map(p => 
+      p.id === id ? { ...p, ...updatedPlaybook } : p
+    );
+    setPlaybooks(updated);
+  };
+
+  const deletePlaybook = (id: string) => {
+    setPlaybooks(playbooks.filter(p => p.id !== id));
+    if (selectedPlaybook?.id === id) {
+      setSelectedPlaybook(null);
+    }
+  };
+
   return {
     playbooks,
     selectedPlaybook,
     setSelectedPlaybook,
-    tradesForPlaybook
+    tradesForPlaybook,
+    addPlaybook,
+    updatePlaybook,
+    deletePlaybook
   };
 };

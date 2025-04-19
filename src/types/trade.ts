@@ -12,6 +12,8 @@ export interface Trade extends ITrade {
   lotSize?: number;
   total?: number;
   hashtags?: string[];
+  // Add commission as an alias for fees
+  commission?: number;
 }
 
 export const mapDBTradeToTrade = (dbTrade: any): Trade => {
@@ -54,31 +56,36 @@ export const mapDBTradeToTrade = (dbTrade: any): Trade => {
   trade.total = (dbTrade.profit_loss || 0) - (dbTrade.fees || 0);
   trade.hashtags = dbTrade.tags || [];
   trade.account = 'Main Trading'; // Default account name
+  trade.commission = dbTrade.fees; // Alias for fees
 
   return trade;
 };
 
-export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): any => ({
-  symbol: trade.symbol,
-  entry_price: trade.entryPrice,
-  exit_price: trade.exitPrice,
-  quantity: trade.quantity,
-  direction: trade.direction,
-  entry_date: trade.entryDate,
-  exit_date: trade.exitDate,
-  profit_loss: trade.profitLoss,
-  fees: trade.fees,
-  notes: trade.notes,
-  tags: trade.tags || [],
-  rating: trade.rating || 0,
-  stop_loss: trade.stopLoss,
-  take_profit: trade.takeProfit,
-  duration_minutes: trade.durationMinutes,
-  playbook: trade.playbook,
-  followed_rules: trade.followedRules || [],
-  market_session: trade.marketSession,
-  account_id: trade.accountId,
-  image_url: trade.imageUrl,
-  before_image_url: trade.beforeImageUrl,
-  after_image_url: trade.afterImageUrl
-});
+export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): any => {
+  const fees = trade.fees || trade.commission || 0;
+  
+  return {
+    symbol: trade.symbol || trade.pair,
+    entry_price: trade.entryPrice || trade.entry,
+    exit_price: trade.exitPrice || trade.exit,
+    quantity: trade.quantity || trade.lotSize,
+    direction: trade.direction || (trade.type === 'Buy' ? 'long' : 'short'),
+    entry_date: trade.entryDate || (trade.date ? new Date(trade.date) : new Date()),
+    exit_date: trade.exitDate || null,
+    profit_loss: trade.profitLoss,
+    fees: fees,
+    notes: trade.notes,
+    tags: trade.tags || trade.hashtags || [],
+    rating: trade.rating || 0,
+    stop_loss: trade.stopLoss,
+    take_profit: trade.takeProfit,
+    duration_minutes: trade.durationMinutes,
+    playbook: trade.playbook,
+    followed_rules: trade.followedRules || [],
+    market_session: trade.marketSession,
+    account_id: trade.accountId,
+    image_url: trade.imageUrl,
+    before_image_url: trade.beforeImageUrl,
+    after_image_url: trade.afterImageUrl
+  };
+};

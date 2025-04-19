@@ -1,27 +1,48 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 
+// Extend the User type from Supabase to include our custom fields
+interface ExtendedUser extends User {
+  name?: string;
+  subscription_tier?: string;
+  role?: string;
+  isAdmin?: boolean;
+}
+
 type AuthContextType = {
   session: Session | null;
-  user: Session['user'] | null;
+  user: ExtendedUser | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  logout: () => Promise<void>; // Alias for signOut for compatibility
   handleRegister: (formData: any) => Promise<void>;
   handleForgotPassword: (email: string) => Promise<void>;
   handleUpdatePassword: (accessToken: string, newPassword: string) => Promise<void>;
   handleVerifyEmail: (token: string, type: string) => Promise<void>;
+  getAllUsers: () => Promise<void>;
+  users: any[];
+  blockUser: (user: any) => Promise<void>;
+  unblockUser: (user: any) => Promise<void>;
+  changePassword: (userId: string, newPassword: string) => Promise<void>;
+  updateUser: (userData: any) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<Session['user'] | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -31,7 +52,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
-        setUser(session?.user || null);
+        
+        if (session?.user) {
+          // Get user profile from profiles table
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          // Combine auth user with profile data
+          const extendedUser: ExtendedUser = {
+            ...session.user,
+            name: profileData?.name || '',
+            subscription_tier: profileData?.subscription_tier || 'free',
+            role: profileData?.role || 'user',
+            isAdmin: profileData?.role === 'admin'
+          };
+          
+          setUser(extendedUser);
+          setIsAuthenticated(true);
+          setIsAdmin(profileData?.role === 'admin');
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          setIsAdmin(false);
+        }
       } catch (error) {
         console.error('Error getting session:', error);
         toast({
@@ -46,9 +92,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     getSession();
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      setUser(session?.user || null);
+      
+      if (session?.user) {
+        // Get user profile from profiles table
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+          
+        // Combine auth user with profile data
+        const extendedUser: ExtendedUser = {
+          ...session.user,
+          name: profileData?.name || '',
+          subscription_tier: profileData?.subscription_tier || 'free',
+          role: profileData?.role || 'user',
+          isAdmin: profileData?.role === 'admin'
+        };
+        
+        setUser(extendedUser);
+        setIsAuthenticated(true);
+        setIsAdmin(profileData?.role === 'admin');
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+      }
     });
   }, [toast]);
 
@@ -94,6 +165,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   };
+
+  // Alias for backward compatibility
+  const logout = signOut;
 
   const handleRegister = async (formData: any): Promise<void> => {
     setIsLoading(true);
@@ -224,8 +298,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleVerifyEmail = async (token: string, type: string): Promise<void> => {
     setIsLoading(true);
     try {
+      // Use the type as MobileOtpType or EmailOtpType from Supabase
+      const otpType = type === 'email' ? 'email' : 'sms' as any;
+      
       const { error } = await supabase.auth.verifyOtp({
-        type: type,
+        type: otpType,
         token: token,
       });
 
@@ -250,18 +327,141 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Admin functions
+  const getAllUsers = async (): Promise<void> => {
+    try {
+      // Get users from the profiles table (not auth.users which isn't accessible via API)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const blockUser = async (user: any): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: true })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      
+      // Refresh users list
+      getAllUsers();
+      
+      toast({
+        title: "User Blocked",
+        description: `${user.name} has been blocked successfully.`
+      });
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to block user.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const unblockUser = async (user: any): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: false })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      
+      // Refresh users list
+      getAllUsers();
+      
+      toast({
+        title: "User Unblocked",
+        description: `${user.name} has been unblocked successfully.`
+      });
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unblock user.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const changePassword = async (userId: string, newPassword: string): Promise<void> => {
+    // Note: In a real application, this would need to be handled by a server function
+    // as client-side code can't change other users' passwords directly
+    toast({
+      title: "Operation Not Supported",
+      description: "Password changes for other users requires server-side implementation.",
+      variant: "destructive"
+    });
+  };
+
+  const updateUser = async (userData: any): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: userData.name,
+          role: userData.role,
+          email: userData.email,
+          is_blocked: userData.is_blocked,
+          subscription_tier: userData.subscription_tier
+        })
+        .eq('id', userData.id);
+
+      if (error) throw error;
+      
+      // Refresh users list
+      getAllUsers();
+      
+      toast({
+        title: "User Updated",
+        description: `${userData.name} has been updated successfully.`
+      });
+    } catch (error) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         session,
         user,
         isLoading,
+        isAuthenticated,
+        isAdmin,
         signIn,
         signOut,
+        logout,
         handleRegister,
         handleForgotPassword,
         handleUpdatePassword,
         handleVerifyEmail,
+        getAllUsers,
+        users,
+        blockUser,
+        unblockUser,
+        changePassword,
+        updateUser,
       }}
     >
       {children}

@@ -95,9 +95,40 @@ const AddTrade: React.FC = () => {
 
   const onSubmit = async (data: FormData) => {
     const hashtags = data.hashtags || [];
-    const newTrade = {
-      ...data,
+    
+    // Create a new trade with all the correct fields
+    const newTrade: Omit<Trade, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
+      // New format fields
+      symbol: data.pair,
+      entryPrice: data.entry,
+      exitPrice: data.exit,
+      quantity: data.lotSize,
+      direction: data.type === 'Buy' ? 'long' : 'short',
+      entryDate: new Date(data.date),
+      exitDate: null, // Assuming exit date is the same as entry for simplicity
+      profitLoss: data.exit * data.lotSize - data.entry * data.lotSize,
+      fees: data.commission,
+      notes: data.notes,
+      tags: hashtags,
+      rating: parseInt(data.rating.toString()) || 0,
+      stopLoss: data.stopLoss,
+      takeProfit: data.takeProfit,
+      durationMinutes: data.durationMinutes,
+      playbook: data.playbook,
+      followedRules: data.followedRules,
+      marketSession: data.marketSession,
+      accountId: data.account === 'Main Trading' ? undefined : data.account,
+      
+      // Backward compatibility fields
+      date: data.date,
+      pair: data.pair,
+      type: data.type as 'Buy' | 'Sell',
+      entry: data.entry,
+      exit: data.exit,
+      lotSize: data.lotSize,
+      account: data.account,
       hashtags: hashtags,
+      commission: data.commission,
     };
 
     try {

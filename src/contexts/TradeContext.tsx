@@ -18,7 +18,7 @@ export type TradingAccount = {
 
 type TradeContextType = {
   trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
   deleteTrade: (id: string) => Promise<void>;
   getTrade: (id: string) => Trade | undefined;
@@ -137,6 +137,7 @@ const formatTrade = (data: any): Trade => {
     formatBase.lotSize = data.quantity;
     formatBase.total = (data.profit_loss || 0) - (data.fees || 0);
     formatBase.hashtags = data.tags || [];
+    formatBase.commission = data.fees;
     
     return formatBase;
   } catch (err) {
@@ -316,6 +317,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { toast } = useToast();
   const { user } = useAuth();
   const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const calculateProfitLoss = (
     entry: number, 
@@ -500,150 +502,121 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     fetchTrades();
   }, [user, toast]);
 
-  const addTrade = async (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user) return;
-
+  const addTrade = async (trade: Omit<Trade, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<void> => {
+    setIsLoading(true);
+    
     try {
-      console.log('Adding new trade with data:', newTradeData);
-      const entryDate = new Date(newTradeData.date);
-      if (isNaN(entryDate.getTime())) {
-        throw new Error('Invalid date format');
-      }
+      const user = supabase.auth.getUser();
+      if (!user) throw new Error('User not found');
       
-      // Create the database object for insertion
-      const insertData = {
-        user_id: user.id,
-        symbol: newTradeData.pair,
-        entry_price: newTradeData.entry,
-        exit_price: newTradeData.exit || null,
-        quantity: newTradeData.lotSize,
-        direction: newTradeData.type === 'Buy' ? 'long' : 'short',
-        entry_date: entryDate.toISOString(),
-        exit_date: newTradeData.exit ? entryDate.toISOString() : null,
-        profit_loss: newTradeData.profitLoss,
-        fees: newTradeData.commission || 0,
-        notes: newTradeData.notes || '',
-        tags: newTradeData.hashtags || [],
-        stop_loss: newTradeData.stopLoss || null,
-        take_profit: newTradeData.takeProfit || null,
-        duration_minutes: newTradeData.durationMinutes || null,
-        rating: newTradeData.rating || 0
+      const dbTrade = {
+        symbol: trade.symbol || trade.pair,
+        entry_price: trade.entryPrice || trade.entry,
+        exit_price: trade.exitPrice || trade.exit,
+        quantity: trade.quantity || trade.lotSize,
+        direction: trade.direction || (trade.type === 'Buy' ? 'long' : 'short'),
+        entry_date: trade.entryDate ? trade.entryDate.toISOString() : (trade.date ? new Date(trade.date).toISOString() : new Date().toISOString()),
+        exit_date: trade.exitDate ? trade.exitDate.toISOString() : null,
+        profit_loss: trade.profitLoss,
+        fees: trade.fees || trade.commission || 0,
+        notes: trade.notes,
+        tags: trade.tags || trade.hashtags || [],
+        rating: trade.rating || 0,
+        stop_loss: trade.stopLoss,
+        take_profit: trade.takeProfit,
+        duration_minutes: trade.durationMinutes,
+        playbook: trade.playbook,
+        followed_rules: trade.followedRules || [],
+        market_session: trade.marketSession,
+        account_id: trade.accountId
       };
       
-      // Add market session if it exists
-      if (newTradeData.marketSession) {
-        insertData['market_session'] = newTradeData.marketSession;
-      }
+      // API call to add trade
+      const { data, error } = await tradeService.addTrade(dbTrade);
       
-      console.log('Inserting trade with data:', insertData);
+      if (error) throw error;
       
-      const { data, error } = await supabase
-        .from('trades')
-        .insert(insertData)
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error adding trade:', error);
-        throw error;
-      }
-
-      if (!data) {
-        console.error('No data returned after insert');
-        throw new Error('No data returned after insert');
-      }
-
-      console.log('Trade added successfully, returned data:', data);
-      const newTrade: Trade = {
-        ...newTradeData,
-        id: data.id,
-        userId: user.id,
-        createdAt: data.created_at,
-      };
-
-      setTrades(prevTrades => [newTrade, ...prevTrades]);
+      const newTrade = formatTrade(data);
+      setTrades(prev => [...prev, newTrade]);
       
       toast({
-        title: "تم إضافة التداول",
-        description: "تم إضافة التداول بنجاح",
+        title: 'Success',
+        description: 'Trade added successfully',
       });
-    } catch (error: any) {
-      console.error('Exception in addTrade:', error);
+      
+    } catch (error) {
+      console.error('Error adding trade:', error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إضافة التداول",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to add trade',
+        variant: 'destructive',
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const updateTrade = async (id: string, tradeUpdate: Partial<Trade>) => {
-    if (!user) return;
+  const updateTrade = async (id: string, trade: Partial<Trade>): Promise<void> => {
+    setIsLoading(true);
     
     try {
-      console.log('Updating trade with ID:', id, 'with data:', tradeUpdate);
-      const updateData: any = {};
+      // Start with an empty update object
+      const updateObj: any = {};
       
-      if (tradeUpdate.pair !== undefined) updateData.symbol = tradeUpdate.pair;
-      if (tradeUpdate.entry !== undefined) updateData.entry_price = tradeUpdate.entry;
-      if (tradeUpdate.exit !== undefined) updateData.exit_price = tradeUpdate.exit;
-      if (tradeUpdate.lotSize !== undefined) updateData.quantity = tradeUpdate.lotSize;
-      if (tradeUpdate.type !== undefined) updateData.direction = tradeUpdate.type === 'Buy' ? 'long' : 'short';
-      if (tradeUpdate.date !== undefined) updateData.entry_date = new Date(tradeUpdate.date).toISOString();
-      if (tradeUpdate.profitLoss !== undefined) updateData.profit_loss = tradeUpdate.profitLoss;
-      if (tradeUpdate.notes !== undefined) updateData.notes = tradeUpdate.notes;
-      if (tradeUpdate.hashtags !== undefined) updateData.tags = tradeUpdate.hashtags;
-      if (tradeUpdate.commission !== undefined) updateData.fees = tradeUpdate.commission;
-      if (tradeUpdate.rating !== undefined) updateData.rating = tradeUpdate.rating;
-      if (tradeUpdate.stopLoss !== undefined) updateData.stop_loss = tradeUpdate.stopLoss;
-      if (tradeUpdate.takeProfit !== undefined) updateData.take_profit = tradeUpdate.takeProfit;
-      if (tradeUpdate.durationMinutes !== undefined) updateData.duration_minutes = tradeUpdate.durationMinutes;
-      if (tradeUpdate.marketSession !== undefined) updateData.market_session = tradeUpdate.marketSession;
+      // Only add fields that are present in the trade object
+      if (trade.symbol || trade.pair) updateObj.symbol = trade.symbol || trade.pair;
+      if (trade.entryPrice || trade.entry) updateObj.entry_price = trade.entryPrice || trade.entry;
+      if (trade.exitPrice || trade.exit) updateObj.exit_price = trade.exitPrice || trade.exit;
+      if (trade.quantity || trade.lotSize) updateObj.quantity = trade.quantity || trade.lotSize;
+      if (trade.direction || trade.type) updateObj.direction = trade.direction || (trade.type === 'Buy' ? 'long' : 'short');
       
-      if (tradeUpdate.exit !== undefined && tradeUpdate.date) {
-        updateData.exit_date = tradeUpdate.exit ? new Date(tradeUpdate.date).toISOString() : null;
+      if (trade.entryDate || trade.date) {
+        updateObj.entry_date = trade.entryDate 
+          ? (trade.entryDate instanceof Date ? trade.entryDate.toISOString() : new Date(trade.entryDate).toISOString())
+          : (trade.date ? new Date(trade.date).toISOString() : undefined);
       }
-
-      console.log('Updating trade with data:', updateData);
-
-      const { data, error } = await supabase
-        .from('trades')
-        .update(updateData)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating trade:', error);
-        throw error;
+      
+      if (trade.exitDate) {
+        updateObj.exit_date = trade.exitDate instanceof Date ? trade.exitDate.toISOString() : new Date(trade.exitDate).toISOString();
       }
-
-      if (!data) {
-        console.error('No data returned after update');
-        throw new Error('No data returned after update');
-      }
-
-      console.log('Trade updated successfully, returned data:', data);
-      setTrades(prevTrades => 
-        prevTrades.map(trade => 
-          trade.id === id ? { ...trade, ...tradeUpdate } : trade
-        )
-      );
-
+      
+      if (trade.profitLoss !== undefined) updateObj.profit_loss = trade.profitLoss;
+      if (trade.fees !== undefined || trade.commission !== undefined) updateObj.fees = trade.fees || trade.commission || 0;
+      if (trade.notes !== undefined) updateObj.notes = trade.notes;
+      if (trade.tags || trade.hashtags) updateObj.tags = trade.tags || trade.hashtags;
+      if (trade.rating !== undefined) updateObj.rating = trade.rating;
+      if (trade.stopLoss !== undefined) updateObj.stop_loss = trade.stopLoss;
+      if (trade.takeProfit !== undefined) updateObj.take_profit = trade.takeProfit;
+      if (trade.durationMinutes !== undefined) updateObj.duration_minutes = trade.durationMinutes;
+      if (trade.playbook !== undefined) updateObj.playbook = trade.playbook;
+      if (trade.followedRules !== undefined) updateObj.followed_rules = trade.followedRules;
+      if (trade.marketSession !== undefined) updateObj.market_session = trade.marketSession;
+      if (trade.accountId !== undefined) updateObj.account_id = trade.accountId;
+      
+      // API call to update trade
+      const { error } = await tradeService.updateTrade(id, updateObj);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setTrades(prev => prev.map(t => t.id === id ? { ...t, ...trade } : t));
+      
       toast({
-        title: "تم تحديث التداول",
-        description: "تم تحديث التداول بنجاح",
+        title: 'Success',
+        description: 'Trade updated successfully',
       });
+      
     } catch (error) {
-      console.error('Exception in updateTrade:', error);
+      console.error('Error updating trade:', error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تحديث التداول",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to update trade',
+        variant: 'destructive',
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
