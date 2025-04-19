@@ -25,6 +25,7 @@ import HashtagBadge from '@/components/HashtagBadge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscriptionFeatures } from '@/hooks/useSubscriptionFeatures';
 import UpgradePrompt from '@/components/UpgradePrompt';
+import { Trade } from '@/types/trade';
 
 interface TradeFormValues {
   pair: string;
@@ -45,11 +46,11 @@ interface TradeFormValues {
   imageUrl?: string;
   beforeImageUrl?: string;
   afterImageUrl?: string;
-  rating?: number;
-  commission?: number;
+  rating: number;  // Changed from optional to required to match Trade type
+  commission: number;
 }
 
-const tradeSchema = yup.object().shape({
+const tradeSchema = yup.object({
   pair: yup.string().required('Trading pair is required'),
   account: yup.string().required('Account is required'),
   type: yup.string().oneOf(['Buy', 'Sell']).required('Trade type is required'),
@@ -68,8 +69,8 @@ const tradeSchema = yup.object().shape({
   imageUrl: yup.string().notRequired(),
   beforeImageUrl: yup.string().notRequired(),
   afterImageUrl: yup.string().notRequired(),
-  rating: yup.number().notRequired(),
-  commission: yup.number().notRequired().default(0),
+  rating: yup.number().required().default(0),  // Changed from optional to required with default
+  commission: yup.number().required().default(0),  // Made explicitly required with default
 });
 
 const AddTrade: React.FC = () => {
@@ -85,7 +86,9 @@ const AddTrade: React.FC = () => {
   } = useForm<TradeFormValues>({
     resolver: yupResolver(tradeSchema),
     defaultValues: {
-      commission: 0
+      commission: 0,
+      rating: 0,  // Add default for rating
+      hashtags: []  // Add default for hashtags
     }
   });
   const { addTrade, updateTrade, getTrade } = useTrade();
@@ -122,6 +125,7 @@ const AddTrade: React.FC = () => {
         setValue('returnPercentage', existingTrade.returnPercentage);
         setValue('notes', existingTrade.notes);
         setValue('commission', existingTrade.commission || 0);
+        setValue('rating', existingTrade.rating || 0);  // Set default for rating
         setSelectedTags(existingTrade.hashtags || []);
         setImageUrl(existingTrade.imageUrl);
         setBeforeImageUrl(existingTrade.beforeImageUrl);
@@ -142,6 +146,7 @@ const AddTrade: React.FC = () => {
       stopLoss: isStopLossEnabled ? data.stopLoss : null,
       takeProfit: isTakeProfitEnabled ? data.takeProfit : null,
       commission: data.commission || 0,
+      rating: data.rating || 0,  // Ensure rating is always provided
       // Convert date to string format
       date: format(data.date, 'yyyy-MM-dd'),
       // Calculate the total (profit/loss minus commission)
