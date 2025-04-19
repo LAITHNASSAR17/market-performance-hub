@@ -50,6 +50,29 @@ const MentorDashboard: React.FC = () => {
   const [selectedMentees, setSelectedMentees] = useState<string[]>([]);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
+  // Add extensive logging
+  console.log('Mentor Dashboard: User', user);
+  console.log('Mentor Dashboard: Mentorships', mentorships);
+  console.log('Mentor Dashboard: Loading State', isLoading);
+
+  useEffect(() => {
+    console.log('MentorDashboard useEffect triggered');
+    if (!user) {
+      console.warn('No user found, redirecting to login');
+      navigate('/login');
+      return;
+    }
+
+    // Add explicit mentor check
+    const isMentor = mentorships.some(m => m.mentor_id === user.id);
+    console.log('Is User a Mentor?', isMentor);
+
+    if (!isMentor) {
+      console.warn('User is not a mentor, redirecting to dashboard');
+      navigate('/dashboard');
+    }
+  }, [user, mentorships, navigate]);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
