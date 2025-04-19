@@ -17,6 +17,10 @@ const EmailVerify = () => {
 
   useEffect(() => {
     const verifyEmail = async () => {
+      // Log the verification attempt for debugging
+      console.log('Starting email verification process');
+      console.log('Email from URL:', email);
+      
       if (!email) {
         console.error('No email provided in URL');
         setStatus('error');
@@ -26,9 +30,8 @@ const EmailVerify = () => {
 
       try {
         console.log(`Attempting to verify email: ${email}`);
-        console.log(`Current app URL: ${window.location.origin}`);
         
-        // 1. التحقق من وجود المستخدم
+        // 1. Check if user exists
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
@@ -51,46 +54,40 @@ const EmailVerify = () => {
 
         console.log('User found:', userData.id);
 
-        // 2. تحديث حالة التحقق للمستخدم
-        try {
-          const { error: updateError } = await supabase
-            .from('users')
-            .update({ email_verified: true })
-            .eq('email', email);
+        // 2. Update verification status for the user
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ email_verified: true })
+          .eq('email', email);
 
-          if (updateError) {
-            console.error('Error updating verification status:', updateError);
-            setStatus('error');
-            setErrorMessage(`حدث خطأ أثناء تحديث حالة التحقق: ${updateError.message}`);
-            return;
-          }
-
-          console.log('Email verification successful');
-          // نجاح التحقق
-          setStatus('success');
-          
-          toast({
-            title: "تم التحقق بنجاح",
-            description: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
-          });
-          
-          // بعد 3 ثوانٍ، انتقل إلى صفحة تسجيل الدخول
-          setTimeout(() => {
-            navigate('/login', { 
-              state: { 
-                verified: true, 
-                email: email,
-                message: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول." 
-              } 
-            });
-          }, 3000);
-        } catch (err) {
-          console.error('Unexpected error during update:', err);
+        if (updateError) {
+          console.error('Error updating verification status:', updateError);
           setStatus('error');
-          setErrorMessage('حدث خطأ غير متوقع أثناء تحديث حالة التحقق');
+          setErrorMessage(`حدث خطأ أثناء تحديث حالة التحقق: ${updateError.message}`);
+          return;
         }
-      } catch (error) {
-        console.error('Unexpected error:', error);
+
+        console.log('Email verification successful');
+        // Verification success
+        setStatus('success');
+        
+        toast({
+          title: "تم التحقق بنجاح",
+          description: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
+        });
+        
+        // After 3 seconds, navigate to login page
+        setTimeout(() => {
+          navigate('/login', { 
+            state: { 
+              verified: true, 
+              email: email,
+              message: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول." 
+            } 
+          });
+        }, 3000);
+      } catch (err) {
+        console.error('Unexpected error during verification:', err);
         setStatus('error');
         setErrorMessage('حدث خطأ غير متوقع أثناء التحقق من البريد الإلكتروني');
       }

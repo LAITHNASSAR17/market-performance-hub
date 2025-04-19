@@ -536,6 +536,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending verification email to ${email}`);
       
+      // Use the exact URL format that matches our route in App.tsx
       const verificationLink = `https://trackmind.vip/verify?email=${encodeURIComponent(email)}`;
       console.log(`Verification link: ${verificationLink}`);
       
@@ -562,7 +563,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       toast({
         title: "تم إرسال البريد الإلكتروني",
-        description: "تم إرسل رابط التحقق إلى بريدك الإلكتروني",
+        description: "تم إرسال رابط التحقق إلى بريدك الإلكتروني",
       });
       
       return response;
