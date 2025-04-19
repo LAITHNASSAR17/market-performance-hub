@@ -44,22 +44,20 @@ import { TagsProvider } from './contexts/TagsContext';
 
 function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <LanguageProvider>
-          <TagsProvider>
-            <TradeProvider>
-              <NotebookProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AnimatedRoutes />
-                </TooltipProvider>
-              </NotebookProvider>
-            </TradeProvider>
-          </TagsProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <TagsProvider>
+          <TradeProvider>
+            <NotebookProvider>
+              <TooltipProvider>
+                <Toaster />
+                <AnimatedRoutes />
+              </TooltipProvider>
+            </NotebookProvider>
+          </TradeProvider>
+        </TagsProvider>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 
@@ -71,11 +69,6 @@ function AnimatedRoutes() {
       <Routes location={location}>
         <Route path="/" element={<Index />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/email-verify" element={<EmailVerify />} />
         <Route path="/trades" element={<Trades />} />
         <Route path="/add-trade" element={<AddTrade />} />
         <Route path="/edit-trade/:id" element={<AddTrade />} />
@@ -87,9 +80,6 @@ function AnimatedRoutes() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/chart" element={<TradingChart />} />
         <Route path="/user-profile" element={<UserProfileSettings />} />
-        <Route path="/subscriptions" element={<Subscriptions />} />
-        <Route path="/payment" element={<Payment />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
         <Route path="/admin/users" element={<AdminUsers />} />
