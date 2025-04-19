@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -46,8 +47,9 @@ export const userService = {
       .from('users')
       .insert({
         ...userData,
-        role: userData.role || 'user',
+        role: 'user', // Always set new users to 'user' role
         subscription_tier: 'starter',
+        is_blocked: false,
         created_at: now,
         updated_at: now
       })
@@ -170,7 +172,7 @@ function formatUser(data: any): IUser {
     name: data.name,
     email: data.email,
     password: data.password,
-    role: data.role || 'user',
+    role: data.role || 'user', // Ensure a default role is set
     isBlocked: data.is_blocked || false,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at)
