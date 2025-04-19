@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTrade } from '@/contexts/TradeContext';
@@ -8,6 +9,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label"; // Re-added the Label import
 import { useToast } from "@/hooks/use-toast";
 import TradePairSelector from '@/components/trade/TradePairSelector';
 import TradeTypeSelector from '@/components/trade/TradeTypeSelector';
@@ -19,6 +21,7 @@ import TradeAccountSelector from '@/components/trade/TradeAccountSelector';
 import MarketSessionSelector from '@/components/trade/MarketSessionSelector';
 import TradeImages from '@/components/trade/TradeImages';
 import { TRADE_TYPES, TradeType } from '@/constants/tradeTypes';
+import { Trade } from '@/types/settings'; // Added the Trade type import
 
 const marketSessions = [
   { id: 'asia', name: 'Asia' },
@@ -139,7 +142,8 @@ const AddTrade: React.FC = () => {
       setLoading(true);
       const currentUser = user || { id: 'demo-user-id' };
       
-      const finalTradeData = {
+      // Create a complete trade data object with all required properties
+      const finalTradeData: Omit<Trade, 'id' | 'createdAt'> = {
         ...tradeData,
         userId: currentUser.id,
         returnPercentage: calculateReturnPercentage(tradeData),
