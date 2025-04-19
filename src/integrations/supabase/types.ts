@@ -390,27 +390,6 @@ export type Database = {
         }
         Relationships: []
       }
-      subscription_tiers: {
-        Row: {
-          created_at: string
-          features: Json
-          tier: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          features: Json
-          tier: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          features?: Json
-          tier?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       trades: {
         Row: {
           account_id: string | null
@@ -625,13 +604,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_feature_access: {
-        Args: {
-          user_id: string
-          feature: Database["public"]["Enums"]["subscription_feature"]
-        }
-        Returns: boolean
-      }
       has_mentor_trade_access: {
         Args: { trade_id: string }
         Returns: boolean
@@ -669,14 +641,6 @@ export type Database = {
       mentorship_status: "pending" | "accepted" | "rejected"
       share_permission: "view" | "note" | "edit"
       shared_item_type: "trade" | "playbook"
-      subscription_feature:
-        | "max_trades"
-        | "trading_accounts"
-        | "ai_analysis"
-        | "reports"
-        | "image_upload"
-        | "notebook"
-        | "trade_list"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -797,15 +761,6 @@ export const Constants = {
       mentorship_status: ["pending", "accepted", "rejected"],
       share_permission: ["view", "note", "edit"],
       shared_item_type: ["trade", "playbook"],
-      subscription_feature: [
-        "max_trades",
-        "trading_accounts",
-        "ai_analysis",
-        "reports",
-        "image_upload",
-        "notebook",
-        "trade_list",
-      ],
     },
   },
 } as const

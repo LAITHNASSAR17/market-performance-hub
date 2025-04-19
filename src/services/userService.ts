@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -46,8 +47,8 @@ export const userService = {
       .from('users')
       .insert({
         ...userData,
-        role: 'user',
-        subscription_tier: 'starter', // Always set new users to starter tier
+        role: 'user', // Always set new users to 'user' role
+        subscription_tier: 'starter',
         is_blocked: false,
         created_at: now,
         updated_at: now
@@ -102,23 +103,6 @@ export const userService = {
   async createTradingAccount(userId: string, name: string, balance: number): Promise<ITradingAccount> {
     if (!userId) {
       throw new Error('User ID is required to create a trading account');
-    }
-
-    // Check trading accounts limit first
-    const { data: currentAccounts } = await supabase
-      .from('trading_accounts')
-      .select('id')
-      .eq('user_id', userId);
-
-    const { data: tierData } = await supabase
-      .from('subscription_tiers')
-      .select('features')
-      .single();
-
-    const maxAccounts = tierData?.features?.trading_accounts || 0;
-    
-    if (currentAccounts && currentAccounts.length >= maxAccounts) {
-      throw new Error('Trading accounts limit reached for your subscription tier');
     }
     
     if (!name || name.trim() === '') {
