@@ -102,9 +102,22 @@ const Login: React.FC = () => {
     setPassword('admin123');
   };
 
-  // Bypass login in case of connection error
+  // Enhanced bypass login for development mode
   const handleBypassLogin = () => {
     localStorage.setItem('bypass_auth', 'true');
+    localStorage.setItem('dev_mode_user', JSON.stringify({
+      id: 'dev-user-123',
+      name: 'Development User',
+      email: 'dev@example.com',
+      role: 'admin',
+      isAdmin: true,
+      subscription_tier: 'premium'
+    }));
+    console.log('Bypassing authentication in development mode');
+    toast({
+      title: "وضع التطوير",
+      description: "تم تسجيل الدخول في وضع التطوير بنجاح!",
+    });
     navigate('/dashboard');
   };
 
@@ -144,7 +157,7 @@ const Login: React.FC = () => {
                 <InfoIcon className="h-4 w-4 text-yellow-600" />
                 <div className="flex flex-col">
                   <AlertDescription className="text-yellow-700 mb-2">
-                    هناك مشكلة في الاتصال بالخادم. يمكنك المتابعة في وضع التجريب المحلي.
+                    هناك مشكلة في الاتصال بالخادم. يمكنك المتابعة في وضع التطوير المحلي.
                   </AlertDescription>
                   <Button
                     variant="outline"

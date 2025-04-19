@@ -2,7 +2,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { hashPassword } from '@/utils/encryption';
+import { hashPassword, comparePassword } from '@/utils/encryption';
 
 interface AuthContextProps {
   session: Session | null;
@@ -54,29 +54,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const loadSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      setSession(session);
-      if (session?.user) {
-        setUser(session.user);
-        setIsAuthenticated(true);
-        
-        // Check if user is admin
-        const { data } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        
-        setIsAdmin(data?.role === 'admin');
+    const checkBypassAuth = () => {
+      const bypassAuth = localStorage.getItem('bypass_auth');
+      if (bypassAuth === 'true') {
+        console.log("Development mode: Using bypassed authentication");
+        const devUser = localStorage.getItem('dev_mode_user');
+        if (devUser) {
+          try {
+            const parsedUser = JSON.parse(devUser);
+            setUser(parsedUser);
+            setIsAuthenticated(true);
+            setIsAdmin(parsedUser.isAdmin || parsedUser.role === 'admin');
+          } catch (e) {
+            console.error("Error parsing dev user:", e);
+          }
+        }
+        return true;
       }
-      setLoading(false);
+      return false;
+    };
+
+    const loadSession = async () => {
+      // First check if we're in development bypass mode
+      if (checkBypassAuth()) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        setSession(session);
+        if (session?.user) {
+          setUser(session.user);
+          setIsAuthenticated(true);
+          
+          // Check if user is admin
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            
+            setIsAdmin(data?.role === 'admin');
+          } catch (error) {
+            console.error("Error checking admin status:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading session:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadSession();
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Skip this if we're in bypass mode
+      if (localStorage.getItem('bypass_auth') === 'true') {
+        return;
+      }
+
       setSession(session);
       setIsAuthenticated(!!session);
       setUser(session?.user || null);
@@ -90,11 +130,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single()
           .then(({ data }) => {
             setIsAdmin(data?.role === 'admin');
+          })
+          .catch(error => {
+            console.error("Error checking admin status on auth change:", error);
           });
       } else {
         setIsAdmin(false);
       }
     });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (credentials: any) => {
@@ -144,6 +191,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setLoading(true);
     try {
+      // Check if we're in bypass mode
+      if (localStorage.getItem('bypass_auth') === 'true') {
+        localStorage.removeItem('bypass_auth');
+        localStorage.removeItem('dev_mode_user');
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+        return;
+      }
+
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
@@ -354,6 +411,155 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error: any) {
       console.error('Update subscription tier error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAllUsers = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error: any) {
+      console.error('Get all users error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const blockUser = async (user: any) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: true })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.id === user.id ? { ...u, is_blocked: true } : u
+        )
+      );
+    } catch (error: any) {
+      console.error('Block user error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const unblockUser = async (user: any) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: false })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.id === user.id ? { ...u, is_blocked: false } : u
+        )
+      );
+    } catch (error: any) {
+      console.error('Unblock user error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const changePassword = async (user: any, newPassword: string) => {
+    setLoading(true);
+    try {
+      const hashedPassword = hashPassword(newPassword);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ password: hashedPassword })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Change password error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const updateUser = async (user: any) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: user.role, isAdmin: user.isAdmin })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.id === user.id ? { ...u, role: user.role, isAdmin: user.isAdmin } : u
+        )
+      );
+    } catch (error: any) {
+      console.error('Update user error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProfile = async (data: any) => {
+    setLoading(true);
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .update({ 
+          name: data.name,
+          email: data.email,
+          avatar_url: data.avatar_url
+         })
+        .eq('id', user?.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setUser((prevUser: any) => ({
+        ...prevUser,
+        ...profile,
+      }));
+    } catch (error: any) {
+      console.error('Update profile error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePassword = async (password: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.updateUser({ password: password });
+
+      if (error) throw error;
+
+      console.log('Password updated successfully', data);
+    } catch (error: any) {
+      console.error('Update password error', error.message);
       throw error;
     } finally {
       setLoading(false);

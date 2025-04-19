@@ -32,6 +32,14 @@ export interface ITrade {
   image_url?: string;
 }
 
+// Helper function to validate and convert direction
+const validateDirection = (direction: string): 'long' | 'short' => {
+  if (direction === 'long' || direction === 'short') {
+    return direction;
+  }
+  return direction === 'Buy' ? 'long' : 'short';
+};
+
 export const tradeService = {
   async getTradeById(id: string): Promise<ITrade> {
     try {
@@ -45,9 +53,7 @@ export const tradeService = {
       
       // Ensure direction is correct type
       const tradeData = data as any;
-      if (tradeData.direction !== 'long' && tradeData.direction !== 'short') {
-        tradeData.direction = tradeData.direction === 'Buy' ? 'long' : 'short';
-      }
+      tradeData.direction = validateDirection(tradeData.direction);
       
       return tradeData as ITrade;
     } catch (error) {
@@ -67,9 +73,7 @@ export const tradeService = {
       
       // Ensure directions are correct type
       const tradesData = (data || []).map((trade: any) => {
-        if (trade.direction !== 'long' && trade.direction !== 'short') {
-          trade.direction = trade.direction === 'Buy' ? 'long' : 'short';
-        }
+        trade.direction = validateDirection(trade.direction);
         return trade as ITrade;
       });
       
@@ -83,26 +87,23 @@ export const tradeService = {
   async createTrade(tradeData: Omit<ITrade, 'id' | 'created_at' | 'updated_at'>): Promise<{data: ITrade | null, error: any}> {
     try {
       // Ensure direction is correct type
-      if (tradeData.direction !== 'long' && tradeData.direction !== 'short') {
-        (tradeData as any).direction = tradeData.direction === 'Buy' ? 'long' : 'short';
-      }
+      const dataToInsert = {
+        ...tradeData,
+        direction: validateDirection(tradeData.direction as string),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
       const { data, error } = await supabase
         .from('trades')
-        .insert({
-          ...tradeData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(dataToInsert)
         .select()
         .single();
         
       if (data) {
         // Ensure direction is correct type for returned data
         const tradeResult = data as any;
-        if (tradeResult.direction !== 'long' && tradeResult.direction !== 'short') {
-          tradeResult.direction = tradeResult.direction === 'Buy' ? 'long' : 'short';
-        }
+        tradeResult.direction = validateDirection(tradeResult.direction);
         return { data: tradeResult as ITrade, error };
       }
       
@@ -116,16 +117,15 @@ export const tradeService = {
   async updateTrade(id: string, tradeData: Partial<Omit<ITrade, 'id' | 'created_at' | 'user_id'>>): Promise<{data: ITrade | null, error: any}> {
     try {
       // Ensure direction is correct type if provided
-      if (tradeData.direction && tradeData.direction !== 'long' && tradeData.direction !== 'short') {
-        (tradeData as any).direction = tradeData.direction === 'Buy' ? 'long' : 'short';
+      const dataToUpdate = { ...tradeData, updated_at: new Date().toISOString() };
+      
+      if (dataToUpdate.direction) {
+        dataToUpdate.direction = validateDirection(dataToUpdate.direction as string);
       }
       
       const { data, error } = await supabase
         .from('trades')
-        .update({
-          ...tradeData,
-          updated_at: new Date().toISOString()
-        })
+        .update(dataToUpdate)
         .eq('id', id)
         .select()
         .single();
@@ -133,9 +133,7 @@ export const tradeService = {
       if (data) {
         // Ensure direction is correct type for returned data
         const tradeResult = data as any;
-        if (tradeResult.direction !== 'long' && tradeResult.direction !== 'short') {
-          tradeResult.direction = tradeResult.direction === 'Buy' ? 'long' : 'short';
-        }
+        tradeResult.direction = validateDirection(tradeResult.direction);
         return { data: tradeResult as ITrade, error };
       }
       
@@ -177,9 +175,7 @@ export const tradeService = {
       
       // Ensure directions are correct type
       const tradesData = (data || []).map((trade: any) => {
-        if (trade.direction !== 'long' && trade.direction !== 'short') {
-          trade.direction = trade.direction === 'Buy' ? 'long' : 'short';
-        }
+        trade.direction = validateDirection(trade.direction);
         return trade as ITrade;
       });
       
