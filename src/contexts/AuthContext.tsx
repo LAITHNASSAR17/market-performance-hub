@@ -1,9 +1,12 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import CryptoJS from 'crypto-js';
+import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
+
+// Remove duplicate User interface and use a single import/definition
 
 interface User {
   id: string;

@@ -263,57 +263,98 @@ export type Database = {
       }
       trades: {
         Row: {
+          account_id: string | null
+          after_image_url: string | null
+          before_image_url: string | null
           created_at: string | null
           direction: string
+          duration_minutes: number | null
           entry_date: string
           entry_price: number
           exit_date: string | null
           exit_price: number | null
           fees: number | null
+          followed_rules: string[] | null
           id: string
+          image_url: string | null
+          market_session: string | null
           notes: string | null
+          playbook: string | null
           profit_loss: number | null
           quantity: number
+          rating: number | null
+          stop_loss: number | null
           symbol: string
           tags: string[] | null
+          take_profit: number | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          account_id?: string | null
+          after_image_url?: string | null
+          before_image_url?: string | null
           created_at?: string | null
           direction: string
+          duration_minutes?: number | null
           entry_date: string
           entry_price: number
           exit_date?: string | null
           exit_price?: number | null
           fees?: number | null
+          followed_rules?: string[] | null
           id?: string
+          image_url?: string | null
+          market_session?: string | null
           notes?: string | null
+          playbook?: string | null
           profit_loss?: number | null
           quantity: number
+          rating?: number | null
+          stop_loss?: number | null
           symbol: string
           tags?: string[] | null
+          take_profit?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          account_id?: string | null
+          after_image_url?: string | null
+          before_image_url?: string | null
           created_at?: string | null
           direction?: string
+          duration_minutes?: number | null
           entry_date?: string
           entry_price?: number
           exit_date?: string | null
           exit_price?: number | null
           fees?: number | null
+          followed_rules?: string[] | null
           id?: string
+          image_url?: string | null
+          market_session?: string | null
           notes?: string | null
+          playbook?: string | null
           profit_loss?: number | null
           quantity?: number
+          rating?: number | null
+          stop_loss?: number | null
           symbol?: string
           tags?: string[] | null
+          take_profit?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trades_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "trading_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trading_accounts: {
         Row: {
