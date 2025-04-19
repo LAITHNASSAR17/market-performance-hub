@@ -28,7 +28,7 @@ export interface TradeFormValues {
 }
 
 // Define the schema to exactly match the interface structure
-export const tradeSchema = yup.object({
+export const tradeSchema = yup.object().shape({
   pair: yup.string().required('Trading pair is required'),
   account: yup.string().required('Account is required'),
   type: yup.string().oneOf(['Buy', 'Sell']).required('Trade type is required'),
