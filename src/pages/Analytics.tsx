@@ -25,7 +25,7 @@ const Analytics: React.FC = () => {
   
   // Use our custom hooks to manage state
   const stats = useAnalyticsStats();
-  const { dailyPL } = usePlData();
+  const plData = usePlData();
   const { mistakes, setMistakes, setups, setSetups, habits, setHabits, tradingDays } = useTags();
   const { playbooks, addPlaybook, updatePlaybook, deletePlaybook } = usePlaybooks();
   
@@ -102,7 +102,7 @@ const Analytics: React.FC = () => {
           
           {/* Chart Tab */}
           <TabsContent value="chart" className="mt-0">
-            <ChartTab plData={dailyPL || []} />
+            <ChartTab plData={plData} />
           </TabsContent>
           
           {/* Sessions Tab */}

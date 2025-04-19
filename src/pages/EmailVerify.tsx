@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -21,11 +20,10 @@ const EmailVerify = () => {
 
   const verifyEmail = async (verificationToken: string) => {
     try {
-      // Using token verification which doesn't require email
       const { data, error } = await supabase.auth.verifyOtp({
-        token_hash: verificationToken,
-        type: 'signup'
-      });
+        token: verificationToken,
+        type: 'email'
+      })
 
       if (error) {
         console.error('Email verification error:', error);

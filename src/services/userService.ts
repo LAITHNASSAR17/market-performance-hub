@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -10,97 +9,95 @@ export interface IUser {
   isBlocked: boolean;
   createdAt: Date;
   updatedAt: Date;
-  subscriptionTier?: string;
 }
 
 export interface ITradingAccount {
   id: string;
   userId: string;
   name: string;
-  balance?: number;
-  createdAt: string;
-}
-
-export interface IUserProfile {
-  id: string;
-  userId: string;
-  country?: string;
-  avatar_url?: string;
-  updatedAt: string;
+  balance: number;
   createdAt: string;
 }
 
 export const userService = {
   async getUserById(id: string): Promise<IUser | null> {
-    const { data, error } = await supabase.auth.admin.getUserById(id);
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single();
     
-    if (error || !data.user) return null;
-    return formatUser(data.user);
+    if (error || !data) return null;
+    return formatUser(data);
   },
 
   async getAllUsers(): Promise<IUser[]> {
-    const { data, error } = await supabase.auth.admin.listUsers();
+    const { data, error } = await supabase
+      .from('users')
+      .select('*');
     
-    if (error || !data.users) return [];
-    return data.users.map(formatUser);
+    if (error || !data) return [];
+    return data.map(formatUser);
   },
 
   async createUser(userData: Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<IUser> {
-    const { data, error } = await supabase.auth.admin.createUser({
-      email: userData.email,
-      password: userData.password,
-      email_confirm: true,
-      user_metadata: {
-        name: userData.name,
-        role: userData.role,
-        is_blocked: userData.isBlocked,
-        subscription_tier: userData.subscriptionTier || 'free'
-      }
-    });
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        ...userData,
+        created_at: now,
+        updated_at: now
+      })
+      .select()
+      .single();
     
-    if (error || !data.user) throw new Error(`Error creating user: ${error?.message}`);
-    return formatUser(data.user);
+    if (error || !data) throw new Error(`Error creating user: ${error?.message}`);
+    return formatUser(data);
   },
 
   async updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null> {
-    const userMetadata: Record<string, any> = {};
-    if (userData.name !== undefined) userMetadata.name = userData.name;
-    if (userData.role !== undefined) userMetadata.role = userData.role;
-    if (userData.isBlocked !== undefined) userMetadata.is_blocked = userData.isBlocked;
-    if (userData.subscriptionTier !== undefined) userMetadata.subscription_tier = userData.subscriptionTier;
-
-    const { data, error } = await supabase.auth.admin.updateUserById(
-      id,
-      { user_metadata: userMetadata }
-    );
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        ...userData,
+        updated_at: now
+      })
+      .eq('id', id)
+      .select()
+      .single();
     
-    if (error || !data.user) return null;
-    return formatUser(data.user);
+    if (error || !data) return null;
+    return formatUser(data);
   },
 
   async deleteUser(id: string): Promise<boolean> {
-    const { error } = await supabase.auth.admin.deleteUser(id);
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id);
+    
     return !error;
   },
 
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
-    // Since we can't query the auth.users table directly, this function
-    // should be implemented to filter users from memory after getting all users
-    const users = await this.getAllUsers();
+    let query = supabase.from('users').select('*');
     
-    // Apply filters
-    return users.filter(user => {
-      for (const [key, value] of Object.entries(filter)) {
-        if (value !== undefined) {
-          // @ts-ignore - dynamic property check
-          if (user[key] !== value) return false;
-        }
+    // Apply filters dynamically
+    Object.entries(filter).forEach(([key, value]) => {
+      if (value !== undefined) {
+        query = query.eq(key, value);
       }
-      return true;
     });
+    
+    const { data, error } = await query;
+    
+    if (error || !data) return [];
+    return data.map(formatUser);
   },
   
-  async createTradingAccount(userId: string, name: string, initialBalance: number = 0): Promise<ITradingAccount> {
+  async createTradingAccount(userId: string, name: string, balance: number): Promise<ITradingAccount> {
     if (!userId) {
       throw new Error('User ID is required to create a trading account');
     }
@@ -109,7 +106,7 @@ export const userService = {
       throw new Error('Account name is required');
     }
     
-    const parsedBalance = Number(initialBalance) || 0;
+    const parsedBalance = Number(balance) || 0;
     
     const { data, error } = await supabase
       .from('trading_accounts')
@@ -134,7 +131,7 @@ export const userService = {
       id: data.id,
       userId: data.user_id,
       name: data.name,
-      balance: data.balance ? Number(data.balance) : undefined,
+      balance: Number(data.balance),
       createdAt: data.created_at
     };
   },
@@ -160,81 +157,21 @@ export const userService = {
       id: account.id,
       userId: account.user_id,
       name: account.name,
-      balance: account.balance ? Number(account.balance) : undefined,
+      balance: Number(account.balance),
       createdAt: account.created_at
     }));
-  },
-
-  async getUserProfile(userId: string): Promise<IUserProfile | null> {
-    if (!userId) {
-      throw new Error('User ID is required to fetch user profile');
-    }
-    
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-    
-    if (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
-    }
-    
-    if (!data) return null;
-    
-    return {
-      id: data.id,
-      userId: data.user_id,
-      country: 'Unknown',
-      avatar_url: '',
-      updatedAt: data.updated_at,
-      createdAt: data.updated_at
-    };
-  },
-  
-  async updateUserProfile(userId: string, profileData: Partial<IUserProfile>): Promise<IUserProfile | null> {
-    if (!userId) {
-      throw new Error('User ID is required to update user profile');
-    }
-    
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .upsert({
-        user_id: userId,
-        updated_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error updating user profile:', error);
-      return null;
-    }
-    
-    if (!data) return null;
-    
-    return {
-      id: data.id,
-      userId: data.user_id,
-      country: profileData.country || 'Unknown',
-      avatar_url: profileData.avatar_url || '',
-      updatedAt: data.updated_at,
-      createdAt: data.updated_at
-    };
   }
 };
 
 function formatUser(data: any): IUser {
   return {
     id: data.id,
-    name: data.user_metadata?.name || '',
+    name: data.name,
     email: data.email,
-    password: '',
-    role: data.user_metadata?.role || 'user',
-    isBlocked: data.user_metadata?.is_blocked || false,
+    password: data.password,
+    role: data.role || 'user',
+    isBlocked: data.is_blocked || false,
     createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at || data.created_at),
-    subscriptionTier: data.user_metadata?.subscription_tier || 'free'
+    updatedAt: new Date(data.updated_at)
   };
 }

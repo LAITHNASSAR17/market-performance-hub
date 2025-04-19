@@ -5,8 +5,9 @@ import { useTrade } from '@/contexts/TradeContext';
 export interface PLDataPoint {
   date: string;
   profit: number;
-  time: string;
-  value: number;
+  // Add these properties to make it compatible with RunningPLChart
+  time?: string;
+  value?: number;
 }
 
 export const usePlData = () => {
@@ -30,8 +31,9 @@ export const usePlData = () => {
     const chartData: PLDataPoint[] = Object.entries(dailyData).map(([date, profit]) => ({
       date,
       profit,
-      time: date, // Add compatible property for ChartTab
-      value: profit // Add compatible property for ChartTab
+      // Add compatible properties
+      time: date,
+      value: profit
     }));
 
     // Sort by date
@@ -40,7 +42,9 @@ export const usePlData = () => {
     setDailyPL(chartData);
   }, [trades]);
 
-  return { dailyPL };
+  return {
+    dailyPL
+  };
 };
 
 export default usePlData;

@@ -7,7 +7,6 @@ interface NotebookContextType {
   notes: Note[];
   isLoading: boolean;
   error: string | null;
-  noteTags: string[]; // Adding the missing property
   addNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt' | 'userId'>) => Promise<void>;
   updateNote: (id: string, note: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
@@ -17,25 +16,12 @@ const NotebookContext = createContext<NotebookContextType | undefined>(undefined
 
 export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [noteTags, setNoteTags] = useState<string[]>([]); // Adding state for note tags
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchNotes();
   }, []);
-  
-  // Function to extract unique tags from all notes
-  useEffect(() => {
-    const extractTags = () => {
-      const tags = notes.reduce((allTags: string[], note) => {
-        return [...allTags, ...note.tags.filter(tag => !allTags.includes(tag))];
-      }, []);
-      setNoteTags(tags);
-    };
-    
-    extractTags();
-  }, [notes]);
 
   const fetchNotes = async () => {
     setIsLoading(true);
@@ -164,7 +150,6 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         notes,
         isLoading,
         error,
-        noteTags,
         addNote,
         updateNote,
         deleteNote,
@@ -182,6 +167,3 @@ export const useNotebook = () => {
   }
   return context;
 };
-
-// Re-export the Note type from types/settings
-export type { Note } from '@/types/settings';

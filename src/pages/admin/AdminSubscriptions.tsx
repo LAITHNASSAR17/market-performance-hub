@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -5,7 +6,6 @@ import { Search, Users, ArrowUp, ArrowDown, Check, X, Badge as BadgeIcon } from 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/lib/supabase';
 import {
   Table,
   TableBody,
@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/dialog';
 
 const AdminSubscriptions: React.FC = () => {
-  const { users, getAllUsers, updateUser } = useAuth();
+  const { users, getAllUsers, updateSubscriptionTier } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] = useState('all');
@@ -85,12 +85,7 @@ const AdminSubscriptions: React.FC = () => {
     if (!selectedUser || !newTier) return;
     
     try {
-      // Use updateUser from AuthContext
-      await updateUser({
-        ...selectedUser,
-        subscription_tier: newTier
-      });
-      
+      await updateSubscriptionTier(selectedUser.id, newTier);
       setShowUpgradeModal(false);
       
       toast({
