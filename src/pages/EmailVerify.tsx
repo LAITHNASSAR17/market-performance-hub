@@ -17,12 +17,13 @@ const EmailVerify = () => {
 
   useEffect(() => {
     const verifyEmail = async () => {
-      // Log the verification attempt for debugging
-      console.log('Starting email verification process');
-      console.log('Email from URL:', email);
+      // Enhanced logging for debugging
+      console.log('EmailVerify component loaded');
+      console.log('Current URL:', window.location.href);
+      console.log('Email from URL params:', email);
       
       if (!email) {
-        console.error('No email provided in URL');
+        console.error('No email provided in URL parameters');
         setStatus('error');
         setErrorMessage('لم يتم توفير البريد الإلكتروني في الرابط');
         return;

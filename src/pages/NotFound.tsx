@@ -1,15 +1,28 @@
-import { useLocation } from "react-router-dom";
+
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 
 const NotFound = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const email = searchParams.get('email');
 
   useEffect(() => {
+    // Special case for email verification links
+    if (location.pathname === "/verify" && email) {
+      console.log("Caught verification link in 404 page, redirecting to Email Verify page");
+      navigate(`/email-verify?email=${encodeURIComponent(email)}`);
+      return;
+    }
+
     console.error(
       "404 Error: User attempted to access non-existent route:",
-      location.pathname
+      location.pathname,
+      "with params:",
+      Object.fromEntries(searchParams.entries())
     );
-  }, [location.pathname]);
+  }, [location.pathname, email, navigate, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

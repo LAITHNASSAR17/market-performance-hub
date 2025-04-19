@@ -536,9 +536,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending verification email to ${email}`);
       
-      // Use the exact URL format that matches our route in App.tsx
-      const verificationLink = `https://trackmind.vip/verify?email=${encodeURIComponent(email)}`;
-      console.log(`Verification link: ${verificationLink}`);
+      // Use the correct URL that works with our route configuration
+      // Important: Use /email-verify not /verify to match the route in App.tsx
+      const verificationLink = `https://trackmind.vip/email-verify?email=${encodeURIComponent(email)}`;
+      console.log(`Verification link generated: ${verificationLink}`);
       
       console.log("Calling Supabase function with parameters:", {
         type: 'verification',
