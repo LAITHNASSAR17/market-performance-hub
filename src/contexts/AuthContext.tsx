@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const initializeAdminUser = async () => {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('email', 'lnmr2001@gmail.com')
         .single();
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const adminPassword = hashPassword('password123');
         
         const { error: insertError } = await supabase
-          .from('users')
+          .from('profiles')
           .insert({
             name: 'Admin User',
             email: adminEmail,
@@ -136,7 +136,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const loadInitialSession = async () => {
       try {
         const { data } = await supabase
-          .from('users')
+          .from('profiles')
           .select('*')
           .eq('email', localStorage.getItem('user_email'))
           .single();
@@ -162,7 +162,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const hashedPassword = hashPassword(password);
       
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .insert({
           name,
           email,
@@ -176,17 +176,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .single();
       
       if (error) throw new Error(error.message);
-      
-      if (country) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.id,
-            country: country
-          });
-          
-        if (profileError) console.error('Error creating profile:', profileError);
-      }
       
       console.log("User registered successfully:", data);
       
@@ -220,7 +209,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('email', email)
         .single();
@@ -310,7 +299,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const hashedPassword = hashPassword(newPassword);
       
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ password: hashedPassword })
         .eq('email', email);
       
@@ -330,7 +319,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateUser = async (updatedUser: User): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({
           name: updatedUser.name,
           email: updatedUser.email,
@@ -370,7 +359,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (newPassword && currentPassword) {
         const { data } = await supabase
-          .from('users')
+          .from('profiles')
           .select('password')
           .eq('id', user.id)
           .single();
@@ -383,7 +372,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update(updateData)
         .eq('id', user.id);
         
@@ -441,7 +430,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const blockUser = async (user: User): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ is_blocked: true })
         .eq('id', user.id);
       
@@ -462,7 +451,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const unblockUser = async (user: User): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ is_blocked: false })
         .eq('id', user.id);
       
@@ -481,7 +470,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const hashedPassword = hashPassword(newPassword);
       
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ password: hashedPassword })
         .eq('email', email);
       
@@ -500,7 +489,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ subscription_tier: tier })
         .eq('id', userId);
         
@@ -582,7 +571,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log(`Sending password reset email to ${email}`);
       
       const { data: userData, error: userError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('email', email)
         .single();
