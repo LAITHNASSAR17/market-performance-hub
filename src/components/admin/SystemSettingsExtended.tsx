@@ -11,6 +11,7 @@ const SystemSettingsExtended = () => {
   const [settings, setSettings] = useState<SiteSettings>({
     id: '',
     site_name: '',
+    company_email: '',
     theme: 'light',
     language: 'en',
     created_at: '',
@@ -32,7 +33,13 @@ const SystemSettingsExtended = () => {
         .single();
 
       if (error) throw error;
-      if (data) setSettings(data);
+      if (data) {
+        // Ensure company_email exists
+        setSettings({
+          ...data,
+          company_email: data.company_email || ''
+        } as SiteSettings);
+      }
     } catch (error) {
       console.error('Error fetching settings:', error);
     }
@@ -47,6 +54,7 @@ const SystemSettingsExtended = () => {
         .from('site_settings')
         .update({
           site_name: settings.site_name,
+          company_email: settings.company_email,
           theme: settings.theme,
           language: settings.language
         })
@@ -83,6 +91,16 @@ const SystemSettingsExtended = () => {
               id="siteName"
               value={settings.site_name}
               onChange={(e) => setSettings({ ...settings, site_name: e.target.value })}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="companyEmail">Company Email</label>
+            <Input
+              id="companyEmail"
+              type="email"
+              value={settings.company_email}
+              onChange={(e) => setSettings({ ...settings, company_email: e.target.value })}
             />
           </div>
           

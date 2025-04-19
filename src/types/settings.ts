@@ -1,4 +1,3 @@
-
 // Extend this file as needed
 
 export interface User {
@@ -106,12 +105,20 @@ export interface JournalEntry {
 
 export interface HomepageContent {
   id: string;
-  hero_title: string;
-  hero_subtitle: string;
-  feature_section_title: string;
+  title: string;
+  subtitle: string;
+  description: string;
   features: HomepageFeature[];
+  primary_button_text: string;
+  primary_button_url: string;
+  secondary_button_text: string;
+  secondary_button_url: string;
   created_at: string;
   updated_at: string;
+  // Keep old properties to avoid other issues
+  hero_title?: string;
+  hero_subtitle?: string;
+  feature_section_title?: string;
 }
 
 export interface HomepageFeature {

@@ -20,6 +20,13 @@ const OverviewTab: React.FC = () => {
     ? Math.round((stats.allTimeStats.losingTrades / stats.allTimeStats.totalTrades) * 100) 
     : 0;
 
+  // Prepare data for RunningPLChart
+  const chartData = dailyPL.map(point => ({
+    ...point,
+    time: point.date,
+    value: point.profit
+  }));
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -87,7 +94,7 @@ const OverviewTab: React.FC = () => {
         </CardContent>
       </Card>
       
-      <RunningPLChart data={dailyPL} />
+      <RunningPLChart data={chartData} />
     </div>
   );
 };

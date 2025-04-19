@@ -49,7 +49,7 @@ const HomepageEditor = () => {
         setContent({
           ...data,
           features: parsedFeatures
-        });
+        } as HomepageContent);
       }
     } catch (error) {
       console.error('Error fetching content:', error);

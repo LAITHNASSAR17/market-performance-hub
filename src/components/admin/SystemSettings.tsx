@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,7 +27,10 @@ const SystemSettings: React.FC = () => {
       console.log('Saving site name:', siteName);
       // Use the updateSettings function from the hook
       updateSettings({ 
-        site_name: siteName 
+        site_name: siteName,
+        company_email: settings?.company_email || '',
+        theme: settings?.theme || 'light',
+        language: settings?.language || 'en'
       });
       
       toast({
