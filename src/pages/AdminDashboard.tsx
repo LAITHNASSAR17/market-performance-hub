@@ -210,17 +210,16 @@ const AdminDashboard: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true,
-        user_metadata: {
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
           name: userData.name,
+          email: userData.email,
+          password: hashedPassword,
           role: userData.isAdmin ? 'admin' : 'user',
-          is_blocked: false,
-          subscription_tier: 'free'
-        }
-      });
+          is_blocked: false
+        })
+        .select();
       
       if (error) throw new Error(error.message);
       

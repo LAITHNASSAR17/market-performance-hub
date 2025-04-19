@@ -21,7 +21,7 @@ const EmailVerify = () => {
 
   const verifyEmail = async (verificationToken: string) => {
     try {
-      // Using token hash verification
+      // Using token verification which doesn't require email
       const { data, error } = await supabase.auth.verifyOtp({
         token_hash: verificationToken,
         type: 'signup'
