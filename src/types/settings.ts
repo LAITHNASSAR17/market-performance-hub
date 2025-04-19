@@ -45,3 +45,34 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Trade {
+  id: string;
+  userId: string;
+  pair: string;
+  symbol: string;
+  type: 'Buy' | 'Sell';
+  entry: number;
+  exit: number | null;
+  lotSize: number;
+  stopLoss: number | null;
+  takeProfit: number | null;
+  riskPercentage: number;
+  returnPercentage: number;
+  profitLoss: number;
+  durationMinutes: number | null;
+  notes: string;
+  date: string;
+  account: string;
+  imageUrl: string | null;
+  beforeImageUrl: string | null;
+  afterImageUrl: string | null;
+  hashtags: string[];
+  createdAt: string;
+  commission: number;
+  rating: number;
+  total: number;
+  playbook?: string;
+  followedRules?: string[];
+  marketSession?: string;
+}

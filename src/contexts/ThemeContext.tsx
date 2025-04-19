@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -15,102 +15,61 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('light'); // Set default theme to light
-
+  const [theme, setTheme] = useState<Theme>('light');
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Load theme preference from Supabase when user logs in
+  // Load theme preference from localStorage first, then try to sync with database
   useEffect(() => {
-    const loadThemePreference = async () => {
+    const loadTheme = async () => {
+      // Set system preference as default
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      setTheme(systemTheme);
+
       if (user) {
         try {
           const { data, error } = await supabase
-            .from('user_preferences')
+            .from('site_settings')
             .select('theme')
-            .eq('user_id', user.id)
             .maybeSingle();
 
-          if (error) throw error;
-          
-          if (data?.theme) {
+          if (!error && data?.theme) {
             setTheme(data.theme as Theme);
-          } else {
-            // Create initial preference if it doesn't exist
-            await supabase
-              .from('user_preferences')
-              .insert({ user_id: user.id, theme });
           }
         } catch (error) {
-          console.error('Error loading theme preference:', error);
+          console.error('Error loading theme:', error);
         }
       }
     };
 
-    loadThemePreference();
+    loadTheme();
   }, [user]);
 
-  // Update theme in Supabase when it changes - with better error handling
+  // Update theme in database when it changes
   useEffect(() => {
     const updateThemePreference = async () => {
-      if (!user) return; // Don't proceed if no user
+      if (!user) return;
 
       try {
-        // Check if record exists first
-        const { data: existingRecord } = await supabase
-          .from('user_preferences')
-          .select('user_id')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const { error } = await supabase
+          .from('site_settings')
+          .upsert({ theme, updated_at: new Date().toISOString() });
 
-        if (existingRecord) {
-          // Update the existing record
-          const { error } = await supabase
-            .from('user_preferences')
-            .update({
-              theme,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id);
-
-          if (error) throw error;
-        } else {
-          // Insert a new record
-          const { error } = await supabase
-            .from('user_preferences')
-            .insert({
-              user_id: user.id,
-              theme,
-              updated_at: new Date().toISOString()
-            });
-
-          if (error) throw error;
-        }
+        if (error) throw error;
       } catch (error) {
-        console.error('Error updating theme preference:', error);
-        // Silent error, don't show toast to avoid repeated error notifications
+        console.error('Error updating theme:', error);
       }
     };
 
-    // Only run after initial user load
-    if (user) {
-      updateThemePreference();
-    }
+    updateThemePreference();
   }, [theme, user]);
 
-  // Update the DOM when theme changes
+  // Update DOM when theme changes
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
     root.classList.add(theme);
   }, [theme]);
-
-  // Apply LTR direction since we only support English now
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.dir = 'ltr';
-    root.lang = 'en';
-  }, []);
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
