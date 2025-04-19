@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Bell, Check, TrendingUp, TrendingDown, AlertTriangle, BadgeCheck, Info, Clock } from 'lucide-react';
@@ -83,7 +84,7 @@ const AlertsDropdown: React.FC = () => {
     );
   };
 
-  const getSeverityVariant = (severity: string) => {
+  const getSeverityVariant = (severity: string): "default" | "destructive" | "success" | "warning" | "secondary" | "outline" => {
     switch (severity) {
       case 'warning': return 'warning';
       case 'critical': return 'destructive';
