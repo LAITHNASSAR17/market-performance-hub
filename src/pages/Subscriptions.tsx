@@ -16,47 +16,51 @@ const Subscriptions: React.FC = () => {
     <Layout>
       <div className="container py-10">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">خطط الاشتراك</h1>
-          <p className="text-gray-500 mb-10">اختر الخطة المناسبة لرحلة التداول الخاصة بك</p>
+          <h1 className="text-3xl font-bold mb-2">Subscription Plans</h1>
+          <p className="text-gray-500 mb-10">Choose the plan that best fits your trading journey</p>
           
           <div className="grid md:grid-cols-3 gap-6">
             {/* Free Plan */}
             <Card className={`border-2 ${currentTier === 'free' ? 'border-blue-500' : 'border-transparent'}`}>
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="text-xl">مجاني</CardTitle>
+                  <CardTitle className="text-xl">Starter</CardTitle>
                   {currentTier === 'free' && (
                     <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                      الخطة الحالية
+                      Current Plan
                     </Badge>
                   )}
                 </div>
-                <CardDescription>الميزات الأساسية للتداول</CardDescription>
+                <CardDescription>For beginner traders</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
-                  $0<span className="text-sm font-normal text-gray-500">/شهر</span>
+                  $0<span className="text-sm font-normal text-gray-500">/month</span>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
-                <ul className="space-y-2 text-right">
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>حتى 10 صفقات شهرياً</span>
+                    <span>Up to 10 trades per month</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>دفتر تداول أساسي</span>
+                    <span>1 trading account</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>تحليلات أساسية</span>
+                    <span>Basic trade list view</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>سجل قيود بسيط</span>
+                    <span>1 AI analysis per day</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-500" />
+                    <span>Basic notebook</span>
+                  </li>
+                  <li className="flex items-center gap-2">
                     <X className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-500">رؤى تداول متقدمة</span>
+                    <span className="text-gray-500">Advanced analytics</span>
                   </li>
                 </ul>
               </CardContent>
@@ -66,130 +70,134 @@ const Subscriptions: React.FC = () => {
                   className="w-full"
                   disabled={currentTier === 'free'}
                 >
-                  {currentTier === 'free' ? 'الخطة الحالية' : 'ابدأ الآن'}
+                  {currentTier === 'free' ? 'Current Plan' : 'Start Free'}
                 </Button>
               </CardFooter>
             </Card>
 
-            {/* Premium Plan */}
-            <Card className={`border-2 ${currentTier === 'premium' ? 'border-purple-500' : 'border-transparent'} shadow-lg relative`}>
+            {/* Pro Plan */}
+            <Card className={`border-2 ${currentTier === 'pro' ? 'border-purple-500' : 'border-transparent'} shadow-lg relative`}>
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                 <Star className="h-4 w-4" />
-                الأكثر شعبية
+                Most Popular
               </div>
               
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl flex items-center gap-1">
                     <Crown className="h-5 w-5 text-purple-500" />
-                    بريميوم
+                    Pro
                   </CardTitle>
-                  {currentTier === 'premium' && (
+                  {currentTier === 'pro' && (
                     <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                      الخطة الحالية
+                      Current Plan
                     </Badge>
                   )}
                 </div>
-                <CardDescription>أدوات تداول متقدمة</CardDescription>
+                <CardDescription>For active traders</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
-                  $19<span className="text-sm font-normal text-gray-500">/شهر</span>
+                  $14.99<span className="text-sm font-normal text-gray-500">/month</span>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
-                <ul className="space-y-2 text-right">
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>صفقات غير محدودة</span>
+                    <span>Unlimited trades</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>تحليلات متقدمة</span>
+                    <span>1 image per trade</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>دفتر ملاحظات متقدم</span>
+                    <span>Full analytics access</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>تقارير أداء مفصلة</span>
+                    <span>Reports & insights</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>دعم أولوية</span>
+                    <span>Export data (CSV/PDF)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <X className="h-5 w-5 text-gray-400" />
+                    <span className="text-gray-500">Advanced trading tools</span>
                   </li>
                 </ul>
               </CardContent>
               <CardFooter>
                 <PaymentButton
-                  tier="premium"
-                  variant={currentTier === 'premium' ? "outline" : "default"}
-                  className={`w-full ${currentTier !== 'premium' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
-                  disabled={currentTier === 'premium'}
-                  text={currentTier === 'premium' ? 'الخطة الحالية' : 'ترقية الآن'}
+                  tier="pro"
+                  variant={currentTier === 'pro' ? "outline" : "default"}
+                  className={`w-full ${currentTier !== 'pro' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                  disabled={currentTier === 'pro'}
+                  text={currentTier === 'pro' ? 'Current Plan' : 'Upgrade Now'}
                 />
               </CardFooter>
             </Card>
 
-            {/* Enterprise Plan */}
-            <Card className={`border-2 ${currentTier === 'enterprise' ? 'border-indigo-500' : 'border-transparent'}`}>
+            {/* Elite Plan */}
+            <Card className={`border-2 ${currentTier === 'elite' ? 'border-indigo-500' : 'border-transparent'}`}>
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl flex items-center gap-1">
                     <Zap className="h-5 w-5 text-indigo-500" />
-                    متقدم
+                    Elite
                   </CardTitle>
-                  {currentTier === 'enterprise' && (
+                  {currentTier === 'elite' && (
                     <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
-                      الخطة الحالية
+                      Current Plan
                     </Badge>
                   )}
                 </div>
-                <CardDescription>حل متكامل للمتداولين المحترفين</CardDescription>
+                <CardDescription>For professional traders</CardDescription>
                 <div className="mt-4 text-3xl font-bold">
-                  $49<span className="text-sm font-normal text-gray-500">/شهر</span>
+                  $24.99<span className="text-sm font-normal text-gray-500">/month</span>
                 </div>
               </CardHeader>
               <CardContent className="h-64">
-                <ul className="space-y-2 text-right">
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                <ul className="space-y-2">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>جميع ميزات الخطة البريميوم</span>
+                    <span>Everything in Pro, plus:</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>تحليل الصفقات بالذكاء الاصطناعي</span>
+                    <span>Up to 3 images per trade</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>لوحة تحكم مخصصة</span>
+                    <span>Trade rating system</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>تقارير مخصصة</span>
+                    <span>Playbooks & strategy analysis</span>
                   </li>
-                  <li className="flex items-center gap-2 flex-row-reverse">
+                  <li className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-green-500" />
-                    <span>دعم على مدار الساعة</span>
+                    <span>Priority support</span>
                   </li>
                 </ul>
               </CardContent>
               <CardFooter>
                 <PaymentButton
-                  tier="enterprise"
-                  variant={currentTier === 'enterprise' ? "outline" : "default"}
-                  className={`w-full ${currentTier !== 'enterprise' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
-                  disabled={currentTier === 'enterprise'}
-                  text={currentTier === 'enterprise' ? 'الخطة الحالية' : 'ترقية الآن'}
+                  tier="elite"
+                  variant={currentTier === 'elite' ? "outline" : "default"}
+                  className={`w-full ${currentTier !== 'elite' ? 'bg-indigo-600 hover:bg-indigo-700' : ''}`}
+                  disabled={currentTier === 'elite'}
+                  text={currentTier === 'elite' ? 'Current Plan' : 'Upgrade Now'}
                 />
               </CardFooter>
             </Card>
           </div>
           
           <div className="mt-12 text-center">
-            <h3 className="text-xl font-semibold mb-2">تحتاج إلى حل مخصص؟</h3>
-            <p className="text-gray-500 mb-4">اتصل بنا للحصول على تجربة منصة تداول مخصصة</p>
+            <h3 className="text-xl font-semibold mb-2">Need a Custom Solution?</h3>
+            <p className="text-gray-500 mb-4">Contact us for a customized trading platform experience</p>
             <Button variant="outline" className="gap-2">
-              اتصل بالمبيعات <ArrowRight className="h-4 w-4" />
+              Contact Sales <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
