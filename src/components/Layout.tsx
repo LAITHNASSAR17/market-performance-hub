@@ -17,6 +17,7 @@ import {
   LineChart,
   AreaChart,
   CreditCard,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -28,7 +29,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const menuItems = [
@@ -61,19 +62,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </Link>
           </div>
 
-          {/* User Profile */}
-          <div className="p-4 border-b">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarFallback>L</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="font-medium">Laith</span>
-                <span className="text-sm text-muted-foreground">lnmr2001@gmail.com</span>
-              </div>
-            </div>
-          </div>
-
           {/* Navigation Menu */}
           <nav className="flex-1 p-2">
             {menuItems.map((item) => (
@@ -102,13 +90,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <header className="border-b">
           <div className="container mx-auto flex justify-end items-center py-4 px-4">
             <div className="flex items-center space-x-4">
-              <AlertsDropdown />
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <Link 
+                    to="/admin" 
+                    className="p-2 hover:bg-accent rounded-full transition-colors"
+                  >
+                    <ShieldAlert className="h-5 w-5" />
+                  </Link>
+                )}
+                <AlertsDropdown />
+              </div>
+              
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar_url || ''} />
+                        <AvatarImage src={user.avatar_url} />
                         <AvatarFallback>
                           {user.name?.charAt(0) || 'U'}
                         </AvatarFallback>
@@ -116,18 +115,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Link to="/profile">Profile</Link>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile">الملف الشخصي</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
-                      Logout
+                      تسجيل الخروج
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
                 <Button asChild>
-                  <Link to="/login">Login</Link>
+                  <Link to="/login">تسجيل الدخول</Link>
                 </Button>
               )}
             </div>
