@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { ThemeToggle } from './ThemeToggle';
+import ThemeToggle from './ThemeToggle';
 import AlertsDropdown from './AlertsDropdown';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -15,11 +16,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
+    await logout();
     navigate('/login');
   };
 
