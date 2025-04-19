@@ -27,7 +27,7 @@ export interface Trade {
   beforeImageUrl?: string;
   afterImageUrl?: string;
   
-  // Adding the missing properties referenced in TradeTracking.tsx
+  // These properties need to be added to resolve errors
   riskPercentage: number;
   returnPercentage: number;
   

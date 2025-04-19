@@ -32,6 +32,8 @@ type AuthContextType = {
   unblockUser: (user: any) => Promise<void>;
   changePassword: (userId: string, newPassword: string) => Promise<void>;
   updateUser: (userData: any) => Promise<void>;
+  updateProfile: (userData: any) => Promise<void>;
+  updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -442,6 +444,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProfile = async (userData: any): Promise<void> => {
+    try {
+      if (!user) throw new Error('No user is authenticated');
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: userData.name,
+          avatar_url: userData.avatar_url,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      
+      setUser(prev => prev ? { ...prev, ...userData } : null);
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully."
+      });
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ subscription_tier: tier })
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      if (user && user.id === userId) {
+        setUser(prev => prev ? { ...prev, subscription_tier: tier } : null);
+      }
+      
+      toast({
+        title: "Subscription Updated",
+        description: `Subscription tier updated to ${tier}`
+      });
+    } catch (error: any) {
+      console.error('Error updating subscription tier:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subscription tier",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -465,6 +524,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unblockUser,
         changePassword,
         updateUser,
+        updateProfile,
+        updateSubscriptionTier,
       }}
     >
       {children}

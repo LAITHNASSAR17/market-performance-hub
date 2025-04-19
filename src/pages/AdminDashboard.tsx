@@ -27,6 +27,7 @@ import {
 } from "recharts";
 import { format } from 'date-fns';
 import { CalendarDays, User2, CreditCard, Users } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface User {
   id: string;

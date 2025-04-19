@@ -1,6 +1,5 @@
 
 import { supabase } from '@/lib/supabase';
-import { Trade } from '@/types/trade';
 
 export interface ITrade {
   id: string;
@@ -114,7 +113,7 @@ export const tradeService = {
     }
   },
   
-  async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
+  async findTradesByFilter(filter: Partial<Record<keyof ITrade, any>>): Promise<ITrade[]> {
     try {
       let query = supabase.from('trades').select('*');
       

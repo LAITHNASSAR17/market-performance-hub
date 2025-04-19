@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -24,7 +25,8 @@ const AdminUsers: React.FC = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      setUsers(data || []);
+      // Use the updateUser from useAuth context to update the users array
+      await getAllUsers();
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -111,7 +113,7 @@ const AdminUsers: React.FC = () => {
       const hashedPassword = hashPassword(userData.password);
       
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .insert({
           name: userData.name,
           email: userData.email,
