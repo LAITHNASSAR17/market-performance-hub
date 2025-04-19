@@ -44,20 +44,22 @@ import { TagsProvider } from './contexts/TagsContext';
 
 function App() {
   return (
-    <ThemeProvider>
-      <LanguageProvider>
-        <TagsProvider>
-          <TradeProvider>
-            <NotebookProvider>
-              <TooltipProvider>
-                <Toaster />
-                <AnimatedRoutes />
-              </TooltipProvider>
-            </NotebookProvider>
-          </TradeProvider>
-        </TagsProvider>
-      </LanguageProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <LanguageProvider>
+          <TagsProvider>
+            <TradeProvider>
+              <NotebookProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <AnimatedRoutes />
+                </TooltipProvider>
+              </NotebookProvider>
+            </TradeProvider>
+          </TagsProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
