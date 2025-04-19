@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -16,7 +17,7 @@ export interface ITradingAccount {
   id: string;
   userId: string;
   name: string;
-  balance: number;
+  balance?: number;
   createdAt: string;
 }
 
@@ -83,21 +84,23 @@ export const userService = {
   },
 
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
-    let query = supabase.from('users').select('*');
+    // Since we can't query the auth.users table directly, this function
+    // should be implemented to filter users from memory after getting all users
+    const users = await this.getAllUsers();
     
-    Object.entries(filter).forEach(([key, value]) => {
-      if (value !== undefined) {
-        query = query.eq(key, value);
+    // Apply filters
+    return users.filter(user => {
+      for (const [key, value] of Object.entries(filter)) {
+        if (value !== undefined) {
+          // @ts-ignore - dynamic property check
+          if (user[key] !== value) return false;
+        }
       }
+      return true;
     });
-    
-    const { data, error } = await query;
-    
-    if (error || !data) return [];
-    return data.map(formatUser);
   },
   
-  async createTradingAccount(userId: string, name: string, balance: number): Promise<ITradingAccount> {
+  async createTradingAccount(userId: string, name: string, initialBalance: number = 0): Promise<ITradingAccount> {
     if (!userId) {
       throw new Error('User ID is required to create a trading account');
     }
@@ -106,7 +109,7 @@ export const userService = {
       throw new Error('Account name is required');
     }
     
-    const parsedBalance = Number(balance) || 0;
+    const parsedBalance = Number(initialBalance) || 0;
     
     const { data, error } = await supabase
       .from('trading_accounts')
@@ -131,7 +134,7 @@ export const userService = {
       id: data.id,
       userId: data.user_id,
       name: data.name,
-      balance: Number(data.balance),
+      balance: data.balance ? Number(data.balance) : undefined,
       createdAt: data.created_at
     };
   },
@@ -157,7 +160,7 @@ export const userService = {
       id: account.id,
       userId: account.user_id,
       name: account.name,
-      balance: Number(account.balance),
+      balance: account.balance ? Number(account.balance) : undefined,
       createdAt: account.created_at
     }));
   },

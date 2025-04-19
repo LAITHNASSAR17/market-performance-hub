@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -69,7 +68,7 @@ const AdminSubscriptions: React.FC = () => {
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase());
       
-    const matchesTier = tierFilter === 'all' ? true : user.subscriptionTier === tierFilter;
+    const matchesTier = tierFilter === 'all' ? true : user.subscription_tier === tierFilter;
     
     return matchesSearch && matchesTier;
   });
@@ -77,7 +76,7 @@ const AdminSubscriptions: React.FC = () => {
   // Open upgrade modal for a user
   const handleOpenUpgradeModal = (user: any) => {
     setSelectedUser(user);
-    setNewTier(user.subscriptionTier || 'free');
+    setNewTier(user.subscription_tier || 'free');
     setShowUpgradeModal(true);
   };
   
@@ -86,10 +85,10 @@ const AdminSubscriptions: React.FC = () => {
     if (!selectedUser || !newTier) return;
     
     try {
-      // Use updateUser from AuthContext instead
+      // Use updateUser from AuthContext
       await updateUser({
         ...selectedUser,
-        subscriptionTier: newTier
+        subscription_tier: newTier
       });
       
       setShowUpgradeModal(false);

@@ -34,8 +34,6 @@ export const noteService = {
   },
 
   async createNote(noteData: Omit<INote, 'id' | 'createdAt' | 'updatedAt'>): Promise<INote> {
-    const now = new Date().toISOString();
-    
     // Map the interface fields to DB column names
     const dbData = {
       title: noteData.title,
@@ -56,10 +54,8 @@ export const noteService = {
   },
 
   async updateNote(id: string, noteData: Partial<INote>): Promise<INote | null> {
-    const now = new Date().toISOString();
-    
     // Convert Note interface fields to database field names
-    const updateData: any = { updated_at: now };
+    const updateData: any = { updated_at: new Date().toISOString() };
     if (noteData.title !== undefined) updateData.title = noteData.title;
     if (noteData.content !== undefined) updateData.content = noteData.content;
     if (noteData.tags !== undefined) updateData.tags = noteData.tags;

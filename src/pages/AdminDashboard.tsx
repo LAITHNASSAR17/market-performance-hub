@@ -51,14 +51,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
 
-// Import our new components
 import UserTable from '@/components/admin/UserTable';
 import TradeTable from '@/components/admin/TradeTable';
 import HashtagsTable from '@/components/admin/HashtagsTable';
 import SystemSettings from '@/components/admin/SystemSettings';
 import AdminCharts from '@/components/admin/AdminCharts';
 
-// Sample data for hashtags
 const sampleHashtags = [
   { 
     name: 'setup', 
@@ -104,36 +102,30 @@ const AdminDashboard: React.FC = () => {
   const [hashtags, setHashtags] = useState(sampleHashtags);
   const [allTrades, setAllTrades] = useState<any[]>([]);
 
-  // Load initial data
   useEffect(() => {
     if (isAdmin) {
       handleRefreshData();
     }
   }, [isAdmin]);
 
-  // Statistics calculations - now derived from loaded data
   const totalUsers = users ? users.length : 0;
   const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
   const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
   
-  // All trades (from all users) for admin
   const totalTrades = allTrades.length;
   
-  // Calculate profit/loss and other trade statistics
   const allProfitLoss = allTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
   
   const winningTrades = allTrades.filter(trade => (trade.profitLoss || 0) > 0).length;
   const losingTrades = allTrades.filter(trade => (trade.profitLoss || 0) < 0).length;
   const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
   
-  // Today's trades
   const today = new Date().toISOString().split('T')[0];
   const todayTrades = allTrades.filter(trade => trade.date === today).length;
   const todayProfit = allTrades
     .filter(trade => trade.date === today)
     .reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
   
-  // Find most traded pair
   const pairCount: Record<string, number> = {};
   allTrades.forEach(trade => {
     pairCount[trade.pair] = (pairCount[trade.pair] || 0) + 1;
@@ -149,7 +141,6 @@ const AdminDashboard: React.FC = () => {
     }
   }
 
-  // Demo data
   const linkedAccounts = 12;
   const totalNotes = 87;
 
@@ -158,14 +149,11 @@ const AdminDashboard: React.FC = () => {
   }
 
   const handleRefreshData = () => {
-    // Fetch users data
     getAllUsers();
     
-    // Fetch ALL trades across users for admin dashboard
     const allTradesData = trades || [];
     setAllTrades(allTradesData);
     
-    // Update refresh timestamp
     setLastRefresh(new Date());
     
     toast({
@@ -207,7 +195,6 @@ const AdminDashboard: React.FC = () => {
           : `${user.name} admin privileges have been revoked`
       });
       
-      // Refresh users list
       getAllUsers();
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -241,7 +228,6 @@ const AdminDashboard: React.FC = () => {
         description: `${userData.name} has been added successfully`
       });
       
-      // Refresh users list
       getAllUsers();
     } catch (error) {
       console.error('Error adding user:', error);
@@ -250,7 +236,7 @@ const AdminDashboard: React.FC = () => {
         description: "Failed to add new user. Please try again.",
         variant: "destructive"
       });
-      throw error; // Rethrow for the component to handle
+      throw error;
     }
   };
 
@@ -293,7 +279,6 @@ const AdminDashboard: React.FC = () => {
       title: "View Trade",
       description: `Viewing trade ${id}`
     });
-    // Implementation would navigate to trade view
   };
 
   const handleEditTrade = (id: string) => {
@@ -301,12 +286,10 @@ const AdminDashboard: React.FC = () => {
       title: "Edit Trade",
       description: `Editing trade ${id}`
     });
-    // Implementation would navigate to trade edit
   };
 
   const handleDeleteTrade = (id: string) => {
     deleteTrade(id);
-    // Update local state to reflect the deletion
     setAllTrades(allTrades.filter(trade => trade.id !== id));
     toast({
       title: "Trade Deleted",
@@ -319,7 +302,6 @@ const AdminDashboard: React.FC = () => {
       title: "Export Initiated",
       description: "Trades export started"
     });
-    // Implementation would export trades
   };
 
   const handleViewUser = (userId: string) => {
@@ -327,7 +309,6 @@ const AdminDashboard: React.FC = () => {
       title: "View User",
       description: `Viewing user ${userId}`
     });
-    // Implementation would navigate to user view
   };
 
   return (
@@ -358,7 +339,6 @@ const AdminDashboard: React.FC = () => {
             </div>
           </header>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <StatCard
               title="Total Users"
@@ -424,10 +404,8 @@ const AdminDashboard: React.FC = () => {
             />
           </div>
 
-          {/* Charts Section */}
           <AdminCharts className="mt-4" />
 
-          {/* Main Content */}
           <Tabs defaultValue="users" className="w-full mt-6">
             <TabsList className="mb-6 bg-white p-1 rounded-md overflow-x-auto flex whitespace-nowrap">
               <TabsTrigger value="users" className="flex items-center">

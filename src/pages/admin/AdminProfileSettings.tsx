@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -40,16 +41,15 @@ import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import {
-  Calendar,
-  CalendarMode,
-  DateRange,
-} from "cmdk";
-
 const AdminProfileSettings: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const { toast } = useToast();
-  const { t, language, setLanguage, currency, setCurrency, timezone, setTimezone } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
+
+  // Since currency and timezone are mentioned in errors but not available in LanguageContext,
+  // let's define them locally instead of trying to use them from context
+  const [currency, setCurrency] = useState('USD');
+  const [timezone, setTimezone] = useState('UTC');
 
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
@@ -97,12 +97,12 @@ const AdminProfileSettings: React.FC = () => {
     }
   };
 
-  const updatePreference = async ({ theme, language, currency, timezone }: any) => {
+  const updatePreference = async (prefData: { theme: string, language: string, currency: string, timezone: string }) => {
     setIsSavingPreferences(true);
     try {
-      setLanguage(language);
-      setCurrency(currency);
-      setTimezone(timezone);
+      setLanguage(prefData.language as "en" | "ar");
+      setCurrency(prefData.currency);
+      setTimezone(prefData.timezone);
       toast({
         title: "Success",
         description: "User preferences updated successfully",
@@ -205,7 +205,10 @@ const AdminProfileSettings: React.FC = () => {
                 <Label htmlFor="language">
                   Language
                 </Label>
-                <Select value={preferenceData.language} onValueChange={(value) => setPreferenceData({ ...preferenceData, language: value })}>
+                <Select 
+                  value={preferenceData.language} 
+                  onValueChange={(value) => setPreferenceData({ ...preferenceData, language: value as "en" | "ar" })}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>

@@ -104,20 +104,16 @@ const AdminUsers: React.FC = () => {
 
   const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
     try {
-      const hashedPassword = hashPassword(userData.password);
-      
-      // Instead of directly inserting into the Supabase users table (which isn't allowed),
-      // use the auth.signUp method to create a user, then manage custom properties
-      const { data, error } = await supabase.auth.signUp({
+      // Use Supabase Auth API to create user instead of direct DB access
+      const { data, error } = await supabase.auth.admin.createUser({
         email: userData.email,
         password: userData.password,
-        options: {
-          data: {
-            name: userData.name,
-            role: userData.isAdmin ? 'admin' : 'user',
-            is_blocked: false,
-            subscription_tier: 'free'
-          }
+        email_confirm: true,
+        user_metadata: {
+          name: userData.name,
+          role: userData.isAdmin ? 'admin' : 'user',
+          is_blocked: false,
+          subscription_tier: 'free'
         }
       });
       
@@ -131,8 +127,7 @@ const AdminUsers: React.FC = () => {
       // Refresh users list
       fetchUsers();
       
-      // Fix the type error by not returning the data
-      return;
+      return data;
     } catch (error) {
       console.error('Error adding user:', error);
       toast({
