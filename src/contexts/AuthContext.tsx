@@ -536,10 +536,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending verification email to ${email}`);
       
-      // IMPORTANT: Use /verify path that our 404 page will catch and redirect
-      // This ensures that even if the route doesn't exist directly, the NotFound page will handle it
       const verificationLink = `https://trackmind.vip/verify?email=${encodeURIComponent(email)}`;
-      console.log(`Verification link generated: ${verificationLink}`);
+      console.log(`Verification link: ${verificationLink}`);
       
       console.log("Calling Supabase function with parameters:", {
         type: 'verification',
@@ -564,7 +562,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       toast({
         title: "تم إرسال البريد الإلكتروني",
-        description: "تم إرسال رابط التحقق إلى بريدك الإلكتروني",
+        description: "تم إرسل رابط التحقق إلى بريدك الإلكتروني",
       });
       
       return response;
@@ -623,7 +621,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Password reset email error:', error);
       toast({
         title: "خطأ",
-        description: "ف��ل في إرسال بريد إعادة تعيين كلمة المرور",
+        description: "فشل في إرسال بريد إعادة تعيين كلمة المرور",
         variant: "destructive",
       });
       throw error;

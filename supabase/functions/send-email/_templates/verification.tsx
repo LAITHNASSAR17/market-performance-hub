@@ -35,12 +35,6 @@ export const VerificationEmail = ({
           تأكيد البريد الإلكتروني
         </Link>
         <Text style={text}>
-          إذا واجهت أي مشكلة مع الرابط، يمكنك نسخه ولصقه مباشرة في المتصفح:
-        </Text>
-        <Text style={linkText}>
-          {verificationLink}
-        </Text>
-        <Text style={text}>
           إذا لم تقم بإنشاء حساب، يمكنك تجاهل هذا البريد الإلكتروني.
         </Text>
       </Container>
@@ -84,17 +78,6 @@ const button = {
   textDecoration: 'none',
   textAlign: 'center' as const,
   margin: '16px 0',
-}
-
-const linkText = {
-  color: '#2563eb',
-  fontSize: '14px',
-  wordBreak: 'break-all' as const,
-  textAlign: 'right' as const,
-  direction: 'ltr' as const,
-  padding: '10px',
-  backgroundColor: '#f4f4f4',
-  borderRadius: '4px',
 }
 
 export default VerificationEmail

@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +9,6 @@ import { Check, LineChart, AlertCircle } from 'lucide-react';
 
 const EmailVerify = () => {
   const [searchParams] = useSearchParams();
-  const location = useLocation();
   const email = searchParams.get('email');
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -18,14 +17,8 @@ const EmailVerify = () => {
 
   useEffect(() => {
     const verifyEmail = async () => {
-      // Enhanced logging for debugging
-      console.log('EmailVerify component loaded');
-      console.log('Current URL:', window.location.href);
-      console.log('Current pathname:', location.pathname);
-      console.log('Email from URL params:', email);
-      
       if (!email) {
-        console.error('No email provided in URL parameters');
+        console.error('No email provided in URL');
         setStatus('error');
         setErrorMessage('لم يتم توفير البريد الإلكتروني في الرابط');
         return;
@@ -33,8 +26,9 @@ const EmailVerify = () => {
 
       try {
         console.log(`Attempting to verify email: ${email}`);
+        console.log(`Current app URL: ${window.location.origin}`);
         
-        // 1. Check if user exists
+        // 1. التحقق من وجود المستخدم
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('*')
@@ -56,17 +50,31 @@ const EmailVerify = () => {
         }
 
         console.log('User found:', userData.id);
-        
-        // Check if already verified
-        if (userData.email_verified) {
-          console.log('Email already verified');
+
+        // 2. تحديث حالة التحقق للمستخدم
+        try {
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ email_verified: true })
+            .eq('email', email);
+
+          if (updateError) {
+            console.error('Error updating verification status:', updateError);
+            setStatus('error');
+            setErrorMessage(`حدث خطأ أثناء تحديث حالة التحقق: ${updateError.message}`);
+            return;
+          }
+
+          console.log('Email verification successful');
+          // نجاح التحقق
           setStatus('success');
+          
           toast({
-            title: "البريد الإلكتروني مفعل بالفعل",
-            description: "تم التحقق من بريدك الإلكتروني بالفعل. يمكنك الآن تسجيل الدخول.",
+            title: "تم التحقق بنجاح",
+            description: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
           });
           
-          // After 3 seconds, navigate to login page
+          // بعد 3 ثوانٍ، انتقل إلى صفحة تسجيل الدخول
           setTimeout(() => {
             navigate('/login', { 
               state: { 
@@ -76,50 +84,20 @@ const EmailVerify = () => {
               } 
             });
           }, 3000);
-          return;
-        }
-
-        // 2. Update verification status for the user
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ email_verified: true })
-          .eq('email', email);
-
-        if (updateError) {
-          console.error('Error updating verification status:', updateError);
+        } catch (err) {
+          console.error('Unexpected error during update:', err);
           setStatus('error');
-          setErrorMessage(`حدث خطأ أثناء تحديث حالة التحقق: ${updateError.message}`);
-          return;
+          setErrorMessage('حدث خطأ غير متوقع أثناء تحديث حالة التحقق');
         }
-
-        console.log('Email verification successful');
-        // Verification success
-        setStatus('success');
-        
-        toast({
-          title: "تم التحقق بنجاح",
-          description: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول.",
-        });
-        
-        // After 3 seconds, navigate to login page
-        setTimeout(() => {
-          navigate('/login', { 
-            state: { 
-              verified: true, 
-              email: email,
-              message: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول." 
-            } 
-          });
-        }, 3000);
-      } catch (err) {
-        console.error('Unexpected error during verification:', err);
+      } catch (error) {
+        console.error('Unexpected error:', error);
         setStatus('error');
         setErrorMessage('حدث خطأ غير متوقع أثناء التحقق من البريد الإلكتروني');
       }
     };
 
     verifyEmail();
-  }, [email, navigate, toast, location.pathname]);
+  }, [email, navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -47,7 +46,6 @@ export const userService = {
       .from('users')
       .insert({
         ...userData,
-        subscription_tier: 'starter', // Set default subscription tier to 'starter'
         created_at: now,
         updated_at: now
       })
