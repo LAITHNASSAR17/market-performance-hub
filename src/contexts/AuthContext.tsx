@@ -16,7 +16,7 @@ interface AuthContextType {
   changePassword: (userId: string, newPassword: string) => Promise<void>;
   updateUser: (user: User) => Promise<void>;
   sendPasswordResetEmail: (email: string) => Promise<any>;
-  register: (email: string, password: string, name: string) => Promise<any>;
+  register: (name: string, email: string, password: string, country: string) => Promise<any>;
   loading: boolean;
   updateProfile: (userData: Partial<User>) => Promise<void>;
 }
@@ -24,10 +24,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
+  // Set initial authenticated state to true and provide a mock user
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>({
+    id: 'mock-user-id',
+    name: 'Demo User',
+    email: 'demo@example.com',
+    role: 'user',
+    isAdmin: false,
+    subscription_tier: 'free'
+  });
+  const [users, setUsers] = useState<User[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -184,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (name: string, email: string, password: string, country: string) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -195,7 +203,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name,
             isAdmin: false,
             role: 'user',
-            subscription_tier: 'free'
+            subscription_tier: 'free',
+            country
           }
         }
       });
@@ -390,7 +399,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         isAuthenticated,
         user,
-        isAdmin,
+        isAdmin: user?.isAdmin || false,
         users,
         login,
         logout,

@@ -17,28 +17,14 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({
-  children
-}) => {
-  const {
-    isAuthenticated,
-    logout,
-    user,
-    isAdmin
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
-  const {
-    t
-  } = useLanguage();
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { user, logout } = useAuth();
+  const { toast } = useToast();
+  const { t } = useLanguage();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  const {
-    theme,
-    toggleTheme
-  } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
   useEffect(() => {
@@ -48,25 +34,6 @@ const Layout: React.FC<LayoutProps> = ({
       setSidebarOpen(true);
     }
   }, [isMobile]);
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-        <div className="text-center max-w-md px-4">
-          <h1 className="text-2xl font-bold mb-4">تحتاج لتسجيل الدخول</h1>
-          <p className="mb-6">يرجى تسجيل الدخول للوصول إلى هذه الصفحة</p>
-          <div className="flex justify-center gap-4">
-            <Button asChild>
-              <Link to="/login">تسجيل الدخول</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/register">إنشاء حساب</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const navigation = [{
     name: 'Dashboard',
