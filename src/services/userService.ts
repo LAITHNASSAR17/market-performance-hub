@@ -10,6 +10,7 @@ export const userService = {
     }
     
     try {
+      // Using a simpler query to avoid column ambiguity issues
       const { data, error } = await supabase
         .from('trading_accounts')
         .select('*')
@@ -44,6 +45,7 @@ export const userService = {
     }
     
     try {
+      // Using a simpler query to avoid column ambiguity issues
       const { data, error } = await supabase
         .from('trading_accounts')
         .insert({
