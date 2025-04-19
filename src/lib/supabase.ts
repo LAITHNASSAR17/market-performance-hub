@@ -1,8 +1,9 @@
+
 import { createClient } from '@supabase/supabase-js';
 
-// Using the values directly to avoid environment variable issues
-const supabaseUrl = "https://gworvqqjzirypwfffapt.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3b3J2cXFqemlyeXB3ZmZmYXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0OTMwMTEsImV4cCI6MjA2MDA2OTAxMX0.djQ7IteaNoWH8Eeo9hTCwbdaB6jPVkdBfxqrCGr2KdI";
+// Update these values with your new Supabase project credentials
+const supabaseUrl = "YOUR_NEW_SUPABASE_URL";
+const supabaseAnonKey = "YOUR_NEW_SUPABASE_ANON_KEY";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
