@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +9,7 @@ import { Check, LineChart, AlertCircle } from 'lucide-react';
 
 const EmailVerify = () => {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const email = searchParams.get('email');
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -20,6 +21,7 @@ const EmailVerify = () => {
       // Enhanced logging for debugging
       console.log('EmailVerify component loaded');
       console.log('Current URL:', window.location.href);
+      console.log('Current pathname:', location.pathname);
       console.log('Email from URL params:', email);
       
       if (!email) {
@@ -54,6 +56,28 @@ const EmailVerify = () => {
         }
 
         console.log('User found:', userData.id);
+        
+        // Check if already verified
+        if (userData.email_verified) {
+          console.log('Email already verified');
+          setStatus('success');
+          toast({
+            title: "البريد الإلكتروني مفعل بالفعل",
+            description: "تم التحقق من بريدك الإلكتروني بالفعل. يمكنك الآن تسجيل الدخول.",
+          });
+          
+          // After 3 seconds, navigate to login page
+          setTimeout(() => {
+            navigate('/login', { 
+              state: { 
+                verified: true, 
+                email: email,
+                message: "تم التحقق من بريدك الإلكتروني بنجاح. يمكنك الآن تسجيل الدخول." 
+              } 
+            });
+          }, 3000);
+          return;
+        }
 
         // 2. Update verification status for the user
         const { error: updateError } = await supabase
@@ -95,7 +119,7 @@ const EmailVerify = () => {
     };
 
     verifyEmail();
-  }, [email, navigate, toast]);
+  }, [email, navigate, toast, location.pathname]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
