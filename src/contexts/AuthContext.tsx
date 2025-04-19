@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, AuthError } from '@supabase/supabase-js';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -25,6 +25,7 @@ type AuthContextType = {
   logout: () => Promise<void>; // Alias for signOut for compatibility
   handleRegister: (formData: any) => Promise<void>;
   handleForgotPassword: (email: string) => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<void>; // Alias for backward compatibility
   handleUpdatePassword: (accessToken: string, newPassword: string) => Promise<void>;
   handleVerifyEmail: (token: string, type: string) => Promise<void>;
   getAllUsers: () => Promise<void>;
@@ -93,41 +94,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     getSession();
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       
       if (session?.user) {
-        // Get user profile from profiles table
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          // Get user profile from profiles table
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+            
+          // Combine auth user with profile data
+          const extendedUser: ExtendedUser = {
+            ...session.user,
+            name: profileData?.name || '',
+            subscription_tier: profileData?.subscription_tier || 'free',
+            role: profileData?.role || 'user',
+            isAdmin: profileData?.role === 'admin'
+          };
           
-        // Combine auth user with profile data
-        const extendedUser: ExtendedUser = {
-          ...session.user,
-          name: profileData?.name || '',
-          subscription_tier: profileData?.subscription_tier || 'free',
-          role: profileData?.role || 'user',
-          isAdmin: profileData?.role === 'admin'
-        };
-        
-        setUser(extendedUser);
-        setIsAuthenticated(true);
-        setIsAdmin(profileData?.role === 'admin');
+          setUser(extendedUser);
+          setIsAuthenticated(true);
+          setIsAdmin(profileData?.role === 'admin');
+        } catch (err) {
+          console.error('Error fetching profile data:', err);
+        }
       } else {
         setUser(null);
         setIsAuthenticated(false);
         setIsAdmin(false);
       }
     });
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [toast]);
 
   // Fix 1: Add proper login method with email and password
   const signIn = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
+      console.log(`Attempting to sign in with email: ${email}`);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -143,12 +154,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "مرحباً بك مرة أخرى",
       });
       
-      navigate('/dashboard');
+      // Navigate only if login was successful
+      if (data.session) {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
       console.error('Exception signing in:', error);
+      let errorMessage = "فشل تسجيل الدخول. الرجاء التحقق من بريدك الإلكتروني وكلمة المرور.";
+      
+      if (error.message === 'Invalid login credentials' || error.message === 'Invalid credentials') {
+        errorMessage = "بريد إلكتروني أو كلمة مرور غير صحيحة";
+      } else if (error.message === 'User is blocked') {
+        errorMessage = "تم حظر هذا الحساب. الرجاء الاتصال بالدعم.";
+      } else if (error.message === 'Email is not activated') {
+        errorMessage = "البريد الإلكتروني غير مفعل. يرجى التحقق من بريدك الإلكتروني لتنشيط حسابك.";
+      }
+      
       toast({
-        title: "خطأ",
-        description: error.message || "فشل تسجيل الدخول",
+        title: "فشل تسجيل الدخول",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
@@ -164,9 +188,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       await supabase.auth.signOut();
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsAdmin(false);
       toast({
         description: "تم تسجيل الخروج بنجاح",
       });
+      navigate('/login');
     } catch (error: any) {
       console.error('Error signing out:', error);
       toast({
@@ -215,7 +243,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: userId,
             name: formData.name,
             email: formData.email,
-            password: '', // We don't store the actual password in profiles
             role: 'user',
             is_blocked: false,
             email_verified: false,
@@ -280,6 +307,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Alias for backward compatibility
+  const sendPasswordResetEmail = handleForgotPassword;
+
   const handleUpdatePassword = async (accessToken: string, newPassword: string): Promise<void> => {
     setIsLoading(true);
     try {
@@ -312,10 +342,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleVerifyEmail = async (token: string, type: string): Promise<void> => {
     setIsLoading(true);
     try {
+      // Convert type string to EmailOtpType
+      const otpType = (type === 'email') ? 'email' : 'phone_change';
+      
       const { error } = await supabase.auth.verifyOtp({
         token,
-        type: type === 'email' ? 'email' : 'sms',
-        email: '', // This is a required field in the latest Supabase version
+        type: otpType,
       });
 
       if (error) {
@@ -467,6 +499,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         handleRegister,
         handleForgotPassword,
+        sendPasswordResetEmail,
         handleUpdatePassword,
         handleVerifyEmail,
         getAllUsers,

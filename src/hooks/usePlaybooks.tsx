@@ -7,8 +7,8 @@ export interface IPlaybook {
   name: string;
   description: string;
   winRate: number;
-  rMultiple: string;
-  expectedValue: string;
+  rMultiple: string | number;
+  expectedValue: string | number;
   rating: number;
   tags: string[];
   isPrivate?: boolean;
@@ -73,8 +73,8 @@ export const usePlaybooks = () => {
         name: "Trend Following",
         description: "Enter long positions when price breaks above a moving average in an uptrend.",
         winRate: 60,
-        rMultiple: "2.0",
-        expectedValue: "1.2",
+        rMultiple: 2.0,
+        expectedValue: 1.2,
         rating: 4,
         tags: ["trend", "momentum", "moving average"],
         isPrivate: false,
@@ -92,8 +92,8 @@ export const usePlaybooks = () => {
         name: "Range Breakout",
         description: "Trade breakouts from defined trading ranges after consolidation.",
         winRate: 55,
-        rMultiple: "2.5",
-        expectedValue: "1.4",
+        rMultiple: 2.5,
+        expectedValue: 1.4,
         rating: 3,
         tags: ["range", "breakout", "consolidation"],
         isPrivate: true,
@@ -111,8 +111,8 @@ export const usePlaybooks = () => {
         name: "Fibonacci Retracement",
         description: "Enter positions on key Fibonacci retracement levels in established trends.",
         winRate: 65,
-        rMultiple: "1.8",
-        expectedValue: "1.2",
+        rMultiple: 1.8,
+        expectedValue: 1.2,
         rating: 5,
         tags: ["fibonacci", "retracement", "trend"],
         isPrivate: false,

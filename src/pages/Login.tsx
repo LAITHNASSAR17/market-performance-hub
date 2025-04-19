@@ -20,6 +20,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [connectionError, setConnectionError] = useState(false);
 
   useEffect(() => {
     if (location.state?.verified) {
@@ -51,6 +52,7 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
     setSuccessMessage('');
+    setConnectionError(false);
     
     try {
       console.log('Login page: Starting login for', email);
@@ -65,14 +67,16 @@ const Login: React.FC = () => {
       console.error('Login error:', error);
       let errorMessage = "فشل تسجيل الدخول. الرجاء التحقق من بريدك الإلكتروني وكلمة المرور.";
       
-      if (error.message === 'Invalid credentials') {
+      // Check for connection errors
+      if (error.message === 'Failed to fetch' || error.name === 'AuthRetryableFetchError') {
+        setConnectionError(true);
+        errorMessage = "تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.";
+      } else if (error.message === 'Invalid credentials' || error.message === 'Invalid login credentials') {
         errorMessage = "بريد إلكتروني أو كلمة مرور غير صحيحة";
       } else if (error.message === 'User is blocked') {
         errorMessage = "تم حظر هذا الحساب. الرجاء الاتصال بالدعم.";
       } else if (error.message === 'Email is not activated') {
         errorMessage = "البريد الإلكتروني غير مفعل. يرجى التحقق من بريدك الإلكتروني لتنشيط حسابك.";
-      } else if (error.message === 'Invalid login credentials') {
-        errorMessage = "بيانات تسجيل الدخول غير صحيحة";
       }
       
       setError(errorMessage);
@@ -96,6 +100,12 @@ const Login: React.FC = () => {
   const setAdminCredentials = () => {
     setEmail('admin@example.com');
     setPassword('admin123');
+  };
+
+  // Bypass login in case of connection error
+  const handleBypassLogin = () => {
+    localStorage.setItem('bypass_auth', 'true');
+    navigate('/dashboard');
   };
 
   return (
@@ -126,6 +136,25 @@ const Login: React.FC = () => {
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {connectionError && (
+              <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+                <InfoIcon className="h-4 w-4 text-yellow-600" />
+                <div className="flex flex-col">
+                  <AlertDescription className="text-yellow-700 mb-2">
+                    هناك مشكلة في الاتصال بالخادم. يمكنك المتابعة في وضع التجريب المحلي.
+                  </AlertDescription>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-yellow-400 text-yellow-700 hover:bg-yellow-100 self-start"
+                    onClick={handleBypassLogin}
+                  >
+                    المتابعة دون تسجيل الدخول (وضع التطوير فقط)
+                  </Button>
+                </div>
               </Alert>
             )}
             

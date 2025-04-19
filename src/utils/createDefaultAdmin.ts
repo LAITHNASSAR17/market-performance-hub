@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 
 export const createDefaultAdmin = async () => {
   try {
-    // التحقق من وجود حساب أدمن بالفعل
+    // التحقق من وجود حساب أدمن بالفعل في جدول profiles
     const { data: existingAdmins, error: adminCheckError } = await supabase
       .from('profiles')
       .select('*')
@@ -17,15 +17,15 @@ export const createDefaultAdmin = async () => {
     
     // إذا كان هناك حساب أدمن موجود بالفعل، لا تقم بإنشاء واحد جديد
     if (existingAdmins && existingAdmins.length > 0) {
-      console.log('Admin account already exists');
+      console.log('Admin account already exists in profiles table');
       return;
     }
+    
+    console.log('No admin account found in profiles, creating default admin...');
     
     // إنشاء حساب أدمن جديد
     const adminEmail = 'admin@example.com';
     const adminPassword = 'admin123';
-    
-    console.log('Creating default admin account...');
     
     // 1. إنشاء مستخدم في نظام المصادقة
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -43,6 +43,8 @@ export const createDefaultAdmin = async () => {
       return;
     }
     
+    console.log('Auth user created successfully with ID:', authData.user.id);
+    
     // 2. إنشاء ملف التعريف الخاص بالأدمن مع صلاحيات المسؤول
     const { error: profileError } = await supabase
       .from('profiles')
@@ -59,6 +61,20 @@ export const createDefaultAdmin = async () => {
     if (profileError) {
       console.error('Error creating admin profile:', profileError);
       return;
+    }
+    
+    // محاولة تأكيد البريد الإلكتروني مباشرة
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({
+        email: adminEmail,
+        data: { email_verified: true }
+      });
+      
+      if (updateError) {
+        console.error('Error confirming admin email:', updateError);
+      }
+    } catch (e) {
+      console.error('Error in email verification:', e);
     }
     
     console.log('Default admin account created successfully');
