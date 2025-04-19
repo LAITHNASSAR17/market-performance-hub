@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/settings';
@@ -20,32 +19,30 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for now
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [user, setUser] = useState<User | null>({
     id: '1',
     name: 'Demo User',
     email: 'demo@example.com',
-    isAdmin: true
+    isAdmin: true,
+    subscription_tier: 'free'
   });
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    // For demo purposes, set demo user data
     if (!user) {
       setUser({
         id: '1',
         name: 'Demo User',
         email: 'demo@example.com',
-        isAdmin: true
+        isAdmin: true,
+        subscription_tier: 'free'
       });
     }
   }, []);
 
-  // Get all admin users
   const getAllUsers = async (): Promise<User[]> => {
     try {
-      // In a real app, we'd fetch from the users table
-      // For demo, return hardcoded data
       const demoUsers = [
         {
           id: '1',
@@ -53,7 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: 'demo@example.com',
           role: 'admin',
           isAdmin: true,
-          isBlocked: false
+          isBlocked: false,
+          subscription_tier: 'free'
         },
         {
           id: '2',
@@ -61,7 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: 'user@example.com',
           role: 'user',
           isAdmin: false,
-          isBlocked: false
+          isBlocked: false,
+          subscription_tier: 'free'
         }
       ];
       
@@ -74,25 +73,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string) => {
-    // Demo login - in real app we'd use supabase auth
     setIsAuthenticated(true);
     setUser({
       id: '1',
       name: 'Demo User',
       email: email,
-      isAdmin: true
+      isAdmin: true,
+      subscription_tier: 'free'
     });
     return { user: { id: '1' } };
   };
 
   const logout = async () => {
-    // Demo logout
     setIsAuthenticated(false);
     setUser(null);
   };
 
   const blockUser = async (user: User) => {
-    // Demo implementation
     setUsers(prevUsers => 
       prevUsers.map(u => 
         u.id === user.id ? { ...u, isBlocked: true } : u
@@ -101,7 +98,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const unblockUser = async (user: User) => {
-    // Demo implementation
     setUsers(prevUsers => 
       prevUsers.map(u => 
         u.id === user.id ? { ...u, isBlocked: false } : u
@@ -110,12 +106,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const changePassword = async (userId: string, newPassword: string) => {
-    // Demo implementation
     console.log(`Changed password for user ${userId} to ${newPassword}`);
   };
 
   const updateUser = async (updatedUser: User) => {
-    // Demo implementation
     setUsers(prevUsers => 
       prevUsers.map(u => 
         u.id === updatedUser.id ? updatedUser : u

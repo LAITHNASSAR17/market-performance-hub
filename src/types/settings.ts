@@ -32,4 +32,16 @@ export interface User {
   role?: string;
   isAdmin?: boolean;
   isBlocked?: boolean;
+  subscription_tier?: string;
+}
+
+export interface Note {
+  id: string;
+  userId: string;
+  title: string;
+  content?: string;
+  tradeId?: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
 }

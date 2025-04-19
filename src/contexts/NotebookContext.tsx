@@ -1,19 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-
-export type Note = {
-  id: string;
-  userId: string;
-  title: string;
-  content: string;
-  tradeId?: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-};
+import { supabase } from '@/lib/supabase';
+import { Note } from '@/types/settings';
 
 type NotebookContextType = {
   notes: Note[];
@@ -31,67 +20,59 @@ const NotebookContext = createContext<NotebookContextType | undefined>(undefined
 export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
-  const [noteTags, setNoteTags] = useState<string[]>([
-    'strategy', 'psychology', 'risk', 'plan', 'improvement', 'analysis'
-  ]);
+  const [noteTags, setNoteTags] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch notes from Supabase instead of localStorage
   useEffect(() => {
-    const fetchNotes = async () => {
-      if (user) {
-        setLoading(true);
-        try {
-          const { data, error } = await supabase
-            .from('notes')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
+    if (user) {
+      fetchNotes();
+    } else {
+      setNotes([]);
+      setLoading(false);
+    }
+  }, [user]);
 
-          if (error) throw error;
+  const fetchNotes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
 
-          const formattedNotes: Note[] = data.map(note => ({
-            id: note.id,
-            userId: note.user_id,
-            title: note.title,
-            content: note.content,
-            tags: note.tags || [],
-            createdAt: note.created_at,
-            updatedAt: note.updated_at
-          }));
+      if (error) throw error;
 
-          setNotes(formattedNotes);
+      const formattedNotes: Note[] = data.map(note => ({
+        id: note.id,
+        userId: note.user_id,
+        title: note.title,
+        content: note.content || '',
+        tradeId: note.trade_id,
+        tags: note.tags || [],
+        createdAt: note.created_at,
+        updatedAt: note.updated_at
+      }));
 
-          // Extract all unique tags
-          const uniqueTags = Array.from(new Set(
-            formattedNotes.flatMap(note => note.tags)
-          ));
-          setNoteTags(prevTags => [
-            ...prevTags,
-            ...uniqueTags.filter(tag => !prevTags.includes(tag))
-          ]);
-        } catch (error) {
-          console.error('Error fetching notes:', error);
-          toast({
-            title: "خطأ",
-            description: "حدث خطأ أثناء جلب الملاحظات",
-            variant: "destructive"
-          });
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setNotes([]);
-        setLoading(false);
-      }
-    };
+      setNotes(formattedNotes);
+      
+      // Extract unique tags
+      const uniqueTags = Array.from(new Set(formattedNotes.flatMap(note => note.tags)));
+      setNoteTags(prevTags => [...new Set([...prevTags, ...uniqueTags])]);
+      
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch notes",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchNotes();
-  }, [user, toast]);
-
-  // Add note to Supabase
-  const addNote = async (newNoteData: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+  const addNote = async (noteData: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
 
     try {
@@ -99,9 +80,10 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .from('notes')
         .insert({
           user_id: user.id,
-          title: newNoteData.title,
-          content: newNoteData.content,
-          tags: newNoteData.tags || []
+          title: noteData.title,
+          content: noteData.content,
+          trade_id: noteData.tradeId,
+          tags: noteData.tags
         })
         .select()
         .single();
@@ -112,35 +94,30 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         id: data.id,
         userId: data.user_id,
         title: data.title,
-        content: data.content,
+        content: data.content || '',
+        tradeId: data.trade_id,
         tags: data.tags || [],
         createdAt: data.created_at,
         updatedAt: data.updated_at
       };
 
-      setNotes(prevNotes => [newNote, ...prevNotes]);
-
-      // Update tags
-      const newTags = newNote.tags.filter(tag => !noteTags.includes(tag));
-      if (newTags.length > 0) {
-        setNoteTags([...noteTags, ...newTags]);
+      setNotes(prev => [newNote, ...prev]);
+      
+      // Update tags if new ones were added
+      if (noteData.tags.length > 0) {
+        setNoteTags(prev => [...new Set([...prev, ...noteData.tags])]);
       }
 
-      toast({
-        title: "تمت الإضافة",
-        description: "تمت إضافة الملاحظة بنجاح",
-      });
     } catch (error) {
       console.error('Error adding note:', error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إضافة الملاحظة",
+        title: "Error",
+        description: "Failed to add note",
         variant: "destructive"
       });
     }
   };
 
-  // Update note in Supabase
   const updateNote = async (id: string, noteUpdate: Partial<Note>) => {
     if (!user) return;
 
@@ -150,6 +127,7 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .update({
           title: noteUpdate.title,
           content: noteUpdate.content,
+          trade_id: noteUpdate.tradeId,
           tags: noteUpdate.tags
         })
         .eq('id', id)
@@ -174,20 +152,19 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       toast({
-        title: "تم التحديث",
-        description: "تم تحديث الملاحظة بنجاح",
+        title: "Updated",
+        description: "Note updated successfully",
       });
     } catch (error) {
       console.error('Error updating note:', error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء تحديث الملاحظة",
+        title: "Error",
+        description: "Failed to update note",
         variant: "destructive"
       });
     }
   };
 
-  // Delete note from Supabase
   const deleteNote = async (id: string) => {
     if (!user) return;
 
@@ -203,14 +180,14 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setNotes(prevNotes => prevNotes.filter(note => note.id !== id));
 
       toast({
-        title: "تم الحذف",
-        description: "تم حذف الملاحظة بنجاح",
+        title: "Deleted",
+        description: "Note deleted successfully",
       });
     } catch (error) {
       console.error('Error deleting note:', error);
       toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء حذف الملاحظة",
+        title: "Error",
+        description: "Failed to delete note",
         variant: "destructive"
       });
     }
@@ -220,23 +197,19 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return notes.find(note => note.id === id);
   };
 
-  const addTag = (tag: string) => {
-    if (!noteTags.includes(tag)) {
-      setNoteTags([...noteTags, tag]);
-    }
-  };
-
   return (
-    <NotebookContext.Provider value={{ 
-      notes, 
-      addNote, 
-      updateNote, 
-      deleteNote, 
-      getNote,
-      loading,
-      noteTags,
-      addTag
-    }}>
+    <NotebookContext.Provider
+      value={{
+        notes,
+        addNote,
+        updateNote,
+        deleteNote,
+        getNote,
+        loading,
+        noteTags,
+        addTag: (tag: string) => setNoteTags(prev => [...new Set([...prev, tag])])
+      }}
+    >
       {children}
     </NotebookContext.Provider>
   );
