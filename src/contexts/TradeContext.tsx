@@ -249,7 +249,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         detectedType = 'forex';
       } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
         detectedType = 'crypto';
-      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
+      } else if (/^(sr|sa)$/i.test(instrumentType)) {
         detectedType = 'stock';
       } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
         detectedType = 'index';
@@ -323,14 +323,25 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (user) {
         setLoading(true);
         try {
+          console.log('Fetching trades for user:', user.id);
           const { data, error } = await supabase
             .from('trades')
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
-          if (error) throw error;
+          if (error) {
+            console.error('Error fetching trades:', error);
+            throw error;
+          }
 
+          if (!data) {
+            console.log('No trade data returned');
+            setTrades([]);
+            return;
+          }
+
+          console.log('Fetched trades data:', data);
           const formattedTrades: Trade[] = data.map(trade => ({
             id: trade.id,
             userId: trade.user_id,
@@ -355,9 +366,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             afterImageUrl: null,
             hashtags: trade.tags || [],
             createdAt: trade.created_at,
-            rating: trade.rating || 0
+            rating: trade.rating || 0,
+            playbook: trade.playbook,
+            followedRules: trade.followed_rules || [],
+            marketSession: trade.market_session
           }));
 
+          console.log('Formatted trades:', formattedTrades);
           setTrades(formattedTrades);
 
           const uniqueHashtags = Array.from(new Set(
@@ -368,7 +383,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ...uniqueHashtags.filter(tag => !prevHashtags.includes(tag))
           ]);
         } catch (error) {
-          console.error('Error fetching trades:', error);
+          console.error('Exception in fetchTrades:', error);
           toast({
             title: "خطأ",
             description: "حدث خطأ أثناء جلب التداولات",
@@ -390,6 +405,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return;
 
     try {
+      console.log('Adding new trade with data:', newTradeData);
       const entryDate = new Date(newTradeData.date);
       if (isNaN(entryDate.getTime())) {
         throw new Error('Invalid date format');
@@ -406,20 +422,30 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           direction: newTradeData.type === 'Buy' ? 'long' : 'short',
           entry_date: entryDate.toISOString(),
           exit_date: newTradeData.exit ? entryDate.toISOString() : null,
-          profit_loss: newTradeData.profitLoss - (newTradeData.commission || 0),
+          profit_loss: newTradeData.profitLoss,
           fees: newTradeData.commission || 0,
           notes: newTradeData.notes || '',
           tags: newTradeData.hashtags || [],
           stop_loss: newTradeData.stopLoss || null,
           take_profit: newTradeData.takeProfit || null,
           duration_minutes: newTradeData.durationMinutes || null,
-          rating: newTradeData.rating || 0
+          rating: newTradeData.rating || 0,
+          market_session: newTradeData.marketSession || null
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding trade:', error);
+        throw error;
+      }
 
+      if (!data) {
+        console.error('No data returned after insert');
+        throw new Error('No data returned after insert');
+      }
+
+      console.log('Trade added successfully, returned data:', data);
       const newTrade: Trade = {
         ...newTradeData,
         id: data.id,
@@ -433,8 +459,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         title: "تم إضافة التداول",
         description: "تم إضافة التداول بنجاح",
       });
-    } catch (error) {
-      console.error('Error adding trade:', error);
+    } catch (error: any) {
+      console.error('Exception in addTrade:', error);
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء إضافة التداول",
@@ -448,6 +474,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!user) return;
     
     try {
+      console.log('Updating trade with ID:', id, 'with data:', tradeUpdate);
       const updateData: any = {};
       
       if (tradeUpdate.pair !== undefined) updateData.symbol = tradeUpdate.pair;
@@ -464,6 +491,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (tradeUpdate.stopLoss !== undefined) updateData.stop_loss = tradeUpdate.stopLoss;
       if (tradeUpdate.takeProfit !== undefined) updateData.take_profit = tradeUpdate.takeProfit;
       if (tradeUpdate.durationMinutes !== undefined) updateData.duration_minutes = tradeUpdate.durationMinutes;
+      if (tradeUpdate.marketSession !== undefined) updateData.market_session = tradeUpdate.marketSession;
       
       if (tradeUpdate.exit !== undefined && tradeUpdate.date) {
         updateData.exit_date = tradeUpdate.exit ? new Date(tradeUpdate.date).toISOString() : null;
@@ -479,8 +507,17 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating trade:', error);
+        throw error;
+      }
 
+      if (!data) {
+        console.error('No data returned after update');
+        throw new Error('No data returned after update');
+      }
+
+      console.log('Trade updated successfully, returned data:', data);
       setTrades(prevTrades => 
         prevTrades.map(trade => 
           trade.id === id ? { ...trade, ...tradeUpdate } : trade
@@ -492,7 +529,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: "تم تحديث التداول بنجاح",
       });
     } catch (error) {
-      console.error('Error updating trade:', error);
+      console.error('Exception in updateTrade:', error);
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء تحديث التداول",
