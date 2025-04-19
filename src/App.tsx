@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -76,6 +77,7 @@ function AnimatedRoutes() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/email-verify" element={<EmailVerify />} />
+        <Route path="/verify" element={<EmailVerify />} />
         <Route path="/trades" element={<Trades />} />
         <Route path="/add-trade" element={<AddTrade />} />
         <Route path="/edit-trade/:id" element={<AddTrade />} />
