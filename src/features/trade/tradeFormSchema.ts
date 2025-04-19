@@ -27,8 +27,8 @@ export interface TradeFormValues {
   followedRules?: string[];
 }
 
-// Make sure the schema definitions exactly match the interface properties
-export const tradeSchema = yup.object({
+// Define the schema to exactly match the interface structure
+export const tradeSchema = yup.object().shape({
   pair: yup.string().required('Trading pair is required'),
   account: yup.string().required('Account is required'),
   type: yup.string().oneOf(['Buy', 'Sell']).required('Trade type is required'),
@@ -36,20 +36,20 @@ export const tradeSchema = yup.object({
   durationMinutes: yup.number().required('Duration is required').min(1, 'Duration must be at least 1 minute'),
   entry: yup.number().required('Entry price is required'),
   exit: yup.number().required('Exit price is required'),
-  stopLoss: yup.number().nullable(),
-  takeProfit: yup.number().nullable(),
+  stopLoss: yup.number().nullable().default(null),
+  takeProfit: yup.number().nullable().default(null),
   lotSize: yup.number().required('Lot size is required').min(0.01, 'Lot size must be at least 0.01'),
   riskPercentage: yup.number().required('Risk percentage is required').min(0, 'Risk must be between 0 and 100').max(100, 'Risk must be between 0 and 100'),
   profitLoss: yup.number().required('Profit/Loss is required'),
   returnPercentage: yup.number().required('Return percentage is required'),
-  notes: yup.string().optional(),
+  notes: yup.string().default(''),
   hashtags: yup.array().of(yup.string()).default([]),
-  imageUrl: yup.string().nullable(),
-  beforeImageUrl: yup.string().nullable(),
-  afterImageUrl: yup.string().nullable(),
-  rating: yup.number().required().default(0),
-  commission: yup.number().required().default(0),
+  imageUrl: yup.string().nullable().default(null),
+  beforeImageUrl: yup.string().nullable().default(null),
+  afterImageUrl: yup.string().nullable().default(null),
+  rating: yup.number().default(0),
+  commission: yup.number().default(0),
   marketSession: yup.string().optional(),
   playbook: yup.string().optional(),
   followedRules: yup.array().of(yup.string()).optional(),
-}).required();
+});
