@@ -1,692 +1,270 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Session } from '@supabase/supabase-js';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
+import { Session } from '@supabase/supabase-js';
+import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { encryptData, decryptData, hashPassword, comparePassword } from '@/utils/encryption';
 
-// Remove duplicate User interface and use a single import/definition
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  password?: string;
-  role?: string;
-  is_blocked?: boolean;
-  email_verified?: boolean;
-  subscription_tier?: string;
-  isAdmin?: boolean;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAdmin: boolean;
-  isAuthenticated: boolean;
-  loading: boolean;
-  users: User[];
-  register: (name: string, email: string, password: string, country?: string) => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (email: string, resetCode: string, newPassword: string) => Promise<void>;
-  updateUser: (updatedUser: User) => Promise<void>;
-  updateProfile: (name: string, email: string, currentPassword?: string, newPassword?: string) => Promise<void>;
-  getAllUsers: () => Promise<User[]>;
-  blockUser: (user: User) => Promise<void>;
-  unblockUser: (user: User) => Promise<void>;
-  changePassword: (email: string, newPassword: string) => Promise<void>;
-  updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
-  sendVerificationEmail: (email: string) => Promise<any>;
-  sendPasswordResetEmail: (email: string) => Promise<any>;
-}
+type AuthContextType = {
+  session: Session | null;
+  user: Session['user'] | null;
+  isLoading: boolean;
+  signIn: (email: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  handleRegister: (formData: any) => Promise<void>;
+  handleForgotPassword: (email: string) => Promise<void>;
+  handleUpdatePassword: (accessToken: string, newPassword: string) => Promise<void>;
+  handleVerifyEmail: (token: string, type: string) => Promise<void>;
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-const USER_STORAGE_KEY = 'trackmind_user';
-const AUTH_STATUS_KEY = 'trackmind_auth_status';
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
-    return storedUser ? JSON.parse(storedUser) : null;
-  });
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
-    return storedUser ? JSON.parse(storedUser)?.role === 'admin' : false;
-  });
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem(AUTH_STATUS_KEY) === 'true';
-  });
-  const [loading, setLoading] = useState<boolean>(true);
-  const [users, setUsers] = useState<User[]>([]);
-  const navigate = useNavigate();
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<Session['user'] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === USER_STORAGE_KEY) {
-        const newUser = e.newValue ? JSON.parse(e.newValue) : null;
-        setUser(newUser);
-        setIsAdmin(newUser?.role === 'admin');
-      } else if (e.key === AUTH_STATUS_KEY) {
-        setIsAuthenticated(e.newValue === 'true');
-        
-        if (e.newValue !== 'true' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-          navigate('/login');
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [navigate]);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(USER_STORAGE_KEY);
-    }
-    
-    localStorage.setItem(AUTH_STATUS_KEY, isAuthenticated.toString());
-  }, [user, isAuthenticated]);
-
-  useEffect(() => {
-    const initializeAdminUser = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', 'lnmr2001@gmail.com')
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        const adminEmail = 'lnmr2001@gmail.com';
-        const adminPassword = hashPassword('password123');
-        
-        const { data: insertedData, error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: crypto.randomUUID(),
-            name: 'Admin User',
-            email: adminEmail,
-            password: adminPassword,
-            role: 'admin',
-            is_blocked: false,
-            email_verified: true,
-            subscription_tier: 'premium'
-          })
-          .select()
-          .single();
-          
-        if (insertError) {
-          console.error('Error creating admin user:', insertError);
-        } else {
-          console.log('Test admin user created:', insertedData);
-        }
-      }
-    };
-
-    initializeAdminUser();
-  }, []);
-
-  useEffect(() => {
-    const loadInitialSession = async () => {
+    const getSession = async () => {
+      setIsLoading(true);
       try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('email', localStorage.getItem('user_email'))
-          .single();
-
-        if (data) {
-          setUser(data);
-          setIsAdmin(data.role === 'admin');
-          setIsAuthenticated(true);
-        }
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user || null);
       } catch (error) {
-        console.error('Error loading initial session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInitialSession();
-  }, []);
-
-  const register = async (name: string, email: string, password: string, country?: string): Promise<void> => {
-    setLoading(true);
-    try {
-      const hashedPassword = hashPassword(password);
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({
-          name,
-          email,
-          password: hashedPassword,
-          role: 'user',
-          is_blocked: false,
-          email_verified: false,
-          subscription_tier: 'free'
-        })
-        .select()
-        .single();
-      
-      if (error) throw new Error(error.message);
-      
-      console.log("User registered successfully:", data);
-      
-      try {
-        await sendVerificationEmail(email);
-        console.log("Verification email sent successfully");
-      } catch (emailError) {
-        console.error("Error sending verification email:", emailError);
-      }
-      
-      toast({
-        title: "التسجيل ناجح",
-        description: "تم إنشاء حسابك بنجاح. تحقق من بريدك الإلكتروني للتحقق من حسابك.",
-      });
-      
-      navigate('/login');
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast({
-        title: "فشل التسجيل",
-        description: (error as Error).message || "تعذر تسجيل المستخدم",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const login = async (email: string, password: string): Promise<void> => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', email)
-        .single();
-      
-      if (error || !data) throw new Error('Invalid credentials');
-      
-      console.log('Login attempt:', email);
-      console.log('Found user:', data ? 'Yes' : 'No');
-      
-      if (comparePassword(password, data.password)) {
-        if (data.is_blocked) {
-          throw new Error('User is blocked');
-        }
-        
-        if (!data.email_verified) {
-          toast({
-            title: "البريد الإلك��روني غير مفعل",
-            description: "يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك. تم إرسال رابط التفعيل إلى بريدك الإلكتروني.",
-            variant: "destructive",
-          });
-          
-          try {
-            await sendVerificationEmail(email);
-            console.log("Verification email resent successfully");
-          } catch (emailError) {
-            console.error("Error resending verification email:", emailError);
-          }
-          
-          throw new Error('البريد الإلكتروني غير مفعل');
-        }
-        
-        localStorage.setItem('user_email', email);
-        
-        setUser(data);
-        setIsAdmin(data.role === 'admin');
-        setIsAuthenticated(true);
-        
-        console.log('Authentication successful, user set:', data.name);
-        console.log('Role:', data.role, 'isAdmin:', data.role === 'admin');
-        console.log('isAuthenticated set to true');
-        
+        console.error('Error getting session:', error);
         toast({
-          title: "Login Successful",
-          description: `Welcome back, ${data.name}!`,
-        });
-        
-        return;
-      } else {
-        throw new Error('Invalid credentials');
-      }
-    } catch (error) {
-      console.error('Login error in AuthContext:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('user_email');
-    
-    setUser(null);
-    setIsAdmin(false);
-    setIsAuthenticated(false);
-    
-    navigate('/login');
-  };
-
-  const forgotPassword = async (email: string): Promise<void> => {
-    console.log(`Forgot password requested for ${email}`);
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    localStorage.setItem(`resetCode_${email}`, resetCode);
-    console.log(`Reset code for ${email}: ${resetCode}`);
-    toast({
-      title: "Reset Code Generated",
-      description: "Check console for the reset code (would be emailed in a real app)"
-    });
-  };
-
-  const resetPassword = async (email: string, resetCode: string, newPassword: string): Promise<void> => {
-    const storedResetCode = localStorage.getItem(`resetCode_${email}`);
-    if (storedResetCode === resetCode) {
-      const hashedPassword = hashPassword(newPassword);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ password: hashedPassword })
-        .eq('email', email);
-      
-      if (error) throw new Error('Failed to reset password');
-      
-      localStorage.removeItem(`resetCode_${email}`);
-      toast({
-        title: "Success",
-        description: "Password reset successfully",
-      });
-      navigate('/login');
-    } else {
-      throw new Error('Invalid reset code');
-    }
-  };
-
-  const getAllUsers = async (): Promise<User[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
-      
-      if (error) throw error;
-      
-      const formattedUsers = data.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isAdmin: user.role === 'admin',
-        is_blocked: user.is_blocked,
-        subscription_tier: user.subscription_tier || 'free'
-      }));
-      
-      setUsers(formattedUsers);
-      return formattedUsers;
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return [];
-    }
-  };
-
-  const updateUser = async (updatedUser: User): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: updatedUser.name,
-          email: updatedUser.email,
-          role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user'),
-          is_blocked: updatedUser.is_blocked || false,
-          subscription_tier: updatedUser.subscription_tier || 'free'
-        })
-        .eq('id', updatedUser.id);
-      
-      if (error) throw error;
-      
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-      
-      if (user && user.id === updatedUser.id) {
-        const updatedCurrentUser = {
-          ...updatedUser,
-          role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user')
-        };
-        setUser(updatedCurrentUser);
-        setIsAdmin(updatedCurrentUser.role === 'admin' || updatedCurrentUser.isAdmin || false);
-      }
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-  };
-
-  const updateProfile = async (name: string, email: string, currentPassword?: string, newPassword?: string): Promise<void> => {
-    try {
-      if (!user) throw new Error('No user logged in');
-      
-      const updateData: any = {
-        name,
-        email
-      };
-      
-      if (newPassword && currentPassword) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('password')
-          .eq('id', user.id)
-          .single();
-          
-        if (!data || !comparePassword(currentPassword, data.password)) {
-          throw new Error('Current password is incorrect');
-        }
-        
-        updateData.password = hashPassword(newPassword);
-      }
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', user.id);
-        
-      if (error) throw error;
-      
-      const updatedUser = {
-        ...user,
-        name,
-        email
-      };
-      
-      setUser(updatedUser);
-      
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully"
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: "Update Failed",
-        description: (error as Error).message || "Could not update profile",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const blockUser = async (user: User): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_blocked: true })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-      
-      if (user.id === user?.id) {
-        logout();
-      }
-    } catch (error) {
-      console.error('Error blocking user:', error);
-      throw error;
-    }
-  };
-
-  const unblockUser = async (user: User): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_blocked: false })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-    } catch (error) {
-      console.error('Error unblocking user:', error);
-      throw error;
-    }
-  };
-
-  const changePassword = async (email: string, newPassword: string): Promise<void> => {
-    try {
-      const hashedPassword = hashPassword(newPassword);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ password: hashedPassword })
-        .eq('email', email);
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success", 
-        description: "Password changed successfully"
-      });
-    } catch (error) {
-      console.error('Error changing password:', error);
-      throw error;
-    }
-  };
-
-  const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ subscription_tier: tier })
-        .eq('id', userId);
-        
-      if (error) throw error;
-      
-      if (user && user.id === userId) {
-        const updatedUser = {
-          ...user,
-          subscription_tier: tier
-        };
-        
-        setUser(updatedUser);
-      }
-      
-      await getAllUsers();
-      
-      toast({
-        title: "Subscription Updated",
-        description: `Subscription tier updated to ${tier}`
-      });
-    } catch (error) {
-      console.error('Error updating subscription tier:', error);
-      toast({
-        title: "Update Failed",
-        description: (error as Error).message || "Could not update subscription",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const sendVerificationEmail = async (email: string) => {
-    try {
-      console.log(`Sending verification email to ${email}`);
-      
-      const verificationLink = `https://trackmind.vip/verify?email=${encodeURIComponent(email)}`;
-      console.log(`Verification link: ${verificationLink}`);
-      
-      console.log("Calling Supabase function with parameters:", {
-        type: 'verification',
-        email,
-        verificationLink
-      });
-      
-      const response = await supabase.functions.invoke('send-email', {
-        body: {
-          type: 'verification',
-          email,
-          verificationLink,
-        },
-      });
-
-      if (response.error) {
-        console.error('Error from edge function:', response.error);
-        throw new Error(response.error.message || 'Failed to send verification email');
-      }
-
-      console.log('Verification email sent response:', response);
-      
-      toast({
-        title: "تم إرسال البريد الإلكتروني",
-        description: "تم إرسل رابط التحقق إلى بريدك الإلكتروني",
-      });
-      
-      return response;
-    } catch (error) {
-      console.error('Error sending verification email:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في إرسال بريد التحقق. حاول مرة أخرى.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const sendPasswordResetEmail = async (email: string) => {
-    try {
-      console.log(`Sending password reset email to ${email}`);
-      
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', email)
-        .single();
-      
-      if (userError || !userData) {
-        console.error('User not found:', userError);
-        toast({
-          title: "خطأ",
-          description: "البريد الإلكتروني غير مسجل في النظام",
+          title: "Error",
+          description: "Failed to retrieve session.",
           variant: "destructive",
         });
-        throw new Error("User not found");
+      } finally {
+        setIsLoading(false);
       }
-      
-      const resetLink = `https://trackmind.vip/reset-password?email=${encodeURIComponent(email)}`;
-      console.log(`Reset password link: ${resetLink}`);
-      
-      console.log("Calling Supabase function for password reset email");
-      const response = await supabase.functions.invoke('send-email', {
-        body: {
-          type: 'reset-password',
-          email,
-          resetLink,
-        },
-      });
+    };
 
-      console.log('Password reset email response:', response);
+    getSession();
 
-      if (response.error) {
-        console.error('Email sending error:', response.error);
-        throw new Error(response.error.message || 'Failed to send password reset email');
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user || null);
+    });
+  }, [toast]);
+
+  const signIn = async (email: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) {
+        console.error('Error signing in:', error);
+        throw error;
       }
-      
-      return response;
-    } catch (error) {
-      console.error('Password reset email error:', error);
       toast({
-        title: "خطأ",
-        description: "فشل في إرسال بريد إعادة تعيين كلمة المرور",
+        title: "Check your email",
+        description: "We've sent you a magic link to sign in.",
+      });
+    } catch (error: any) {
+      console.error('Exception signing in:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign in.",
         variant: "destructive",
       });
-      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const createTestAdmin = async () => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Creating test admin user in development mode...');
-      
-      const { data: existingUsers, error: checkError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', 'lnmr2001@gmail.com')
-        .maybeSingle();
-      
-      if (checkError) {
-        console.error('Error checking for existing admin:', checkError);
-        return;
+  const signOut = async (): Promise<void> => {
+    setIsLoading(true);
+    try {
+      await supabase.auth.signOut();
+      toast({
+        description: "Signed out successfully.",
+      });
+    } catch (error: any) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign out.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async (formData: any): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (error) {
+        console.error('Error signing up:', error);
+        throw error;
       }
-      
-      if (!existingUsers) {
-        console.log('No existing admin found, creating one...');
-        const adminEmail = 'lnmr2001@gmail.com';
-        const adminPassword = hashPassword('password123');
+
+      if (!data.user) {
+        throw new Error('User not found after signup');
+      }
+
+      // Create profile for the new user
+      try {
+        // Generate UUID for the new user to match the auth.users id
+        const userId = data.user?.id;
         
-        const { data: insertedData, error: insertError } = await supabase
+        if (!userId) {
+          throw new Error('User ID not available');
+        }
+
+        // Create a profile for the new user
+        const { error: profileError } = await supabase
           .from('profiles')
           .insert({
-            id: crypto.randomUUID(),
-            name: 'Admin User',
-            email: adminEmail,
-            password: adminPassword,
-            role: 'admin',
+            id: userId, // Use the UUID from auth.users
+            name: formData.name,
+            email: formData.email,
+            password: '', // We don't store the actual password in profiles
+            role: 'user',
             is_blocked: false,
-            email_verified: true,
-            subscription_tier: 'premium'
-          })
-          .select()
-          .single();
-          
-        if (insertError) {
-          console.error('Error creating admin user:', insertError);
-        } else {
-          console.log('Test admin user created:', insertedData);
+            email_verified: false,
+            subscription_tier: 'free'
+          });
+
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          throw profileError;
         }
+
+        toast({
+          title: "Success",
+          description: "Registration successful! Check your email to verify your account.",
+        });
+        navigate('/verify-email');
+      } catch (error: any) {
+        console.error('Error during post-registration:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create profile.",
+          variant: "destructive",
+        });
       }
+    } catch (error: any) {
+      console.error('Exception signing up:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign up.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const value = {
-    user,
-    isAdmin,
-    isAuthenticated,
-    loading,
-    users,
-    register,
-    login,
-    logout,
-    forgotPassword,
-    resetPassword,
-    updateUser,
-    updateProfile,
-    getAllUsers,
-    blockUser,
-    unblockUser,
-    changePassword,
-    updateSubscriptionTier,
-    sendVerificationEmail,
-    sendPasswordResetEmail,
+  const handleForgotPassword = async (email: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+
+      if (error) {
+        console.error('Error sending reset password email:', error);
+        throw error;
+      }
+
+      toast({
+        title: "Check your email",
+        description: "We've sent you a link to reset your password.",
+      });
+    } catch (error: any) {
+      console.error('Exception sending reset password email:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset password email.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (accessToken: string, newPassword: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        console.error('Error updating password:', error);
+        throw error;
+      }
+
+      toast({
+        description: "Password updated successfully!",
+      });
+      navigate('/login');
+    } catch (error: any) {
+      console.error('Exception updating password:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update password.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyEmail = async (token: string, type: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        type: type,
+        token: token,
+      });
+
+      if (error) {
+        console.error('Error verifying email:', error);
+        throw error;
+      }
+
+      toast({
+        description: "Email verified successfully!",
+      });
+      navigate('/login');
+    } catch (error: any) {
+      console.error('Exception verifying email:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to verify email.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        isLoading,
+        signIn,
+        signOut,
+        handleRegister,
+        handleForgotPassword,
+        handleUpdatePassword,
+        handleVerifyEmail,
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   );
 };
@@ -694,9 +272,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within a AuthProvider');
   }
   return context;
 };
-
-export default AuthProvider;

@@ -84,136 +84,222 @@ const symbolsToPairs = (symbols: Symbol[]): string[] => {
   return symbols.map(symbol => symbol.symbol);
 };
 
+const formatTrade = (data: any): Trade => {
+  try {
+    const formatBase: Trade = {
+      id: data.id,
+      userId: data.user_id,
+      symbol: data.symbol,
+      entryPrice: data.entry_price,
+      exitPrice: data.exit_price,
+      quantity: data.quantity,
+      direction: data.direction,
+      entryDate: new Date(data.entry_date),
+      exitDate: data.exit_date ? new Date(data.exit_date) : null,
+      profitLoss: data.profit_loss,
+      fees: data.fees || 0,
+      notes: data.notes || '',
+      tags: data.tags || [],
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at || data.created_at),
+      rating: data.rating || 0,
+      stopLoss: data.stop_loss,
+      takeProfit: data.take_profit,
+      durationMinutes: data.duration_minutes,
+      accountId: data.account_id,
+      imageUrl: data.image_url,
+      beforeImageUrl: data.before_image_url,
+      afterImageUrl: data.after_image_url
+    };
+
+    // Add playbook if it exists
+    if (data.playbook) {
+      formatBase.playbook = data.playbook;
+    }
+
+    // Add followed_rules if it exists
+    if (data.followed_rules) {
+      formatBase.followedRules = data.followed_rules;
+    }
+    
+    // Add market_session if it exists
+    if (data.market_session) {
+      formatBase.marketSession = data.market_session;
+    }
+
+    // Add backward compatibility fields
+    formatBase.date = data.entry_date ? data.entry_date.split('T')[0] : new Date().toISOString().split('T')[0];
+    formatBase.pair = data.symbol;
+    formatBase.entry = data.entry_price;
+    formatBase.exit = data.exit_price;
+    formatBase.type = data.direction === 'long' ? 'Buy' : 'Sell';
+    formatBase.account = 'Main Trading';
+    formatBase.lotSize = data.quantity;
+    formatBase.total = (data.profit_loss || 0) - (data.fees || 0);
+    formatBase.hashtags = data.tags || [];
+    
+    return formatBase;
+  } catch (err) {
+    console.error('Error formatting trade:', err, data);
+    throw err;
+  }
+};
+
 const sampleTrades: Trade[] = [
   {
     id: '1',
     userId: '1',
-    account: 'Main Trading',
+    symbol: 'EUR/USD',
+    entryPrice: 1.1245,
+    exitPrice: 1.1305,
+    quantity: 0.5,
+    direction: 'long',
+    entryDate: new Date('2025-04-10'),
+    exitDate: new Date('2025-04-10'),
+    profitLoss: 300,
+    fees: 15,
+    notes: 'Strong momentum after NFP data',
+    tags: ['momentum', 'news'],
+    createdAt: new Date('2025-04-10T15:30:00Z'),
+    updatedAt: new Date('2025-04-10T15:30:00Z'),
+    rating: 4,
+    stopLoss: 1.1200,
+    takeProfit: 1.1320,
+    durationMinutes: 240,
+    // Compatibility fields
     date: '2025-04-10',
     pair: 'EUR/USD',
     type: 'Buy',
     entry: 1.1245,
     exit: 1.1305,
+    account: 'Main Trading',
     lotSize: 0.5,
-    stopLoss: 1.1200,
-    takeProfit: 1.1320,
-    riskPercentage: 1.5,
-    returnPercentage: 2.1,
-    profitLoss: 300,
     total: 285,
-    durationMinutes: 240,
-    notes: 'Strong momentum after NFP data',
-    imageUrl: null,
-    beforeImageUrl: null,
-    afterImageUrl: null,
     hashtags: ['momentum', 'news'],
-    createdAt: '2025-04-10T15:30:00Z',
-    commission: 15,
-    rating: 4
   },
   {
     id: '2',
     userId: '1',
-    account: 'Main Trading',
+    symbol: 'GBP/USD',
+    entryPrice: 1.3310,
+    exitPrice: 1.3240,
+    quantity: 0.3,
+    direction: 'short',
+    entryDate: new Date('2025-04-09'),
+    exitDate: new Date('2025-04-09'),
+    profitLoss: 210,
+    fees: 10,
+    notes: 'Technical breakout from resistance level',
+    tags: ['breakout', 'technical'],
+    createdAt: new Date('2025-04-09T12:15:00Z'),
+    updatedAt: new Date('2025-04-09T12:15:00Z'),
+    rating: 3,
+    stopLoss: 1.3350,
+    takeProfit: 1.3240,
+    durationMinutes: 120,
+    // Compatibility fields
     date: '2025-04-09',
     pair: 'GBP/USD',
     type: 'Sell',
     entry: 1.3310,
     exit: 1.3240,
+    account: 'Main Trading',
     lotSize: 0.3,
-    stopLoss: 1.3350,
-    takeProfit: 1.3240,
-    riskPercentage: 1.2,
-    returnPercentage: 2.3,
-    profitLoss: 210,
     total: 195,
-    durationMinutes: 120,
-    notes: 'Technical breakout from resistance level',
-    imageUrl: null,
-    beforeImageUrl: null,
-    afterImageUrl: null,
     hashtags: ['breakout', 'technical'],
-    createdAt: '2025-04-09T12:15:00Z',
-    commission: 10,
-    rating: 3
   },
   {
     id: '3',
     userId: '1',
-    account: 'Demo Account',
+    symbol: 'USD/JPY',
+    entryPrice: 107.50,
+    exitPrice: 107.20,
+    quantity: 0.7,
+    direction: 'long',
+    entryDate: new Date('2025-04-08'),
+    exitDate: new Date('2025-04-08'),
+    profitLoss: -210,
+    fees: 15,
+    notes: 'Failed breakout, stopped out',
+    tags: ['mistake', 'fakeout'],
+    createdAt: new Date('2025-04-08T09:45:00Z'),
+    updatedAt: new Date('2025-04-08T09:45:00Z'),
+    rating: 2,
+    stopLoss: 107.10,
+    takeProfit: 108.00,
+    durationMinutes: 180,
+    // Compatibility fields
     date: '2025-04-08',
     pair: 'USD/JPY',
     type: 'Buy',
     entry: 107.50,
     exit: 107.20,
+    account: 'Demo Account',
     lotSize: 0.7,
-    stopLoss: 107.10,
-    takeProfit: 108.00,
-    riskPercentage: 2.0,
-    returnPercentage: -1.5,
-    profitLoss: -210,
     total: -195,
-    durationMinutes: 180,
-    notes: 'Failed breakout, stopped out',
-    imageUrl: null,
-    beforeImageUrl: null,
-    afterImageUrl: null,
     hashtags: ['mistake', 'fakeout'],
-    createdAt: '2025-04-08T09:45:00Z',
-    commission: 15,
-    rating: 2
   },
   {
     id: '4',
     userId: '1',
-    account: 'Main Trading',
+    symbol: 'EUR/USD',
+    entryPrice: 1.1285,
+    exitPrice: 1.1240,
+    quantity: 0.6,
+    direction: 'short',
+    entryDate: new Date('2025-04-07'),
+    exitDate: new Date('2025-04-07'),
+    profitLoss: 270,
+    fees: 12,
+    notes: 'Traded the retracement from daily high',
+    tags: ['retracement', 'setup'],
+    createdAt: new Date('2025-04-07T14:20:00Z'),
+    updatedAt: new Date('2025-04-07T14:20:00Z'),
+    rating: 5,
+    stopLoss: 1.1320,
+    takeProfit: 1.1230,
+    durationMinutes: 200,
+    // Compatibility fields
     date: '2025-04-07',
     pair: 'EUR/USD',
     type: 'Sell',
     entry: 1.1285,
     exit: 1.1240,
+    account: 'Main Trading',
     lotSize: 0.6,
-    stopLoss: 1.1320,
-    takeProfit: 1.1230,
-    riskPercentage: 1.8,
-    returnPercentage: 2.4,
-    profitLoss: 270,
     total: 255,
-    durationMinutes: 200,
-    notes: 'Traded the retracement from daily high',
-    imageUrl: null,
-    beforeImageUrl: null,
-    afterImageUrl: null,
     hashtags: ['retracement', 'setup'],
-    createdAt: '2025-04-07T14:20:00Z',
-    commission: 12,
-    rating: 5
   },
   {
     id: '5',
     userId: '1',
-    account: 'Main Trading',
+    symbol: 'AUD/USD',
+    entryPrice: 0.7250,
+    exitPrice: 0.7190,
+    quantity: 0.5,
+    direction: 'long',
+    entryDate: new Date('2025-04-06'),
+    exitDate: new Date('2025-04-06'),
+    profitLoss: -300,
+    fees: 10,
+    notes: 'Bad timing, should have waited for confirmation',
+    tags: ['mistake', 'patience'],
+    createdAt: new Date('2025-04-06T10:30:00Z'),
+    updatedAt: new Date('2025-04-06T10:30:00Z'),
+    rating: 1,
+    stopLoss: 0.7180,
+    takeProfit: 0.7320,
+    durationMinutes: 150,
+    // Compatibility fields
     date: '2025-04-06',
     pair: 'AUD/USD',
     type: 'Buy',
     entry: 0.7250,
     exit: 0.7190,
+    account: 'Main Trading',
     lotSize: 0.5,
-    stopLoss: 0.7180,
-    takeProfit: 0.7320,
-    riskPercentage: 1.5,
-    returnPercentage: -3.0,
-    profitLoss: -300,
     total: -270,
-    durationMinutes: 150,
-    notes: 'Bad timing, should have waited for confirmation',
-    imageUrl: null,
-    beforeImageUrl: null,
-    afterImageUrl: null,
     hashtags: ['mistake', 'patience'],
-    createdAt: '2025-04-06T10:30:00Z',
-    commission: 10,
-    rating: 1
   }
 ];
 
@@ -382,7 +468,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               formattedTrade.marketSession = trade.market_session;
             }
             
-            return formattedTrade;
+            return formatTrade(formattedTrade);
           });
 
           console.log('Formatted trades:', formattedTrades);
