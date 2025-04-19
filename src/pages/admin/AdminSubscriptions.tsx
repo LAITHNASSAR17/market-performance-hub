@@ -6,6 +6,7 @@ import { Search, Users, ArrowUp, ArrowDown, Check, X, Badge as BadgeIcon } from 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
 import {
   Table,
   TableBody,
@@ -32,7 +33,7 @@ import {
 } from '@/components/ui/dialog';
 
 const AdminSubscriptions: React.FC = () => {
-  const { users, getAllUsers, updateSubscriptionTier } = useAuth();
+  const { users, getAllUsers, updateUser } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] = useState('all');
@@ -68,7 +69,7 @@ const AdminSubscriptions: React.FC = () => {
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchTerm.toLowerCase());
       
-    const matchesTier = tierFilter === 'all' ? true : user.subscription_tier === tierFilter;
+    const matchesTier = tierFilter === 'all' ? true : user.subscriptionTier === tierFilter;
     
     return matchesSearch && matchesTier;
   });
@@ -76,7 +77,7 @@ const AdminSubscriptions: React.FC = () => {
   // Open upgrade modal for a user
   const handleOpenUpgradeModal = (user: any) => {
     setSelectedUser(user);
-    setNewTier(user.subscription_tier || 'free');
+    setNewTier(user.subscriptionTier || 'free');
     setShowUpgradeModal(true);
   };
   
@@ -85,7 +86,12 @@ const AdminSubscriptions: React.FC = () => {
     if (!selectedUser || !newTier) return;
     
     try {
-      await updateSubscriptionTier(selectedUser.id, newTier);
+      // Use updateUser from AuthContext instead
+      await updateUser({
+        ...selectedUser,
+        subscriptionTier: newTier
+      });
+      
       setShowUpgradeModal(false);
       
       toast({

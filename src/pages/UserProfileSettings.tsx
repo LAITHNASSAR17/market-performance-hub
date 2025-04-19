@@ -252,7 +252,9 @@ const UserProfileSettings: React.FC = () => {
     
     try {
       setIsChangingPassword(true);
-      await updateProfile({password: newPassword});
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      
+      if (error) throw error;
       
       setCurrentPassword('');
       setNewPassword('');

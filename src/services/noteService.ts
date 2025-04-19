@@ -9,6 +9,7 @@ export interface INote {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
+  tradeId?: string;
 }
 
 export const noteService = {
@@ -34,13 +35,19 @@ export const noteService = {
 
   async createNote(noteData: Omit<INote, 'id' | 'createdAt' | 'updatedAt'>): Promise<INote> {
     const now = new Date().toISOString();
+    
+    // Map the interface fields to DB column names
+    const dbData = {
+      title: noteData.title,
+      content: noteData.content,
+      tags: noteData.tags,
+      trade_id: noteData.tradeId,
+      user_id: noteData.userId // Correctly map userId to user_id
+    };
+    
     const { data, error } = await supabase
       .from('notes')
-      .insert({
-        ...noteData,
-        created_at: now,
-        updated_at: now
-      })
+      .insert(dbData)
       .select()
       .single();
     
@@ -50,16 +57,22 @@ export const noteService = {
 
   async updateNote(id: string, noteData: Partial<INote>): Promise<INote | null> {
     const now = new Date().toISOString();
+    
+    // Convert Note interface fields to database field names
+    const updateData: any = { updated_at: now };
+    if (noteData.title !== undefined) updateData.title = noteData.title;
+    if (noteData.content !== undefined) updateData.content = noteData.content;
+    if (noteData.tags !== undefined) updateData.tags = noteData.tags;
+    if (noteData.tradeId !== undefined) updateData.trade_id = noteData.tradeId;
+    if (noteData.userId !== undefined) updateData.user_id = noteData.userId;
+
     const { data, error } = await supabase
       .from('notes')
-      .update({
-        ...noteData,
-        updated_at: now
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error || !data) return null;
     return formatNote(data);
   },
@@ -76,12 +89,10 @@ export const noteService = {
   async findNotesByFilter(filter: Partial<INote>): Promise<INote[]> {
     let query = supabase.from('notes').select('*');
     
-    // Apply filters dynamically
-    Object.entries(filter).forEach(([key, value]) => {
-      if (value !== undefined) {
-        query = query.eq(key, value);
-      }
-    });
+    // Apply filters dynamically, converting camelCase to snake_case for DB columns
+    if (filter.userId !== undefined) query = query.eq('user_id', filter.userId);
+    if (filter.title !== undefined) query = query.eq('title', filter.title);
+    if (filter.tradeId !== undefined) query = query.eq('trade_id', filter.tradeId);
     
     const { data, error } = await query;
     
@@ -96,9 +107,10 @@ function formatNote(data: any): INote {
     id: data.id,
     userId: data.user_id,
     title: data.title,
-    content: data.content,
+    content: data.content || '',
     tags: data.tags || [],
     createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at)
+    updatedAt: new Date(data.updated_at),
+    tradeId: data.trade_id
   };
 }

@@ -106,17 +106,20 @@ const AdminUsers: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name: userData.name,
-          email: userData.email,
-          password: hashedPassword,
-          role: userData.isAdmin ? 'admin' : 'user',
-          is_blocked: false,
-          subscription_tier: 'free'
-        })
-        .select();
+      // Instead of directly inserting into the Supabase users table (which isn't allowed),
+      // use the auth.signUp method to create a user, then manage custom properties
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            name: userData.name,
+            role: userData.isAdmin ? 'admin' : 'user',
+            is_blocked: false,
+            subscription_tier: 'free'
+          }
+        }
+      });
       
       if (error) throw new Error(error.message);
       

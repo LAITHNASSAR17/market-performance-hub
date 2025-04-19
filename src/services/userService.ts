@@ -9,6 +9,7 @@ export interface IUser {
   isBlocked: boolean;
   createdAt: Date;
   updatedAt: Date;
+  subscriptionTier?: string;
 }
 
 export interface ITradingAccount {
@@ -30,70 +31,60 @@ export interface IUserProfile {
 
 export const userService = {
   async getUserById(id: string): Promise<IUser | null> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await supabase.auth.admin.getUserById(id);
     
-    if (error || !data) return null;
-    return formatUser(data);
+    if (error || !data.user) return null;
+    return formatUser(data.user);
   },
 
   async getAllUsers(): Promise<IUser[]> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*');
+    const { data, error } = await supabase.auth.admin.listUsers();
     
-    if (error || !data) return [];
-    return data.map(formatUser);
+    if (error || !data.users) return [];
+    return data.users.map(formatUser);
   },
 
   async createUser(userData: Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<IUser> {
-    const now = new Date().toISOString();
-    const { data, error } = await supabase
-      .from('users')
-      .insert({
-        ...userData,
-        created_at: now,
-        updated_at: now
-      })
-      .select()
-      .single();
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: userData.password,
+      email_confirm: true,
+      user_metadata: {
+        name: userData.name,
+        role: userData.role,
+        is_blocked: userData.isBlocked,
+        subscription_tier: userData.subscriptionTier || 'free'
+      }
+    });
     
-    if (error || !data) throw new Error(`Error creating user: ${error?.message}`);
-    return formatUser(data);
+    if (error || !data.user) throw new Error(`Error creating user: ${error?.message}`);
+    return formatUser(data.user);
   },
 
   async updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null> {
-    const now = new Date().toISOString();
-    const { data, error } = await supabase
-      .from('users')
-      .update({
-        ...userData,
-        updated_at: now
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    const userMetadata: Record<string, any> = {};
+    if (userData.name !== undefined) userMetadata.name = userData.name;
+    if (userData.role !== undefined) userMetadata.role = userData.role;
+    if (userData.isBlocked !== undefined) userMetadata.is_blocked = userData.isBlocked;
+    if (userData.subscriptionTier !== undefined) userMetadata.subscription_tier = userData.subscriptionTier;
+
+    const { data, error } = await supabase.auth.admin.updateUserById(
+      id,
+      { user_metadata: userMetadata }
+    );
     
-    if (error || !data) return null;
-    return formatUser(data);
+    if (error || !data.user) return null;
+    return formatUser(data.user);
   },
 
   async deleteUser(id: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', id);
-    
+    const { error } = await supabase.auth.admin.deleteUser(id);
     return !error;
   },
 
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
     let query = supabase.from('users').select('*');
     
-    // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined) {
         query = query.eq(key, value);
@@ -176,7 +167,6 @@ export const userService = {
       throw new Error('User ID is required to fetch user profile');
     }
     
-    // Use user_preferences as a fallback since profiles doesn't exist
     const { data, error } = await supabase
       .from('user_preferences')
       .select('*')
@@ -190,14 +180,13 @@ export const userService = {
     
     if (!data) return null;
     
-    // Format as IUserProfile for compatibility
     return {
       id: data.id,
       userId: data.user_id,
-      country: 'Unknown', // Default since it's not stored
-      avatar_url: '', // Default since it's not stored
+      country: 'Unknown',
+      avatar_url: '',
       updatedAt: data.updated_at,
-      createdAt: data.updated_at // Use updated_at as fallback
+      createdAt: data.updated_at
     };
   },
   
@@ -206,13 +195,11 @@ export const userService = {
       throw new Error('User ID is required to update user profile');
     }
     
-    // Use user_preferences as a fallback since profiles doesn't exist
     const { data, error } = await supabase
       .from('user_preferences')
       .upsert({
         user_id: userId,
         updated_at: new Date().toISOString(),
-        // User preferences doesn't store avatar or country, so these will be ignored
       })
       .select()
       .single();
@@ -224,7 +211,6 @@ export const userService = {
     
     if (!data) return null;
     
-    // Format as IUserProfile for compatibility, including the requested changes
     return {
       id: data.id,
       userId: data.user_id,
@@ -239,12 +225,13 @@ export const userService = {
 function formatUser(data: any): IUser {
   return {
     id: data.id,
-    name: data.name,
+    name: data.user_metadata?.name || '',
     email: data.email,
-    password: data.password,
-    role: data.role || 'user',
-    isBlocked: data.is_blocked || false,
+    password: '',
+    role: data.user_metadata?.role || 'user',
+    isBlocked: data.user_metadata?.is_blocked || false,
     createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at)
+    updatedAt: new Date(data.updated_at || data.created_at),
+    subscriptionTier: data.user_metadata?.subscription_tier || 'free'
   };
 }
