@@ -94,7 +94,7 @@ const formatTrade = (data: any): Trade => {
       exitPrice: data.exit_price,
       quantity: data.quantity,
       direction: data.direction,
-      entryDate: new Date(data.entry_date),
+      entryDate: data.entry_date ? new Date(data.entry_date) : new Date(),
       exitDate: data.exit_date ? new Date(data.exit_date) : null,
       profitLoss: data.profit_loss,
       fees: data.fees || 0,
@@ -109,7 +109,9 @@ const formatTrade = (data: any): Trade => {
       accountId: data.account_id,
       imageUrl: data.image_url,
       beforeImageUrl: data.before_image_url,
-      afterImageUrl: data.after_image_url
+      afterImageUrl: data.after_image_url,
+      riskPercentage: data.risk_percentage || 0,
+      returnPercentage: data.return_percentage || 0,
     };
 
     // Add playbook if it exists
@@ -532,7 +534,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       };
       
       // API call to add trade
-      const { data, error } = await tradeService.addTrade(dbTrade);
+      const { data, error } = await tradeService.createTrade(dbTrade);
       
       if (error) throw error;
       
@@ -595,9 +597,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (trade.accountId !== undefined) updateObj.account_id = trade.accountId;
       
       // API call to update trade
-      const { error } = await tradeService.updateTrade(id, updateObj);
+      const { error: updateError } = await tradeService.updateTrade(id, updateObj);
       
-      if (error) throw error;
+      if (updateError) throw updateError;
       
       // Update local state
       setTrades(prev => prev.map(t => t.id === id ? { ...t, ...trade } : t));
@@ -607,7 +609,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         description: 'Trade updated successfully',
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating trade:', error);
       toast({
         title: 'Error',
@@ -716,7 +718,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Error creating trading account:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء إنشاء الحساب",
+        description: "حدث خطأ أثناء إنشاء الحسا��",
         variant: "destructive"
       });
       throw error;

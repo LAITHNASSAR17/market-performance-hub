@@ -308,7 +308,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const handleVerifyEmail = async (token: string, type: string) => {
+  const handleVerifyEmail = async (token: string, type: string): Promise<void> => {
     try {
       if (type === 'email') {
         const { error } = await supabase.auth.verifyOtp({
@@ -318,8 +318,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         
         if (error) throw error;
-        
-        return { success: true };
       } else if (type === 'phone_change') {
         const { error } = await supabase.auth.verifyOtp({
           token,
@@ -328,8 +326,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         
         if (error) throw error;
-        
-        return { success: true };
       } else {
         throw new Error('Invalid verification type');
       }

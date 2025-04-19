@@ -49,7 +49,7 @@ const AddTrade: React.FC = () => {
     pair: '',
     account: '',
     date: '',
-    type: 'Buy',
+    type: 'Buy' as 'Buy' | 'Sell',
     entry: 0,
     exit: 0,
     lotSize: 0,
