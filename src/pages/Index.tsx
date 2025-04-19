@@ -4,11 +4,11 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const { isAuthenticated, isLoading } = useAuth(); // Use isLoading instead of loading
+  const { isAuthenticated, loading } = useAuth();
   const [redirect, setRedirect] = useState<string | null>(null);
   
   useEffect(() => {
-    if (!isLoading) {
+    if (!loading) {
       if (isAuthenticated) {
         console.log("Index page: User is authenticated, redirecting to dashboard");
         setRedirect('/dashboard');
@@ -17,10 +17,10 @@ const Index = () => {
         setRedirect('/login');
       }
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, loading]);
   
   // Show loading state while checking authentication
-  if (isLoading || !redirect) {
+  if (loading || !redirect) {
     return <div className="h-screen flex items-center justify-center">Loading...</div>;
   }
   

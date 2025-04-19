@@ -1,450 +1,706 @@
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
-import { useTags } from '@/contexts/TagsContext';
-import { tradeService, ITrade } from '@/services/tradeService';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { userService, TradingAccount } from '@/services/userService';
 import { useToast } from '@/hooks/use-toast';
-import { Checkbox } from "@/components/ui/checkbox";
-
-const formSchema = z.object({
-  symbol: z.string().min(1, { message: "Symbol is required." }),
-  entry_price: z.string().refine(value => !isNaN(parseFloat(value)), {
-    message: "Entry price must be a number.",
-  }),
-  exit_price: z.string().refine(value => !isNaN(parseFloat(value)), {
-    message: "Exit price must be a number.",
-  }),
-  quantity: z.string().refine(value => !isNaN(parseFloat(value)), {
-    message: "Quantity must be a number.",
-  }),
-  direction: z.enum(['long', 'short'], {
-    required_error: "Please select a trade direction.",
-  }),
-  entry_date: z.date(),
-  exit_date: z.date().nullable(),
-  profit_loss: z.string().refine(value => !isNaN(parseFloat(value)), {
-    message: "Profit/Loss must be a number.",
-  }),
-  fees: z.string().refine(value => !isNaN(parseFloat(value)), {
-    message: "Fees must be a number.",
-  }),
-  notes: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  rating: z.string().optional(),
-  stop_loss: z.string().optional(),
-  take_profit: z.string().optional(),
-  duration_minutes: z.string().optional(),
-  playbook: z.string().optional(),
-  followed_rules: z.array(z.string()).optional(),
-  market_session: z.string().optional(),
-  account_id: z.string().optional(),
-  risk_percentage: z.string().optional(),
-  return_percentage: z.string().optional(),
-});
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Calendar, Plus, X } from "lucide-react";
+import { format } from 'date-fns';
+import { useLanguage } from '@/contexts/LanguageContext';
+import StarRating from '@/components/StarRating';
+import { supabase } from '@/lib/supabase';
+import AddPairDialog from '@/components/AddPairDialog';
+import ImageUpload from '@/components/ImageUpload';
+import { usePlaybooks } from '@/hooks/usePlaybooks';
+import TagSelectors from '@/components/analytics/TagSelectors';
+import { useTagsState } from '@/hooks/useTagsState';
+import TradingSessionSelector from '@/components/TradingSessionSelector';
 
 const AddTrade: React.FC = () => {
-  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const { addTrade, updateTrade } = useTrade();
-  const { mistakes, setups, habits } = useTags();
-  const [trade, setTrade] = useState<any>(null);
-  const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const { getTrade, updateTrade, addTrade, pairs, accounts, allHashtags, addHashtag } = useTrade();
   const { toast } = useToast();
-  const allTags = [...mistakes, ...setups, ...habits];
+  const { t } = useLanguage();
+  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAddPairDialog, setShowAddPairDialog] = useState(false);
+  const { playbooks } = usePlaybooks();
+  const { mistakes, setups, habits } = useTagsState();
+  
+  const [pair, setPair] = useState('');
+  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
+  const [entry, setEntry] = useState('');
+  const [exit, setExit] = useState('');
+  const [lotSize, setLotSize] = useState('');
+  const [stopLoss, setStopLoss] = useState('');
+  const [takeProfit, setTakeProfit] = useState('');
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [durationMinutes, setDurationMinutes] = useState('');
+  const [notes, setNotes] = useState('');
+  const [account, setAccount] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [newHashtag, setNewHashtag] = useState('');
+  const [profitLoss, setProfitLoss] = useState<string>('0');
+  const [commission, setCommission] = useState('0');
+  const [rating, setRating] = useState(0);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
+  const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
+  const [total, setTotal] = useState<string>('0');
+  const [playbook, setPlaybook] = useState<string | undefined>(undefined);
+  const [followedRules, setFollowedRules] = useState<string[]>([]);
+  const [marketSession, setMarketSession] = useState<string | undefined>(undefined);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      symbol: "",
-      entry_price: "",
-      exit_price: "",
-      quantity: "",
-      direction: "long",
-      entry_date: new Date(),
-      exit_date: null,
-      profit_loss: "",
-      fees: "",
-      notes: "",
-      tags: [],
-      rating: "",
-      stop_loss: "",
-      take_profit: "",
-      duration_minutes: "",
-      playbook: "",
-      followed_rules: [],
-      market_session: "",
-      account_id: "",
-      risk_percentage: "",
-      return_percentage: "",
-    },
-  });
+  const [selectedMistakes, setSelectedMistakes] = useState<string[]>([]);
+  const [selectedSetups, setSelectedSetups] = useState<string[]>([]);
+  const [selectedHabits, setSelectedHabits] = useState<string[]>([]);
+
+  const fetchTradeFromDb = async (tradeId: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('trades')
+        .select('*')
+        .eq('id', tradeId)
+        .single();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setPair(data.symbol || '');
+        setType(data.direction === 'long' ? 'Buy' : 'Sell');
+        setEntry(data.entry_price?.toString() || '');
+        setExit(data.exit_price?.toString() || '');
+        setLotSize(data.quantity?.toString() || '');
+        
+        if (data.entry_date) {
+          setDate(data.entry_date.split('T')[0]);
+        }
+        
+        setStopLoss(data.stop_loss?.toString() || '');
+        setTakeProfit(data.take_profit?.toString() || '');
+        setDurationMinutes(data.duration_minutes?.toString() || '');
+        setNotes(data.notes || '');
+        setHashtags(data.tags || []);
+        setProfitLoss(data.profit_loss?.toString() || '0');
+        setCommission(data.fees?.toString() || '0');
+        setRating(data.rating || 0);
+        setImageUrl(data.image_url || null);
+        setBeforeImageUrl(data.before_image_url || null);
+        setAfterImageUrl(data.after_image_url || null);
+        setPlaybook(data.playbook || undefined);
+        setFollowedRules(data.followed_rules || []);
+        setMarketSession(data.market_session || undefined);
+        
+        const tags = data.tags || [];
+        setSelectedMistakes(tags.filter((tag: string) => mistakes.includes(tag)));
+        setSelectedSetups(tags.filter((tag: string) => setups.includes(tag)));
+        setSelectedHabits(tags.filter((tag: string) => habits.includes(tag)));
+        
+        setAccount(accounts[0] || '');
+        setIsEditing(true);
+        console.log("Trade data loaded:", data);
+      }
+    } catch (error) {
+      console.error('Error fetching trade:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while fetching trade data",
+        variant: "destructive"
+      });
+      navigate('/trades');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (id) {
-      const fetchTrade = async () => {
-        try {
-          const tradeData = await tradeService.getTradeById(id);
-          setTrade(tradeData);
-          setSelectedTags(tradeData.tags || []);
-          form.reset({
-            symbol: tradeData.symbol,
-            entry_price: String(tradeData.entry_price),
-            exit_price: String(tradeData.exit_price),
-            quantity: String(tradeData.quantity),
-            direction: tradeData.direction as "long" | "short",
-            entry_date: new Date(tradeData.entry_date),
-            exit_date: tradeData.exit_date ? new Date(tradeData.exit_date) : null,
-            profit_loss: String(tradeData.profit_loss),
-            fees: String(tradeData.fees),
-            notes: tradeData.notes,
-            tags: tradeData.tags,
-            rating: String(tradeData.rating ?? ""),
-            stop_loss: String(tradeData.stop_loss ?? ""),
-            take_profit: String(tradeData.take_profit ?? ""),
-            duration_minutes: String(tradeData.duration_minutes ?? ""),
-            playbook: tradeData.playbook ?? "",
-            followed_rules: tradeData.followed_rules ?? [],
-            market_session: tradeData.market_session ?? "",
-            account_id: tradeData.account_id ?? "",
-            risk_percentage: String(tradeData.risk_percentage ?? ""),
-            return_percentage: String(tradeData.return_percentage ?? ""),
-          });
-        } catch (error) {
-          console.error("Error fetching trade:", error);
-        }
-      };
-      fetchTrade();
+      fetchTradeFromDb(id);
+    } else {
+      setAccount(accounts[0] || '');
     }
-  }, [id, form]);
+  }, [id, accounts]);
 
-  useEffect(() => {
-    const loadTradingAccounts = async () => {
-      if (user?.id) {
-        try {
-          const accounts = await userService.getTradingAccounts(user.id);
-          setTradingAccounts(accounts);
-        } catch (error) {
-          console.error("Error loading trading accounts:", error);
-        }
-      }
-    };
+  const handleAddHashtag = () => {
+    if (newHashtag && !hashtags.includes(newHashtag)) {
+      setHashtags([...hashtags, newHashtag]);
+      addHashtag(newHashtag);
+      setNewHashtag('');
+    }
+  };
 
-    loadTradingAccounts();
-  }, [user]);
+  const handleRemoveHashtag = (tag: string) => {
+    setHashtags(hashtags.filter(t => t !== tag));
+  };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!user?.id) {
+  const handleCommissionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCommission = e.target.value;
+    setCommission(newCommission);
+    
+    const rawPL = parseFloat(profitLoss) || 0;
+    const fees = parseFloat(newCommission) || 0;
+    setTotal((rawPL - fees).toString());
+  };
+
+  const handleProfitLossChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPL = e.target.value;
+    setProfitLoss(newPL);
+    
+    const rawPL = parseFloat(newPL) || 0;
+    const fees = parseFloat(commission) || 0;
+    setTotal((rawPL - fees).toString());
+  };
+
+  const handlePlaybookChange = (value: string) => {
+    setPlaybook(value);
+    setFollowedRules([]);
+  };
+
+  const toggleRuleSelection = (ruleText: string) => {
+    if (followedRules.includes(ruleText)) {
+      setFollowedRules(followedRules.filter(rule => rule !== ruleText));
+    } else {
+      setFollowedRules([...followedRules, ruleText]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!pair || !type || !entry || !date || !account) {
       toast({
-        title: "Authentication Error",
-        description: "You must be logged in to add or update trades.",
-        variant: "destructive",
+        title: "Missing Data",
+        description: "Please fill in all required fields",
+        variant: "destructive"
       });
       return;
     }
 
-    // Prepare the trade data in the correct format
-    const tradeData = {
-      userId: user.id,
-      symbol: values.symbol,
-      entryPrice: parseFloat(values.entry_price),
-      exitPrice: parseFloat(values.exit_price),
-      quantity: parseFloat(values.quantity),
-      direction: values.direction as 'long' | 'short',
-      entryDate: values.entry_date,
-      exitDate: values.exit_date,
-      profitLoss: parseFloat(values.profit_loss),
-      fees: parseFloat(values.fees),
-      notes: values.notes || '',
-      tags: selectedTags,
-      rating: values.rating ? parseFloat(values.rating) : 0,
-      stopLoss: values.stop_loss ? parseFloat(values.stop_loss) : 0,
-      takeProfit: values.take_profit ? parseFloat(values.take_profit) : 0,
-      durationMinutes: values.duration_minutes ? parseFloat(values.duration_minutes) : 0,
-      playbook: values.playbook || '',
-      followedRules: values.followed_rules || [],
-      marketSession: values.market_session || '',
-      accountId: values.account_id || '',
-      riskPercentage: values.risk_percentage ? parseFloat(values.risk_percentage) : 0,
-      returnPercentage: values.return_percentage ? parseFloat(values.return_percentage) : 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
     try {
-      if (id) {
-        // For updating existing trade
-        const result = await updateTrade(id, tradeData);
-        if (result.error) {
-          toast({
-            title: "Error updating trade",
-            description: "Failed to update the trade. Please try again.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Trade updated",
-            description: "The trade has been updated successfully.",
-          });
-          navigate('/trades');
-        }
+      const tradeData = {
+        pair,
+        type,
+        entry: parseFloat(entry),
+        exit: exit ? parseFloat(exit) : null,
+        lotSize: parseFloat(lotSize),
+        stopLoss: stopLoss ? parseFloat(stopLoss) : null,
+        takeProfit: takeProfit ? parseFloat(takeProfit) : null,
+        date,
+        durationMinutes: durationMinutes ? parseInt(durationMinutes) : 0,
+        notes,
+        account,
+        hashtags: [...hashtags, ...selectedMistakes, ...selectedSetups, ...selectedHabits],
+        profitLoss: parseFloat(profitLoss),
+        commission: parseFloat(commission) || 0,
+        total: parseFloat(total),
+        rating,
+        riskPercentage: 0,
+        returnPercentage: 0,
+        imageUrl: imageUrl,
+        beforeImageUrl: beforeImageUrl,
+        afterImageUrl: afterImageUrl,
+        playbook,
+        followedRules,
+        marketSession
+      };
+
+      if (isEditing && id) {
+        await updateTrade(id, tradeData);
+        toast({
+          title: "Updated",
+          description: "Trade updated successfully",
+        });
       } else {
-        // For creating new trade
-        const result = await addTrade(tradeData);
-        if (result.error) {
-          toast({
-            title: "Error adding trade",
-            description: "Failed to add the trade. Please try again.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Trade added",
-            description: "The trade has been added successfully.",
-          });
-          navigate('/trades');
-        }
+        await addTrade(tradeData);
+        toast({
+          title: "Added",
+          description: "Trade added successfully",
+        });
       }
+      
+      navigate('/trades');
     } catch (error) {
-      console.error("Error adding/updating trade:", error);
+      console.error('Error saving trade:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+        description: "An error occurred while saving the trade",
+        variant: "destructive"
       });
     }
   };
 
-  const handleTagToggle = (tag: string) => {
-    setSelectedTags(prev => {
-      if (prev.includes(tag)) {
-        return prev.filter(t => t !== tag);
-      } else {
-        return [...prev, tag];
-      }
-    });
-  };
+  const selectedPlaybookRules = playbook 
+    ? playbooks.find(p => p.id === playbook)?.rules || []
+    : [];
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-6">{id ? "Edit Trade" : "Add Trade"}</h1>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <Label htmlFor="symbol">Symbol</Label>
-          <Input id="symbol" type="text" placeholder="e.g., AAPL" {...form.register("symbol")} />
-          {form.formState.errors.symbol && (
-            <p className="text-red-500 text-sm">{form.formState.errors.symbol.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="entry_price">Entry Price</Label>
-          <Input id="entry_price" type="text" placeholder="e.g., 150.25" {...form.register("entry_price")} />
-          {form.formState.errors.entry_price && (
-            <p className="text-red-500 text-sm">{form.formState.errors.entry_price.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="exit_price">Exit Price</Label>
-          <Input id="exit_price" type="text" placeholder="e.g., 155.50" {...form.register("exit_price")} />
-          {form.formState.errors.exit_price && (
-            <p className="text-red-500 text-sm">{form.formState.errors.exit_price.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="quantity">Quantity</Label>
-          <Input id="quantity" type="text" placeholder="e.g., 10" {...form.register("quantity")} />
-          {form.formState.errors.quantity && (
-            <p className="text-red-500 text-sm">{form.formState.errors.quantity.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label>Direction</Label>
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="long" className="flex items-center">
-              <input
-                type="radio"
-                id="long"
-                value="long"
-                className="mr-2"
-                {...form.register("direction")}
-              />
-              Long
-            </Label>
-            <Label htmlFor="short" className="flex items-center">
-              <input
-                type="radio"
-                id="short"
-                value="short"
-                className="mr-2"
-                {...form.register("direction")}
-              />
-              Short
-            </Label>
-          </div>
-          {form.formState.errors.direction && (
-            <p className="text-red-500 text-sm">{form.formState.errors.direction.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="entry_date">Entry Date</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !form.getValues("entry_date") && "text-muted-foreground"
-                )}
-              >
-                {form.getValues("entry_date") ? (
-                  format(form.getValues("entry_date"), "PPP")
-                ) : (
-                  <span>Pick a date</span>
-                )}
-                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center" side="bottom">
-              <Calendar
-                mode="single"
-                selected={form.getValues("entry_date")}
-                onSelect={(date) => form.setValue("entry_date", date!)}
-                disabled={(date) =>
-                  date > new Date()
-                }
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          {form.formState.errors.entry_date && (
-            <p className="text-red-500 text-sm">{form.formState.errors.entry_date.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="exit_date">Exit Date</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[240px] justify-start text-left font-normal",
-                  !form.getValues("exit_date") && "text-muted-foreground"
-                )}
-              >
-                {form.getValues("exit_date") ? (
-                  format(form.getValues("exit_date"), "PPP")
-                ) : (
-                  <span>Pick a date</span>
-                )}
-                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="center" side="bottom">
-              <Calendar
-                mode="single"
-                selected={form.getValues("exit_date")}
-                onSelect={(date) => form.setValue("exit_date", date)}
-                disabled={(date) =>
-                  date > new Date() || date < form.getValues("entry_date")
-                }
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          {form.formState.errors.exit_date && (
-            <p className="text-red-500 text-sm">{form.formState.errors.exit_date.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="profit_loss">Profit/Loss</Label>
-          <Input id="profit_loss" type="text" placeholder="e.g., 500.00" {...form.register("profit_loss")} />
-          {form.formState.errors.profit_loss && (
-            <p className="text-red-500 text-sm">{form.formState.errors.profit_loss.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="fees">Fees</Label>
-          <Input id="fees" type="text" placeholder="e.g., 1.50" {...form.register("fees")} />
-          {form.formState.errors.fees && (
-            <p className="text-red-500 text-sm">{form.formState.errors.fees.message}</p>
-          )}
-        </div>
-
-        <div>
-          <Label htmlFor="notes">Notes</Label>
-          <Textarea id="notes" placeholder="Trade notes..." {...form.register("notes")} />
-        </div>
-
-        <div>
-          <Label htmlFor="tags">Tags</Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
-            {allTags.map((tag) => (
-              <div key={tag} className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`tag-${tag}`}
-                  checked={selectedTags.includes(tag)}
-                  onCheckedChange={() => handleTagToggle(tag)}
-                />
-                <label 
-                  htmlFor={`tag-${tag}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {tag}
-                </label>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="account_id">Trading Account</Label>
-          <Select 
-            onValueChange={(value) => form.setValue("account_id", value)}
-            defaultValue={form.getValues("account_id") || ""}
-          >
-            <SelectTrigger className="w-[240px]">
-              <SelectValue placeholder="Select account" />
-            </SelectTrigger>
-            <SelectContent>
-              {tradingAccounts.map((account) => (
-                <SelectItem key={account.id} value={account.id}>
-                  {account.name} (Balance: {account.balance})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "Submitting..." : "Submit"}
+    <Layout>
+      <div className="mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="mb-2" 
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
         </Button>
-      </form>
-    </div>
+        <h1 className="text-2xl font-bold">{isEditing ? 'Edit Trade' : 'Add New Trade'}</h1>
+        <p className="text-gray-500">
+          {isEditing 
+            ? 'Update your trade details' 
+            : 'Record a new trade with all relevant details'}
+        </p>
+      </div>
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <p>Loading trade data...</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Trade Details</CardTitle>
+                <CardDescription>Enter the basic information about your trade</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="pair">Trading Pair/Symbol</Label>
+                    {isEditing ? (
+                      <Input 
+                        id="pair" 
+                        value={pair} 
+                        readOnly 
+                        className="bg-gray-100 border border-gray-300"
+                      />
+                    ) : (
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <Select value={pair} onValueChange={setPair} required>
+                            <SelectTrigger id="pair">
+                              <SelectValue placeholder="Select pair" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {pairs.map(p => (
+                                <SelectItem key={p} value={p}>{p}</SelectItem>
+                              ))}
+                              <SelectItem value="add-new" className="text-primary font-semibold">
+                                + Add new pair
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="px-3" 
+                          onClick={() => setShowAddPairDialog(true)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="account">Trading Account</Label>
+                    <Select value={account} onValueChange={setAccount} required>
+                      <SelectTrigger id="account">
+                        <SelectValue placeholder="Select account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map(a => (
+                          <SelectItem key={a} value={a}>{a}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <TradingSessionSelector 
+                    value={marketSession} 
+                    onValueChange={setMarketSession} 
+                  />
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="type">Trade Type</Label>
+                    <Select value={type} onValueChange={(value: 'Buy' | 'Sell') => setType(value)} required>
+                      <SelectTrigger id="type">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Buy">Buy (Long)</SelectItem>
+                        <SelectItem value="Sell">Sell (Short)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Trade Date</Label>
+                    <div className="relative">
+                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                      <Input 
+                        id="date" 
+                        type="date" 
+                        value={date} 
+                        onChange={(e) => setDate(e.target.value)} 
+                        className="pl-9"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="playbook">Playbook</Label>
+                    <Select 
+                      value={playbook} 
+                      onValueChange={handlePlaybookChange}
+                    >
+                      <SelectTrigger id="playbook">
+                        <SelectValue placeholder="Select playbook (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {playbooks.map(p => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {playbook && playbook !== 'none' && selectedPlaybookRules.length > 0 && (
+                  <div className="mt-4 border rounded-md p-4 bg-muted/30">
+                    <h3 className="font-medium mb-2">Followed Playbook Rules:</h3>
+                    <div className="space-y-2">
+                      {selectedPlaybookRules.map((rule: any) => (
+                        <div key={rule.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`rule-${rule.id}`}
+                            checked={followedRules.includes(rule.description)}
+                            onChange={() => toggleRuleSelection(rule.description)}
+                            className="rounded border-gray-300"
+                          />
+                          <label htmlFor={`rule-${rule.id}`} className="text-sm">
+                            {rule.description}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Price Information</CardTitle>
+                <CardDescription>Enter entry, exit prices and risk management details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="entry">Entry Price</Label>
+                    <Input 
+                      id="entry" 
+                      type="number" 
+                      step="any" 
+                      value={entry} 
+                      onChange={(e) => setEntry(e.target.value)} 
+                      required
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="exit">Exit Price</Label>
+                    <Input 
+                      id="exit" 
+                      type="number" 
+                      step="any" 
+                      value={exit} 
+                      onChange={(e) => setExit(e.target.value)} 
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="lotSize">Position Size</Label>
+                    <Input 
+                      id="lotSize" 
+                      type="number" 
+                      step="any" 
+                      value={lotSize} 
+                      onChange={(e) => setLotSize(e.target.value)} 
+                      required
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="stopLoss">Stop Loss</Label>
+                    <Input 
+                      id="stopLoss" 
+                      type="number" 
+                      step="any" 
+                      value={stopLoss} 
+                      onChange={(e) => setStopLoss(e.target.value)} 
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="takeProfit">Take Profit</Label>
+                    <Input 
+                      id="takeProfit" 
+                      type="number" 
+                      step="any" 
+                      value={takeProfit} 
+                      onChange={(e) => setTakeProfit(e.target.value)} 
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="profitLoss">Profit/Loss</Label>
+                    <Input 
+                      id="profitLoss" 
+                      type="number" 
+                      step="any" 
+                      value={profitLoss} 
+                      onChange={handleProfitLossChange}
+                      required
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="durationMinutes">Duration (minutes)</Label>
+                    <Input 
+                      id="durationMinutes" 
+                      type="number" 
+                      value={durationMinutes} 
+                      onChange={(e) => setDurationMinutes(e.target.value)}
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="commission">Commission/Fees</Label>
+                    <Input 
+                      id="commission" 
+                      type="number" 
+                      step="any" 
+                      value={commission} 
+                      onChange={handleCommissionChange}
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="total">Total (Net P/L)</Label>
+                    <Input 
+                      id="total" 
+                      type="number" 
+                      value={total}
+                      readOnly
+                      className="bg-gray-100 border border-gray-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Trade Images</CardTitle>
+                <CardDescription>Add images for trade setup, entry and exit</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label>Pre-Entry Image</Label>
+                    <ImageUpload 
+                      value={beforeImageUrl} 
+                      onChange={setBeforeImageUrl}
+                      className="min-h-[200px]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Post-Exit Image</Label>
+                    <ImageUpload 
+                      value={afterImageUrl} 
+                      onChange={setAfterImageUrl}
+                      className="min-h-[200px]"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Additional Image</Label>
+                    <ImageUpload 
+                      value={imageUrl} 
+                      onChange={setImageUrl}
+                      className="min-h-[200px]"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Trade Rating</CardTitle>
+                <CardDescription>Rate the execution quality of this trade</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">How would you rate this trade?</p>
+                  <StarRating 
+                    value={rating} 
+                    onChange={setRating}
+                    size="large"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Trade Categories</CardTitle>
+                <CardDescription>Categorize your trade with predefined tags</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <TagSelectors
+                  mistakes={mistakes}
+                  setups={setups}
+                  habits={habits}
+                  selectedMistakes={selectedMistakes}
+                  selectedSetups={selectedSetups}
+                  selectedHabits={selectedHabits}
+                  onAddMistake={(tag) => setSelectedMistakes([...selectedMistakes, tag])}
+                  onAddSetup={(tag) => setSelectedSetups([...selectedSetups, tag])}
+                  onAddHabit={(tag) => setSelectedHabits([...selectedHabits, tag])}
+                  onRemoveMistake={(tag) => setSelectedMistakes(selectedMistakes.filter(t => t !== tag))}
+                  onRemoveSetup={(tag) => setSelectedSetups(selectedSetups.filter(t => t !== tag))}
+                  onRemoveHabit={(tag) => setSelectedHabits(selectedHabits.filter(t => t !== tag))}
+                />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Notes & Tags</CardTitle>
+                <CardDescription>Add notes and categorize your trade</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Trade Notes</Label>
+                  <Textarea 
+                    id="notes" 
+                    placeholder="Add notes about your trade, strategy used, observations..." 
+                    value={notes} 
+                    onChange={(e) => setNotes(e.target.value)} 
+                    className="min-h-[100px]"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Tags</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {hashtags.map(tag => (
+                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                        {tag}
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-4 w-4 p-0 hover:bg-transparent" 
+                          onClick={() => handleRemoveHashtag(tag)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="Add a tag..." 
+                      value={newHashtag} 
+                      onChange={(e) => setNewHashtag(e.target.value)} 
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddHashtag())}
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={handleAddHashtag} 
+                      variant="outline"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <p className="text-sm text-muted-foreground mb-2">Suggested tags:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {allHashtags.slice(0, 10).map(tag => (
+                        <Badge 
+                          key={tag} 
+                          variant="outline" 
+                          className="cursor-pointer hover:bg-secondary"
+                          onClick={() => {
+                            if (!hashtags.includes(tag)) {
+                              setHashtags([...hashtags, tag]);
+                            }
+                          }}
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="flex justify-end gap-4 mb-10">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => navigate('/trades')}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+            >
+              {isEditing ? 'Update Trade' : 'Add Trade'}
+            </Button>
+          </div>
+        </form>
+      )}
+      
+      <AddPairDialog 
+        isOpen={showAddPairDialog}
+        onClose={() => setShowAddPairDialog(false)}
+        onPairAdded={(newSymbol) => {
+          setPair(newSymbol);
+          setShowAddPairDialog(false);
+        }}
+      />
+    </Layout>
   );
 };
 

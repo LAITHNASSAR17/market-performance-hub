@@ -25,9 +25,9 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({
     
     if (!symbol.trim()) return;
     
-    // Add the symbol with required properties
+    // Only add the symbol, without additional details
     const newSymbol = {
-      symbol: symbol,
+      symbol,
       name: symbol,
       type: 'other' as const
     };

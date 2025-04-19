@@ -51,28 +51,26 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
           if (error) throw error;
 
-          if (data) {
-            const formattedNotes: Note[] = data.map(note => ({
-              id: note.id,
-              userId: note.user_id,
-              title: note.title,
-              content: note.content,
-              tags: note.tags || [],
-              createdAt: note.created_at,
-              updatedAt: note.updated_at
-            }));
+          const formattedNotes: Note[] = data.map(note => ({
+            id: note.id,
+            userId: note.user_id,
+            title: note.title,
+            content: note.content,
+            tags: note.tags || [],
+            createdAt: note.created_at,
+            updatedAt: note.updated_at
+          }));
 
-            setNotes(formattedNotes);
+          setNotes(formattedNotes);
 
-            // Extract all unique tags
-            const uniqueTags = Array.from(new Set(
-              formattedNotes.flatMap(note => note.tags)
-            ));
-            setNoteTags(prevTags => [
-              ...prevTags,
-              ...uniqueTags.filter(tag => !prevTags.includes(tag))
-            ]);
-          }
+          // Extract all unique tags
+          const uniqueTags = Array.from(new Set(
+            formattedNotes.flatMap(note => note.tags)
+          ));
+          setNoteTags(prevTags => [
+            ...prevTags,
+            ...uniqueTags.filter(tag => !prevTags.includes(tag))
+          ]);
         } catch (error) {
           console.error('Error fetching notes:', error);
           toast({
@@ -110,30 +108,28 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       if (error) throw error;
 
-      if (data) {
-        const newNote: Note = {
-          id: data.id,
-          userId: data.user_id,
-          title: data.title,
-          content: data.content,
-          tags: data.tags || [],
-          createdAt: data.created_at,
-          updatedAt: data.updated_at
-        };
+      const newNote: Note = {
+        id: data.id,
+        userId: data.user_id,
+        title: data.title,
+        content: data.content,
+        tags: data.tags || [],
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
 
-        setNotes(prevNotes => [newNote, ...prevNotes]);
+      setNotes(prevNotes => [newNote, ...prevNotes]);
 
-        // Update tags
-        const newTags = newNote.tags.filter(tag => !noteTags.includes(tag));
-        if (newTags.length > 0) {
-          setNoteTags([...noteTags, ...newTags]);
-        }
-
-        toast({
-          title: "تمت الإضافة",
-          description: "تمت إضافة الملاحظة بنجاح",
-        });
+      // Update tags
+      const newTags = newNote.tags.filter(tag => !noteTags.includes(tag));
+      if (newTags.length > 0) {
+        setNoteTags([...noteTags, ...newTags]);
       }
+
+      toast({
+        title: "تمت الإضافة",
+        description: "تمت إضافة الملاحظة بنجاح",
+      });
     } catch (error) {
       console.error('Error adding note:', error);
       toast({

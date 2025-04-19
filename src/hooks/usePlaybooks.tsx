@@ -1,207 +1,212 @@
 
 import { useState, useEffect } from 'react';
-import { useTrade, Trade } from '@/contexts/TradeContext';
-
-export interface IPlaybook {
-  id: string;
-  name: string;
-  description: string;
-  winRate: number;
-  rMultiple: number; // Changed from string | number to number
-  expectedValue: number; // Changed from string | number to number
-  rating: number;
-  tags: string[];
-  isPrivate?: boolean;
-  category?: string;
-  netProfitLoss?: number;
-  totalTrades?: number;
-  rules?: PlaybookRule[]; // Changed from string[] to PlaybookRule[]
-  success_criteria?: string[];
-  avgWinner?: number;
-  avgLoser?: number;
-  profitFactor?: number; // Changed from string to number
-  missedTrades?: number;
-}
-
-export interface PlaybookEntry extends IPlaybook {
-  entryConditions: string[];
-  exitConditions: string[];
-}
+import { supabase } from '@/lib/supabase';
+import { ITrade } from '@/services/tradeService';
 
 export interface PlaybookRule {
   id: string;
+  type: 'entry' | 'exit' | 'risk' | 'custom';
   description: string;
-  isRequired: boolean;
-  type?: string;
 }
 
-export interface ITrade {
+export interface PlaybookEntry {
   id: string;
-  userId: string;
-  symbol: string;
-  entryPrice: number;
-  exitPrice: number;
-  quantity: number;
-  direction: string;
-  entryDate: Date;
-  exitDate: Date | null;
-  profitLoss: number;
-  fees: number;
-  notes: string;
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
+  name: string;
+  description: string;
   rating: number;
-  stopLoss: number;
-  takeProfit: number;
-  durationMinutes: number;
-  playbook?: string;
-  followedRules?: string[];
-  marketSession?: string;
+  tags: string[];
+  rMultiple?: number;
+  winRate?: number;
+  expectedValue?: number;
+  profitFactor?: number;
+  totalTrades?: number;
+  averageProfit?: number;
+  category?: 'trend' | 'reversal' | 'breakout' | 'other';
+  isPrivate?: boolean;
+  avgWinner?: number;
+  avgLoser?: number;
+  missedTrades?: number;
+  netProfitLoss?: number;
+  rules?: PlaybookRule[];
 }
 
 export const usePlaybooks = () => {
-  const [playbooks, setPlaybooks] = useState<IPlaybook[]>([]);
-  const [selectedPlaybook, setSelectedPlaybook] = useState<IPlaybook | null>(null);
-  const { trades } = useTrade();
-
-  useEffect(() => {
-    // Mock playbooks data with enhanced properties
-    const mockPlaybooks: IPlaybook[] = [
-      {
-        id: "1",
-        name: "Trend Following",
-        description: "Enter long positions when price breaks above a moving average in an uptrend.",
-        winRate: 60,
-        rMultiple: 2.0,
-        expectedValue: 1.2,
-        rating: 4,
-        tags: ["trend", "momentum", "moving average"],
-        isPrivate: false,
-        category: "Momentum",
-        netProfitLoss: 1250,
-        totalTrades: 35,
-        profitFactor: 1.8, // Changed from string to number
-        avgWinner: 120,
-        avgLoser: -67,
-        rules: [
-          { id: "tf1", description: "Follow the trend", isRequired: true, type: "entry" },
-          { id: "tf2", description: "Wait for pullback", isRequired: true, type: "entry" },
-          { id: "tf3", description: "Confirm with volume", isRequired: false, type: "entry" }
-        ],
-        success_criteria: ["Trend continues", "2:1 reward to risk ratio"]
-      },
-      {
-        id: "2",
-        name: "Range Breakout",
-        description: "Trade breakouts from defined trading ranges after consolidation.",
-        winRate: 55,
-        rMultiple: 2.5,
-        expectedValue: 1.4,
-        rating: 3,
-        tags: ["range", "breakout", "consolidation"],
-        isPrivate: true,
-        category: "Breakout",
-        netProfitLoss: 980,
-        totalTrades: 28,
-        profitFactor: 1.5, // Changed from string to number
-        avgWinner: 140,
-        avgLoser: -72,
-        rules: [
-          { id: "rb1", description: "Identify clear range", isRequired: true, type: "entry" },
-          { id: "rb2", description: "Wait for volume confirmation", isRequired: true, type: "entry" },
-          { id: "rb3", description: "Avoid trading into news", isRequired: false, type: "risk" }
-        ],
-        success_criteria: ["Price makes new high/low", "Volume increases on breakout"]
-      },
-      {
-        id: "3",
-        name: "Fibonacci Retracement",
-        description: "Enter positions on key Fibonacci retracement levels in established trends.",
-        winRate: 65,
-        rMultiple: 1.8,
-        expectedValue: 1.2,
-        rating: 5,
-        tags: ["fibonacci", "retracement", "trend"],
-        isPrivate: false,
-        category: "Technical",
-        netProfitLoss: 1750,
-        totalTrades: 42,
-        profitFactor: 2.0, // Changed from string to number
-        avgWinner: 110,
-        avgLoser: -60,
-        rules: [
-          { id: "fib1", description: "Draw Fibonacci levels on major moves", isRequired: true, type: "entry" },
-          { id: "fib2", description: "Wait for price to respect level", isRequired: true, type: "entry" },
-          { id: "fib3", description: "Look for confluence with other indicators", isRequired: false, type: "entry" }
-        ],
-        success_criteria: ["Price bounces from key level", "Trend continuation"]
-      }
-    ];
-
-    setPlaybooks(mockPlaybooks);
-  }, []);
-
-  const tradesForPlaybook = trades.filter(trade => 
-    trade.playbook === selectedPlaybook?.name
-  ).map(trade => {
-    // Map the Trade object to ITrade correctly
-    return {
-      id: trade.id,
-      userId: trade.userId,
-      symbol: trade.symbol || trade.pair || '',
-      entryPrice: trade.entryPrice || trade.entry || 0,
-      exitPrice: trade.exitPrice || trade.exit || 0,
-      quantity: trade.quantity || trade.lotSize || 0,
-      direction: trade.direction || (trade.type === 'Buy' ? 'long' : 'short'),
-      entryDate: trade.entryDate || new Date(trade.date || ''),
-      exitDate: trade.exitDate || null,
-      profitLoss: trade.profitLoss,
-      fees: trade.fees,
-      notes: trade.notes,
-      tags: trade.tags || trade.hashtags || [],
-      createdAt: trade.createdAt,
-      updatedAt: trade.updatedAt,
-      rating: trade.rating || 0,
-      stopLoss: trade.stopLoss,
-      takeProfit: trade.takeProfit,
-      durationMinutes: trade.durationMinutes,
-      playbook: trade.playbook,
-      followedRules: trade.followedRules || [],
-      marketSession: trade.marketSession
-    };
-  });
-
-  // Add playbook management functions
-  const addPlaybook = (playbook: Omit<IPlaybook, 'id'>) => {
+  const [playbooks, setPlaybooks] = useState<PlaybookEntry[]>([
+    {
+      id: '1',
+      name: 'Pullback Retest',
+      description: 'Trading the retracement from key levels after a strong move',
+      rating: 4.5,
+      tags: ['pullback', 'retracement', 'trend'],
+      rMultiple: 2.8,
+      winRate: 65,
+      expectedValue: 1.52,
+      profitFactor: 1.8,
+      totalTrades: 28,
+      averageProfit: 125.75,
+      category: 'trend',
+      isPrivate: false,
+      avgWinner: 250.30,
+      avgLoser: -75.20,
+      missedTrades: 5,
+      netProfitLoss: 3521.00,
+      rules: [
+        { id: '1-1', type: 'entry', description: 'Wait for pullback to key level' },
+        { id: '1-2', type: 'entry', description: 'Confirm with price action' },
+        { id: '1-3', type: 'exit', description: 'Take profit at previous swing high/low' },
+        { id: '1-4', type: 'risk', description: 'Risk no more than 2% per trade' }
+      ]
+    },
+    {
+      id: '2',
+      name: 'Breakout Setup',
+      description: 'Trading the breakout from key resistance or support levels',
+      rating: 4.0,
+      tags: ['breakout', 'momentum', 'volume'],
+      rMultiple: 2.1,
+      winRate: 58,
+      expectedValue: 1.02,
+      profitFactor: 1.45,
+      totalTrades: 35,
+      averageProfit: 98.30,
+      category: 'breakout',
+      isPrivate: true,
+      avgWinner: 210.50,
+      avgLoser: -85.40,
+      missedTrades: 8,
+      netProfitLoss: 3440.50,
+      rules: [
+        { id: '2-1', type: 'entry', description: 'Wait for volume confirmation' },
+        { id: '2-2', type: 'exit', description: 'Trailing stop after 1:1 R:R reached' },
+        { id: '2-3', type: 'risk', description: 'Position size based on ATR' }
+      ]
+    },
+    {
+      id: '3',
+      name: 'Gap and Go',
+      description: 'Trading stocks that gap up or down at market open',
+      rating: 3.8,
+      tags: ['gap', 'opening range', 'momentum'],
+      rMultiple: 2.5,
+      winRate: 52,
+      expectedValue: 0.98,
+      profitFactor: 1.32,
+      totalTrades: 22,
+      averageProfit: 87.15,
+      category: 'breakout',
+      isPrivate: false,
+      avgWinner: 190.30,
+      avgLoser: -95.20,
+      missedTrades: 3,
+      netProfitLoss: 1917.30,
+      rules: [
+        { id: '3-1', type: 'entry', description: 'Enter after first 5-minute candle' },
+        { id: '3-2', type: 'entry', description: 'Confirm direction with volume' },
+        { id: '3-3', type: 'exit', description: 'Take profit at previous day high/low' }
+      ]
+    },
+    {
+      id: '4',
+      name: 'Trend Continuation',
+      description: 'Following established trends after brief consolidation',
+      rating: 4.2,
+      tags: ['trend', 'consolidation', 'momentum'],
+      rMultiple: 3.2,
+      winRate: 61,
+      expectedValue: 1.73,
+      profitFactor: 2.1,
+      totalTrades: 31,
+      averageProfit: 143.50,
+      category: 'trend',
+      isPrivate: false,
+      avgWinner: 235.40,
+      avgLoser: -69.80,
+      missedTrades: 6,
+      netProfitLoss: 4448.50,
+      rules: [
+        { id: '4-1', type: 'entry', description: 'Enter after consolidation breaks' },
+        { id: '4-2', type: 'exit', description: 'Exit when momentum slows' },
+        { id: '4-3', type: 'risk', description: 'Stop loss below recent swing low' }
+      ]
+    }
+  ]);
+  
+  const addPlaybook = (playbook: Omit<PlaybookEntry, 'id'>) => {
     const newPlaybook = {
       ...playbook,
-      id: Math.random().toString(36).substr(2, 9),
+      id: Date.now().toString()
     };
     setPlaybooks([...playbooks, newPlaybook]);
   };
-
-  const updatePlaybook = (id: string, updatedPlaybook: Partial<IPlaybook>) => {
-    const updated = playbooks.map(p => 
-      p.id === id ? { ...p, ...updatedPlaybook } : p
-    );
-    setPlaybooks(updated);
+  
+  const updatePlaybook = (id: string, updatedData: Partial<PlaybookEntry>) => {
+    setPlaybooks(playbooks.map(p => p.id === id ? {...p, ...updatedData} : p));
   };
-
+  
   const deletePlaybook = (id: string) => {
     setPlaybooks(playbooks.filter(p => p.id !== id));
-    if (selectedPlaybook?.id === id) {
-      setSelectedPlaybook(null);
+  };
+
+  // Get trades linked to a specific playbook
+  const getPlaybookTrades = async (playbookId: string): Promise<ITrade[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('trades')
+        .select('*')
+        .contains('tags', [playbooks.find(p => p.id === playbookId)?.name]);
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching playbook trades:', error);
+      return [];
     }
   };
 
+  // Calculate performance metrics for a playbook based on linked trades
+  const calculatePlaybookMetrics = async (playbookId: string) => {
+    try {
+      const trades = await getPlaybookTrades(playbookId);
+      if (trades.length === 0) return;
+
+      const totalTrades = trades.length;
+      const winningTrades = trades.filter(t => (t.profitLoss || 0) > 0);
+      const losingTrades = trades.filter(t => (t.profitLoss || 0) <= 0);
+      
+      const winRate = (winningTrades.length / totalTrades) * 100;
+      const totalProfit = winningTrades.reduce((sum, t) => sum + (t.profitLoss || 0), 0);
+      const totalLoss = Math.abs(losingTrades.reduce((sum, t) => sum + (t.profitLoss || 0), 0));
+      const profitFactor = totalLoss === 0 ? totalProfit : totalProfit / totalLoss;
+      const netPL = trades.reduce((sum, t) => sum + (t.profitLoss || 0), 0);
+      const avgProfit = netPL / totalTrades;
+      const avgWinner = winningTrades.length > 0 ? totalProfit / winningTrades.length : 0;
+      const avgLoser = losingTrades.length > 0 ? totalLoss / losingTrades.length * -1 : 0;
+      
+      // Calculate expectancy: (Win% × Average Win) - (Loss% × Average Loss)
+      const expectancy = ((winRate / 100) * avgWinner) + ((1 - winRate / 100) * avgLoser);
+      
+      updatePlaybook(playbookId, {
+        winRate: parseFloat(winRate.toFixed(2)),
+        profitFactor: parseFloat(profitFactor.toFixed(2)),
+        totalTrades,
+        averageProfit: parseFloat(avgProfit.toFixed(2)),
+        expectedValue: parseFloat(expectancy.toFixed(2)),
+        avgWinner: parseFloat(avgWinner.toFixed(2)),
+        avgLoser: parseFloat(avgLoser.toFixed(2)),
+        netProfitLoss: parseFloat(netPL.toFixed(2))
+      });
+      
+    } catch (error) {
+      console.error('Error calculating playbook metrics:', error);
+    }
+  };
+  
   return {
     playbooks,
-    selectedPlaybook,
-    setSelectedPlaybook,
-    tradesForPlaybook,
     addPlaybook,
     updatePlaybook,
-    deletePlaybook
+    deletePlaybook,
+    getPlaybookTrades,
+    calculatePlaybookMetrics
   };
 };

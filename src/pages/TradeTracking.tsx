@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { useTrade, Trade } from '@/contexts/TradeContext';
+import { useTrade } from '@/contexts/TradeContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,42 +22,10 @@ const TradeTracking: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [trade, setTrade] = useState<Trade | null>(null);
-  const [notes, setNotes] = useState('');
+  const trade = id ? getTrade(id) : undefined;
+  const [notes, setNotes] = useState(trade?.notes || '');
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
-  const [rating, setRating] = useState(0);
-  const [loading, setLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchTrade = async () => {
-      if (id) {
-        try {
-          const fetchedTrade = await getTrade(id);
-          if (fetchedTrade) {
-            setTrade(fetchedTrade);
-            setNotes(fetchedTrade.notes || '');
-            setRating(fetchedTrade.rating || 0);
-          }
-        } catch (error) {
-          console.error('Error fetching trade:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    
-    fetchTrade();
-  }, [id, getTrade]);
-  
-  if (loading) {
-    return (
-      <Layout>
-        <div className="text-center py-16">
-          <h2 className="text-2xl font-bold mb-2">Loading...</h2>
-        </div>
-      </Layout>
-    );
-  }
+  const [rating, setRating] = useState(trade?.rating || 0);
   
   if (!trade) {
     return (
@@ -71,7 +39,7 @@ const TradeTracking: React.FC = () => {
     );
   }
   
-  const formattedDate = format(new Date(trade.date || trade.entryDate), 'MMMM d, yyyy');
+  const formattedDate = format(new Date(trade.date), 'MMMM d, yyyy');
   
   const handleSaveNotes = () => {
     if (id) {

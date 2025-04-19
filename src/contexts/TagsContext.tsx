@@ -14,7 +14,6 @@ interface TagsContextType {
   tradingDays: {day: string, performance: number}[];
   setTradingDays: React.Dispatch<React.SetStateAction<{day: string, performance: number}[]>>;
   isLoading: boolean;
-  tags: string[]; // Add tags property
 }
 
 const TagsContext = createContext<TagsContextType | undefined>(undefined);
@@ -31,8 +30,6 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
     {day: 'Friday', performance: -240}
   ]);
   const [isLoading, setIsLoading] = useState(true);
-  // Add tags state
-  const [tags, setTags] = useState<string[]>([...mistakes, ...setups, ...habits]);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -40,8 +37,7 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadTags = async () => {
       try {
-        // Combine all tag types for the tags array
-        setTags([...mistakes, ...setups, ...habits]);
+        // In the future, we can load from database based on user ID
         setIsLoading(false);
       } catch (error) {
         console.error('Error loading tags:', error);
@@ -55,7 +51,7 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
     };
 
     loadTags();
-  }, [mistakes, setups, habits, user]);
+  }, [user]);
 
   return (
     <TagsContext.Provider value={{ 
@@ -67,8 +63,7 @@ export function TagsProvider({ children }: { children: React.ReactNode }) {
       setHabits, 
       tradingDays, 
       setTradingDays,
-      isLoading,
-      tags
+      isLoading
     }}>
       {children}
     </TagsContext.Provider>

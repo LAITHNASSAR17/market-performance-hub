@@ -1,7 +1,4 @@
 
-// This file should also work fine with our updated Trade type.
-// No changes needed, but we're checking for completeness.
-
 import React from 'react';
 import { useTrade } from '@/contexts/TradeContext';
 import { useToast } from '@/hooks/use-toast';

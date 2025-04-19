@@ -19,18 +19,12 @@ const AdminUsers: React.FC = () => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
       await getAllUsers();
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch users",
+        title: "خطأ في جلب البيانات",
+        description: "تعذر جلب بيانات المستخدمين، يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
     } finally {
@@ -40,8 +34,8 @@ const AdminUsers: React.FC = () => {
 
   const handleViewUser = (userId: string) => {
     toast({
-      title: "View User",
-      description: `Loading user ${userId}`
+      title: "عرض المستخدم",
+      description: `جاري عرض بيانات المستخدم ${userId}`
     });
   };
 
@@ -49,14 +43,14 @@ const AdminUsers: React.FC = () => {
     try {
       await blockUser({...user, password: '' });
       toast({
-        title: "User Blocked",
-        description: `User ${user.name} has been blocked`
+        title: "تم حظر المستخدم",
+        description: `تم حظر ${user.name} بنجاح`
       });
     } catch (error) {
       console.error('Error blocking user:', error);
       toast({
-        title: "Error Blocking User",
-        description: "Failed to block user",
+        title: "خطأ في حظر المستخدم",
+        description: "تعذر حظر المستخدم، يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
     }
@@ -66,14 +60,14 @@ const AdminUsers: React.FC = () => {
     try {
       await unblockUser(user);
       toast({
-        title: "User Unblocked",
-        description: `User ${user.name} has been unblocked`
+        title: "تم إلغاء الحظر",
+        description: `تم إلغاء حظر ${user.name} بنجاح`
       });
     } catch (error) {
       console.error('Error unblocking user:', error);
       toast({
-        title: "Error Unblocking User",
-        description: "Failed to unblock user",
+        title: "خطأ في إلغاء الحظر",
+        description: "تعذر إلغاء حظر المستخدم، يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
     }
@@ -90,18 +84,19 @@ const AdminUsers: React.FC = () => {
       await updateUser(updatedUser);
       
       toast({
-        title: isAdmin ? "User Promoted" : "User Role Downgraded",
+        title: isAdmin ? "تمت الترقية بنجاح" : "تم تخفيض الصلاحية بنجاح",
         description: isAdmin 
-          ? `User ${user.name} has been promoted to admin` 
-          : `User ${user.name} has had admin privileges removed`
+          ? `تم منح ${user.name} صلاحيات الأدمن بنجاح` 
+          : `تم إزالة صلاحيات الأدمن من ${user.name} بنجاح`
       });
       
+      // Refresh users list
       fetchUsers();
     } catch (error) {
       console.error('Error updating user role:', error);
       toast({
-        title: "Error Updating Role",
-        description: "Failed to update user role",
+        title: "خطأ في تحديث الصلاحيات",
+        description: "تعذر تحديث صلاحيات المستخدم، يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
     }
@@ -111,48 +106,38 @@ const AdminUsers: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
-      // Generate a UUID for the profile ID
-      const { data: { user }, error: authError } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          name: userData.name,
+          email: userData.email,
+          password: hashedPassword,
+          role: userData.isAdmin ? 'admin' : 'user',
+          is_blocked: false,
+          subscription_tier: 'free'
+        })
+        .select();
+      
+      if (error) throw new Error(error.message);
+      
+      toast({
+        title: "تم إضافة المستخدم بنجاح",
+        description: `تم إضافة ${userData.name} إلى النظام بنجاح`
       });
       
-      if (authError) throw new Error(authError.message);
+      // Refresh users list
+      fetchUsers();
       
-      // If user is created successfully, create profile with the user ID
-      if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id,
-            name: userData.name,
-            email: userData.email,
-            password: hashedPassword,
-            role: userData.isAdmin ? 'admin' : 'user',
-            is_blocked: false,
-            subscription_tier: 'free'
-          })
-          .select();
-        
-        if (error) throw new Error(error.message);
-        
-        toast({
-          title: "User Added",
-          description: `User ${userData.name} has been added to the system`
-        });
-        
-        fetchUsers();
-        
-        return;
-      }
+      // Fix the type error by not returning the data
+      return;
     } catch (error) {
       console.error('Error adding user:', error);
       toast({
-        title: "Error Adding User",
-        description: "Failed to add new user",
+        title: "خطأ في إضافة المستخدم",
+        description: "تعذر إضافة المستخدم الجديد، يرجى المحاولة مرة أخرى",
         variant: "destructive"
       });
-      throw error;
+      throw error; // Rethrow for the component to handle
     }
   };
 
@@ -160,10 +145,10 @@ const AdminUsers: React.FC = () => {
     <div>
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-          Manage Users
+          إدارة المستخدمين
         </h1>
         <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-          View and manage user accounts on the platform.
+          عرض وإدارة حسابات المستخدمين على المنصة.
         </p>
       </header>
 

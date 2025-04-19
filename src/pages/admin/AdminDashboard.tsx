@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrade } from '@/contexts/TradeContext';
@@ -23,7 +24,7 @@ import AdminCharts from '@/components/admin/AdminCharts';
 
 const AdminDashboard: React.FC = () => {
   const { users, getAllUsers } = useAuth();
-  const { trades } = useTrade();
+  const { trades, getAllTrades } = useTrade();
   const { t } = useLanguage();
   const isMobile = useIsMobile();
   const { toast } = useToast();
