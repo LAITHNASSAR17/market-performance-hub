@@ -1,46 +1,16 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
-import { Trade as TradeType } from '@/types/trade';
+import { Trade } from '@/types/trade';
 import { calculateProfitLoss } from '@/utils/tradeCalculations';
 import { defaultSymbols, defaultAccounts, defaultHashtags } from '@/data/defaultTradeData';
 import { useTradeOperations } from '@/hooks/useTradeOperations';
-import { userService, ITradingAccount } from '@/services/userService';
+import { useTradingAccounts } from '@/hooks/useTradingAccounts';
+import { TradeContextType, Symbol, TradingAccount } from '@/types/tradingTypes';
 
-// Export the Trade type to be used in other components
-export type Trade = TradeType;
-
-// Update TradingAccount interface to match the ITradingAccount structure
-export interface TradingAccount extends ITradingAccount {
-  currency?: string; // Added optional currency property to match previous usage
-}
-
-export interface Symbol {
-  symbol: string;
-  name: string;
-  type: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity';
-}
-
-type TradeContextType = {
-  trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
-  updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
-  deleteTrade: (id: string) => Promise<void>;
-  getTrade: (id: string) => Trade | undefined;
-  getAllTrades: () => Trade[];
-  loading: boolean;
-  accounts: string[];
-  pairs: string[];
-  symbols: Symbol[];
-  addSymbol: (symbol: Symbol) => void;
-  allHashtags: string[];
-  addHashtag: (hashtag: string) => void;
-  calculateProfitLoss: (entry: number, exit: number, lotSize: number, type: 'Buy' | 'Sell', instrumentType: string) => number;
-  tradingAccounts: TradingAccount[];
-  createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
-  fetchTradingAccounts: () => Promise<void>;
-};
+export type { Trade, TradingAccount, Symbol };
 
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
 
@@ -51,8 +21,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [allHashtags, setAllHashtags] = useState<string[]>(defaultHashtags);
   const { toast } = useToast();
   const { user } = useAuth();
-  const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
   const tradeOps = useTradeOperations(user?.id);
+  const { tradingAccounts, fetchTradingAccounts, createTradingAccount } = useTradingAccounts(user?.id);
 
   useEffect(() => {
     if (user) {
@@ -122,6 +92,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [user, toast]);
 
+  useEffect(() => {
+    if (user) {
+      fetchTradingAccounts();
+    }
+  }, [user]);
+
   const getTrade = (id: string) => trades.find(trade => trade.id === id);
   const getAllTrades = () => trades;
   
@@ -140,71 +116,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
     }
   };
-
-  const fetchTradingAccounts = async () => {
-    if (!user) return;
-
-    try {
-      const accounts = await userService.getTradingAccounts(user.id);
-      // Convert ITradingAccount[] to TradingAccount[] with added currency property
-      const convertedAccounts: TradingAccount[] = accounts.map(acc => ({
-        ...acc,
-        currency: 'USD' // Default currency
-      }));
-      setTradingAccounts(convertedAccounts);
-    } catch (error) {
-      console.error('Error fetching trading accounts:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب الحسابات",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const createTradingAccount = async (name: string, balance: number): Promise<TradingAccount> => {
-    if (!user) throw new Error('User not authenticated');
-
-    if (!name.trim()) {
-      toast({
-        title: "خطأ",
-        description: "الرجاء إدخال اسم الحساب",
-        variant: "destructive"
-      });
-      throw new Error('Account name is required');
-    }
-
-    try {
-      const newAccount = await userService.createTradingAccount(user.id, name, balance);
-      // Convert ITradingAccount to TradingAccount with added currency property
-      const convertedAccount: TradingAccount = {
-        ...newAccount,
-        currency: 'USD' // Default currency
-      };
-      
-      setTradingAccounts(prev => [...prev, convertedAccount]);
-      
-      toast({
-        title: "حساب جديد",
-        description: `تم إنشاء الحساب ${name}`,
-      });
-      return convertedAccount;
-    } catch (error: any) {
-      console.error('Error creating trading account:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إنشاء الحساب",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchTradingAccounts();
-    }
-  }, [user]);
 
   return (
     <TradeContext.Provider value={{ 
