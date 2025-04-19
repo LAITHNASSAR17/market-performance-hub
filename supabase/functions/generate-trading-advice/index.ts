@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
+const llamaApiKey = Deno.env.get('LLAMA_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,8 +25,8 @@ serve(async (req) => {
     }
 
     // Verify API key exists
-    if (!deepseekApiKey) {
-      console.error('Missing Deepseek API key');
+    if (!llamaApiKey) {
+      console.error('Missing Llama API key');
       return new Response(
         JSON.stringify({ 
           analysis: 'عذراً، لم يتم تكوين مفتاح API بشكل صحيح. يرجى الاتصال بمسؤول النظام.' 
@@ -39,15 +39,15 @@ serve(async (req) => {
     }
 
     try {
-      console.log('Calling Deepseek API for trading advice');
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      console.log('Calling Llama API for trading advice');
+      const response = await fetch('https://api.together.xyz/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Authorization': `Bearer ${llamaApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "deepseek-chat",
+          model: "meta-llama/llama-4-maverick:free",
           messages: [
             {
               role: 'system',
@@ -81,11 +81,11 @@ serve(async (req) => {
       });
 
       const data = await response.json();
-      console.log('Deepseek Response:', data);
+      console.log('Llama API Response:', data);
 
       if (data.error) {
-        console.error('Deepseek API Error:', data.error);
-        throw new Error(data.error.message || 'Error calling Deepseek API');
+        console.error('Llama API Error:', data.error);
+        throw new Error(data.error.message || 'Error calling Llama API');
       }
 
       return new Response(
