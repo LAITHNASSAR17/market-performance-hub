@@ -24,3 +24,12 @@ export interface HomepageContent {
   created_at: string;
   updated_at: string;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role?: string;
+  isAdmin?: boolean;
+  isBlocked?: boolean;
+}

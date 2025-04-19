@@ -38,7 +38,19 @@ const HomepageEditor = () => {
         .single();
 
       if (error) throw error;
-      if (data) setContent(data);
+      if (data) {
+        // Parse the features JSON if it's a string
+        const parsedFeatures = Array.isArray(data.features) 
+          ? data.features 
+          : typeof data.features === 'string' 
+            ? JSON.parse(data.features) 
+            : [];
+            
+        setContent({
+          ...data,
+          features: parsedFeatures
+        });
+      }
     } catch (error) {
       console.error('Error fetching content:', error);
     }
