@@ -9,6 +9,75 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      homepage_content: {
+        Row: {
+          created_at: string
+          description: string | null
+          features: Json | null
+          id: string
+          primary_button_text: string | null
+          primary_button_url: string | null
+          secondary_button_text: string | null
+          secondary_button_url: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          primary_button_text?: string | null
+          primary_button_url?: string | null
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          primary_button_text?: string | null
+          primary_button_url?: string | null
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          created_at: string
+          id: string
+          language: string | null
+          site_name: string
+          theme: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          site_name?: string
+          theme?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string | null
+          site_name?: string
+          theme?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trades: {
         Row: {
           after_image_url: string | null
