@@ -4,27 +4,22 @@ import { useTrade } from '@/contexts/TradeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import Layout from '@/components/Layout';
 import { calculateProfitLoss, calculateReturnPercentage, calculateRiskPercentage } from '@/utils/tradeUtils';
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Trade } from '@/types/trade';
-import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 import TradePairSelector from '@/components/trade/TradePairSelector';
 import TradeTypeSelector from '@/components/trade/TradeTypeSelector';
 import TradePriceInputs from '@/components/trade/TradePriceInputs';
 import TradeSizeAndCommission from '@/components/trade/TradeSizeAndCommission';
 import TradeStopLossAndTarget from '@/components/trade/TradeStopLossAndTarget';
-import { TradingSessionSelector } from '@/components/TradingSessionSelector';
-import ImageUploader from '@/components/ImageUploader';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Listbox } from '@headlessui/react';
+import TradeDateSelector from '@/components/trade/TradeDateSelector';
+import TradeAccountSelector from '@/components/trade/TradeAccountSelector';
+import MarketSessionSelector from '@/components/trade/MarketSessionSelector';
+import TradeImages from '@/components/trade/TradeImages';
+import { Trade } from '@/types/settings';
 
 const marketSessions = [
   { id: 'asia', name: 'Asia' },
@@ -120,7 +115,7 @@ const AddTrade: React.FC = () => {
   const handleSelectChange = (name: string, value: string) => {
     setTradeData(prev => ({ ...prev, [name]: value }));
     if (name === 'pair') {
-      setTradeData(prev => ({ ...prev, symbol: value }));
+      setTradeData(prev => ({ ...prev, pair: value }));
     }
   };
 
@@ -242,115 +237,28 @@ const AddTrade: React.FC = () => {
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label>Entry Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? (
-                        format(selectedDate, "yyyy-MM-dd")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center" side="bottom">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={handleDateChange}
-                      disabled={(date) =>
-                        date > new Date()
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div>
-                <Label htmlFor="account">Account</Label>
-                <Select onValueChange={(value) => handleSelectChange('account', value)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select account" defaultValue={tradeData.account} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tradingAccounts.map((account) => (
-                      <SelectItem key={account} value={account}>{account}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="marketSession">Market Session</Label>
-              <Listbox value={tradeData.marketSession} onChange={(value) => handleSelectChange('marketSession', value)}>
-                <div className="relative mt-1">
-                  <Listbox.Button className="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
-                    <span className="block truncate">{tradeData.marketSession}</span>
-                    <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                      {/* Heroicon small */}
-                      <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M10 3a1.5 1.5 0 01.354 2.929l4.5 4.5a1.5 1.5 0 11-2.122 2.122L10 9.121l-2.732 2.732a1.5 1.5 0 11-2.122-2.122l4.5-4.5A1.5 1.5 0 0110 3zm0 14a1.5 1.5 0 01-.354-2.929l-4.5-4.5a1.5 1.5 0 112.122-2.122L10 14.879l2.732-2.732a1.5 1.5 0 112.122 2.122l-4.5 4.5A1.5 1.5 0 0110 17z" clipRule="evenodd" />
-                      </svg>
-                    </span>
-                  </Listbox.Button>
-                  <Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                    {marketSessions.map((session) => (
-                      <Listbox.Option
-                        key={session.id}
-                        className={({ active }) =>
-                          cn("relative cursor-default select-none py-2 pl-10 pr-4",
-                            active ? "bg-amber-100 text-amber-900" : "text-gray-900")}
-                        value={session.name}
-                      >
-                        {({ selected }) => (
-                          <>
-                            <span className={cn("block truncate", selected ? 'font-medium' : 'font-normal')}>
-                              {session.name}
-                            </span>
-                            {selected ? (
-                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600">
-                                {/* Heroicon check */}
-                                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                              </span>
-                            ) : null}
-                          </>
-                        )}
-                      </Listbox.Option>
-                    ))}
-                  </Listbox.Options>
-                </div>
-              </Listbox>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              <ImageUploader
-                label="Before Image"
-                onUpload={(url) => handleImageUpload(url, 'beforeImageUrl')}
-                existingImageUrl={tradeData.beforeImageUrl}
+              <TradeDateSelector
+                selectedDate={selectedDate}
+                onDateChange={handleDateChange}
               />
-              <ImageUploader
-                label="After Image"
-                onUpload={(url) => handleImageUpload(url, 'afterImageUrl')}
-                existingImageUrl={tradeData.afterImageUrl}
-              />
-              <ImageUploader
-                label="Additional Image"
-                onUpload={(url) => handleImageUpload(url, 'imageUrl')}
-                existingImageUrl={tradeData.imageUrl}
+              <TradeAccountSelector
+                accounts={tradingAccounts}
+                selectedAccount={tradeData.account}
+                onAccountChange={(value) => handleSelectChange('account', value)}
               />
             </div>
+
+            <MarketSessionSelector
+              selectedSession={tradeData.marketSession}
+              onSessionChange={(value) => handleSelectChange('marketSession', value)}
+            />
+
+            <TradeImages
+              beforeImageUrl={tradeData.beforeImageUrl}
+              afterImageUrl={tradeData.afterImageUrl}
+              additionalImageUrl={tradeData.imageUrl}
+              onImageUpload={handleImageUpload}
+            />
 
             <Button onClick={handleSaveClick} disabled={loading}>
               {loading ? 'Saving...' : 'Save Trade'}
