@@ -33,6 +33,9 @@ const Homepage: React.FC = () => {
         }
         
         if (data) {
+          // Ensure features is an array
+          const featuresArray = Array.isArray(data.features) ? data.features : [];
+          
           // Convert from database format to our format
           setContent({
             id: data.id,
@@ -43,7 +46,7 @@ const Homepage: React.FC = () => {
             primaryButtonUrl: data.primary_button_url,
             secondaryButtonText: data.secondary_button_text,
             secondaryButtonUrl: data.secondary_button_url,
-            features: data.features || [],
+            features: featuresArray,
             createdAt: data.created_at,
             updatedAt: data.updated_at
           });

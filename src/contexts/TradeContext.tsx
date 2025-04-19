@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useState,
@@ -9,8 +8,11 @@ import React, {
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@/contexts/AuthContext';
 import { ITrade, tradeService } from '@/services/tradeService';
-import { Trade } from '@/types/trade';
+import { Trade as TradeType } from '@/types/trade';
 import { useToast } from '@/components/ui/use-toast';
+
+// Export Trade type for use in other components
+export type Trade = TradeType;
 
 // Define a TradingAccount type
 interface TradingAccount {
