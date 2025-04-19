@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -14,8 +15,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { AddPairDialog } from '@/components/AddPairDialog';
-import { TradingView } from '@/components/TradingView';
+import AddPairDialog from '@/components/AddPairDialog';
+import TradingView from '@/components/TradingView';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
@@ -25,7 +26,7 @@ const AddTrade: React.FC = () => {
   const [pair, setPair] = useState('');
   const [account, setAccount] = useState('');
   const [tradeDate, setTradeDate] = useState<string>('');
-  const [type, setType] = useState('');
+  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
   const [entry, setEntry] = useState<number>(0);
   const [exit, setExit] = useState<number>(0);
   const [lotSize, setLotSize] = useState<number>(0);
@@ -57,7 +58,7 @@ const AddTrade: React.FC = () => {
             setPair(fetchedTrade.pair || fetchedTrade.symbol || '');
             setAccount(fetchedTrade.account || fetchedTrade.accountId || '');
             setTradeDate(fetchedTrade.date || (fetchedTrade.entryDate ? new Date(fetchedTrade.entryDate).toISOString().split('T')[0] : ''));
-            setType(fetchedTrade.type || fetchedTrade.direction || '');
+            setType(fetchedTrade.type || (fetchedTrade.direction === 'long' ? 'Buy' : 'Sell'));
             setEntry(fetchedTrade.entry || fetchedTrade.entryPrice || 0);
             setExit(fetchedTrade.exit || fetchedTrade.exitPrice || 0);
             setLotSize(fetchedTrade.lotSize || fetchedTrade.quantity || 0);
@@ -88,12 +89,24 @@ const AddTrade: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Calculate profit/loss based on entry, exit, and direction
+    const profitLoss = type === 'Buy' 
+      ? (exit - entry) * lotSize 
+      : (entry - exit) * lotSize;
+      
+    // Calculate risk percentage and return percentage
+    const riskPercentage = stopLoss > 0 
+      ? Math.abs((stopLoss - entry) / entry) * 100 
+      : 0;
+      
+    const returnPercentage = Math.abs((exit - entry) / entry) * 100;
+
     const newTrade = {
       symbol: pair,
       accountId: account,
       date: tradeDate,
       entryDate: new Date(tradeDate),
-      direction: type,
+      direction: type === 'Buy' ? 'long' : 'short',
       entryPrice: entry,
       exitPrice: exit,
       quantity: lotSize,
@@ -107,12 +120,17 @@ const AddTrade: React.FC = () => {
       marketSession: marketSession,
       playbook: playbook,
       followedRules: followedRules,
+      profitLoss: profitLoss,
+      riskPercentage: riskPercentage,
+      returnPercentage: returnPercentage,
+      // Compatibility fields
       pair: pair,
       account: account,
       type: type,
       entry: entry,
       exit: exit,
       lotSize: lotSize,
+      exitDate: new Date()
     };
 
     if (id) {

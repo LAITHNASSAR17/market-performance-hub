@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/use-toast';
 export type Trade = TradeType;
 
 // Define a TradingAccount type
-interface TradingAccount {
+export interface TradingAccount {
   id: string;
   name: string;
   balance: number;
@@ -23,7 +23,7 @@ interface TradingAccount {
 }
 
 // Define a Symbol type
-interface Symbol {
+export interface Symbol {
   symbol: string;
   name: string;
   type: 'forex' | 'stock' | 'crypto' | 'other';
@@ -46,165 +46,10 @@ type TradeContextType = {
   allHashtags: string[];
   addHashtag: (hashtag: string) => void;
   addSymbol: (symbol: Symbol) => void;
+  getAllTrades?: () => Promise<Trade[]>;
 };
 
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
-
-// Mock data for testing purposes
-const mockTradeData: Trade[] = [
-  {
-    id: "1",
-    userId: "user123",
-    symbol: "AAPL",
-    entryPrice: 150.5,
-    exitPrice: 155.75,
-    quantity: 10,
-    direction: "Buy",
-    entryDate: new Date("2023-01-15T09:30:00"),
-    exitDate: new Date("2023-01-15T14:45:00"),
-    profitLoss: 52.5,
-    fees: 2.99,
-    notes: "Breakout strategy worked well",
-    tags: ["breakout", "momentum"],
-    createdAt: new Date("2023-01-15"),
-    updatedAt: new Date("2023-01-15"),
-    rating: 4,
-    stopLoss: 148.0,
-    takeProfit: 157.0,
-    durationMinutes: 315,
-    riskPercentage: 1.5,
-    returnPercentage: 3.5,
-    // Compatibility fields
-    pair: "AAPL/USD",
-    type: "Buy",
-    entry: 150.5,
-    exit: 155.75,
-    account: "Main Trading",
-    lotSize: 10,
-    imageUrl: "https://example.com/image1.png",
-    beforeImageUrl: "https://example.com/before1.png",
-    afterImageUrl: "https://example.com/after1.png",
-    hashtags: ["#trading", "#stocks"]
-  },
-  {
-    id: "2",
-    userId: "user456",
-    symbol: "GOOG",
-    entryPrice: 2700.0,
-    exitPrice: 2750.5,
-    quantity: 5,
-    direction: "Sell",
-    entryDate: new Date("2023-02-01T11:00:00"),
-    exitDate: new Date("2023-02-01T16:15:00"),
-    profitLoss: -252.75,
-    fees: 1.99,
-    notes: "Failed to anticipate earnings report",
-    tags: ["earnings", "correction"],
-    createdAt: new Date("2023-02-01"),
-    updatedAt: new Date("2023-02-01"),
-    rating: 2,
-    stopLoss: 2720.0,
-    takeProfit: 2650.0,
-    durationMinutes: 315,
-    riskPercentage: 2.0,
-    returnPercentage: 1.0,
-    // Compatibility fields
-    pair: "GOOG/USD",
-    type: "Sell",
-    entry: 2700.0,
-    exit: 2750.5,
-    account: "Retirement",
-    lotSize: 5,
-    imageUrl: "https://example.com/image2.png",
-    beforeImageUrl: "https://example.com/before2.png",
-    afterImageUrl: "https://example.com/after2.png",
-    hashtags: ["#investing", "#tech"]
-  },
-  {
-    id: "3",
-    userId: "user789",
-    symbol: "TSLA",
-    entryPrice: 850.25,
-    exitPrice: 840.50,
-    quantity: 8,
-    direction: "Buy",
-    entryDate: new Date("2023-02-15T14:00:00"),
-    exitDate: new Date("2023-02-15T19:30:00"),
-    profitLoss: -78.0,
-    fees: 3.49,
-    notes: "Market volatility led to unexpected loss",
-    tags: ["volatility", "electric vehicles"],
-    createdAt: new Date("2023-02-15"),
-    updatedAt: new Date("2023-02-15"),
-    rating: 3,
-    stopLoss: 845.0,
-    takeProfit: 860.0,
-    durationMinutes: 330,
-    riskPercentage: 1.0,
-    returnPercentage: 2.5,
-    pair: "TSLA/USD",
-    imageUrl: "https://example.com/image3.png",
-    beforeImageUrl: "https://example.com/before3.png",
-    afterImageUrl: "https://example.com/after3.png",
-    hashtags: ["#innovation", "#automotive"]
-  },
-  {
-    id: "4",
-    userId: "user101",
-    symbol: "AMZN",
-    entryPrice: 3200.75,
-    exitPrice: 3250.0,
-    quantity: 3,
-    direction: "Sell",
-    entryDate: new Date("2023-03-01T08:00:00"),
-    exitDate: new Date("2023-03-01T13:45:00"),
-    profitLoss: 147.75,
-    fees: 2.49,
-    notes: "E-commerce sector showing strong growth",
-    tags: ["e-commerce", "growth"],
-    createdAt: new Date("2023-03-01"),
-    updatedAt: new Date("2023-03-01"),
-    rating: 5,
-    stopLoss: 3220.0,
-    takeProfit: 3150.0,
-    durationMinutes: 345,
-    riskPercentage: 1.8,
-    returnPercentage: 4.0,
-    pair: "AMZN/USD",
-    imageUrl: "https://example.com/image4.png",
-    beforeImageUrl: "https://example.com/before4.png",
-    afterImageUrl: "https://example.com/after4.png",
-    hashtags: ["#retail", "#online shopping"]
-  },
-  {
-    id: "5",
-    userId: "user202",
-    symbol: "MSFT",
-    entryPrice: 250.50,
-    exitPrice: 255.0,
-    quantity: 12,
-    direction: "Buy",
-    entryDate: new Date("2023-03-15T10:30:00"),
-    exitDate: new Date("2023-03-15T16:00:00"),
-    profitLoss: 53.5,
-    fees: 1.49,
-    notes: "Cloud computing driving stock value",
-    tags: ["cloud computing", "technology"],
-    createdAt: new Date("2023-03-15"),
-    updatedAt: new Date("2023-03-15"),
-    rating: 4,
-    stopLoss: 248.0,
-    takeProfit: 260.0,
-    durationMinutes: 330,
-    riskPercentage: 1.2,
-    returnPercentage: 3.0,
-    pair: "MSFT/USD",
-    imageUrl: "https://example.com/image5.png",
-    beforeImageUrl: "https://example.com/before5.png",
-    afterImageUrl: "https://example.com/after5.png",
-    hashtags: ["#software", "#business"]
-  }
-];
 
 // Mock trading accounts
 const mockTradingAccounts: TradingAccount[] = [
@@ -457,6 +302,16 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [toast]);
 
+  const getAllTrades = useCallback(async () => {
+    try {
+      const allTrades = await tradeService.getAllTrades();
+      return allTrades.map(convertFromApiFormat);
+    } catch (error) {
+      console.error('Error fetching all trades:', error);
+      return [];
+    }
+  }, []);
+
   const addHashtag = useCallback((hashtag: string) => {
     if (!hashtag.startsWith('#')) {
       hashtag = `#${hashtag}`;
@@ -496,7 +351,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
         symbols,
         allHashtags,
         addHashtag,
-        addSymbol
+        addSymbol,
+        getAllTrades
       }}
     >
       {children}

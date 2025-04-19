@@ -80,7 +80,7 @@ export const tradeService = {
     }
   },
   
-  async updateTrade(id: string, tradeData: Partial<ITrade>): Promise<{data: ITrade | null, error: any}> {
+  async updateTrade(id: string, tradeData: Partial<Omit<ITrade, 'id' | 'created_at' | 'user_id'>>): Promise<{data: ITrade | null, error: any}> {
     try {
       const { data, error } = await supabase
         .from('trades')
@@ -113,7 +113,7 @@ export const tradeService = {
     }
   },
   
-  async findTradesByFilter(filter: Partial<Record<keyof ITrade, any>>): Promise<ITrade[]> {
+  async findTradesByFilter(filter: Record<string, any>): Promise<ITrade[]> {
     try {
       let query = supabase.from('trades').select('*');
       

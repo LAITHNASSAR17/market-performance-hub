@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -110,28 +111,40 @@ const AdminUsers: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({
-          name: userData.name,
-          email: userData.email,
-          password: hashedPassword,
-          role: userData.isAdmin ? 'admin' : 'user',
-          is_blocked: false,
-          subscription_tier: 'free'
-        })
-        .select();
-      
-      if (error) throw new Error(error.message);
-      
-      toast({
-        title: "User Added",
-        description: `User ${userData.name} has been added to the system`
+      // Generate a UUID for the profile ID
+      const { data: { user }, error: authError } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password
       });
       
-      fetchUsers();
+      if (authError) throw new Error(authError.message);
       
-      return;
+      // If user is created successfully, create profile with the user ID
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            name: userData.name,
+            email: userData.email,
+            password: hashedPassword,
+            role: userData.isAdmin ? 'admin' : 'user',
+            is_blocked: false,
+            subscription_tier: 'free'
+          })
+          .select();
+        
+        if (error) throw new Error(error.message);
+        
+        toast({
+          title: "User Added",
+          description: `User ${userData.name} has been added to the system`
+        });
+        
+        fetchUsers();
+        
+        return;
+      }
     } catch (error) {
       console.error('Error adding user:', error);
       toast({
