@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -325,7 +326,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         try {
           console.log('Fetching trades for user:', user.id);
           
-          // Simplify the query to avoid the ambiguous column issue
+          // Use a simple query to avoid the ambiguous column issue
           const { data, error } = await supabase
             .from('trades')
             .select('*')
@@ -349,7 +350,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const formattedTrade: Trade = {
               id: trade.id,
               userId: trade.user_id,
-              account: 'Main Trading',
+              account: trade.account_id ? 'Account ' + trade.account_id.substring(0, 5) : 'Main Trading',
               date: trade.entry_date.split('T')[0],
               pair: trade.symbol,
               type: trade.direction === 'long' ? 'Buy' : 'Sell',
@@ -365,9 +366,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               total: (trade.profit_loss || 0) - (trade.fees || 0),
               durationMinutes: trade.duration_minutes || 0,
               notes: trade.notes || '',
-              imageUrl: null,
-              beforeImageUrl: null,
-              afterImageUrl: null,
+              imageUrl: trade.image_url || null,
+              beforeImageUrl: trade.before_image_url || null,
+              afterImageUrl: trade.after_image_url || null,
               hashtags: trade.tags || [],
               createdAt: trade.created_at,
               rating: trade.rating || 0,
@@ -422,27 +423,34 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         throw new Error('Invalid date format');
       }
       
+      // Create the database object for insertion
+      const insertData = {
+        user_id: user.id,
+        symbol: newTradeData.pair,
+        entry_price: newTradeData.entry,
+        exit_price: newTradeData.exit || null,
+        quantity: newTradeData.lotSize,
+        direction: newTradeData.type === 'Buy' ? 'long' : 'short',
+        entry_date: entryDate.toISOString(),
+        exit_date: newTradeData.exit ? entryDate.toISOString() : null,
+        profit_loss: newTradeData.profitLoss,
+        fees: newTradeData.commission || 0,
+        notes: newTradeData.notes || '',
+        tags: newTradeData.hashtags || [],
+        stop_loss: newTradeData.stopLoss || null,
+        take_profit: newTradeData.takeProfit || null,
+        duration_minutes: newTradeData.durationMinutes || null,
+        rating: newTradeData.rating || 0
+      };
+      
+      // Add market session if it exists
+      if (newTradeData.marketSession) {
+        insertData['market_session'] = newTradeData.marketSession;
+      }
+      
       const { data, error } = await supabase
         .from('trades')
-        .insert({
-          user_id: user.id,
-          symbol: newTradeData.pair,
-          entry_price: newTradeData.entry,
-          exit_price: newTradeData.exit || null,
-          quantity: newTradeData.lotSize,
-          direction: newTradeData.type === 'Buy' ? 'long' : 'short',
-          entry_date: entryDate.toISOString(),
-          exit_date: newTradeData.exit ? entryDate.toISOString() : null,
-          profit_loss: newTradeData.profitLoss,
-          fees: newTradeData.commission || 0,
-          notes: newTradeData.notes || '',
-          tags: newTradeData.hashtags || [],
-          stop_loss: newTradeData.stopLoss || null,
-          take_profit: newTradeData.takeProfit || null,
-          duration_minutes: newTradeData.durationMinutes || null,
-          rating: newTradeData.rating || 0,
-          market_session: newTradeData.marketSession || null
-        })
+        .insert(insertData)
         .select()
         .single();
 
