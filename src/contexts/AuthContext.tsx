@@ -57,6 +57,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      // Use auth.users instead of profiles
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+      
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        return null;
+      }
+      
+      if (userData) {
+        const user: User = {
+          id: userData.user.id,
+          name: userData.user.user_metadata?.name || 'Anonymous',
+          email: userData.user.email || '',
+          role: userData.user.user_metadata?.role || 'user',
+          isAdmin: userData.user.user_metadata?.is_admin || false,
+          isBlocked: userData.user.user_metadata?.is_blocked || false,
+        };
+        
+        return user;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      return null;
+    }
+  };
+
   const getAllUsers = async (): Promise<User[]> => {
     try {
       // Since we don't have direct access to auth.users, we'll simulate this

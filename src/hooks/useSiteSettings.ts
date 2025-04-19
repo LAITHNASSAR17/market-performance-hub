@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 export const useSiteSettings = () => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -31,7 +32,9 @@ export const useSiteSettings = () => {
         site_name: data.site_name,
         theme: data.theme || 'light',
         language: data.language || 'en',
-        company_email: 'support@example.com', // Add default value
+        company_email: data.company_email || 'support@example.com',
+        support_phone: data.support_phone || '',
+        copyright_text: data.copyright_text || '',
         created_at: data.created_at,
         updated_at: data.updated_at
       };
@@ -48,6 +51,8 @@ export const useSiteSettings = () => {
         theme: 'light',
         language: 'en',
         company_email: 'support@example.com',
+        support_phone: '',
+        copyright_text: '',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
@@ -59,6 +64,8 @@ export const useSiteSettings = () => {
   const updateSettings = async (newSettings: Partial<SiteSettings>) => {
     try {
       if (!settings) throw new Error('No settings to update');
+      
+      setIsUpdating(true);
 
       const { error } = await supabase
         .from('site_settings')
@@ -66,6 +73,9 @@ export const useSiteSettings = () => {
           site_name: newSettings.site_name || settings.site_name,
           theme: newSettings.theme || settings.theme,
           language: newSettings.language || settings.language,
+          company_email: newSettings.company_email || settings.company_email,
+          support_phone: newSettings.support_phone || settings.support_phone,
+          copyright_text: newSettings.copyright_text || settings.copyright_text,
           updated_at: new Date().toISOString()
         })
         .eq('id', settings.id);
@@ -90,8 +100,43 @@ export const useSiteSettings = () => {
         description: "Failed to update site settings",
         variant: "destructive"
       });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  
+  const updateFavicon = (faviconUrl: string) => {
+    try {
+      // Update favicon in document
+      const linkElements = document.querySelectorAll("link[rel*='icon']");
+      
+      // If favicon link elements exist, update them
+      if (linkElements.length > 0) {
+        linkElements.forEach(element => {
+          element.setAttribute('href', faviconUrl);
+        });
+      } else {
+        // If no favicon links exist, create a new one
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.href = faviconUrl;
+        link.type = 'image/png';
+        document.head.appendChild(link);
+      }
+      
+      toast({
+        title: "Success",
+        description: "Favicon updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating favicon:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favicon",
+        variant: "destructive"
+      });
     }
   };
 
-  return { settings, loading, error, updateSettings };
+  return { settings, loading, error, isUpdating, updateSettings, updateFavicon };
 };

@@ -8,7 +8,7 @@ import {
   BarChart, Coins, Hash, Lock, Unlock, Trophy, AlertTriangle 
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { PlaybookEntry, PlaybookRule } from '@/hooks/usePlaybooks';
+import { PlaybookEntry, PlaybookRule } from '@/types/settings';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';

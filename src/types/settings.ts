@@ -1,9 +1,12 @@
+
 export interface SiteSettings {
   id: string;
   site_name: string;
   theme?: string;
   language?: string;
   company_email: string;
+  support_phone?: string;
+  copyright_text?: string;
   created_at: string;
   updated_at: string;
 }
@@ -75,4 +78,33 @@ export interface Trade {
   playbook?: string;
   followedRules?: string[];
   marketSession?: string;
+}
+
+// Add required interfaces for Playbook components
+export interface PlaybookEntry {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  category?: 'trend' | 'reversal' | 'breakout' | 'other';
+  isPrivate?: boolean;
+  rating: number;
+  winRate?: number;
+  rMultiple?: number;
+  expectedValue?: number;
+  profitFactor?: number;
+  netProfitLoss?: number;
+  totalTrades?: number;
+  missedTrades?: number;
+  avgWinner?: number;
+  avgLoser?: number;
+  rules?: PlaybookRule[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PlaybookRule {
+  id: string;
+  type: 'entry' | 'exit' | 'risk' | 'custom';
+  description: string;
 }
