@@ -34,7 +34,10 @@ export const tradeService = {
       .eq('id', id)
       .single();
     
-    if (error || !data) return null;
+    if (error || !data) {
+      console.error('Error fetching trade by ID:', error);
+      return null;
+    }
     return formatTrade(data);
   },
 
@@ -43,7 +46,10 @@ export const tradeService = {
       .from('trades')
       .select('*');
     
-    if (error || !data) return [];
+    if (error || !data) {
+      console.error('Error fetching all trades:', error);
+      return [];
+    }
     return data.map(formatTrade);
   },
 
@@ -69,12 +75,17 @@ export const tradeService = {
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
         duration_minutes: tradeData.durationMinutes,
-        market_session: tradeData.marketSession
+        market_session: tradeData.marketSession,
+        playbook: tradeData.playbook,
+        followed_rules: tradeData.followedRules
       })
       .select()
       .single();
     
-    if (error || !data) throw new Error(`Error creating trade: ${error?.message}`);
+    if (error || !data) {
+      console.error(`Error creating trade:`, error);
+      throw new Error(`Error creating trade: ${error?.message}`);
+    }
     return formatTrade(data);
   },
 
@@ -102,6 +113,8 @@ export const tradeService = {
     if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
     if (tradeData.marketSession !== undefined) updateObject.market_session = tradeData.marketSession;
+    if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
+    if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
     
     const { data, error } = await supabase
       .from('trades')
@@ -110,7 +123,10 @@ export const tradeService = {
       .select()
       .single();
     
-    if (error || !data) return null;
+    if (error || !data) {
+      console.error('Error updating trade:', error);
+      return null;
+    }
     return formatTrade(data);
   },
 
@@ -120,6 +136,9 @@ export const tradeService = {
       .delete()
       .eq('id', id);
     
+    if (error) {
+      console.error('Error deleting trade:', error);
+    }
     return !error;
   },
 
@@ -135,7 +154,10 @@ export const tradeService = {
     
     const { data, error } = await query;
     
-    if (error || !data) return [];
+    if (error || !data) {
+      console.error('Error filtering trades:', error);
+      return [];
+    }
     return data.map(formatTrade);
   }
 };
@@ -162,7 +184,7 @@ function formatTrade(data: any): ITrade {
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
     playbook: data.playbook,
-    followedRules: data.followedRules,
+    followedRules: data.followed_rules,
     marketSession: data.market_session
   };
 }
