@@ -17,9 +17,10 @@ export type Trade = TradeType;
 // Define a TradingAccount type
 export interface TradingAccount {
   id: string;
+  userId: string;
   name: string;
   balance: number;
-  userId: string;
+  created_at?: string;
 }
 
 // Define a Symbol type

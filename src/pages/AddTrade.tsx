@@ -1,500 +1,420 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useTrade, Trade } from '@/contexts/TradeContext';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTrade } from '@/contexts/TradeContext';
+import { useTags } from '@/contexts/TagsContext';
+import { tradeService } from '@/services/tradeService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/components/ui/use-toast';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import AddPairDialog from '@/components/AddPairDialog';
-import TradingView from '@/components/TradingView';
+import { CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { TradingAccount } from '@/contexts/TradeContext';
+import { userService } from '@/services/userService';
+import { useToast } from '@/hooks/use-toast';
+
+const formSchema = z.object({
+  symbol: z.string().min(1, { message: "Symbol is required." }),
+  entry_price: z.string().refine(value => !isNaN(parseFloat(value)), {
+    message: "Entry price must be a number.",
+  }),
+  exit_price: z.string().refine(value => !isNaN(parseFloat(value)), {
+    message: "Exit price must be a number.",
+  }),
+  quantity: z.string().refine(value => !isNaN(parseFloat(value)), {
+    message: "Quantity must be a number.",
+  }),
+  direction: z.enum(['long', 'short'], {
+    required_error: "Please select a trade direction.",
+  }),
+  entry_date: z.date(),
+  exit_date: z.date().nullable(),
+  profit_loss: z.string().refine(value => !isNaN(parseFloat(value)), {
+    message: "Profit/Loss must be a number.",
+  }),
+  fees: z.string().refine(value => !isNaN(parseFloat(value)), {
+    message: "Fees must be a number.",
+  }),
+  notes: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  rating: z.string().optional(),
+  stop_loss: z.string().optional(),
+  take_profit: z.string().optional(),
+  duration_minutes: z.string().optional(),
+  playbook: z.string().optional(),
+  followed_rules: z.array(z.string()).optional(),
+  market_session: z.string().optional(),
+  account_id: z.string().optional(),
+  risk_percentage: z.string().optional(),
+  return_percentage: z.string().optional(),
+});
 
 const AddTrade: React.FC = () => {
-  const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const { addTrade, updateTrade, getTrade, accounts, pairs, allHashtags, addHashtag, tradingAccounts, symbols } = useTrade();
-  
-  const [pair, setPair] = useState('');
-  const [account, setAccount] = useState('');
-  const [tradeDate, setTradeDate] = useState<string>('');
-  const [type, setType] = useState<'Buy' | 'Sell'>('Buy');
-  const [entry, setEntry] = useState<number>(0);
-  const [exit, setExit] = useState<number>(0);
-  const [lotSize, setLotSize] = useState<number>(0);
-  const [stopLoss, setStopLoss] = useState<number>(0);
-  const [takeProfit, setTakeProfit] = useState<number>(0);
-  const [duration, setDuration] = useState<number>(0);
-  const [fees, setFees] = useState<number>(0);
-  const [notes, setNotes] = useState('');
-  const [hashtags, setHashtags] = useState<string[]>([]);
-  const [newHashtag, setNewHashtag] = useState('');
-  const [rating, setRating] = useState<number>(0);
-  const [marketSession, setMarketSession] = useState('');
-  const [playbook, setPlaybook] = useState('');
-  const [followedRules, setFollowedRules] = useState<string[]>([]);
-  const [isAddPairDialogOpen, setIsAddPairDialogOpen] = useState(false);
-  
-  const [tradeData, setTradeData] = useState<Trade | null>(null);
-  const [loading, setLoading] = useState(id ? true : false);
-  
+  const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const { addTrade, updateTrade } = useTrade();
+  const { tags } = useTags();
+  const [trade, setTrade] = useState<any>(null);
+  const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      symbol: "",
+      entry_price: "",
+      exit_price: "",
+      quantity: "",
+      direction: "long",
+      entry_date: new Date(),
+      exit_date: null,
+      profit_loss: "",
+      fees: "",
+      notes: "",
+      tags: [],
+      rating: "",
+      stop_loss: "",
+      take_profit: "",
+      duration_minutes: "",
+      playbook: "",
+      followed_rules: [],
+      market_session: "",
+      account_id: "",
+      risk_percentage: "",
+      return_percentage: "",
+    },
+  });
+
   useEffect(() => {
-    const fetchTradeData = async () => {
-      if (id) {
+    if (id) {
+      const fetchTrade = async () => {
         try {
-          const fetchedTrade = await getTrade(id);
-          if (fetchedTrade) {
-            setTradeData(fetchedTrade);
-            
-            // Set all form values from the fetched trade
-            setPair(fetchedTrade.pair || fetchedTrade.symbol || '');
-            setAccount(fetchedTrade.account || fetchedTrade.accountId || '');
-            setTradeDate(fetchedTrade.date || (fetchedTrade.entryDate ? new Date(fetchedTrade.entryDate).toISOString().split('T')[0] : ''));
-            setType(fetchedTrade.type || (fetchedTrade.direction === 'long' ? 'Buy' : 'Sell'));
-            setEntry(fetchedTrade.entry || fetchedTrade.entryPrice || 0);
-            setExit(fetchedTrade.exit || fetchedTrade.exitPrice || 0);
-            setLotSize(fetchedTrade.lotSize || fetchedTrade.quantity || 0);
-            setStopLoss(fetchedTrade.stopLoss || 0);
-            setTakeProfit(fetchedTrade.takeProfit || 0);
-            setDuration(fetchedTrade.durationMinutes || 0);
-            setFees(fetchedTrade.fees || 0);
-            setNotes(fetchedTrade.notes || '');
-            setHashtags(fetchedTrade.hashtags || fetchedTrade.tags || []);
-            setRating(fetchedTrade.rating || 0);
-            setMarketSession(fetchedTrade.marketSession || '');
-            setPlaybook(fetchedTrade.playbook || '');
-            setFollowedRules(fetchedTrade.followedRules || []);
-          }
+          const tradeData = await tradeService.getTradeById(id);
+          setTrade(tradeData);
+          form.reset({
+            symbol: tradeData.symbol,
+            entry_price: String(tradeData.entry_price),
+            exit_price: String(tradeData.exit_price),
+            quantity: String(tradeData.quantity),
+            direction: tradeData.direction,
+            entry_date: new Date(tradeData.entry_date),
+            exit_date: tradeData.exit_date ? new Date(tradeData.exit_date) : null,
+            profit_loss: String(tradeData.profit_loss),
+            fees: String(tradeData.fees),
+            notes: tradeData.notes,
+            tags: tradeData.tags,
+            rating: String(tradeData.rating),
+            stop_loss: String(tradeData.stop_loss),
+            take_profit: String(tradeData.take_profit),
+            duration_minutes: String(tradeData.duration_minutes),
+            playbook: tradeData.playbook,
+            followed_rules: tradeData.followed_rules,
+            market_session: tradeData.market_session,
+            account_id: tradeData.account_id,
+            risk_percentage: String(tradeData.risk_percentage),
+            return_percentage: String(tradeData.return_percentage),
+          });
         } catch (error) {
-          console.error('Error fetching trade:', error);
-        } finally {
-          setLoading(false);
+          console.error("Error fetching trade:", error);
+        }
+      };
+      fetchTrade();
+    }
+  }, [id, form]);
+
+  useEffect(() => {
+    const loadTradingAccounts = async () => {
+      if (user?.id) {
+        try {
+          const accounts = await userService.getTradingAccounts(user.id);
+          setTradingAccounts(accounts);
+        } catch (error) {
+          console.error("Error loading trading accounts:", error);
         }
       }
     };
-    
-    fetchTradeData();
-  }, [id, getTrade]);
 
-  const { toast } = useToast();
+    loadTradingAccounts();
+  }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const mappedDirection = values.direction === "long" ? "Buy" : "Sell";
 
-    // Calculate profit/loss based on entry, exit, and direction
-    const profitLoss = type === 'Buy' 
-      ? (exit - entry) * lotSize 
-      : (entry - exit) * lotSize;
-      
-    // Calculate risk percentage and return percentage
-    const riskPercentage = stopLoss > 0 
-      ? Math.abs((stopLoss - entry) / entry) * 100 
-      : 0;
-      
-    const returnPercentage = Math.abs((exit - entry) / entry) * 100;
-
-    const newTrade = {
-      symbol: pair,
-      accountId: account,
-      date: tradeDate,
-      entryDate: new Date(tradeDate),
-      direction: type === 'long' ? 'long' : 'short',
-      entryPrice: entry,
-      exitPrice: exit,
-      quantity: lotSize,
-      stopLoss: stopLoss,
-      takeProfit: takeProfit,
-      durationMinutes: duration,
-      fees: fees,
-      notes: notes,
-      tags: hashtags,
-      rating: rating,
-      marketSession: marketSession,
-      playbook: playbook,
-      followedRules: followedRules,
-      profitLoss: profitLoss,
-      riskPercentage: riskPercentage,
-      returnPercentage: returnPercentage,
-      // Compatibility fields
-      pair: pair,
-      account: account,
-      type: type,
-      entry: entry,
-      exit: exit,
-      lotSize: lotSize,
-      exitDate: new Date()
+    const tradeData = {
+      user_id: user?.id as string,
+      symbol: values.symbol,
+      entry_price: parseFloat(values.entry_price),
+      exit_price: parseFloat(values.exit_price),
+      quantity: parseFloat(values.quantity),
+      direction: values.direction,
+      entry_date: values.entry_date.toISOString(),
+      exit_date: values.exit_date ? values.exit_date.toISOString() : null,
+      profit_loss: parseFloat(values.profit_loss),
+      fees: parseFloat(values.fees),
+      notes: values.notes || '',
+      tags: values.tags || [],
+      rating: values.rating ? parseFloat(values.rating) : null,
+      stop_loss: values.stop_loss ? parseFloat(values.stop_loss) : null,
+      take_profit: values.take_profit ? parseFloat(values.take_profit) : null,
+      duration_minutes: values.duration_minutes ? parseFloat(values.duration_minutes) : null,
+      playbook: values.playbook || '',
+      followed_rules: values.followed_rules || [],
+      market_session: values.market_session || '',
+      account_id: values.account_id || '',
+      risk_percentage: values.risk_percentage ? parseFloat(values.risk_percentage) : null,
+      return_percentage: values.return_percentage ? parseFloat(values.return_percentage) : null,
     };
 
-    if (id) {
-      try {
-        await updateTrade(id, newTrade);
-        toast({
-          title: "Trade updated",
-          description: "Your trade has been updated successfully",
-        });
-        navigate('/trades');
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to update trade",
-          variant: "destructive",
-        });
+    try {
+      if (id) {
+        const { data, error } = await tradeService.updateTrade(id, tradeData);
+        if (error) {
+          toast({
+            title: "Error updating trade",
+            description: "Failed to update the trade. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          updateTrade(data);
+          toast({
+            title: "Trade updated",
+            description: "The trade has been updated successfully.",
+          });
+          navigate('/trades');
+        }
+      } else {
+        const { data, error } = await tradeService.createTrade(tradeData);
+        if (error) {
+          toast({
+            title: "Error adding trade",
+            description: "Failed to add the trade. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          addTrade(data);
+          toast({
+            title: "Trade added",
+            description: "The trade has been added successfully.",
+          });
+          navigate('/trades');
+        }
       }
-    } else {
-      try {
-        await addTrade(newTrade);
-        toast({
-          title: "Trade added",
-          description: "Your new trade has been added successfully",
-        });
-        navigate('/trades');
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to add trade",
-          variant: "destructive",
-        });
-      }
+    } catch (error) {
+      console.error("Error adding/updating trade:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
-  };
-
-  const handleAddHashtag = () => {
-    if (newHashtag.trim()) {
-      addHashtag(newHashtag);
-      setHashtags([...hashtags, newHashtag]);
-      setNewHashtag('');
-    }
-  };
-
-  const handleRemoveHashtag = (hashtagToRemove: string) => {
-    setHashtags(hashtags.filter(tag => tag !== hashtagToRemove));
-  };
-
-  const handlePairAdded = (newPair: string) => {
-    setPair(newPair);
-  };
-
-  const handleOpenAddPairDialog = () => {
-    setIsAddPairDialogOpen(true);
-  };
-
-  const handleCloseAddPairDialog = () => {
-    setIsAddPairDialogOpen(false);
   };
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-4">{id ? 'Edit Trade' : 'Add Trade'}</h1>
-      
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* First Column */}
+      <h1 className="text-2xl font-bold mb-6">{id ? "Edit Trade" : "Add Trade"}</h1>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div>
-          <div className="mb-4">
-            <Label htmlFor="pair">Trading Pair</Label>
-            <div className="flex items-center">
-              <Select value={pair} onValueChange={setPair}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a pair" />
-                </SelectTrigger>
-                <SelectContent>
-                  {symbols.map((symbol) => (
-                    <SelectItem key={symbol.symbol} value={symbol.symbol}>
-                      {symbol.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="icon" 
-                className="ml-2"
-                onClick={handleOpenAddPairDialog}
-              >
-                +
-              </Button>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="account">Account</Label>
-            <Select value={account} onValueChange={setAccount}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select an account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account} value={account}>
-                    {account}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="mb-4">
-            <Label>Trade Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !tradeDate && "text-muted-foreground"
-                  )}
-                >
-                  {tradeDate ? format(new Date(tradeDate), "PPP") : (
-                    <span>Pick a date</span>
-                  )}
-                  {/* <CalendarIcon className="ml-auto h-4 w-4 opacity-50" /> */}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={tradeDate ? new Date(tradeDate) : undefined}
-                  onSelect={(date) => setTradeDate(date?.toISOString().split('T')[0] || '')}
-                  disabled={(date) =>
-                    date > new Date()
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="type">Type</Label>
-            <Select 
-              value={type} 
-              onValueChange={(value: 'Buy' | 'Sell') => setType(value)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select trade type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Buy">Buy</SelectItem>
-                <SelectItem value="Sell">Sell</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="entry">Entry Price</Label>
-            <Input
-              type="number"
-              id="entry"
-              value={entry}
-              onChange={(e) => setEntry(parseFloat(e.target.value))}
-              placeholder="Enter entry price"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="exit">Exit Price</Label>
-            <Input
-              type="number"
-              id="exit"
-              value={exit}
-              onChange={(e) => setExit(parseFloat(e.target.value))}
-              placeholder="Enter exit price"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="lotSize">Lot Size</Label>
-            <Input
-              type="number"
-              id="lotSize"
-              value={lotSize}
-              onChange={(e) => setLotSize(parseFloat(e.target.value))}
-              placeholder="Enter lot size"
-              required
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="stopLoss">Stop Loss</Label>
-            <Input
-              type="number"
-              id="stopLoss"
-              value={stopLoss}
-              onChange={(e) => setStopLoss(parseFloat(e.target.value))}
-              placeholder="Enter stop loss"
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="takeProfit">Take Profit</Label>
-            <Input
-              type="number"
-              id="takeProfit"
-              value={takeProfit}
-              onChange={(e) => setTakeProfit(parseFloat(e.target.value))}
-              placeholder="Enter take profit"
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="duration">Duration (minutes)</Label>
-            <Input
-              type="number"
-              id="duration"
-              value={duration}
-              onChange={(e) => setDuration(parseFloat(e.target.value))}
-              placeholder="Enter duration in minutes"
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="fees">Fees</Label>
-            <Input
-              type="number"
-              id="fees"
-              value={fees}
-              onChange={(e) => setFees(parseFloat(e.target.value))}
-              placeholder="Enter fees"
-            />
-          </div>
+          <Label htmlFor="symbol">Symbol</Label>
+          <Input id="symbol" type="text" placeholder="e.g., AAPL" {...form.register("symbol")} />
+          {form.formState.errors.symbol && (
+            <p className="text-red-500 text-sm">{form.formState.errors.symbol.message}</p>
+          )}
         </div>
 
-        {/* Second Column */}
         <div>
-          <div className="mb-4">
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Enter notes"
-              className="min-h-[100px]"
-            />
-          </div>
+          <Label htmlFor="entry_price">Entry Price</Label>
+          <Input id="entry_price" type="text" placeholder="e.g., 150.25" {...form.register("entry_price")} />
+          {form.formState.errors.entry_price && (
+            <p className="text-red-500 text-sm">{form.formState.errors.entry_price.message}</p>
+          )}
+        </div>
 
-          <div className="mb-4">
-            <Label>Hashtags</Label>
-            <div className="flex items-center mb-2">
-              <Input
-                type="text"
-                placeholder="Add a hashtag"
-                value={newHashtag}
-                onChange={(e) => setNewHashtag(e.target.value)}
+        <div>
+          <Label htmlFor="exit_price">Exit Price</Label>
+          <Input id="exit_price" type="text" placeholder="e.g., 155.50" {...form.register("exit_price")} />
+          {form.formState.errors.exit_price && (
+            <p className="text-red-500 text-sm">{form.formState.errors.exit_price.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="quantity">Quantity</Label>
+          <Input id="quantity" type="text" placeholder="e.g., 10" {...form.register("quantity")} />
+          {form.formState.errors.quantity && (
+            <p className="text-red-500 text-sm">{form.formState.errors.quantity.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label>Direction</Label>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="long" className="flex items-center">
+              <input
+                type="radio"
+                id="long"
+                value="long"
+                className="mr-2"
+                {...form.register("direction")}
               />
-              <Button type="button" variant="outline" size="sm" className="ml-2" onClick={handleAddHashtag}>
-                Add
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {hashtags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="mr-1 mb-1">
-                  {tag}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="ml-2 -mr-1 h-4 w-4"
-                    onClick={() => handleRemoveHashtag(tag)}
-                  >
-                    {/* <X className="h-3 w-3" /> */}
-                  </Button>
-                </Badge>
-              ))}
-            </div>
+              Long
+            </Label>
+            <Label htmlFor="short" className="flex items-center">
+              <input
+                type="radio"
+                id="short"
+                value="short"
+                className="mr-2"
+                {...form.register("direction")}
+              />
+              Short
+            </Label>
           </div>
-
-          <div className="mb-4">
-            <Label htmlFor="rating">Rating</Label>
-            <Input
-              type="number"
-              id="rating"
-              value={rating}
-              onChange={(e) => setRating(parseInt(e.target.value))}
-              placeholder="Enter rating"
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="marketSession">Market Session</Label>
-            <Input
-              type="text"
-              id="marketSession"
-              value={marketSession}
-              onChange={(e) => setMarketSession(e.target.value)}
-              placeholder="Enter market session"
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label htmlFor="playbook">Playbook</Label>
-            <Input
-              type="text"
-              id="playbook"
-              value={playbook}
-              onChange={(e) => setPlaybook(e.target.value)}
-              placeholder="Enter playbook"
-            />
-          </div>
-
-          <div className="mb-4">
-            <Label>Followed Rules</Label>
-            <div>
-              <Label htmlFor="rule1" className="inline-flex items-center space-x-2">
-                <Checkbox
-                  id="rule1"
-                  checked={followedRules.includes('Rule 1')}
-                  onCheckedChange={(checked) =>
-                    setFollowedRules(
-                      checked
-                        ? [...followedRules, 'Rule 1']
-                        : followedRules.filter((rule) => rule !== 'Rule 1')
-                    )
-                  }
-                />
-                <span>Rule 1</span>
-              </Label>
-            </div>
-            <div>
-              <Label htmlFor="rule2" className="inline-flex items-center space-x-2">
-                <Checkbox
-                  id="rule2"
-                  checked={followedRules.includes('Rule 2')}
-                  onCheckedChange={(checked) =>
-                    setFollowedRules(
-                      checked
-                        ? [...followedRules, 'Rule 2']
-                        : followedRules.filter((rule) => rule !== 'Rule 2')
-                    )
-                  }
-                />
-                <span>Rule 2</span>
-              </Label>
-            </div>
-          </div>
+          {form.formState.errors.direction && (
+            <p className="text-red-500 text-sm">{form.formState.errors.direction.message}</p>
+          )}
         </div>
 
-        <AddPairDialog
-          isOpen={isAddPairDialogOpen}
-          onClose={handleCloseAddPairDialog}
-          onPairAdded={handlePairAdded}
-        />
+        <div>
+          <Label htmlFor="entry_date">Entry Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !form.getValues("entry_date") && "text-muted-foreground"
+                )}
+              >
+                {form.getValues("entry_date") ? (
+                  format(form.getValues("entry_date"), "PPP")
+                ) : (
+                  <span>Pick a date</span>
+                )}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center" side="bottom">
+              <Calendar
+                mode="single"
+                selected={form.getValues("entry_date")}
+                onSelect={(date) => form.setValue("entry_date", date!)}
+                disabled={(date) =>
+                  date > new Date()
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          {form.formState.errors.entry_date && (
+            <p className="text-red-500 text-sm">{form.formState.errors.entry_date.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="exit_date">Exit Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[240px] justify-start text-left font-normal",
+                  !form.getValues("exit_date") && "text-muted-foreground"
+                )}
+              >
+                {form.getValues("exit_date") ? (
+                  format(form.getValues("exit_date"), "PPP")
+                ) : (
+                  <span>Pick a date</span>
+                )}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center" side="bottom">
+              <Calendar
+                mode="single"
+                selected={form.getValues("exit_date")}
+                onSelect={(date) => form.setValue("exit_date", date)}
+                disabled={(date) =>
+                  date > new Date() || date < form.getValues("entry_date")
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          {form.formState.errors.exit_date && (
+            <p className="text-red-500 text-sm">{form.formState.errors.exit_date.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="profit_loss">Profit/Loss</Label>
+          <Input id="profit_loss" type="text" placeholder="e.g., 500.00" {...form.register("profit_loss")} />
+          {form.formState.errors.profit_loss && (
+            <p className="text-red-500 text-sm">{form.formState.errors.profit_loss.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="fees">Fees</Label>
+          <Input id="fees" type="text" placeholder="e.g., 1.50" {...form.register("fees")} />
+          {form.formState.errors.fees && (
+            <p className="text-red-500 text-sm">{form.formState.errors.fees.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="notes">Notes</Label>
+          <Textarea id="notes" placeholder="Trade notes..." {...form.register("notes")} />
+        </div>
+
+        <div>
+          <Label htmlFor="tags">Tags</Label>
+          <Select
+            multiple
+            onValueChange={(value) => form.setValue("tags", value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select tags" />
+            </SelectTrigger>
+            <SelectContent>
+              {tags.map((tag) => (
+                <SelectItem key={tag} value={tag}>
+                  {tag}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="account_id">Trading Account</Label>
+          <Select onValueChange={(value) => form.setValue("account_id", value)}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Select account" />
+            </SelectTrigger>
+            <SelectContent>
+              {tradingAccounts.map((account) => (
+                <SelectItem key={account.id} value={account.id}>
+                  {account.name} (Balance: {account.balance})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? "Submitting..." : "Submit"}
+        </Button>
       </form>
-      <Separator className="my-4" />
-      <div className="flex justify-between">
-        <Button variant="outline" onClick={() => navigate('/trades')}>
-          Cancel
-        </Button>
-        <Button type="submit" onClick={handleSubmit}>
-          {id ? 'Update Trade' : 'Add Trade'}
-        </Button>
-      </div>
     </div>
   );
 };

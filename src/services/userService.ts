@@ -1,5 +1,13 @@
+
 import { supabase } from '@/lib/supabase';
-import { TradingAccount } from '@/contexts/TradeContext';
+
+export interface TradingAccount {
+  id: string;
+  userId: string;
+  name: string;
+  balance: number;
+  created_at?: string;
+}
 
 export const userService = {
   async getTradingAccounts(userId: string): Promise<TradingAccount[]> {
@@ -18,7 +26,7 @@ export const userService = {
         userId: account.user_id,
         name: account.name,
         balance: Number(account.balance),
-        createdAt: account.created_at
+        created_at: account.created_at
       }));
     } catch (error) {
       console.error('Error fetching trading accounts:', error);
@@ -47,7 +55,7 @@ export const userService = {
         userId: data.user_id,
         name: data.name,
         balance: Number(data.balance),
-        createdAt: data.created_at
+        created_at: data.created_at
       };
     } catch (error) {
       console.error('Error creating trading account:', error);
@@ -55,7 +63,7 @@ export const userService = {
     }
   },
   
-  async updateTradingAccount(id: string, updates: Partial<Omit<TradingAccount, 'id' | 'userId' | 'createdAt'>>): Promise<TradingAccount> {
+  async updateTradingAccount(id: string, updates: Partial<Omit<TradingAccount, 'id' | 'userId' | 'created_at'>>): Promise<TradingAccount> {
     try {
       // Convert our format to DB format
       const dbUpdates: any = {};
@@ -77,7 +85,7 @@ export const userService = {
         userId: data.user_id,
         name: data.name,
         balance: Number(data.balance),
-        createdAt: data.created_at
+        created_at: data.created_at
       };
     } catch (error) {
       console.error('Error updating trading account:', error);

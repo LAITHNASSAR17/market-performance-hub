@@ -1,7 +1,8 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import { hashPassword, verifyPassword } from '@/utils/encryption';
+import { hashPassword } from '@/utils/encryption';
 
 interface AuthContextProps {
   session: Session | null;
@@ -15,12 +16,22 @@ interface AuthContextProps {
   blockUser: (user: any) => Promise<void>;
   unblockUser: (user: any) => Promise<void>;
   changePassword: (user: any, newPassword: string) => Promise<void>;
-	updateUser: (user: any) => Promise<void>;
+  updateUser: (user: any) => Promise<void>;
   updateProfile: (data: any) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  handleRegister: (userData: any) => Promise<void>;
+  handleForgotPassword: (email: string) => Promise<void>;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  isAdmin: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateSubscriptionTier: (userId: string, tier: string) => Promise<void>;
 }
 
-export interface ExtendedUser extends User {
+// Define ExtendedUser without extending User to avoid compatibility issues
+export interface ExtendedUser {
+  id?: string;
   name?: string;
   email?: string;
   role?: string;
@@ -39,13 +50,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const loadSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
 
       setSession(session);
-      setUser(session?.user || null);
+      if (session?.user) {
+        setUser(session.user);
+        setIsAuthenticated(true);
+        
+        // Check if user is admin
+        const { data } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        
+        setIsAdmin(data?.role === 'admin');
+      }
       setLoading(false);
     };
 
@@ -53,7 +78,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setIsAuthenticated(!!session);
       setUser(session?.user || null);
+      
+      // Check admin status when auth state changes
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            setIsAdmin(data?.role === 'admin');
+          });
+      } else {
+        setIsAdmin(false);
+      }
     });
   }, []);
 
@@ -92,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (error) throw error;
       setUser(data.user);
+      setIsAuthenticated(true);
     } catch (error: any) {
       console.error('Signin error', error.message);
       throw error;
@@ -106,6 +147,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
+      setIsAuthenticated(false);
+      setIsAdmin(false);
     } catch (error: any) {
       console.error('Signout error', error.message);
       throw error;
@@ -263,6 +306,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Add the missing functions to align with interface
+  const handleRegister = async (userData: any) => {
+    return signUp(userData);
+  };
+
+  const login = async (email: string, password: string) => {
+    return signIn({ email, password });
+  };
+
+  const logout = async () => {
+    return signOut();
+  };
+
+  const handleForgotPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Forgot password error', error.message);
+      throw error;
+    }
+  };
+
+  const updateSubscriptionTier = async (userId: string, tier: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ subscription_tier: tier })
+        .eq('id', userId);
+      
+      if (error) throw error;
+      
+      // Update local users list if user being updated is in the list
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.id === userId ? { ...u, subscription_tier: tier } : u
+        )
+      );
+      
+      // Update local user if it's the current user
+      if (user?.id === userId) {
+        setUser(prevUser => prevUser ? { ...prevUser, subscription_tier: tier } : null);
+      }
+    } catch (error: any) {
+      console.error('Update subscription tier error', error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value: AuthContextProps = {
     session,
     user,
@@ -275,9 +372,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     blockUser,
     unblockUser,
     changePassword,
-		updateUser,
+    updateUser,
     updateProfile,
-    updatePassword
+    updatePassword,
+    handleRegister,
+    handleForgotPassword,
+    isAuthenticated,
+    isLoading: loading,
+    isAdmin,
+    login,
+    logout,
+    updateSubscriptionTier
   };
 
   return (
