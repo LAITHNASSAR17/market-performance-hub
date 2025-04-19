@@ -27,7 +27,7 @@ export interface TradeFormValues {
   followedRules?: string[];
 }
 
-export const tradeSchema = yup.object({
+export const tradeSchema = yup.object().shape({
   pair: yup.string().required('Trading pair is required'),
   account: yup.string().required('Account is required'),
   type: yup.string().oneOf(['Buy', 'Sell']).required('Trade type is required'),
@@ -51,4 +51,4 @@ export const tradeSchema = yup.object({
   marketSession: yup.string().optional(),
   playbook: yup.string().optional(),
   followedRules: yup.array().of(yup.string()).optional(),
-}).required();
+});
