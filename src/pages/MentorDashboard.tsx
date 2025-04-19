@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMentorship } from '@/contexts/MentorshipContext';
+import { useMenteeView } from '@/contexts/MenteeViewContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,10 +11,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserPlus, Users } from 'lucide-react';
+import { UserPlus, Users, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import CumulativePLChart from '@/components/CumulativePLChart';
 import AverageTradeCards from '@/components/AverageTradeCards';
-import { ITrade } from '@/services/tradeService';
 import { supabase } from '@/lib/supabase';
 
 interface MenteeStats {
@@ -43,6 +44,7 @@ const CHART_COLORS = [
 const MentorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { mentorships, isLoading } = useMentorship();
+  const { enterMenteeView } = useMenteeView();
   const navigate = useNavigate();
   const [menteeStats, setMenteeStats] = useState<MenteeStats[]>([]);
   const [selectedMentees, setSelectedMentees] = useState<string[]>([]);
@@ -177,6 +179,12 @@ const MentorDashboard: React.FC = () => {
       );
   };
 
+  const handlePlayAsMentee = (mentee: MenteeStats) => {
+    if (mentee.status === 'pending') return;
+    enterMenteeView(mentee.id, mentee.name);
+    navigate('/dashboard');
+  };
+
   return (
     <Layout>
       <div className="container mx-auto p-4">
@@ -224,7 +232,7 @@ const MentorDashboard: React.FC = () => {
                           <AvatarImage src={`https://api.dicebear.com/6.x/initials/svg?seed=${mentee.name}`} />
                           <AvatarFallback>{mentee.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <div>
+                        <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{mentee.name}</span>
                             {mentee.status === 'pending' && (
@@ -233,6 +241,17 @@ const MentorDashboard: React.FC = () => {
                           </div>
                           <p className="text-xs text-gray-500">{mentee.email}</p>
                         </div>
+                        {mentee.status === 'accepted' && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePlayAsMentee(mentee)}
+                            className="ml-auto"
+                            title="View mentee's account"
+                          >
+                            <Play className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>

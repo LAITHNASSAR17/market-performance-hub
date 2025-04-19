@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
@@ -44,6 +43,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
 import { TagsProvider } from './contexts/TagsContext';
 import MentorDashboard from './pages/MentorDashboard';
+import { MenteeViewProvider } from './contexts/MenteeViewContext';
 
 function App() {
   return (
@@ -54,10 +54,12 @@ function App() {
             <TradeProvider>
               <NotebookProvider>
                 <MentorshipProvider>
-                  <TooltipProvider>
-                    <Toaster />
-                    <AnimatedRoutes />
-                  </TooltipProvider>
+                  <MenteeViewProvider>
+                    <TooltipProvider>
+                      <Toaster />
+                      <AnimatedRoutes />
+                    </TooltipProvider>
+                  </MenteeViewProvider>
                 </MentorshipProvider>
               </NotebookProvider>
             </TradeProvider>

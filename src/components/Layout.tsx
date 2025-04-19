@@ -12,6 +12,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useToast } from "@/hooks/use-toast";
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { MenteeViewBanner } from './MenteeViewBanner';
+import { useMenteeView } from '@/contexts/MenteeViewContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -48,6 +50,8 @@ const Layout: React.FC<LayoutProps> = ({
       setSidebarOpen(true);
     }
   }, [isMobile]);
+
+  const { isInMenteeView } = useMenteeView();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
@@ -210,6 +214,7 @@ const Layout: React.FC<LayoutProps> = ({
       {sidebarOpen && isMobile && <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={() => setSidebarOpen(false)} />}
 
       <main className="flex-1 overflow-y-auto bg-trading-background dark:bg-gray-800 p-4 md:p-6">
+        {isInMenteeView && <MenteeViewBanner />}
         {children}
       </main>
     </div>;
