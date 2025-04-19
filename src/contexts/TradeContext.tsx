@@ -12,13 +12,8 @@ import { userService, ITradingAccount } from '@/services/userService';
 export type Trade = TradeType;
 
 // Update TradingAccount interface to match the ITradingAccount structure
-export interface TradingAccount {
-  id: string;
-  userId: string;
-  name: string;
-  balance: number;
-  currency?: string; // Made optional to match ITradingAccount
-  createdAt: string;
+export interface TradingAccount extends ITradingAccount {
+  currency?: string; // Added optional currency property to match previous usage
 }
 
 export interface Symbol {
@@ -151,14 +146,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     try {
       const accounts = await userService.getTradingAccounts(user.id);
-      // Convert ITradingAccount[] to TradingAccount[]
+      // Convert ITradingAccount[] to TradingAccount[] with added currency property
       const convertedAccounts: TradingAccount[] = accounts.map(acc => ({
-        id: acc.id,
-        userId: acc.userId,
-        name: acc.name,
-        balance: acc.balance,
-        createdAt: acc.createdAt,
-        currency: 'USD' // Default currency since it's required in TradingAccount
+        ...acc,
+        currency: 'USD' // Default currency
       }));
       setTradingAccounts(convertedAccounts);
     } catch (error) {
@@ -185,14 +176,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     try {
       const newAccount = await userService.createTradingAccount(user.id, name, balance);
-      // Convert ITradingAccount to TradingAccount
+      // Convert ITradingAccount to TradingAccount with added currency property
       const convertedAccount: TradingAccount = {
-        id: newAccount.id,
-        userId: newAccount.userId,
-        name: newAccount.name,
-        balance: newAccount.balance,
-        createdAt: newAccount.createdAt,
-        currency: 'USD' // Default currency since it's required in TradingAccount
+        ...newAccount,
+        currency: 'USD' // Default currency
       };
       
       setTradingAccounts(prev => [...prev, convertedAccount]);
