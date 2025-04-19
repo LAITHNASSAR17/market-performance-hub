@@ -5,6 +5,7 @@ export interface Trade {
   id: string;
   userId: string;
   pair: string;
+  symbol?: string; // Add symbol as optional property
   type: 'Buy' | 'Sell';
   entry: number;
   exit: number | null;
@@ -36,6 +37,7 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   id: dbTrade.id,
   userId: dbTrade.userId,
   pair: dbTrade.symbol,
+  symbol: dbTrade.symbol,
   type: dbTrade.direction === 'long' ? 'Buy' : 'Sell',
   entry: dbTrade.entryPrice,
   exit: dbTrade.exitPrice || null,
@@ -67,7 +69,7 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
 // Make sure mapTradeToDBTrade passes the correct values
 export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => ({
   userId: '', // Will be set by the service
-  symbol: trade.pair,
+  symbol: trade.symbol || trade.pair,
   entryPrice: trade.entry,
   exitPrice: trade.exit,
   quantity: trade.lotSize,
