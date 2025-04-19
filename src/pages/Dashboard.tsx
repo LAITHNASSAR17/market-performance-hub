@@ -215,7 +215,7 @@ const Dashboard: React.FC = () => {
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold mb-1">لوحة التحكم</h1>
-          <p className="text-gray-500">نظرة عامة على أداء التداول الخاص بك</p>
+          <p className="text-gray-500">نظرة عامة على أداء ا��تداول الخاص بك</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>

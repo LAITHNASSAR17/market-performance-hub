@@ -70,7 +70,7 @@ export const tradeService = {
         take_profit: tradeData.takeProfit,
         duration_minutes: tradeData.durationMinutes,
         market_session: tradeData.marketSession,
-        followed_rules: tradeData.followedRules
+        followed_rules: tradeData.followedRules || []
       })
       .select()
       .single();
