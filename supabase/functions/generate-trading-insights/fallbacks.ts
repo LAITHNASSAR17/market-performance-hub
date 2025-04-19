@@ -1,5 +1,5 @@
 
-import { TradingInsight } from './types';
+import { TradingInsight } from './types.ts';
 
 export const getFallbackInsights = (minTrades: number): TradingInsight[] => [
   {

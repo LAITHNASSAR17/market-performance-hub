@@ -1,5 +1,5 @@
 
-import { TradeStats } from './types';
+import { TradeStats } from './types.ts';
 
 export const generateUserPrompt = (
   purpose: string,
