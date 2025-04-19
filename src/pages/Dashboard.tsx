@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
@@ -26,7 +27,7 @@ import CumulativePLChart from '@/components/CumulativePLChart';
 import DailyPLBarChart from '@/components/DailyPLBarChart';
 import { addDays, startOfWeek, endOfWeek, format, isSameDay, isSameWeek, parseISO, isMonday, isSunday, getWeek } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import AverageTradeCards from '@/components/AverageTradeCards';
 import TradingTips from '@/components/TradingTips';
 import TradingInsights from '@/components/TradingInsights';
@@ -215,7 +216,7 @@ const Dashboard: React.FC = () => {
       <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold mb-1">لوحة التحكم</h1>
-          <p className="text-gray-500">نظرة عامة على أداء ا��تداول الخاص بك</p>
+          <p className="text-gray-500">نظرة عامة على أداء التداول الخاص بك</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Select value={timeframeFilter} onValueChange={setTimeframeFilter}>

@@ -69,8 +69,9 @@ export const tradeService = {
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
         duration_minutes: tradeData.durationMinutes,
-        market_session: tradeData.marketSession,
-        followed_rules: tradeData.followedRules || []
+        market_session: tradeData.marketSession || null,
+        followed_rules: tradeData.followedRules || [],
+        playbook: tradeData.playbook || null
       })
       .select()
       .single();
@@ -104,7 +105,14 @@ export const tradeService = {
     if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
     if (tradeData.marketSession !== undefined) updateObject.market_session = tradeData.marketSession;
     if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
+    if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
     
+    if (tradeData.exitDate !== undefined && tradeData.entryDate) {
+      updateObject.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
+    }
+
+    console.log('Updating trade with data:', updateObject);
+
     const { data, error } = await supabase
       .from('trades')
       .update(updateObject)
