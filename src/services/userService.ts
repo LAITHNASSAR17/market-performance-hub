@@ -47,9 +47,7 @@ export const userService = {
       .from('users')
       .insert({
         ...userData,
-        role: 'user', // Always set new users to 'user' role
-        subscription_tier: 'starter',
-        is_blocked: false,
+        subscription_tier: 'starter', // Set default subscription tier to 'starter'
         created_at: now,
         updated_at: now
       })
@@ -88,6 +86,7 @@ export const userService = {
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
     let query = supabase.from('users').select('*');
     
+    // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined) {
         query = query.eq(key, value);
@@ -172,7 +171,7 @@ function formatUser(data: any): IUser {
     name: data.name,
     email: data.email,
     password: data.password,
-    role: data.role || 'user', // Ensure a default role is set
+    role: data.role || 'user',
     isBlocked: data.is_blocked || false,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at)
