@@ -1,4 +1,3 @@
-
 export interface SiteSettings {
   id: string;
   site_name: string;
