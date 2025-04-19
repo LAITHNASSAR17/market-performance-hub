@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -30,6 +29,7 @@ interface MenteeStats {
   lossCount: number;
   trades: any[];
   color: string;
+  status: 'pending' | 'accepted';
 }
 
 const CHART_COLORS = [
@@ -58,7 +58,6 @@ const MentorDashboard: React.FC = () => {
       setIsLoadingStats(false);
     }
 
-    // Only proceed if we have mentorships and the user is a mentor
     if (mentorships.some(m => m.mentor_id === user.id)) {
       fetchMenteeStats();
     }
@@ -68,7 +67,6 @@ const MentorDashboard: React.FC = () => {
     setIsLoadingStats(true);
     
     try {
-      // Filter for accepted mentorships where the current user is the mentor
       const acceptedMentorships = mentorships.filter(
         m => m.mentor_id === user?.id && m.status === 'accepted' && m.mentee_id
       );
@@ -78,7 +76,6 @@ const MentorDashboard: React.FC = () => {
       );
 
       const menteeStatsPromises = [...acceptedMentorships, ...pendingMentorships].map(async (mentorship, index) => {
-        // For pending invitations without a mentee_id yet
         if (!mentorship.mentee_id) {
           return {
             id: mentorship.id,
@@ -97,14 +94,12 @@ const MentorDashboard: React.FC = () => {
           };
         }
 
-        // Get mentee's info
         const { data: menteeData } = await supabase
           .from('users')
           .select('name, email')
           .eq('id', mentorship.mentee_id)
           .single();
 
-        // Get mentee's trades
         const { data: trades } = await supabase
           .from('trades')
           .select('*')
@@ -112,7 +107,6 @@ const MentorDashboard: React.FC = () => {
 
         if (!trades) return null;
 
-        // Calculate stats
         const totalPL = trades.reduce((sum, trade) => sum + (trade.profit_loss || 0), 0);
         const winningTrades = trades.filter(trade => (trade.profit_loss || 0) > 0);
         const losingTrades = trades.filter(trade => (trade.profit_loss || 0) < 0);
@@ -139,7 +133,7 @@ const MentorDashboard: React.FC = () => {
           lossCount,
           trades: trades.map(trade => ({
             id: trade.id,
-            date: trade.entry_date.split('T')[0], // Format for the chart
+            date: trade.entry_date.split('T')[0],
             profitLoss: trade.profit_loss || 0
           })),
           status: 'accepted',
@@ -158,17 +152,14 @@ const MentorDashboard: React.FC = () => {
 
   const handleMenteeSelection = (menteeId: string) => {
     setSelectedMentees(prev => {
-      // If already selected, remove it
       if (prev.includes(menteeId)) {
         return prev.filter(id => id !== menteeId);
       }
       
-      // If not selected but we already have 5, don't add
       if (prev.length >= 5) {
         return prev;
       }
       
-      // Add the mentee to selection
       return [...prev, menteeId];
     });
   };
@@ -192,7 +183,6 @@ const MentorDashboard: React.FC = () => {
         <h1 className="text-2xl font-bold mb-6">Mentor Dashboard</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Mentee Sidebar */}
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -251,9 +241,7 @@ const MentorDashboard: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* P&L Comparison Chart */}
             <Card>
               <CardHeader>
                 <CardTitle>Daily Net Cumulative P&L Comparison</CardTitle>
@@ -272,7 +260,6 @@ const MentorDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Mentee Stats Table */}
             <Card>
               <CardHeader>
                 <CardTitle>Mentee Statistics</CardTitle>
@@ -329,7 +316,6 @@ const MentorDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Selected Mentee Details */}
             {selectedMentees.length === 1 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {menteeStats

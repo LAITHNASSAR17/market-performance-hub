@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade, Trade } from '@/contexts/TradeContext';
 import StatCard from '@/components/StatCard';
-import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight, Brain } from 'lucide-react';
+import { BarChart2, TrendingUp, TrendingDown, DollarSign, Activity, Calendar, CircleIcon, ExternalLink, Eye, Trash2, Menu, ChevronRight, Brain, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,6 @@ import AverageTradeCards from '@/components/AverageTradeCards';
 import TradingTips from '@/components/TradingTips';
 import TradingInsights from '@/components/TradingInsights';
 import { Link } from 'react-router-dom';
-import Users from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { trades, deleteTrade } = useTrade();
