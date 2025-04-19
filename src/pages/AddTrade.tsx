@@ -8,7 +8,6 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import TradePairSelector from '@/components/trade/TradePairSelector';
 import TradeTypeSelector from '@/components/trade/TradeTypeSelector';
@@ -19,7 +18,7 @@ import TradeDateSelector from '@/components/trade/TradeDateSelector';
 import TradeAccountSelector from '@/components/trade/TradeAccountSelector';
 import MarketSessionSelector from '@/components/trade/MarketSessionSelector';
 import TradeImages from '@/components/trade/TradeImages';
-import { Trade } from '@/types/settings';
+import { TRADE_TYPES, TradeType } from '@/constants/tradeTypes';
 
 const marketSessions = [
   { id: 'asia', name: 'Asia' },
@@ -42,7 +41,7 @@ const AddTrade: React.FC = () => {
   const [tradeData, setTradeData] = useState<Omit<Trade, 'id' | 'createdAt'>>({
     userId: user?.id || 'demo-user-id',
     pair: pairs[0] || 'EURUSD',
-    type: 'Buy',
+    type: TRADE_TYPES.BUY as TradeType,
     entry: 0,
     exit: 0,
     lotSize: 0,
@@ -117,6 +116,13 @@ const AddTrade: React.FC = () => {
     if (name === 'pair') {
       setTradeData(prev => ({ ...prev, pair: value }));
     }
+  };
+
+  const handleTypeChange = (value: TradeType) => {
+    setTradeData(prev => ({
+      ...prev,
+      type: value
+    }));
   };
 
   const handleSaveClick = async () => {
@@ -204,7 +210,7 @@ const AddTrade: React.FC = () => {
               />
               <TradeTypeSelector
                 selectedType={tradeData.type}
-                onTypeChange={(value) => handleSelectChange('type', value)}
+                onTypeChange={handleTypeChange}
               />
             </div>
 
