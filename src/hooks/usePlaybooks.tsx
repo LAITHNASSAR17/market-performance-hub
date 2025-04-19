@@ -15,11 +15,15 @@ export interface IPlaybook {
   category?: string;
   netProfitLoss?: number;
   totalTrades?: number;
+  rules?: string[];
+  success_criteria?: string[];
+  avgWinner?: number;
+  avgLoser?: number;
+  profitFactor?: string;
+  missedTrades?: number;
 }
 
-export interface PlaybookEntry {
-  id: string;
-  name: string;
+export interface PlaybookEntry extends IPlaybook {
   entryConditions: string[];
   exitConditions: string[];
 }
@@ -28,6 +32,7 @@ export interface PlaybookRule {
   id: string;
   description: string;
   isRequired: boolean;
+  type?: string;
 }
 
 export interface ITrade {
@@ -75,7 +80,12 @@ export const usePlaybooks = () => {
         isPrivate: false,
         category: "Momentum",
         netProfitLoss: 1250,
-        totalTrades: 35
+        totalTrades: 35,
+        profitFactor: "1.8",
+        avgWinner: 120,
+        avgLoser: -67,
+        rules: ["Follow the trend", "Wait for pullback", "Confirm with volume"],
+        success_criteria: ["Trend continues", "2:1 reward to risk ratio"]
       },
       {
         id: "2",
@@ -89,7 +99,12 @@ export const usePlaybooks = () => {
         isPrivate: true,
         category: "Breakout",
         netProfitLoss: 980,
-        totalTrades: 28
+        totalTrades: 28,
+        profitFactor: "1.5",
+        avgWinner: 140,
+        avgLoser: -72,
+        rules: ["Identify clear range", "Wait for volume confirmation", "Avoid trading into news"],
+        success_criteria: ["Price makes new high/low", "Volume increases on breakout"]
       },
       {
         id: "3",
@@ -103,7 +118,12 @@ export const usePlaybooks = () => {
         isPrivate: false,
         category: "Technical",
         netProfitLoss: 1750,
-        totalTrades: 42
+        totalTrades: 42,
+        profitFactor: "2.0",
+        avgWinner: 110,
+        avgLoser: -60,
+        rules: ["Draw Fibonacci levels on major moves", "Wait for price to respect level", "Look for confluence with other indicators"],
+        success_criteria: ["Price bounces from key level", "Trend continuation"]
       }
     ];
 

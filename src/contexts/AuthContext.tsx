@@ -19,7 +19,8 @@ type AuthContextType = {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  signIn: (email: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>; // Alias for signIn
   signOut: () => Promise<void>;
   logout: () => Promise<void>; // Alias for signOut for compatibility
   handleRegister: (formData: any) => Promise<void>;
@@ -123,42 +124,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [toast]);
 
-  const signIn = async (email: string): Promise<void> => {
+  // Fix 1: Add proper login method with email and password
+  const signIn = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
       if (error) {
         console.error('Error signing in:', error);
         throw error;
       }
+      
       toast({
-        title: "Check your email",
-        description: "We've sent you a magic link to sign in.",
+        title: "تم تسجيل الدخول بنجاح",
+        description: "مرحباً بك مرة أخرى",
       });
+      
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Exception signing in:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to sign in.",
+        title: "خطأ",
+        description: error.message || "فشل تسجيل الدخول",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
+  
+  // Alias for backward compatibility
+  const login = signIn;
 
   const signOut = async (): Promise<void> => {
     setIsLoading(true);
     try {
       await supabase.auth.signOut();
       toast({
-        description: "Signed out successfully.",
+        description: "تم تسجيل الخروج بنجاح",
       });
     } catch (error: any) {
       console.error('Error signing out:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to sign out.",
+        title: "خطأ",
+        description: error.message || "فشل تسجيل الخروج",
         variant: "destructive",
       });
     } finally {
@@ -195,11 +208,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error('User ID not available');
         }
 
-        // Create a profile for the new user
+        // Fix 2: Add the user ID to the profile
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
-            id: userId, // Use the UUID from auth.users
+            id: userId,
             name: formData.name,
             email: formData.email,
             password: '', // We don't store the actual password in profiles
@@ -215,23 +228,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         toast({
-          title: "Success",
-          description: "Registration successful! Check your email to verify your account.",
+          title: "نجاح",
+          description: "تم التسجيل بنجاح! تحقق من بريدك الإلكتروني للتحقق من حسابك",
         });
         navigate('/verify-email');
       } catch (error: any) {
         console.error('Error during post-registration:', error);
         toast({
-          title: "Error",
-          description: error.message || "Failed to create profile.",
+          title: "خطأ",
+          description: error.message || "فشل إنشاء الملف الشخصي",
           variant: "destructive",
         });
       }
     } catch (error: any) {
       console.error('Exception signing up:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to sign up.",
+        title: "خطأ",
+        description: error.message || "فشل التسجيل",
         variant: "destructive",
       });
     } finally {
@@ -252,14 +265,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       toast({
-        title: "Check your email",
-        description: "We've sent you a link to reset your password.",
+        title: "تحقق من بريدك الإلكتروني",
+        description: "لقد أرسلنا لك رابطاً لإعادة تعيين كلمة المرور",
       });
     } catch (error: any) {
       console.error('Exception sending reset password email:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to send reset password email.",
+        title: "خطأ",
+        description: error.message || "فشل إرسال بريد إلكتروني لإعادة تعيين كلمة المرور",
         variant: "destructive",
       });
     } finally {
@@ -280,14 +293,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       toast({
-        description: "Password updated successfully!",
+        description: "تم تحديث كلمة المرور بنجاح!",
       });
       navigate('/login');
     } catch (error: any) {
       console.error('Exception updating password:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to update password.",
+        title: "خطأ",
+        description: error.message || "فشل تحديث كلمة المرور",
         variant: "destructive",
       });
     } finally {
@@ -295,15 +308,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Fix 3: Update the verification method
   const handleVerifyEmail = async (token: string, type: string): Promise<void> => {
     setIsLoading(true);
     try {
-      // Use the type as MobileOtpType or EmailOtpType from Supabase
-      const otpType = type === 'email' ? 'email' : 'sms' as any;
-      
       const { error } = await supabase.auth.verifyOtp({
-        type: otpType,
-        token: token,
+        token,
+        type: type === 'email' ? 'email' : 'sms',
+        email: '', // This is a required field in the latest Supabase version
       });
 
       if (error) {
@@ -312,14 +324,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       toast({
-        description: "Email verified successfully!",
+        description: "تم التحقق من البريد الإلكتروني بنجاح!",
       });
       navigate('/login');
     } catch (error: any) {
       console.error('Exception verifying email:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to verify email.",
+        title: "خطأ",
+        description: error.message || "فشل التحقق من البريد الإلكتروني",
         variant: "destructive",
       });
     } finally {
@@ -340,8 +352,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
-        title: "Error",
-        description: "Failed to fetch users.",
+        title: "خطأ",
+        description: "فشل جلب المستخدمين",
         variant: "destructive"
       });
     }
@@ -360,14 +372,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getAllUsers();
       
       toast({
-        title: "User Blocked",
-        description: `${user.name} has been blocked successfully.`
+        title: "تم حظر المستخدم",
+        description: `تم حظر ${user.name} بنجاح`
       });
     } catch (error) {
       console.error('Error blocking user:', error);
       toast({
-        title: "Error",
-        description: "Failed to block user.",
+        title: "خطأ",
+        description: "فشل حظر المستخدم",
         variant: "destructive"
       });
     }
@@ -386,14 +398,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getAllUsers();
       
       toast({
-        title: "User Unblocked",
-        description: `${user.name} has been unblocked successfully.`
+        title: "تم إلغاء حظر المستخدم",
+        description: `تم إلغاء حظر ${user.name} بنجاح`
       });
     } catch (error) {
       console.error('Error unblocking user:', error);
       toast({
-        title: "Error",
-        description: "Failed to unblock user.",
+        title: "خطأ",
+        description: "فشل إلغاء حظر المستخدم",
         variant: "destructive"
       });
     }
@@ -403,8 +415,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Note: In a real application, this would need to be handled by a server function
     // as client-side code can't change other users' passwords directly
     toast({
-      title: "Operation Not Supported",
-      description: "Password changes for other users requires server-side implementation.",
+      title: "العملية غير مدعومة",
+      description: "تغيير كلمات المرور للمستخدمين الآخرين يتطلب تنفيذ على جانب الخادم",
       variant: "destructive"
     });
   };
@@ -428,14 +440,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       getAllUsers();
       
       toast({
-        title: "User Updated",
-        description: `${userData.name} has been updated successfully.`
+        title: "تم تحديث المستخدم",
+        description: `تم تحديث ${userData.name} بنجاح`
       });
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
-        title: "Error",
-        description: "Failed to update user.",
+        title: "خطأ",
+        description: "فشل تحديث المستخدم",
         variant: "destructive"
       });
     }
@@ -450,6 +462,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated,
         isAdmin,
         signIn,
+        login,
         signOut,
         logout,
         handleRegister,
