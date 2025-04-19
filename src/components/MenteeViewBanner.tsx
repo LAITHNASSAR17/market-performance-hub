@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useMenteeView } from '@/contexts/MenteeViewContext';
 import { Button } from '@/components/ui/button';
-import { ExitIcon } from '@radix-ui/react-icons';
+import { LogOut } from 'lucide-react';
 
 export const MenteeViewBanner = () => {
   const { activeMenteeName, exitMenteeView } = useMenteeView();
@@ -23,7 +23,7 @@ export const MenteeViewBanner = () => {
           <span className="font-medium">{activeMenteeName}</span>
         </div>
         <Button variant="outline" size="sm" onClick={handleExit}>
-          <ExitIcon className="mr-2 h-4 w-4" />
+          <LogOut className="mr-2 h-4 w-4" />
           Exit View
         </Button>
       </div>
