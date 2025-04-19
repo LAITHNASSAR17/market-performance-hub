@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -324,7 +325,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setLoading(true);
         try {
           console.log('Fetching trades for user:', user.id);
-          
           const { data, error } = await supabase
             .from('trades')
             .select(`
@@ -348,7 +348,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               take_profit, 
               duration_minutes, 
               playbook,
-              followed_rules
+              followed_rules,
+              market_session
             `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
@@ -366,6 +367,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           console.log('Fetched trades data:', data);
           const formattedTrades: Trade[] = data.map(trade => {
+            // Create base trade object with required fields
             const formattedTrade: Trade = {
               id: trade.id,
               userId: trade.user_id,
@@ -394,6 +396,11 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               playbook: trade.playbook,
               followedRules: trade.followed_rules || []
             };
+            
+            // Only add marketSession if it exists in the response
+            if (trade.market_session) {
+              formattedTrade.marketSession = trade.market_session;
+            }
             
             return formattedTrade;
           });
@@ -437,32 +444,27 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         throw new Error('Invalid date format');
       }
       
-      const insertData = {
-        user_id: user.id,
-        symbol: newTradeData.pair,
-        entry_price: newTradeData.entry,
-        exit_price: newTradeData.exit || null,
-        quantity: newTradeData.lotSize,
-        direction: newTradeData.type === 'Buy' ? 'long' : 'short',
-        entry_date: entryDate.toISOString(),
-        exit_date: newTradeData.exit ? entryDate.toISOString() : null,
-        profit_loss: newTradeData.profitLoss,
-        fees: newTradeData.commission || 0,
-        notes: newTradeData.notes || '',
-        tags: newTradeData.hashtags || [],
-        stop_loss: newTradeData.stopLoss || null,
-        take_profit: newTradeData.takeProfit || null,
-        duration_minutes: newTradeData.durationMinutes || null,
-        rating: newTradeData.rating || 0
-      };
-      
-      const finalInsertData = newTradeData.marketSession 
-        ? { ...insertData, market_session: newTradeData.marketSession }
-        : insertData;
-      
       const { data, error } = await supabase
         .from('trades')
-        .insert(finalInsertData)
+        .insert({
+          user_id: user.id,
+          symbol: newTradeData.pair,
+          entry_price: newTradeData.entry,
+          exit_price: newTradeData.exit || null,
+          quantity: newTradeData.lotSize,
+          direction: newTradeData.type === 'Buy' ? 'long' : 'short',
+          entry_date: entryDate.toISOString(),
+          exit_date: newTradeData.exit ? entryDate.toISOString() : null,
+          profit_loss: newTradeData.profitLoss,
+          fees: newTradeData.commission || 0,
+          notes: newTradeData.notes || '',
+          tags: newTradeData.hashtags || [],
+          stop_loss: newTradeData.stopLoss || null,
+          take_profit: newTradeData.takeProfit || null,
+          duration_minutes: newTradeData.durationMinutes || null,
+          rating: newTradeData.rating || 0,
+          market_session: newTradeData.marketSession || null
+        })
         .select()
         .single();
 
@@ -522,14 +524,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (tradeUpdate.stopLoss !== undefined) updateData.stop_loss = tradeUpdate.stopLoss;
       if (tradeUpdate.takeProfit !== undefined) updateData.take_profit = tradeUpdate.takeProfit;
       if (tradeUpdate.durationMinutes !== undefined) updateData.duration_minutes = tradeUpdate.durationMinutes;
-      
-      if (tradeUpdate.marketSession !== undefined) {
-        try {
-          updateData.market_session = tradeUpdate.marketSession;
-        } catch (err) {
-          console.log('Market session field might not be available, skipping this field update');
-        }
-      }
+      if (tradeUpdate.marketSession !== undefined) updateData.market_session = tradeUpdate.marketSession;
       
       if (tradeUpdate.exit !== undefined && tradeUpdate.date) {
         updateData.exit_date = tradeUpdate.exit ? new Date(tradeUpdate.date).toISOString() : null;
