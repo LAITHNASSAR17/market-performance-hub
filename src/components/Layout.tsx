@@ -163,9 +163,6 @@ const Layout: React.FC<LayoutProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
-                    
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link to="/user-profile" className="flex items-center">
                       <UserCog className="mr-2 h-4 w-4" />
                       User Profile
