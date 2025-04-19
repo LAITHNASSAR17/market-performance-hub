@@ -1,13 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Bell, Check } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { Bell, Check, TrendingUp, TrendingDown, AlertTriangle, BadgeCheck, Info, Clock } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuLabel, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +22,7 @@ type Alert = {
   severity: 'info' | 'warning' | 'critical';
   seen: boolean;
   created_at: string;
+  related_tag?: string;
 };
 
 const AlertsDropdown: React.FC = () => {
@@ -62,7 +65,7 @@ const AlertsDropdown: React.FC = () => {
       .from('alerts')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(15);
 
     if (data) setAlerts(data);
   };
@@ -91,14 +94,35 @@ const AlertsDropdown: React.FC = () => {
 
   const getAlertIcon = (type: string) => {
     switch (type) {
-      case 'mistake': return '⚠️';
-      case 'success': return '🎉';
-      case 'drop': return '📉';
-      default: return '📢';
+      case 'mistake': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'success': return <BadgeCheck className="h-4 w-4 text-emerald-500" />;
+      case 'drop': return <TrendingDown className="h-4 w-4 text-red-500" />;
+      case 'improvement': return <TrendingUp className="h-4 w-4 text-blue-500" />;
+      default: return <Info className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getAlertTimestamp = (createdAt: string) => {
+    const date = new Date(createdAt);
+    const now = new Date();
+    const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
+    
+    if (diffInHours < 1) {
+      const minutes = Math.floor(diffInHours * 60);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    } else if (diffInHours < 24) {
+      const hours = Math.floor(diffInHours);
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else {
+      const days = Math.floor(diffInHours / 24);
+      return `${days} day${days !== 1 ? 's' : ''} ago`;
     }
   };
 
   const unreadAlerts = alerts.filter(alert => !alert.seen);
+  const criticalAlerts = alerts.filter(alert => alert.severity === 'critical' && !alert.seen);
+  const warningAlerts = alerts.filter(alert => alert.severity === 'warning' && !alert.seen);
+  const infoAlerts = alerts.filter(alert => alert.severity === 'info' && !alert.seen);
 
   return (
     <DropdownMenu>
@@ -106,17 +130,17 @@ const AlertsDropdown: React.FC = () => {
         <Bell className="h-5 w-5" />
         {unreadAlerts.length > 0 && (
           <Badge 
-            variant="destructive" 
+            variant={criticalAlerts.length > 0 ? "destructive" : warningAlerts.length > 0 ? "warning" : "default"}
             className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs"
           >
             {unreadAlerts.length}
           </Badge>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-96">
+      <DropdownMenuContent className="w-96 max-h-[70vh] overflow-y-auto">
         <DropdownMenuLabel>
           <div className="flex justify-between items-center">
-            Alerts
+            Trading Alerts
             {unreadAlerts.length > 0 && (
               <button 
                 onClick={() => unreadAlerts.forEach(alert => markAlertAsSeen(alert.id))}
@@ -127,36 +151,137 @@ const AlertsDropdown: React.FC = () => {
             )}
           </div>
         </DropdownMenuLabel>
-        {alerts.length === 0 ? (
+        {criticalAlerts.length > 0 && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-red-500 font-normal">Critical Alerts</DropdownMenuLabel>
+            {criticalAlerts.map(alert => (
+              <AlertItem 
+                key={alert.id} 
+                alert={alert} 
+                onMarkSeen={markAlertAsSeen} 
+              />
+            ))}
+            <DropdownMenuSeparator />
+          </DropdownMenuGroup>
+        )}
+        {warningAlerts.length > 0 && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-amber-500 font-normal">Warning Alerts</DropdownMenuLabel>
+            {warningAlerts.map(alert => (
+              <AlertItem 
+                key={alert.id} 
+                alert={alert} 
+                onMarkSeen={markAlertAsSeen} 
+              />
+            ))}
+            <DropdownMenuSeparator />
+          </DropdownMenuGroup>
+        )}
+        {infoAlerts.length > 0 && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-blue-500 font-normal">Insights</DropdownMenuLabel>
+            {infoAlerts.map(alert => (
+              <AlertItem 
+                key={alert.id} 
+                alert={alert} 
+                onMarkSeen={markAlertAsSeen} 
+              />
+            ))}
+            <DropdownMenuSeparator />
+          </DropdownMenuGroup>
+        )}
+        {alerts.filter(alert => alert.seen).length > 0 && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-gray-500 font-normal">Read Alerts</DropdownMenuLabel>
+            {alerts.filter(alert => alert.seen).slice(0, 5).map(alert => (
+              <AlertItem 
+                key={alert.id} 
+                alert={alert} 
+                onMarkSeen={markAlertAsSeen} 
+              />
+            ))}
+          </DropdownMenuGroup>
+        )}
+        {alerts.length === 0 && (
           <DropdownMenuItem disabled>
-            No alerts at the moment
+            <div className="flex flex-col items-center w-full py-6 text-center">
+              <Bell className="h-8 w-8 text-muted-foreground mb-2 opacity-40" />
+              <p className="text-muted-foreground">No alerts at the moment</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Alerts will appear as you continue trading
+              </p>
+            </div>
           </DropdownMenuItem>
-        ) : (
-          alerts.map(alert => (
-            <DropdownMenuItem 
-              key={alert.id} 
-              className={`flex items-center justify-between ${!alert.seen ? 'bg-muted/50' : ''}`}
-            >
-              <div>
-                <div className="flex items-center">
-                  <span className="mr-2">{getAlertIcon(alert.type)}</span>
-                  <span className="font-medium">{alert.title}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{alert.message}</p>
-              </div>
-              {!alert.seen && (
-                <button 
-                  onClick={() => markAlertAsSeen(alert.id)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Check className="h-4 w-4" />
-                </button>
-              )}
-            </DropdownMenuItem>
-          ))
         )}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+};
+
+const AlertItem: React.FC<{ 
+  alert: Alert; 
+  onMarkSeen: (id: string) => void;
+}> = ({ alert, onMarkSeen }) => {
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'mistake': return <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />;
+      case 'success': return <BadgeCheck className="h-4 w-4 text-emerald-500 shrink-0" />;
+      case 'drop': return <TrendingDown className="h-4 w-4 text-red-500 shrink-0" />;
+      case 'improvement': return <TrendingUp className="h-4 w-4 text-blue-500 shrink-0" />;
+      default: return <Info className="h-4 w-4 text-gray-500 shrink-0" />;
+    }
+  };
+
+  const getAlertTimestamp = (createdAt: string) => {
+    const date = new Date(createdAt);
+    const now = new Date();
+    const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
+    
+    if (diffInHours < 1) {
+      const minutes = Math.floor(diffInHours * 60);
+      return `${minutes}m ago`;
+    } else if (diffInHours < 24) {
+      const hours = Math.floor(diffInHours);
+      return `${hours}h ago`;
+    } else {
+      const days = Math.floor(diffInHours / 24);
+      return `${days}d ago`;
+    }
+  };
+
+  return (
+    <DropdownMenuItem 
+      className={`flex items-start gap-2 p-3 cursor-default ${!alert.seen ? 'bg-muted/50' : ''}`}
+      onSelect={(e) => e.preventDefault()}
+    >
+      {getAlertIcon(alert.type)}
+      <div className="flex-1 min-w-0">
+        <div className="flex justify-between items-start gap-1">
+          <h4 className="font-medium text-sm">{alert.title}</h4>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {getAlertTimestamp(alert.created_at)}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{alert.message}</p>
+        {alert.related_tag && (
+          <Badge variant="outline" className="mt-2 text-xs">
+            #{alert.related_tag}
+          </Badge>
+        )}
+      </div>
+      {!alert.seen && (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onMarkSeen(alert.id);
+          }}
+          className="text-muted-foreground hover:text-foreground mt-1 shrink-0"
+          title="Mark as read"
+        >
+          <Check className="h-4 w-4" />
+        </button>
+      )}
+    </DropdownMenuItem>
   );
 };
 
