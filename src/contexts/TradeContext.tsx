@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -7,6 +6,7 @@ import { Trade as TradeType } from '@/types/trade';
 import { calculateProfitLoss } from '@/utils/tradeCalculations';
 import { defaultSymbols, defaultAccounts, defaultHashtags } from '@/data/defaultTradeData';
 import { useTradeOperations } from '@/hooks/useTradeOperations';
+import { userService } from '@/services/userService';
 
 // Export the Trade type to be used in other components
 export type Trade = TradeType;

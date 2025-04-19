@@ -9,19 +9,22 @@ export interface TradeFormValues {
   durationMinutes: number;
   entry: number;
   exit: number;
-  stopLoss?: number;
-  takeProfit?: number;
+  stopLoss?: number | null;
+  takeProfit?: number | null;
   lotSize: number;
   riskPercentage: number;
   profitLoss: number;
   returnPercentage: number;
   notes: string;
   hashtags: string[];
-  imageUrl?: string;
-  beforeImageUrl?: string;
-  afterImageUrl?: string;
+  imageUrl?: string | null;
+  beforeImageUrl?: string | null;
+  afterImageUrl?: string | null;
   rating: number;
   commission: number;
+  marketSession?: string;
+  playbook?: string;
+  followedRules?: string[];
 }
 
 export const tradeSchema = yup.object({
@@ -45,4 +48,7 @@ export const tradeSchema = yup.object({
   afterImageUrl: yup.string().nullable().optional(),
   rating: yup.number().required().default(0),
   commission: yup.number().required().default(0),
+  marketSession: yup.string().optional(),
+  playbook: yup.string().optional(),
+  followedRules: yup.array().of(yup.string()).optional(),
 }).required();
