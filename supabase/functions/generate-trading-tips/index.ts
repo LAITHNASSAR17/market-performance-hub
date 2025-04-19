@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -17,22 +16,13 @@ serve(async (req) => {
   try {
     const { trades, stats } = await req.json();
 
-    if (!trades || trades.length < 3) {
-      return new Response(
-        JSON.stringify([{
-          id: '1',
-          title: 'أضف المزيد من الصفقات',
-          content: 'نحتاج المزيد من الصفقات لتقديم تحليل دقيق لأدائك',
-          category: 'performance',
-          priority: 'medium'
-        }]),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Log input data for debugging
+    console.log('Received trading tips request');
+    console.log('Trades count:', trades.length);
+    console.log('API Key present:', !!llamaApiKey);
 
-    // Verify API key exists
     if (!llamaApiKey) {
-      console.error('Missing Llama API key');
+      console.error('CRITICAL: LLAMA_API_KEY is not set');
       return new Response(
         JSON.stringify([{
           id: 'error',
@@ -114,12 +104,12 @@ serve(async (req) => {
       throw error;
     }
   } catch (error) {
-    console.error('Error in generate-trading-tips function:', error);
+    console.error('Comprehensive error in generate-trading-tips:', error);
     return new Response(
       JSON.stringify([{
         id: 'error',
         title: 'عذراً، حدث خطأ',
-        content: 'حدث خطأ أثناء توليد النصائح. يرجى المحاولة مرة أخرى لاحقاً.',
+        content: 'حدث خطأ غير متوقع أثناء توليد النصائح.',
         category: 'error',
         priority: 'high'
       }]),

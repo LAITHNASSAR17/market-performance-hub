@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -17,16 +16,13 @@ serve(async (req) => {
   try {
     const { trades, stats } = await req.json();
 
-    if (!trades || trades.length < 3) {
-      return new Response(
-        JSON.stringify({ analysis: 'أضف المزيد من الصفقات للحصول على تحليل مفصل لأدائك' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Log input data for debugging
+    console.log('Received trading advice request');
+    console.log('Trades count:', trades.length);
+    console.log('API Key present:', !!llamaApiKey);
 
-    // Verify API key exists
     if (!llamaApiKey) {
-      console.error('Missing Llama API key');
+      console.error('CRITICAL: LLAMA_API_KEY is not set');
       return new Response(
         JSON.stringify({ 
           analysis: 'عذراً، لم يتم تكوين مفتاح API بشكل صحيح. يرجى الاتصال بمسؤول النظام.' 
@@ -100,10 +96,10 @@ serve(async (req) => {
       throw error;
     }
   } catch (error) {
-    console.error('Error in generate-trading-advice function:', error);
+    console.error('Comprehensive error in generate-trading-advice:', error);
     return new Response(
       JSON.stringify({ 
-        analysis: 'عذراً، حدث خطأ أثناء توليد التحليل. يرجى المحاولة مرة أخرى لاحقاً.'
+        analysis: 'عذراً، حدث خطأ غير متوقع أثناء توليد التحليل.'
       }),
       {
         status: 500,

@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -17,6 +16,25 @@ serve(async (req) => {
 
   try {
     const { trades, stats, playbooks = [], timeRange = 'all', purpose = 'insights' } = await req.json();
+
+    // Log input data for debugging
+    console.log('Received request with purpose:', purpose);
+    console.log('Trades count:', trades.length);
+    console.log('API Key present:', !!llamaApiKey);
+
+    // Check API key explicitly
+    if (!llamaApiKey) {
+      console.error('CRITICAL: LLAMA_API_KEY is not set');
+      return new Response(
+        JSON.stringify({ 
+          error: 'API key is missing. Please configure LLAMA_API_KEY in Supabase secrets.' 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     const minimumTrades = purpose === 'insights' ? 5 : 3;
 
@@ -41,25 +59,6 @@ serve(async (req) => {
           }]
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!llamaApiKey) {
-      console.error('Missing Llama API key');
-      return new Response(
-        JSON.stringify({ 
-          insights: [{
-            id: 'error',
-            title: 'API Configuration Error',
-            content: 'API key not properly configured. Please contact system administrator.',
-            category: 'error',
-            importance: 'high'
-          }]
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
       );
     }
 
@@ -233,16 +232,11 @@ serve(async (req) => {
       });
     }
   } catch (error) {
-    console.error('Error in generate-trading-insights function:', error);
+    console.error('Comprehensive error in generate-trading-insights:', error);
     return new Response(
       JSON.stringify({ 
-        insights: [{
-          id: 'error',
-          title: 'Sorry, an error occurred',
-          content: 'An error occurred while processing your request. Please try again later.',
-          category: 'error',
-          importance: 'high'
-        }]
+        error: 'An unexpected error occurred',
+        details: error.message
       }),
       {
         status: 500,
