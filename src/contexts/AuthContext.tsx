@@ -415,7 +415,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const getAllUsers = async (): Promise<User[]> => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*');
       
       if (error) throw error;

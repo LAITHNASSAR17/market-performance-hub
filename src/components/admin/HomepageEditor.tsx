@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Plus, Trash2, Image } from 'lucide-react';
+import { Save, Plus, Trash2 } from 'lucide-react';
 
 interface Feature {
   title: string;
@@ -25,6 +25,10 @@ interface HomepageContent {
   secondaryButtonUrl: string;
   features: Feature[];
 }
+
+// We'll store homepage content in localStorage for now since the database
+// schema doesn't include the homepage_content table yet
+const storageKey = 'homepage_content';
 
 const HomepageEditor: React.FC = () => {
   const { toast } = useToast();
@@ -66,27 +70,14 @@ const HomepageEditor: React.FC = () => {
   
   const [content, setContent] = useState<HomepageContent>(defaultContent);
   
-  // Fetch homepage content
+  // Fetch homepage content from localStorage
   useEffect(() => {
     const fetchHomepageContent = async () => {
       try {
-        const { data, error } = await supabase
-          .from('homepage_content')
-          .select('*')
-          .single();
-          
-        if (error) {
-          console.error('Error fetching homepage content:', error);
-          // Use default content if none exists
-        } else if (data) {
-          // Parse the features JSON if stored as string
-          const parsedData = {
-            ...data,
-            features: typeof data.features === 'string' 
-              ? JSON.parse(data.features) 
-              : data.features
-          };
-          setContent(parsedData);
+        const storedContent = localStorage.getItem(storageKey);
+        
+        if (storedContent) {
+          setContent(JSON.parse(storedContent));
         }
       } catch (error) {
         console.error('Error:', error);
@@ -98,26 +89,16 @@ const HomepageEditor: React.FC = () => {
     fetchHomepageContent();
   }, []);
   
-  // Handle saving homepage content
+  // Handle saving homepage content to localStorage
   const handleSave = async () => {
     setSaving(true);
     
     try {
-      // Convert features to string if needed for database storage
-      const dataToSave = {
-        ...content,
-        features: typeof content.features === 'object' 
-          ? JSON.stringify(content.features) 
-          : content.features
-      };
+      // Save to localStorage
+      localStorage.setItem(storageKey, JSON.stringify(content));
       
-      const { error } = await supabase
-        .from('homepage_content')
-        .upsert(dataToSave, { onConflict: 'id' });
-        
-      if (error) {
-        throw error;
-      }
+      // Save site name to localStorage so it can be used in the UI
+      localStorage.setItem('siteName', content.title.split(' ')[0]);
       
       toast({
         title: "Homepage Updated",
