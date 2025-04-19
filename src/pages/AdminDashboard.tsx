@@ -230,7 +230,6 @@ const AdminDashboard: React.FC = () => {
       });
       
       getAllUsers();
-      return data;
     } catch (error) {
       console.error('Error adding user:', error);
       toast({

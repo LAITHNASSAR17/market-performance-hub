@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -46,8 +45,6 @@ const AdminProfileSettings: React.FC = () => {
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
 
-  // Since currency and timezone are mentioned in errors but not available in LanguageContext,
-  // let's define them locally instead of trying to use them from context
   const [currency, setCurrency] = useState('USD');
   const [timezone, setTimezone] = useState('UTC');
 
@@ -100,9 +97,7 @@ const AdminProfileSettings: React.FC = () => {
   const updatePreference = async (prefData: { theme: string, language: string, currency: string, timezone: string }) => {
     setIsSavingPreferences(true);
     try {
-      // Only use "en" as language since type expects it
-      const languageToSet = prefData.language === "en" ? "en" : "en";
-      setLanguage(languageToSet);
+      setLanguage("en");
       setCurrency(prefData.currency);
       setTimezone(prefData.timezone);
       toast({
@@ -258,7 +253,7 @@ const AdminProfileSettings: React.FC = () => {
               <Button
                 onClick={() => updatePreference({
                   theme: preferenceData.theme,
-                  language: "en", // Force "en" to match the expected type
+                  language: "en",
                   currency: preferenceData.currency,
                   timezone: preferenceData.timezone
                 })}
