@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -186,8 +186,8 @@ const AdminProfileSettings: React.FC = () => {
             </Avatar>
             
             <ImageUpload
-              endpoint="avatar"
-              onUploadComplete={handleAvatarUpdate}
+              value={profileData.avatar_url}
+              onChange={handleAvatarUpdate}
             />
           </CardContent>
         </Card>

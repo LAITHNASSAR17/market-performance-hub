@@ -5,15 +5,19 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface ImageUploadProps {
-  value: string | null;
-  onChange: (value: string | null) => void;
+  value?: string | null;
+  onChange?: (value: string | null) => void;
   className?: string;
+  endpoint?: string; // Add endpoint prop
+  onUploadComplete?: (url: string) => void; // Add onUploadComplete prop
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
   value,
   onChange,
   className,
+  endpoint,
+  onUploadComplete,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,7 +28,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        onChange(result);
+        if (onChange) {
+          onChange(result);
+        }
+        if (onUploadComplete) {
+          onUploadComplete(result);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -48,14 +57,24 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        onChange(result);
+        if (onChange) {
+          onChange(result);
+        }
+        if (onUploadComplete) {
+          onUploadComplete(result);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
   const removeImage = () => {
-    onChange(null);
+    if (onChange) {
+      onChange(null);
+    }
+    if (onUploadComplete) {
+      onUploadComplete('');
+    }
     if (inputRef.current) {
       inputRef.current.value = '';
     }
@@ -93,7 +112,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         <div className="relative rounded-lg overflow-hidden border border-gray-200">
           <img 
             src={value} 
-            alt="Uploaded chart" 
+            alt="Uploaded image" 
             className="w-full h-auto object-contain max-h-[300px]"
           />
           <Button

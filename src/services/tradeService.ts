@@ -8,7 +8,7 @@ export interface ITrade {
   entry_price: number;
   exit_price: number;
   quantity: number;
-  direction: string;
+  direction: 'long' | 'short';
   entry_date: string;
   exit_date: string | null;
   profit_loss: number;

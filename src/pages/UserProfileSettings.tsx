@@ -177,8 +177,8 @@ const UserProfileSettings: React.FC = () => {
             </Avatar>
             
             <ImageUpload
-              endpoint="avatar"
-              onUploadComplete={handleAvatarUpdate}
+              value={profileData.avatar_url}
+              onChange={handleAvatarUpdate}
             />
           </CardContent>
         </Card>

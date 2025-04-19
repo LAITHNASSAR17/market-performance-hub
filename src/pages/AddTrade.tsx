@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
@@ -6,7 +7,7 @@ import * as z from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrade } from '@/contexts/TradeContext';
 import { useTags } from '@/contexts/TagsContext';
-import { tradeService } from '@/services/tradeService';
+import { tradeService, ITrade } from '@/services/tradeService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,9 +18,9 @@ import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { TradingAccount } from '@/contexts/TradeContext';
-import { userService } from '@/services/userService';
+import { userService, TradingAccount } from '@/services/userService';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from "@/components/ui/checkbox";
 
 const formSchema = z.object({
   symbol: z.string().min(1, { message: "Symbol is required." }),
@@ -65,6 +66,7 @@ const AddTrade: React.FC = () => {
   const { tags } = useTags();
   const [trade, setTrade] = useState<any>(null);
   const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -100,28 +102,29 @@ const AddTrade: React.FC = () => {
         try {
           const tradeData = await tradeService.getTradeById(id);
           setTrade(tradeData);
+          setSelectedTags(tradeData.tags || []);
           form.reset({
             symbol: tradeData.symbol,
             entry_price: String(tradeData.entry_price),
             exit_price: String(tradeData.exit_price),
             quantity: String(tradeData.quantity),
-            direction: tradeData.direction,
+            direction: tradeData.direction as "long" | "short",
             entry_date: new Date(tradeData.entry_date),
             exit_date: tradeData.exit_date ? new Date(tradeData.exit_date) : null,
             profit_loss: String(tradeData.profit_loss),
             fees: String(tradeData.fees),
             notes: tradeData.notes,
             tags: tradeData.tags,
-            rating: String(tradeData.rating),
-            stop_loss: String(tradeData.stop_loss),
-            take_profit: String(tradeData.take_profit),
-            duration_minutes: String(tradeData.duration_minutes),
-            playbook: tradeData.playbook,
-            followed_rules: tradeData.followed_rules,
-            market_session: tradeData.market_session,
-            account_id: tradeData.account_id,
-            risk_percentage: String(tradeData.risk_percentage),
-            return_percentage: String(tradeData.return_percentage),
+            rating: String(tradeData.rating ?? ""),
+            stop_loss: String(tradeData.stop_loss ?? ""),
+            take_profit: String(tradeData.take_profit ?? ""),
+            duration_minutes: String(tradeData.duration_minutes ?? ""),
+            playbook: tradeData.playbook ?? "",
+            followed_rules: tradeData.followed_rules ?? [],
+            market_session: tradeData.market_session ?? "",
+            account_id: tradeData.account_id ?? "",
+            risk_percentage: String(tradeData.risk_percentage ?? ""),
+            return_percentage: String(tradeData.return_percentage ?? ""),
           });
         } catch (error) {
           console.error("Error fetching trade:", error);
@@ -147,31 +150,38 @@ const AddTrade: React.FC = () => {
   }, [user]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const mappedDirection = values.direction === "long" ? "Buy" : "Sell";
+    if (!user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to add or update trades.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const tradeData = {
-      user_id: user?.id as string,
+    const tradeData: Partial<ITrade> = {
+      user_id: user.id,
       symbol: values.symbol,
       entry_price: parseFloat(values.entry_price),
       exit_price: parseFloat(values.exit_price),
       quantity: parseFloat(values.quantity),
-      direction: values.direction,
+      direction: values.direction, 
       entry_date: values.entry_date.toISOString(),
       exit_date: values.exit_date ? values.exit_date.toISOString() : null,
       profit_loss: parseFloat(values.profit_loss),
       fees: parseFloat(values.fees),
       notes: values.notes || '',
-      tags: values.tags || [],
-      rating: values.rating ? parseFloat(values.rating) : null,
-      stop_loss: values.stop_loss ? parseFloat(values.stop_loss) : null,
-      take_profit: values.take_profit ? parseFloat(values.take_profit) : null,
-      duration_minutes: values.duration_minutes ? parseFloat(values.duration_minutes) : null,
+      tags: selectedTags,
+      rating: values.rating ? parseFloat(values.rating) : undefined,
+      stop_loss: values.stop_loss ? parseFloat(values.stop_loss) : undefined,
+      take_profit: values.take_profit ? parseFloat(values.take_profit) : undefined,
+      duration_minutes: values.duration_minutes ? parseFloat(values.duration_minutes) : undefined,
       playbook: values.playbook || '',
       followed_rules: values.followed_rules || [],
       market_session: values.market_session || '',
       account_id: values.account_id || '',
-      risk_percentage: values.risk_percentage ? parseFloat(values.risk_percentage) : null,
-      return_percentage: values.return_percentage ? parseFloat(values.return_percentage) : null,
+      risk_percentage: values.risk_percentage ? parseFloat(values.risk_percentage) : undefined,
+      return_percentage: values.return_percentage ? parseFloat(values.return_percentage) : undefined,
     };
 
     try {
@@ -184,7 +194,7 @@ const AddTrade: React.FC = () => {
             variant: "destructive",
           });
         } else {
-          updateTrade(data);
+          updateTrade(data, id);
           toast({
             title: "Trade updated",
             description: "The trade has been updated successfully.",
@@ -192,7 +202,7 @@ const AddTrade: React.FC = () => {
           navigate('/trades');
         }
       } else {
-        const { data, error } = await tradeService.createTrade(tradeData);
+        const { data, error } = await tradeService.createTrade(tradeData as Omit<ITrade, 'id' | 'created_at' | 'updated_at'>);
         if (error) {
           toast({
             title: "Error adding trade",
@@ -216,6 +226,16 @@ const AddTrade: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tag)) {
+        return prev.filter(t => t !== tag);
+      } else {
+        return [...prev, tag];
+      }
+    });
   };
 
   return (
@@ -378,26 +398,31 @@ const AddTrade: React.FC = () => {
 
         <div>
           <Label htmlFor="tags">Tags</Label>
-          <Select
-            multiple
-            onValueChange={(value) => form.setValue("tags", value)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select tags" />
-            </SelectTrigger>
-            <SelectContent>
-              {tags.map((tag) => (
-                <SelectItem key={tag} value={tag}>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+            {tags && tags.map((tag) => (
+              <div key={tag} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`tag-${tag}`}
+                  checked={selectedTags.includes(tag)}
+                  onCheckedChange={() => handleTagToggle(tag)}
+                />
+                <label 
+                  htmlFor={`tag-${tag}`}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
                   {tag}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
           <Label htmlFor="account_id">Trading Account</Label>
-          <Select onValueChange={(value) => form.setValue("account_id", value)}>
+          <Select 
+            onValueChange={(value) => form.setValue("account_id", value)}
+            defaultValue={form.getValues("account_id") || ""}
+          >
             <SelectTrigger className="w-[240px]">
               <SelectValue placeholder="Select account" />
             </SelectTrigger>
