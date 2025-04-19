@@ -6,8 +6,17 @@ import {
   BookOpen, Users, Star, TrendingUp, BarChart4, Percent, Coins
 } from 'lucide-react';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
-import { PlaybookEntry, PlaybookRule } from '@/types/settings';
+import { PlaybookEntry } from '@/types/settings';
 import PlaybookCard from './PlaybookCard';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { useForm, Controller } from "react-hook-form";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface PlaybookFormData {
   name: string;
@@ -109,7 +118,7 @@ const PlaybookTab = () => {
 
   const onSubmit = async (data: PlaybookFormData) => {
     try {
-      const rules: PlaybookRule[] = [];
+      const rules = [];
       
       if (data.entryRules) {
         data.entryRules.forEach((rule, index) => {
@@ -117,7 +126,8 @@ const PlaybookTab = () => {
             rules.push({
               id: `entry-${Date.now()}-${index}`,
               type: 'entry',
-              description: rule.trim()
+              description: rule.trim(),
+              order: index
             });
           }
         });
@@ -129,7 +139,8 @@ const PlaybookTab = () => {
             rules.push({
               id: `exit-${Date.now()}-${index}`,
               type: 'exit',
-              description: rule.trim()
+              description: rule.trim(),
+              order: index
             });
           }
         });
@@ -141,7 +152,8 @@ const PlaybookTab = () => {
             rules.push({
               id: `risk-${Date.now()}-${index}`,
               type: 'risk',
-              description: rule.trim()
+              description: rule.trim(),
+              order: index
             });
           }
         });
@@ -153,20 +165,28 @@ const PlaybookTab = () => {
             rules.push({
               id: `custom-${Date.now()}-${index}`,
               type: 'custom',
-              description: rule.trim()
+              description: rule.trim(),
+              order: index
             });
           }
         });
       }
       
-      await addPlaybook({
-        ...data,
+      const newPlaybook: Partial<PlaybookEntry> = {
+        name: data.name,
+        description: data.description,
         tags: data.tags || [],
-        rating: 0,
-        category: data.category || 'other',
-        isPrivate: data.isPrivate || false,
-        rules
-      });
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: "1",
+        order: playbooks.length + 1,
+        tradeType: 'both',
+        rules,
+        id: `playbook-${Date.now()}`
+      };
+      
+      await addPlaybook(newPlaybook as PlaybookEntry);
       
       toast({
         title: "Playbook Created",

@@ -1,91 +1,107 @@
-
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
-import { LineChart, BarChart } from 'lucide-react';
-import TradeStatsCard from './TradeStatsCard';
-import DailyPLBarChart from '../DailyPLBarChart';
-import CumulativePLChart from '../CumulativePLChart';
-import { useTrade } from '@/contexts/TradeContext';
-import { format, subDays } from 'date-fns';
+import { usePlData } from '@/hooks/usePlData';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar } from 'recharts';
+import { TradeStatsCard } from './TradeStatsCard';
+import RunningPLChart from './RunningPLChart';
 
-const OverviewTab = () => {
-  const stats = useAnalyticsStats();
-  const { trades } = useTrade();
+// Helper to ensure profit is a number for chart data
+const ensureNumber = (value: unknown): number => {
+  if (typeof value === 'number') return value;
+  return 0;
+};
+
+const OverviewTab: React.FC = () => {
+  const { allTimeStats, monthlyStats, weeklyStats } = useAnalyticsStats();
+  const plData = usePlData();
   
-  // Calculate daily P&L data for the last 30 days
-  const getDailyData = () => {
-    const thirtyDaysAgo = subDays(new Date(), 30);
-    const filtered = trades.filter(trade => new Date(trade.date) >= thirtyDaysAgo);
+  // Ensure profit values are numbers
+  const processedData = plData.dailyPL.map(item => ({
+    ...item,
+    profit: ensureNumber(item.profit)
+  }));
+  
+  // Process data for display
+  const positiveTradePercent = allTimeStats.totalTrades > 0 
+    ? Math.round((allTimeStats.winningTrades / allTimeStats.totalTrades) * 100) 
+    : 0;
+  
+  const negativeTradePercent = allTimeStats.totalTrades > 0 
+    ? Math.round((allTimeStats.losingTrades / allTimeStats.totalTrades) * 100) 
+    : 0;
     
-    const dailyPL = filtered.reduce((acc: Record<string, number>, trade) => {
-      if (!acc[trade.date]) {
-        acc[trade.date] = 0;
-      }
-      acc[trade.date] += trade.total;
-      return acc;
-    }, {});
-
-    return Object.entries(dailyPL).map(([date, profit]) => ({
-      day: format(new Date(date), 'MMM dd'),
-      profit,
-      date
-    })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  };
-
+  // Calculate monthly profit/loss
+  const monthlyProfit = processedData
+    .filter(day => {
+      const dayDate = new Date(day.date);
+      const today = new Date();
+      return dayDate.getMonth() === today.getMonth() && 
+             dayDate.getFullYear() === today.getFullYear();
+    })
+    .reduce((sum, day) => sum + day.profit, 0);
+  
+  // Calculate weekly profit/loss  
+  const weeklyProfit = processedData
+    .filter(day => {
+      const dayDate = new Date(day.date);
+      const today = new Date();
+      const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return dayDate >= lastWeek && dayDate <= today;
+    })
+    .reduce((sum, day) => sum + day.profit, 0);
+  
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        <TradeStatsCard
-          title="Total P&L"
-          value={stats.totalPL}
-          icon={<LineChart size={18} />}
-          description="Net profit/loss after fees"
-          className={Number(stats.totalPL.replace('$', '')) >= 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}
-        />
-        
-        <TradeStatsCard
-          title="Win Rate"
-          value={stats.winRate}
-          icon={<BarChart size={18} />}
-          description={`${stats.winningTrades} wins, ${stats.losingTrades} losses`}
-        />
-        
-        <TradeStatsCard
-          title="Profit Factor"
-          value={stats.profitFactor}
-          icon={<LineChart size={18} />}
-          description="Gross profit / Gross loss"
-        />
-        
-        <TradeStatsCard
-          title="Avg Trade"
-          value={Number(stats.avgWin.replace('$', '')) >= 0 ? stats.avgWin : stats.avgLoss}
-          icon={<BarChart size={18} />}
-          description="Average trade P&L"
-          className={Number(stats.avgWin.replace('$', '')) >= 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <TradeStatsCard title="Total Trades" value={allTimeStats.totalTrades} />
+        <TradeStatsCard title="Winning Trades" value={allTimeStats.winningTrades} percentage={positiveTradePercent} />
+        <TradeStatsCard title="Losing Trades" value={allTimeStats.losingTrades} percentage={negativeTradePercent} />
+        <TradeStatsCard title="Break Even Trades" value={allTimeStats.breakEvenTrades} />
       </div>
-
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Daily P&L</CardTitle>
+            <CardTitle>Monthly Profit</CardTitle>
+            <CardDescription>Current month profit and loss</CardDescription>
           </CardHeader>
-          <CardContent className="h-[400px]">
-            <DailyPLBarChart data={getDailyData()} />
+          <CardContent>
+            <div className="text-2xl font-bold">${monthlyProfit.toFixed(2)}</div>
           </CardContent>
         </Card>
-
+        
         <Card>
           <CardHeader>
-            <CardTitle>Cumulative P&L</CardTitle>
+            <CardTitle>Weekly Profit</CardTitle>
+            <CardDescription>Last 7 days profit and loss</CardDescription>
           </CardHeader>
-          <CardContent className="h-[400px]">
-            <CumulativePLChart trades={trades} timeRange="month" />
+          <CardContent>
+            <div className="text-2xl font-bold">${weeklyProfit.toFixed(2)}</div>
           </CardContent>
         </Card>
       </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Daily Profit/Loss</CardTitle>
+          <CardDescription>A chart of your daily trading performance</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={processedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Area type="monotone" dataKey="profit" stroke="#8884d8" fill="#8884d8" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+      
+      <RunningPLChart />
     </div>
   );
 };

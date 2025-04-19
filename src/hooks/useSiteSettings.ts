@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { SiteSettings } from '@/types/settings';
-import { useToast } from './use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 
 // Default site settings
@@ -18,11 +18,14 @@ const defaultSettings: SiteSettings = {
   maintenance_mode: false,
   allow_registrations: true,
   default_user_role: 'user',
+  support_phone: '+1-800-TRADE',
+  copyright_text: '© 2024 TradeTracker. All rights reserved.',
 };
 
 export const useSiteSettings = () => {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const { toast } = useToast();
 
   const fetchSettings = async () => {
@@ -54,18 +57,19 @@ export const useSiteSettings = () => {
   };
 
   const updateSettings = async (updatedSettings: SiteSettings) => {
-    setLoading(true);
+    setIsUpdating(true);
     try {
       // In a real app, you would update your database
       // const { error } = await supabase.from('site_settings').update(updatedSettings).eq('id', updatedSettings.id);
       
       // For now, we'll use localStorage
-      localStorage.setItem('siteSettings', JSON.stringify(updatedSettings));
+      const completeSettings = { ...settings, ...updatedSettings, updated_at: new Date().toISOString() };
+      localStorage.setItem('siteSettings', JSON.stringify(completeSettings));
       
       // Update site name in local storage for immediate use elsewhere
-      localStorage.setItem('siteName', updatedSettings.site_name);
+      localStorage.setItem('siteName', completeSettings.site_name);
       
-      setSettings(updatedSettings);
+      setSettings(completeSettings);
       
       toast({
         title: 'Success',
@@ -79,7 +83,7 @@ export const useSiteSettings = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setIsUpdating(false);
     }
   };
 
@@ -133,6 +137,7 @@ export const useSiteSettings = () => {
   return {
     settings,
     loading,
+    isUpdating,
     updateSettings,
     updateFavicon
   };

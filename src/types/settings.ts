@@ -41,6 +41,8 @@ export interface SiteSettings {
   allow_registrations?: boolean;
   custom_domain?: string;
   google_analytics_id?: string;
+  support_phone?: string;
+  copyright_text?: string;
 }
 
 export interface SubscriptionPlan {
@@ -59,7 +61,7 @@ export interface PlaybookEntry {
   id: string;
   name: string;
   description: string;
-  setup: string;
+  setup?: string;
   rules: PlaybookRule[];
   isActive: boolean;
   createdAt: string;
@@ -68,12 +70,25 @@ export interface PlaybookEntry {
   order: number;
   tradeType: 'long' | 'short' | 'both';
   tags: string[];
+  // Added properties to match component usage
+  category?: 'trend' | 'reversal' | 'breakout' | 'other';
+  isPrivate?: boolean;
+  rating?: number;
+  netProfitLoss?: number;
+  winRate?: number;
+  totalTrades?: number;
+  missedTrades?: number;
+  expectedValue?: number;
+  profitFactor?: number;
+  avgWinner?: number;
+  avgLoser?: number;
+  rMultiple?: number;
 }
 
 export interface PlaybookRule {
   id: string;
   description: string;
-  type: 'entry' | 'exit' | 'management';
+  type: 'entry' | 'exit' | 'management' | 'risk' | 'custom';
   order: number;
 }
 
@@ -87,4 +102,22 @@ export interface JournalEntry {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HomepageContent {
+  id: string;
+  hero_title: string;
+  hero_subtitle: string;
+  feature_section_title: string;
+  features: HomepageFeature[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HomepageFeature {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  order: number;
 }
