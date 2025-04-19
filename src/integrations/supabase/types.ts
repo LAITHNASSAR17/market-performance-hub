@@ -427,6 +427,7 @@ export type Database = {
           followed_rules: string[] | null
           id: string
           image_url: string | null
+          market_session: string | null
           notes: string | null
           playbook: string | null
           profit_loss: number | null
@@ -454,6 +455,7 @@ export type Database = {
           followed_rules?: string[] | null
           id?: string
           image_url?: string | null
+          market_session?: string | null
           notes?: string | null
           playbook?: string | null
           profit_loss?: number | null
@@ -481,6 +483,7 @@ export type Database = {
           followed_rules?: string[] | null
           id?: string
           image_url?: string | null
+          market_session?: string | null
           notes?: string | null
           playbook?: string | null
           profit_loss?: number | null
