@@ -162,7 +162,10 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          is_blocked: boolean | null
           name: string | null
+          password: string | null
+          role: string | null
           subscription_tier: string | null
           updated_at: string | null
         }
@@ -171,7 +174,10 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id: string
+          is_blocked?: boolean | null
           name?: string | null
+          password?: string | null
+          role?: string | null
           subscription_tier?: string | null
           updated_at?: string | null
         }
@@ -180,7 +186,10 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          is_blocked?: boolean | null
           name?: string | null
+          password?: string | null
+          role?: string | null
           subscription_tier?: string | null
           updated_at?: string | null
         }

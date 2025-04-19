@@ -13,6 +13,7 @@ interface User {
   is_blocked?: boolean;
   email_verified?: boolean;
   subscription_tier?: string;
+  isAdmin?: boolean; // Adding this for backwards compatibility
 }
 
 interface AuthContextType {
@@ -316,6 +317,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const getAllUsers = async (): Promise<User[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) throw error;
+      
+      const formattedUsers = data.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isAdmin: user.role === 'admin',
+        is_blocked: user.is_blocked,
+        subscription_tier: user.subscription_tier || 'free'
+      }));
+      
+      setUsers(formattedUsers);
+      return formattedUsers;
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
+    }
+  };
+
   const updateUser = async (updatedUser: User): Promise<void> => {
     try {
       const { error } = await supabase
@@ -398,32 +425,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         variant: "destructive",
       });
       throw error;
-    }
-  };
-
-  const getAllUsers = async (): Promise<User[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
-      
-      if (error) throw error;
-      
-      const formattedUsers = data.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isAdmin: user.role === 'admin',
-        isBlocked: user.is_blocked,
-        subscription_tier: user.subscription_tier || 'free'
-      }));
-      
-      setUsers(formattedUsers);
-      return formattedUsers;
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return [];
     }
   };
 
