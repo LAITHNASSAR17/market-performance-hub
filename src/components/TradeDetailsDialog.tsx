@@ -101,7 +101,6 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
     });
   };
 
-  // Sample playbook data for demonstration
   const samplePlaybooks = [
     {
       id: "1",
@@ -129,8 +128,8 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="w-11/12 max-w-4xl overflow-y-auto max-h-[calc(100vh-40px)] p-4">
+        <DialogHeader className="mb-2">
           <DialogTitle className="flex justify-between items-center">
             <div className="flex items-center">
               <Button variant="ghost" size="icon" className="mr-2">
@@ -150,15 +149,15 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <Tabs defaultValue="stats" className="mt-6" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-4">
+        <Tabs defaultValue="stats" className="w-full" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-3">
             <TabsTrigger value="stats">Stats</TabsTrigger>
             <TabsTrigger value="playbooks">Playbooks</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="stats" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="h-[160px]">
+          <TabsContent value="stats" className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="h-[130px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
                     <defs>
@@ -185,7 +184,7 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                 </ResponsiveContainer>
               </div>
               
-              <div className="h-[160px]">
+              <div className="h-[130px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -212,47 +211,47 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2 py-1">
               <div className="text-center">
-                <div className="text-sm text-gray-500">Total Trades</div>
-                <div className="font-bold text-lg">{dayTrades.length}</div>
+                <div className="text-xs text-gray-500">Total Trades</div>
+                <div className="font-bold text-base">{dayTrades.length}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500">Winners</div>
-                <div className="font-bold text-lg text-emerald-500">{winners}</div>
+                <div className="text-xs text-gray-500">Winners</div>
+                <div className="font-bold text-base text-emerald-500">{winners}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500">Losers</div>
-                <div className="font-bold text-lg text-red-500">{losers}</div>
+                <div className="text-xs text-gray-500">Losers</div>
+                <div className="font-bold text-base text-red-500">{losers}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500">Win Rate</div>
-                <div className="font-bold text-lg">{winRate.toFixed(0)}%</div>
+                <div className="text-xs text-gray-500">Win Rate</div>
+                <div className="font-bold text-base">{winRate.toFixed(0)}%</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500">Volume</div>
-                <div className="font-bold text-lg">{volume.toFixed(2)}</div>
+                <div className="text-xs text-gray-500">Volume</div>
+                <div className="font-bold text-base">{volume.toFixed(2)}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500">Profit Factor</div>
-                <div className="font-bold text-lg">{profitFactor}</div>
+                <div className="text-xs text-gray-500">Profit Factor</div>
+                <div className="font-bold text-base">{profitFactor}</div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Options traded</span>
+                <div className="flex justify-between items-center mb-2 border-b pb-1">
+                  <span className="text-xs font-medium">Options traded</span>
                   <span className="font-medium">{dayTrades.length}</span>
                 </div>
                 
-                <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Commissions & Fees</span>
+                <div className="flex justify-between items-center mb-2 border-b pb-1">
+                  <span className="text-xs font-medium">Commissions & Fees</span>
                   <span className="font-medium">$0.00</span>
                 </div>
                 
-                <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Net ROI</span>
+                <div className="flex justify-between items-center mb-2 border-b pb-1">
+                  <span className="text-xs font-medium">Net ROI</span>
                   <span className={cn(
                     "font-medium",
                     netROI > 0 ? "text-emerald-500" : "text-red-500"
@@ -261,8 +260,8 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Gross P&L</span>
+                <div className="flex justify-between items-center mb-2 border-b pb-1">
+                  <span className="text-xs font-medium">Gross P&L</span>
                   <span className={cn(
                     "font-medium",
                     grossProfit > 0 ? "text-emerald-500" : "text-red-500"
@@ -271,43 +270,43 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">Adjusted cost</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium">Adjusted cost</span>
                   <span className="font-medium">${adjustedCost.toFixed(2)}</span>
                 </div>
               </div>
               
               <div>
-                <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Avg Win Size</span>
+                <div className="flex justify-between items-center mb-2 border-b pb-1">
+                  <span className="text-xs font-medium">Avg Win Size</span>
                   <span className="font-medium text-emerald-500">
                     ${winners > 0 ? (grossProfit / winners).toFixed(2) : "0.00"}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Avg Loss Size</span>
+                <div className="flex justify-between items-center mb-2 border-b pb-1">
+                  <span className="text-xs font-medium">Avg Loss Size</span>
                   <span className="font-medium text-red-500">
                     -${losers > 0 ? (grossLoss / losers).toFixed(2) : "0.00"}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Largest Win</span>
+                <div className="flex justify-between items-center mb-2 border-b pb-1">
+                  <span className="text-xs font-medium">Largest Win</span>
                   <span className="font-medium text-emerald-500">
                     ${winners > 0 ? Math.max(...dayTrades.filter(t => t.profitLoss > 0).map(t => t.profitLoss)).toFixed(2) : "0.00"}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center mb-2 border-b pb-2">
-                  <span className="text-sm font-medium">Largest Loss</span>
+                <div className="flex justify-between items-center mb-2 border-b pb-1">
+                  <span className="text-xs font-medium">Largest Loss</span>
                   <span className="font-medium text-red-500">
                     ${losers > 0 ? Math.abs(Math.min(...dayTrades.filter(t => t.profitLoss < 0).map(t => t.profitLoss))).toFixed(2) : "0.00"}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">Win/Loss Ratio</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-medium">Win/Loss Ratio</span>
                   <span className="font-medium">
                     {losers > 0 ? (winners / losers).toFixed(2) : (winners > 0 ? "∞" : "0.00")}
                   </span>
@@ -315,151 +314,149 @@ const TradeDetailsDialog: React.FC<TradeDetailsDialogProps> = ({
               </div>
             </div>
           
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Time</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Symbol</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Side</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Entry</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Exit</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Size</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">P&L</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">R-Multiple</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Rating</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Tags</th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dayTrades.map((trade, index) => (
-                    <tr 
-                      key={trade.id} 
-                      className="border-b hover:bg-gray-50 cursor-pointer"
-                      onClick={() => navigateToTrade(trade.id)}
-                    >
-                      <td className="px-3 py-2">{format(new Date(), 'HH:mm:ss')}</td>
-                      <td className="px-3 py-2">{trade.pair}</td>
-                      <td className="px-3 py-2">
-                        <span className={cn(
-                          "px-2 py-1 rounded text-xs font-medium",
-                          trade.type === 'Buy' ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
-                        )}>
-                          {trade.type}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">{trade.entry.toFixed(4)}</td>
-                      <td className="px-3 py-2">{trade.exit.toFixed(4)}</td>
-                      <td className="px-3 py-2">{trade.lotSize}</td>
-                      <td className={cn(
-                        "px-3 py-2 font-medium",
-                        trade.profitLoss > 0 ? "text-emerald-500" : "text-red-500"
-                      )}>
-                        {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss.toFixed(2)}
-                      </td>
-                      <td className="px-3 py-2">
-                        {trade.stopLoss ? (Math.abs(trade.profitLoss) / Math.abs(trade.entry - trade.stopLoss)).toFixed(2) : '-'}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={cn(
-                                "h-4 w-4",
-                                star <= trade.rating 
-                                  ? "fill-yellow-400 text-yellow-400" 
-                                  : "text-gray-300"
-                              )}
-                            />
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-wrap gap-1">
-                          {trade.hashtags.slice(0, 2).map((tag, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">{tag}</Badge>
-                          ))}
-                          {trade.hashtags.length > 2 && (
-                            <Badge variant="outline" className="text-xs">+{trade.hashtags.length - 2}</Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex space-x-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigateToTrade(trade.id);
-                            }}
-                            className="h-8 w-8"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={(e) => handleDeleteTrade(trade.id, e)}
-                            className="h-8 w-8 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
+            <div className="border rounded-lg overflow-hidden mt-2">
+              <div className="overflow-x-auto max-h-[180px]">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-background">
+                    <tr className="border-b">
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Time</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Symbol</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Side</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Entry</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Exit</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Size</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">P&L</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Rating</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Tags</th>
+                      <th className="px-2 py-1 text-left font-medium text-gray-500">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {dayTrades.map((trade, index) => (
+                      <tr 
+                        key={trade.id} 
+                        className="border-b hover:bg-gray-50 cursor-pointer"
+                        onClick={() => navigateToTrade(trade.id)}
+                      >
+                        <td className="px-2 py-1">{format(new Date(), 'HH:mm:ss')}</td>
+                        <td className="px-2 py-1">{trade.pair}</td>
+                        <td className="px-2 py-1">
+                          <span className={cn(
+                            "px-1 py-0.5 rounded text-xs font-medium",
+                            trade.type === 'Buy' ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                          )}>
+                            {trade.type}
+                          </span>
+                        </td>
+                        <td className="px-2 py-1">{trade.entry.toFixed(4)}</td>
+                        <td className="px-2 py-1">{trade.exit.toFixed(4)}</td>
+                        <td className="px-2 py-1">{trade.lotSize}</td>
+                        <td className={cn(
+                          "px-2 py-1 font-medium",
+                          trade.profitLoss > 0 ? "text-emerald-500" : "text-red-500"
+                        )}>
+                          {trade.profitLoss > 0 ? '+' : ''}{trade.profitLoss.toFixed(2)}
+                        </td>
+                        <td className="px-2 py-1">
+                          <div className="flex items-center">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={cn(
+                                  "h-3 w-3",
+                                  star <= trade.rating 
+                                    ? "fill-yellow-400 text-yellow-400" 
+                                    : "text-gray-300"
+                                )}
+                              />
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-2 py-1">
+                          <div className="flex flex-wrap gap-1">
+                            {trade.hashtags.slice(0, 2).map((tag, idx) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">{tag}</Badge>
+                            ))}
+                            {trade.hashtags.length > 2 && (
+                              <Badge variant="outline" className="text-xs">+{trade.hashtags.length - 2}</Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-2 py-1">
+                          <div className="flex space-x-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigateToTrade(trade.id);
+                              }}
+                              className="h-6 w-6"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={(e) => handleDeleteTrade(trade.id, e)}
+                              className="h-6 w-6 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </TabsContent>
           
-          <TabsContent value="playbooks">
+          <TabsContent value="playbooks" className="space-y-4">
             {relevantPlaybooks.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {relevantPlaybooks.map(playbook => (
-                  <div key={playbook.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <h3 className="text-lg font-bold">{playbook.name}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{playbook.description}</p>
+                  <div key={playbook.id} className="border rounded-lg p-3 hover:shadow-md transition-shadow">
+                    <h3 className="text-base font-bold">{playbook.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{playbook.description}</p>
                     
-                    <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="mt-3 grid grid-cols-2 gap-2">
                       <div>
-                        <div className="text-sm text-gray-500">Win Rate</div>
-                        <div className="font-bold">{playbook.winRate}%</div>
+                        <div className="text-xs text-gray-500">Win Rate</div>
+                        <div className="font-bold text-sm">{playbook.winRate}%</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-500">R-Multiple</div>
-                        <div className="font-bold">{playbook.rMultiple}</div>
+                        <div className="text-xs text-gray-500">R-Multiple</div>
+                        <div className="font-bold text-sm">{playbook.rMultiple}</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-500">Expected Value</div>
-                        <div className="font-bold">{playbook.expectedValue}</div>
+                        <div className="text-xs text-gray-500">Expected Value</div>
+                        <div className="font-bold text-sm">{playbook.expectedValue}</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-500">Rating</div>
-                        <div className="font-bold">{playbook.rating}/5</div>
+                        <div className="text-xs text-gray-500">Rating</div>
+                        <div className="font-bold text-sm">{playbook.rating}/5</div>
                       </div>
                     </div>
                     
-                    <div className="mt-4 flex flex-wrap gap-1">
+                    <div className="mt-3 flex flex-wrap gap-1">
                       {playbook.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary">{tag}</Badge>
+                        <Badge key={index} variant="secondary" className="text-xs">{tag}</Badge>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-6 text-center text-gray-500">
                 <p>No playbooks defined for this day</p>
               </div>
             )}
           </TabsContent>
         </Tabs>
         
-        <DialogFooter className="mt-6 flex justify-between">
+        <DialogFooter className="mt-3 flex justify-between">
           <Button variant="outline" onClick={onClose}>Close</Button>
           <Button onClick={handleViewDetails} className="flex items-center">
             View Details

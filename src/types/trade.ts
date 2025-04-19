@@ -28,9 +28,10 @@ export interface Trade {
   total: number;  // Net profit/loss after fees
   playbook?: string; // Field to link to a playbook
   followedRules?: string[]; // Rules that were followed in this trade
+  marketSession?: string; // Market session when the trade was executed
 }
 
-// Update mapDBTradeToTrade to calculate total correctly
+// Update mapDBTradeToTrade to include marketSession
 export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   id: dbTrade.id,
   userId: dbTrade.userId,
@@ -59,7 +60,8 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   // Calculate total as profit/loss minus fees
   total: (dbTrade.profitLoss || 0) - (dbTrade.fees || 0),
   playbook: dbTrade.playbook,
-  followedRules: dbTrade.followedRules
+  followedRules: dbTrade.followedRules,
+  marketSession: dbTrade.marketSession
 });
 
 // Make sure mapTradeToDBTrade passes the correct values
@@ -83,5 +85,6 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   takeProfit: trade.takeProfit || null,
   durationMinutes: trade.durationMinutes || null,
   playbook: trade.playbook,
-  followedRules: trade.followedRules
+  followedRules: trade.followedRules,
+  marketSession: trade.marketSession
 });

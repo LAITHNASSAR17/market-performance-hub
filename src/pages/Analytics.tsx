@@ -3,12 +3,12 @@ import React from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from '@/contexts/LanguageContext';
-import { ChartLine, Target, BookMarked, LineChart, Lightbulb, Hash } from 'lucide-react';
+import { ChartLine, Target, BookMarked, LineChart, Lightbulb, Hash, Clock } from 'lucide-react';
 
 // Import custom hooks
 import { useAnalyticsStats } from '@/hooks/useAnalyticsStats';
 import { usePlData } from '@/hooks/usePlData';
-import { useTagsState } from '@/hooks/useTagsState';
+import { useTags } from '@/contexts/TagsContext';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
 
 // Import tab components
@@ -18,6 +18,7 @@ import PlaybookTab from '@/components/analytics/PlaybookTab';
 import ChartTab from '@/components/analytics/ChartTab';
 import TradingTips from '@/components/TradingTips';
 import HashtagsTab from '@/components/analytics/HashtagsTab';
+import SessionAnalyticsTab from '@/components/analytics/SessionAnalyticsTab';
 
 const Analytics: React.FC = () => {
   const { t, language } = useLanguage();
@@ -25,7 +26,7 @@ const Analytics: React.FC = () => {
   // Use our custom hooks to manage state
   const stats = useAnalyticsStats();
   const plData = usePlData();
-  const { mistakes, setMistakes, setups, setSetups, habits, setHabits, tradingDays } = useTagsState();
+  const { mistakes, setMistakes, setups, setSetups, habits, setHabits, tradingDays } = useTags();
   const { playbooks, addPlaybook, updatePlaybook, deletePlaybook } = usePlaybooks();
   
   return (
@@ -61,6 +62,10 @@ const Analytics: React.FC = () => {
             <TabsTrigger value="chart" className="flex-1 md:flex-none">
               <LineChart className="h-4 w-4 mr-2" />
               {t('chart') || 'Chart'}
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="flex-1 md:flex-none">
+              <Clock className="h-4 w-4 mr-2" />
+              {t('sessions') || 'Sessions'}
             </TabsTrigger>
             <TabsTrigger value="tips" className="flex-1 md:flex-none">
               <Lightbulb className="h-4 w-4 mr-2" />
@@ -98,6 +103,11 @@ const Analytics: React.FC = () => {
           {/* Chart Tab */}
           <TabsContent value="chart" className="mt-0">
             <ChartTab plData={plData} />
+          </TabsContent>
+          
+          {/* Sessions Tab */}
+          <TabsContent value="sessions" className="mt-0">
+            <SessionAnalyticsTab />
           </TabsContent>
           
           {/* Tips Tab */}

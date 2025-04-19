@@ -19,7 +19,8 @@ const tradeSchema = new mongoose.Schema({
   takeProfit: { type: Number },
   durationMinutes: { type: Number },
   playbook: { type: String },
-  followedRules: [{ type: String }]
+  followedRules: [{ type: String }],
+  marketSession: { type: String, enum: ['Asia', 'London', 'New York', 'London Close', 'Overlap', 'Other'] }
 }, { timestamps: true });
 
 export const Trade = mongoose.model('Trade', tradeSchema);

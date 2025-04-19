@@ -21,6 +21,7 @@ import ImageUpload from '@/components/ImageUpload';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
 import TagSelectors from '@/components/analytics/TagSelectors';
 import { useTagsState } from '@/hooks/useTagsState';
+import TradingSessionSelector from '@/components/TradingSessionSelector';
 
 const AddTrade: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +57,7 @@ const AddTrade: React.FC = () => {
   const [total, setTotal] = useState<string>('0');
   const [playbook, setPlaybook] = useState<string | undefined>(undefined);
   const [followedRules, setFollowedRules] = useState<string[]>([]);
+  const [marketSession, setMarketSession] = useState<string | undefined>(undefined);
 
   const [selectedMistakes, setSelectedMistakes] = useState<string[]>([]);
   const [selectedSetups, setSelectedSetups] = useState<string[]>([]);
@@ -96,6 +98,7 @@ const AddTrade: React.FC = () => {
         setAfterImageUrl(data.after_image_url || null);
         setPlaybook(data.playbook || undefined);
         setFollowedRules(data.followed_rules || []);
+        setMarketSession(data.market_session || undefined);
         
         const tags = data.tags || [];
         setSelectedMistakes(tags.filter((tag: string) => mistakes.includes(tag)));
@@ -206,7 +209,8 @@ const AddTrade: React.FC = () => {
         beforeImageUrl: beforeImageUrl,
         afterImageUrl: afterImageUrl,
         playbook,
-        followedRules
+        followedRules,
+        marketSession
       };
 
       if (isEditing && id) {
@@ -323,6 +327,11 @@ const AddTrade: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  <TradingSessionSelector 
+                    value={marketSession} 
+                    onValueChange={setMarketSession} 
+                  />
                   
                   <div className="space-y-2">
                     <Label htmlFor="type">Trade Type</Label>
