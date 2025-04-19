@@ -52,8 +52,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-background border-r">
+      {/* Fixed Sidebar */}
+      <aside className="fixed h-screen w-64 bg-background border-r z-50">
         <div className="h-full flex flex-col">
           {/* Logo and Title */}
           <div className="p-4 border-b">
@@ -63,7 +63,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
 
           {/* Navigation Menu */}
-          <nav className="flex-1 p-2">
+          <nav className="flex-1 p-2 overflow-y-auto">
             {menuItems.map((item) => (
               <Link
                 key={item.path}
@@ -72,22 +72,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   location.pathname === item.path ? 'bg-accent text-accent-foreground' : ''
                 }`}
               >
-                <item.icon className="h-5 w-5" />
+                <item.icon className="h-5 w-5 shrink-0" />
                 <span>{item.label}</span>
               </Link>
             ))}
           </nav>
-
-          {/* Theme Toggle */}
-          <div className="p-4 border-t">
-            <ThemeToggle variant="switch" className="w-full justify-center" />
-          </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1">
-        <header className="border-b">
+      <div className="flex-1 ml-64">
+        <header className="fixed top-0 right-0 left-64 bg-background border-b z-40">
           <div className="container mx-auto flex justify-end items-center py-4 px-4">
             <div className="flex items-center space-x-4">
               <div className="flex items-center gap-2">
@@ -116,7 +111,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link to="/profile">الملف الشخصي</Link>
+                      <Link to="/profile">User Profile</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>
@@ -133,7 +128,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </header>
         
-        <main className="container mx-auto py-8 px-4">
+        <main className="container mx-auto py-8 px-4 mt-16">
           {children}
         </main>
       </div>
