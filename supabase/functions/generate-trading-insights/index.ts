@@ -1,7 +1,8 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
+const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,8 +43,8 @@ serve(async (req) => {
       );
     }
 
-    if (!deepseekApiKey) {
-      console.error('Missing Deepseek API key');
+    if (!perplexityApiKey) {
+      console.error('Missing Perplexity API key');
       return new Response(
         JSON.stringify({ 
           insights: [{
@@ -62,10 +63,9 @@ serve(async (req) => {
     }
 
     try {
-      console.log(`Calling Deepseek API for ${purpose}`);
+      console.log(`Calling Perplexity API for ${purpose}`);
       
       let userPrompt = '';
-      let responseFormat = { type: "json_object" };
       
       if (purpose === 'advice') {
         userPrompt = `
@@ -83,7 +83,7 @@ serve(async (req) => {
           - Specific strengths and weaknesses
           - Clear, actionable recommendations for improvement
           
-          Return the response as a JSON object with an "analysis" field containing the text.
+          Return the response in Arabic.
         `;
       } else if (purpose === 'tips') {
         userPrompt = `
@@ -96,18 +96,17 @@ serve(async (req) => {
           - Largest win: $${stats.largestWin}
           - Largest loss: $${stats.largestLoss}
 
-          Generate 3-5 specific trading tips in English, focusing on:
+          Generate 3-5 specific trading tips in Arabic, focusing on:
           - Performance improvement
           - Risk management
           - Trading psychology
           - Strategy optimization
 
-          Return the response as a JSON object with an "insights" array, where each item has:
-          - id: unique string
-          - title: short tip title
-          - content: detailed explanation
-          - category: one of ["performance", "risk", "psychology", "strategy"]
-          - importance: one of ["high", "medium", "low"]
+          Format each tip with:
+          - A short title
+          - Detailed explanation
+          - Category (performance/risk/psychology/strategy)
+          - Importance (high/medium/low)
         `;
       } else {
         userPrompt = `
@@ -120,7 +119,7 @@ serve(async (req) => {
           - Largest win: $${stats.largestWin}
           - Largest loss: $${stats.largestLoss}
 
-          Generate 4-6 specific trading insights in English, focusing on:
+          Generate 4-6 specific trading insights in Arabic, focusing on:
           - Performance patterns
           - Risk management opportunities
           - Psychological aspects
@@ -129,57 +128,68 @@ serve(async (req) => {
           
           ${playbooks.length > 0 ? `Consider these existing trading playbooks: ${JSON.stringify(playbooks.map(p => p.title))}` : ''}
 
-          Return the response as a JSON object with an "insights" array, where each item has:
-          - id: unique string
-          - title: short insight title
-          - content: detailed explanation (50-100 words)
-          - category: one of ["performance", "psychology", "risk", "strategy", "pattern", "data"]
-          - importance: one of ["high", "medium", "low"]
+          Format each insight with:
+          - A short title
+          - Detailed explanation (50-100 words)
+          - Category (performance/psychology/risk/strategy/pattern/data)
+          - Importance (high/medium/low)
         `;
       }
 
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${deepseekApiKey}`,
+          'Authorization': `Bearer ${perplexityApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "deepseek-chat",
+          model: 'llama-3.1-sonar-small-128k-online',
           messages: [
             {
               role: 'system',
-              content: 'You are a professional trading advisor. Analyze the trading data and provide actionable insights.'
+              content: 'You are a professional trading advisor that provides analysis in Arabic. Be precise and actionable in your recommendations.'
             },
             {
               role: 'user',
               content: userPrompt
             }
           ],
-          response_format: responseFormat
+          temperature: 0.2,
+          max_tokens: 1000
         }),
       });
 
       const data = await response.json();
-      console.log('Deepseek Response:', data);
+      console.log('Perplexity Response:', data);
 
       if (data.error) {
-        console.error('Deepseek API Error:', data.error);
-        throw new Error(data.error.message || 'Error calling Deepseek API');
+        console.error('Perplexity API Error:', data.error);
+        throw new Error(data.error.message || 'Error calling Perplexity API');
       }
 
-      const parsedContent = JSON.parse(data.choices[0].message.content);
-      
-      if (purpose === 'advice' && !parsedContent.insights) {
-        return new Response(JSON.stringify({ analysis: parsedContent.analysis || "Sorry, an error occurred while analyzing the data" }), {
+      // Process the response based on purpose
+      if (purpose === 'advice') {
+        return new Response(JSON.stringify({ 
+          analysis: data.choices[0].message.content 
+        }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      
-      return new Response(JSON.stringify({ 
-        insights: parsedContent.insights || [],
-        analysis: parsedContent.analysis
-      }), {
+
+      // For tips and insights, parse the response and format it
+      const content = data.choices[0].message.content;
+      const insights = content.split('\n\n').filter(Boolean).map((insight, index) => {
+        const lines = insight.split('\n');
+        return {
+          id: `insight-${index + 1}`,
+          title: lines[0].replace(/^[*-]\s*/, ''),
+          content: lines.slice(1).join('\n').replace(/^[*-]\s*/, ''),
+          category: lines.find(l => l.includes('Category'))?.split(':')[1]?.trim() || 'performance',
+          importance: lines.find(l => l.includes('Importance'))?.split(':')[1]?.trim() || 'medium'
+        };
+      });
+
+      return new Response(JSON.stringify({ insights }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
 
@@ -189,29 +199,29 @@ serve(async (req) => {
       const fallbackInsights = [
         {
           id: 'fallback-1',
-          title: 'Improve Win Rate',
-          content: 'Focus on increasing profitable trades while minimizing losses for better overall results.',
+          title: 'تحسين نسبة الربح',
+          content: 'ركز على زيادة الصفقات المربحة مع تقليل الخسائر للحصول على نتائج أفضل.',
           category: 'performance',
           importance: 'high'
         },
         {
           id: 'fallback-2',
-          title: 'Session Analysis',
-          content: 'Focus on trading sessions that yield the best results and avoid sessions with recurring losses.',
+          title: 'تحليل الجلسات',
+          content: 'ركز على جلسات التداول التي تحقق أفضل النتائج وتجنب الجلسات ذات الخسائر المتكررة.',
           category: 'strategy',
           importance: 'medium'
         },
         {
           id: 'fallback-3',
-          title: 'Risk Management',
-          content: 'Ensure clear entry and exit points are defined before entering any trade to improve risk management.',
+          title: 'إدارة المخاطر',
+          content: 'تأكد من تحديد نقاط الدخول والخروج بوضوح قبل الدخول في أي صفقة لتحسين إدارة المخاطر.',
           category: 'risk',
           importance: 'high'
         },
         {
           id: 'fallback-4',
-          title: 'Trading Psychology',
-          content: 'Maintain psychological discipline and avoid emotional decision-making while trading.',
+          title: 'علم النفس التداول',
+          content: 'حافظ على الانضباط النفسي وتجنب اتخاذ القرارات العاطفية أثناء التداول.',
           category: 'psychology',
           importance: 'medium'
         }
@@ -219,7 +229,7 @@ serve(async (req) => {
       
       if (purpose === 'advice') {
         return new Response(JSON.stringify({ 
-          analysis: "Sorry, an error occurred while analyzing the data. Please check your internet connection and try again."
+          analysis: "عذراً، حدث خطأ أثناء تحليل البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى."
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -235,8 +245,8 @@ serve(async (req) => {
       JSON.stringify({ 
         insights: [{
           id: 'error',
-          title: 'Sorry, an error occurred',
-          content: 'An error occurred while processing your request. Please try again later.',
+          title: 'عذراً، حدث خطأ',
+          content: 'حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى لاحقاً.',
           category: 'error',
           importance: 'high'
         }]
