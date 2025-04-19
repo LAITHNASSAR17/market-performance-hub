@@ -121,17 +121,8 @@ const AddTrade: React.FC = () => {
   const handleSaveClick = async () => {
     if (!tradeData.pair || !tradeData.type || !tradeData.entry || !tradeData.exit || !tradeData.lotSize) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (isNaN(Number(tradeData.entry)) || isNaN(Number(tradeData.exit)) || isNaN(Number(tradeData.lotSize))) {
-      toast({
-        title: "Error",
-        description: "Entry, Exit, and Lot Size must be numbers.",
+        title: "خطأ",
+        description: "يرجى ملء جميع الحقول المطلوبة",
         variant: "destructive"
       });
       return;
@@ -139,41 +130,36 @@ const AddTrade: React.FC = () => {
 
     try {
       setLoading(true);
-      const currentUser = user || { id: 'demo-user-id' }; // Fallback to a demo ID if user is null
-    
-      // Calculate P/L
-      const profitOrLoss = calculateProfitLoss(tradeData);
-    
-      // Create the final trade object with calculated fields
+      const currentUser = user || { id: 'demo-user-id' };
+      
       const finalTradeData = {
         ...tradeData,
-        userId: currentUser.id, // Add userId
+        userId: currentUser.id,
         returnPercentage: calculateReturnPercentage(tradeData),
         riskPercentage: calculateRiskPercentage(tradeData),
-        profitLoss: profitOrLoss,
-        total: profitOrLoss - (tradeData.commission || 0)
+        profitLoss: calculateProfitLoss(tradeData)
       };
     
       if (isEditMode && selectedTrade) {
         await updateTrade(selectedTrade.id, finalTradeData);
         toast({
-          title: "Trade Updated",
-          description: "Trade has been updated successfully"
+          title: "تم التحديث",
+          description: "تم تحديث الصفقة بنجاح"
         });
       } else {
         await addTrade(finalTradeData);
         toast({
-          title: "Trade Added",
-          description: "Trade has been added successfully"
+          title: "تمت الإضافة",
+          description: "تم إضافة الصفقة بنجاح"
         });
       }
 
       navigate('/trades');
     } catch (error) {
-      console.error("Error adding/updating trade:", error);
+      console.error("Error saving trade:", error);
       toast({
-        title: "Error",
-        description: "Failed to save trade.",
+        title: "خطأ",
+        description: "فشل في حفظ الصفقة",
         variant: "destructive"
       });
     } finally {
