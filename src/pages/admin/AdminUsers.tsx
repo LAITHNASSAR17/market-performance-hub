@@ -104,7 +104,7 @@ const AdminUsers: React.FC = () => {
 
   const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
     try {
-      // Use Supabase Auth API to create user instead of direct DB access
+      // Use Supabase Auth API to create user
       const { data, error } = await supabase.auth.admin.createUser({
         email: userData.email,
         password: userData.password,
@@ -127,7 +127,8 @@ const AdminUsers: React.FC = () => {
       // Refresh users list
       fetchUsers();
       
-      return data;
+      // Convert the return type to void to match the expected type
+      return;
     } catch (error) {
       console.error('Error adding user:', error);
       toast({

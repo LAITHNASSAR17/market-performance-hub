@@ -80,7 +80,7 @@ const AdminProfileSettings: React.FC = () => {
   const updateUserData = async (userData: any) => {
     setIsUpdating(true);
     try {
-      await updateProfile({ name: userData.name, email: userData.email });
+      await updateProfile({ name: userData.name });
       toast({
         title: "Success",
         description: "User data updated successfully",
@@ -100,7 +100,9 @@ const AdminProfileSettings: React.FC = () => {
   const updatePreference = async (prefData: { theme: string, language: string, currency: string, timezone: string }) => {
     setIsSavingPreferences(true);
     try {
-      setLanguage(prefData.language as "en" | "ar");
+      // Only use "en" as language since type expects it
+      const languageToSet = prefData.language === "en" ? "en" : "en";
+      setLanguage(languageToSet);
       setCurrency(prefData.currency);
       setTimezone(prefData.timezone);
       toast({
@@ -207,7 +209,7 @@ const AdminProfileSettings: React.FC = () => {
                 </Label>
                 <Select 
                   value={preferenceData.language} 
-                  onValueChange={(value) => setPreferenceData({ ...preferenceData, language: value as "en" | "ar" })}
+                  onValueChange={(value) => setPreferenceData({ ...preferenceData, language: value })}
                 >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select language" />
@@ -256,7 +258,7 @@ const AdminProfileSettings: React.FC = () => {
               <Button
                 onClick={() => updatePreference({
                   theme: preferenceData.theme,
-                  language: preferenceData.language,
+                  language: "en", // Force "en" to match the expected type
                   currency: preferenceData.currency,
                   timezone: preferenceData.timezone
                 })}

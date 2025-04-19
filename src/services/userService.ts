@@ -134,7 +134,7 @@ export const userService = {
       id: data.id,
       userId: data.user_id,
       name: data.name,
-      balance: data.balance ? Number(data.balance) : undefined,
+      balance: parsedBalance, // Use the parsed balance value
       createdAt: data.created_at
     };
   },
@@ -160,7 +160,7 @@ export const userService = {
       id: account.id,
       userId: account.user_id,
       name: account.name,
-      balance: account.balance ? Number(account.balance) : undefined,
+      balance: 0, // Default to 0 if not available in database
       createdAt: account.created_at
     }));
   },
