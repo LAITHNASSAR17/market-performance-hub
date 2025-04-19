@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Bell, Check, TrendingUp, TrendingDown, AlertTriangle, BadgeCheck, Info, Clock } from 'lucide-react';
@@ -49,6 +48,7 @@ const AlertsDropdown: React.FC = () => {
           toast({
             title: (payload.new as Alert).title,
             description: (payload.new as Alert).message,
+            // Use only valid toast variants
             variant: getSeverityVariant((payload.new as Alert).severity)
           });
         }
@@ -84,12 +84,13 @@ const AlertsDropdown: React.FC = () => {
     );
   };
 
-  const getSeverityVariant = (severity: string): "default" | "destructive" | "success" | "warning" | "secondary" | "outline" => {
+  // Fix the return type to match what toast expects from use-toast.ts
+  const getSeverityVariant = (severity: string): "default" | "destructive" => {
     switch (severity) {
-      case 'warning': return 'warning';
-      case 'critical': return 'destructive';
+      case 'warning': return "default"; // Convert warning to default
+      case 'critical': return "destructive";
       case 'info': 
-      default: return 'success';
+      default: return "default"; // Convert success to default
     }
   };
 
