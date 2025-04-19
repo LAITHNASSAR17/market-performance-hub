@@ -2,16 +2,16 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
   name: string;
   email: string;
   password?: string;
-  isAdmin?: boolean;
-  isBlocked?: boolean;
   role?: string;
+  is_blocked?: boolean;
+  email_verified?: boolean;
   subscription_tier?: string;
 }
 
@@ -169,8 +169,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           password: hashedPassword,
           role: 'user',
           is_blocked: false,
-          subscription_tier: 'free',
-          email_verified: false
+          email_verified: false,
+          subscription_tier: 'free'
         })
         .select()
         .single();
@@ -323,8 +323,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .update({
           name: updatedUser.name,
           email: updatedUser.email,
-          role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
-          is_blocked: updatedUser.isBlocked || false,
+          role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user'),
+          is_blocked: updatedUser.is_blocked || false,
           subscription_tier: updatedUser.subscription_tier || 'free'
         })
         .eq('id', updatedUser.id);
