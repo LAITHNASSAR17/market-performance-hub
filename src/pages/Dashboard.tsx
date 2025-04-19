@@ -75,6 +75,23 @@ const Dashboard: React.FC = () => {
     return userTrades.filter(trade => new Date(trade.date) >= cutoffDate);
   }, [userTrades, timeframeFilter]);
 
+  useEffect(() => {
+    const fetchTrades = async () => {
+      try {
+        await trades.getAllTrades();
+      } catch (error) {
+        console.error('Error fetching trades:', error);
+        toast({
+          title: "خطأ في تحميل البيانات",
+          description: "حدث خطأ أثناء تحميل الصفقات. يرجى المحاولة مرة أخرى.",
+          variant: "destructive"
+        });
+      }
+    };
+
+    fetchTrades();
+  }, []);
+
   const totalProfit = filteredTrades.reduce((sum, trade) => sum + trade.total, 0);
   const winningTrades = filteredTrades.filter(trade => trade.total > 0).length;
   const losingTrades = filteredTrades.filter(trade => trade.total < 0).length;
