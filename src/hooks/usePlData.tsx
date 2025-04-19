@@ -28,7 +28,7 @@ export const usePlData = () => {
     }, {} as Record<string, number>);
 
     // Convert to array format for chart
-    const chartData = Object.entries(dailyData).map(([date, profit]) => ({
+    const chartData: PLDataPoint[] = Object.entries(dailyData).map(([date, profit]) => ({
       date,
       profit,
       // Add compatible properties

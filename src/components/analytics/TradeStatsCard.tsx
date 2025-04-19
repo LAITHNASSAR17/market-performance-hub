@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface TradeStatsCardProps {
   title: string;
-  value: number;
+  value: number | string;
   percentage?: number;
 }
 

@@ -34,7 +34,6 @@ const SystemSettingsExtended = () => {
 
       if (error) throw error;
       if (data) {
-        // Ensure company_email exists
         setSettings({
           ...data,
           company_email: data.company_email || ''

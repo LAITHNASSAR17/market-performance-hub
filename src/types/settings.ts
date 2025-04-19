@@ -1,3 +1,4 @@
+
 // Extend this file as needed
 
 export interface User {
@@ -128,3 +129,49 @@ export interface HomepageFeature {
   icon: string;
   order: number;
 }
+
+// Add the Trade and Note interfaces to fix the import errors in contexts
+export interface Trade {
+  id: string;
+  userId: string;
+  pair: string;
+  symbol?: string;
+  type: 'Buy' | 'Sell';
+  entry: number;
+  exit: number | null;
+  lotSize: number;
+  stopLoss: number | null;
+  takeProfit: number | null;
+  riskPercentage: number;
+  returnPercentage: number;
+  profitLoss: number;
+  durationMinutes: number | null;
+  notes: string;
+  date: string;
+  account: string;
+  imageUrl: string | null;
+  beforeImageUrl: string | null;
+  afterImageUrl: string | null;
+  hashtags: string[];
+  createdAt: string;
+  commission: number;
+  rating: number;
+  total: number;
+  playbook?: string;
+  followedRules?: string[];
+  marketSession?: string;
+}
+
+export interface Note {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  tradeId?: string;
+}
+
+// Export a Json type that can be used for features array in HomepageContent
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];

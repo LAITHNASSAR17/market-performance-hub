@@ -95,6 +95,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const getUser = async (userId: string) => {
+    try {
+      // We can't use "profiles" since it doesn't exist in the database
+      // Instead we'll use user_preferences to check if user exists
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user preferences:', error);
+        return null;
+      }
+
+      // Get user data from auth.user - we can't directly query this
+      // So we'll create a user object with default values
+      const user: User = {
+        id: userId,
+        name: 'User', // Default name
+        email: '', // We don't have access to email from preferences
+        role: 'user', // Default role
+        isAdmin: false,
+        isBlocked: false,
+        subscription_tier: 'free'
+      };
+
+      return user;
+    } catch (error) {
+      console.error('Error in getUser:', error);
+      return null;
+    }
+  };
+
   const getAllUsers = async (): Promise<User[]> => {
     try {
       // Since we don't have direct access to auth.users, we'll simulate this
