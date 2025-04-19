@@ -111,21 +111,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const adminEmail = 'lnmr2001@gmail.com';
         const adminPassword = hashPassword('password123');
         
-        const { error: insertError } = await supabase
+        const { data: insertedData, error: insertError } = await supabase
           .from('profiles')
           .insert({
+            id: crypto.randomUUID(),
             name: 'Admin User',
             email: adminEmail,
             password: adminPassword,
             role: 'admin',
             is_blocked: false,
+            email_verified: true,
             subscription_tier: 'premium'
-          });
+          })
+          .select()
+          .single();
           
         if (insertError) {
           console.error('Error creating admin user:', insertError);
         } else {
-          console.log('Test admin user created:', adminEmail);
+          console.log('Test admin user created:', insertedData);
         }
       }
     };
@@ -227,7 +231,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (!data.email_verified) {
           toast({
-            title: "البريد الإلكتروني غير مفعل",
+            title: "البريد الإلك��روني غير مفعل",
             description: "يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك. تم إرسال رابط التفعيل إلى بريدك الإلكتروني.",
             variant: "destructive",
           });
@@ -654,3 +658,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthProvider;
