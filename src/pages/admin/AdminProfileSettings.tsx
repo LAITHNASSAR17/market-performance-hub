@@ -59,7 +59,7 @@ const AdminProfileSettings: React.FC = () => {
 
   const [preferenceData, setPreferenceData] = useState({
     theme: 'system',
-    language: language,
+    language: language as 'en',
     currency: currency,
     timezone: timezone,
   });
@@ -94,7 +94,7 @@ const AdminProfileSettings: React.FC = () => {
     }
   };
 
-  const updatePreference = async (prefData: { theme: string, language: string, currency: string, timezone: string }) => {
+  const updatePreference = async (prefData: { theme: string, language: 'en', currency: string, timezone: string }) => {
     setIsSavingPreferences(true);
     try {
       setLanguage("en");
