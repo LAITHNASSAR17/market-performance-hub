@@ -1,8 +1,9 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Session, User } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { hashPassword, comparePassword } from '@/utils/encryption';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import CryptoJS from 'crypto-js';
 
 interface User {
   id: string;
@@ -13,7 +14,7 @@ interface User {
   is_blocked?: boolean;
   email_verified?: boolean;
   subscription_tier?: string;
-  isAdmin?: boolean; // Adding this for backwards compatibility
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
@@ -44,7 +45,6 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-// Session storage keys
 const USER_STORAGE_KEY = 'trackmind_user';
 const AUTH_STATUS_KEY = 'trackmind_auth_status';
 
@@ -65,7 +65,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Handle storage events to sync auth state across tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === USER_STORAGE_KEY) {
@@ -75,7 +74,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else if (e.key === AUTH_STATUS_KEY) {
         setIsAuthenticated(e.newValue === 'true');
         
-        // If logged out in another tab, redirect to login
         if (e.newValue !== 'true' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
           navigate('/login');
         }
@@ -88,7 +86,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [navigate]);
 
-  // Save auth state to local storage whenever it changes
   useEffect(() => {
     if (user) {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
@@ -246,7 +243,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw new Error('البريد الإلكتروني غير مفعل');
         }
         
-        // Save email for session recovery
         localStorage.setItem('user_email', email);
         
         setUser(data);
@@ -275,15 +271,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    // Remove current session data
     localStorage.removeItem('user_email');
     
-    // Update state
     setUser(null);
     setIsAdmin(false);
     setIsAuthenticated(false);
     
-    // Navigate to login page
     navigate('/login');
   };
 
@@ -619,6 +612,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         variant: "destructive",
       });
       throw error;
+    }
+  };
+
+  const createTestAdmin = async () => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Creating test admin user in development mode...');
+      
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', 'lnmr2001@gmail.com')
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error('Error checking for existing admin:', checkError);
+        return;
+      }
+      
+      if (!existingUsers) {
+        console.log('No existing admin found, creating one...');
+        const adminEmail = 'lnmr2001@gmail.com';
+        const adminPassword = hashPassword('password123');
+        
+        const { data: insertedData, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: crypto.randomUUID(),
+            name: 'Admin User',
+            email: adminEmail,
+            password: adminPassword,
+            role: 'admin',
+            is_blocked: false,
+            email_verified: true,
+            subscription_tier: 'premium'
+          })
+          .select()
+          .single();
+          
+        if (insertError) {
+          console.error('Error creating admin user:', insertError);
+        } else {
+          console.log('Test admin user created:', insertedData);
+        }
+      }
     }
   };
 

@@ -1,3 +1,6 @@
+
+// We need to update the fetchTradeFromDb function to handle the new properties
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';

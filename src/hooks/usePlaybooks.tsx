@@ -1,7 +1,9 @@
-
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from './use-toast';
 import { ITrade } from '@/services/tradeService';
+import { mapDBTradeToTrade } from '@/types/trade';
 
 export interface PlaybookRule {
   id: string;
@@ -147,7 +149,6 @@ export const usePlaybooks = () => {
     setPlaybooks(playbooks.filter(p => p.id !== id));
   };
 
-  // Get trades linked to a specific playbook
   const getPlaybookTrades = async (playbookId: string): Promise<ITrade[]> => {
     try {
       const { data, error } = await supabase
@@ -163,7 +164,6 @@ export const usePlaybooks = () => {
     }
   };
 
-  // Calculate performance metrics for a playbook based on linked trades
   const calculatePlaybookMetrics = async (playbookId: string) => {
     try {
       const trades = await getPlaybookTrades(playbookId);
@@ -182,7 +182,6 @@ export const usePlaybooks = () => {
       const avgWinner = winningTrades.length > 0 ? totalProfit / winningTrades.length : 0;
       const avgLoser = losingTrades.length > 0 ? totalLoss / losingTrades.length * -1 : 0;
       
-      // Calculate expectancy: (Win% × Average Win) - (Loss% × Average Loss)
       const expectancy = ((winRate / 100) * avgWinner) + ((1 - winRate / 100) * avgLoser);
       
       updatePlaybook(playbookId, {

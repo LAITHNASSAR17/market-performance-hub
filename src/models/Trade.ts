@@ -1,4 +1,7 @@
 
+// This is the MongoDB schema definition, not directly related to our Supabase/TypeScript interfaces.
+// No changes needed, but we're checking for completeness.
+
 import mongoose from 'mongoose';
 
 const tradeSchema = new mongoose.Schema({

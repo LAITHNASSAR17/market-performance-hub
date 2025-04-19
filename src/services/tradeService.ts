@@ -24,6 +24,10 @@ export interface ITrade {
   playbook?: string;
   followedRules?: string[];
   marketSession?: string;
+  accountId?: string;
+  imageUrl?: string | null;
+  beforeImageUrl?: string | null;
+  afterImageUrl?: string | null;
 }
 
 export const tradeService = {
@@ -83,7 +87,11 @@ export const tradeService = {
         stop_loss: tradeData.stopLoss,
         take_profit: tradeData.takeProfit,
         duration_minutes: tradeData.durationMinutes,
-        followed_rules: tradeData.followedRules || []
+        followed_rules: tradeData.followedRules || [],
+        account_id: tradeData.accountId,
+        image_url: tradeData.imageUrl,
+        before_image_url: tradeData.beforeImageUrl,
+        after_image_url: tradeData.afterImageUrl
       };
 
       // Only add market_session if it exists in tradeData
@@ -227,6 +235,10 @@ function formatTrade(data: any): ITrade {
       durationMinutes: data.duration_minutes,
       playbook: data.playbook,
       followedRules: data.followed_rules || [],
+      accountId: data.account_id,
+      imageUrl: data.image_url,
+      beforeImageUrl: data.before_image_url,
+      afterImageUrl: data.after_image_url,
       // Only add marketSession if it exists in the database response
       ...(data.market_session && { marketSession: data.market_session })
     };

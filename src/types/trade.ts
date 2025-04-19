@@ -29,9 +29,10 @@ export interface Trade {
   playbook?: string; // Field to link to a playbook
   followedRules?: string[]; // Rules that were followed in this trade
   marketSession?: string; // Market session when the trade was executed
+  accountId?: string; // ID of the trading account
 }
 
-// Update mapDBTradeToTrade to include marketSession
+// Update mapDBTradeToTrade to include all fields
 export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   id: dbTrade.id,
   userId: dbTrade.userId,
@@ -50,9 +51,9 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   // Important: Always format dates consistently as YYYY-MM-DD
   date: dbTrade.entryDate.toISOString().split('T')[0],
   account: 'Main Trading',
-  imageUrl: null,
-  beforeImageUrl: null,
-  afterImageUrl: null,
+  imageUrl: dbTrade.imageUrl || null,
+  beforeImageUrl: dbTrade.beforeImageUrl || null,
+  afterImageUrl: dbTrade.afterImageUrl || null,
   hashtags: dbTrade.tags || [],
   createdAt: dbTrade.createdAt.toISOString(),
   commission: dbTrade.fees || 0,
@@ -61,7 +62,8 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
   total: (dbTrade.profitLoss || 0) - (dbTrade.fees || 0),
   playbook: dbTrade.playbook,
   followedRules: dbTrade.followedRules,
-  marketSession: dbTrade.marketSession
+  marketSession: dbTrade.marketSession,
+  accountId: dbTrade.accountId
 });
 
 // Make sure mapTradeToDBTrade passes the correct values
@@ -86,5 +88,9 @@ export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITr
   durationMinutes: trade.durationMinutes || null,
   playbook: trade.playbook,
   followedRules: trade.followedRules,
-  marketSession: trade.marketSession
+  marketSession: trade.marketSession,
+  accountId: trade.accountId,
+  imageUrl: trade.imageUrl,
+  beforeImageUrl: trade.beforeImageUrl,
+  afterImageUrl: trade.afterImageUrl
 });

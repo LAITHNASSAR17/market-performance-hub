@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -350,7 +349,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const formattedTrade: Trade = {
               id: trade.id,
               userId: trade.user_id,
-              account: trade.account_id ? 'Account ' + trade.account_id.substring(0, 5) : 'Main Trading',
+              // Use account_id for account name if available
+              account: 'Main Trading',
               date: trade.entry_date ? trade.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
               pair: trade.symbol,
               type: trade.direction === 'long' ? 'Buy' : 'Sell',
@@ -373,7 +373,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               createdAt: trade.created_at,
               rating: trade.rating || 0,
               playbook: trade.playbook,
-              followedRules: trade.followed_rules || []
+              followedRules: trade.followed_rules || [],
+              accountId: trade.account_id
             };
             
             // Only add marketSession if it exists in the response

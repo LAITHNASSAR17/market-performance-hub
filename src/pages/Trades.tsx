@@ -1,3 +1,8 @@
+
+// This file should work fine with our updated Trade type, 
+// since it uses the properties that were already defined.
+// No changes needed, but we're checking for completeness.
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import { useTrade } from '@/contexts/TradeContext';
