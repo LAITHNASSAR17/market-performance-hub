@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useState,
@@ -11,6 +12,21 @@ import { ITrade, tradeService } from '@/services/tradeService';
 import { Trade } from '@/types/trade';
 import { useToast } from '@/components/ui/use-toast';
 
+// Define a TradingAccount type
+interface TradingAccount {
+  id: string;
+  name: string;
+  balance: number;
+  userId: string;
+}
+
+// Define a Symbol type
+interface Symbol {
+  symbol: string;
+  name: string;
+  type: 'forex' | 'stock' | 'crypto' | 'other';
+}
+
 type TradeContextType = {
   trades: Trade[];
   addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<{ success: boolean; data: Trade | null; error: string | null }>;
@@ -20,12 +36,20 @@ type TradeContextType = {
   findTradesByFilter: (filter: Partial<Trade>) => Promise<Trade[]>;
   loading: boolean;
   error: string | null;
+  // Additional properties for components
+  tradingAccounts: TradingAccount[];
+  accounts: string[];
+  pairs: string[];
+  symbols: Symbol[];
+  allHashtags: string[];
+  addHashtag: (hashtag: string) => void;
+  addSymbol: (symbol: Symbol) => void;
 };
 
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
 
 // Mock data for testing purposes
-const mockTradeData = [
+const mockTradeData: Trade[] = [
   {
     id: "1",
     userId: "user123",
@@ -48,7 +72,13 @@ const mockTradeData = [
     durationMinutes: 315,
     riskPercentage: 1.5,
     returnPercentage: 3.5,
+    // Compatibility fields
     pair: "AAPL/USD",
+    type: "Buy",
+    entry: 150.5,
+    exit: 155.75,
+    account: "Main Trading",
+    lotSize: 10,
     imageUrl: "https://example.com/image1.png",
     beforeImageUrl: "https://example.com/before1.png",
     afterImageUrl: "https://example.com/after1.png",
@@ -76,7 +106,13 @@ const mockTradeData = [
     durationMinutes: 315,
     riskPercentage: 2.0,
     returnPercentage: 1.0,
+    // Compatibility fields
     pair: "GOOG/USD",
+    type: "Sell",
+    entry: 2700.0,
+    exit: 2750.5,
+    account: "Retirement",
+    lotSize: 5,
     imageUrl: "https://example.com/image2.png",
     beforeImageUrl: "https://example.com/before2.png",
     afterImageUrl: "https://example.com/after2.png",
@@ -168,12 +204,31 @@ const mockTradeData = [
   }
 ];
 
+// Mock trading accounts
+const mockTradingAccounts: TradingAccount[] = [
+  { id: "1", name: "Main Trading", balance: 10000, userId: "user123" },
+  { id: "2", name: "Retirement", balance: 50000, userId: "user123" },
+  { id: "3", name: "Forex", balance: 5000, userId: "user123" },
+];
+
+// Mock symbols
+const mockSymbols: Symbol[] = [
+  { symbol: "EURUSD", name: "EUR/USD", type: "forex" },
+  { symbol: "AAPL", name: "Apple Inc.", type: "stock" },
+  { symbol: "BTCUSD", name: "Bitcoin/USD", type: "crypto" },
+];
+
 export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>(mockTradingAccounts);
+  const [symbols, setSymbols] = useState<Symbol[]>(mockSymbols);
+  const [allHashtags, setAllHashtags] = useState<string[]>([
+    "#forex", "#stocks", "#crypto", "#trading", "#winning", "#losing"
+  ]);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -238,7 +293,16 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
       accountId: apiTrade.account_id,
       riskPercentage: apiTrade.risk_percentage || 0,
       returnPercentage: apiTrade.return_percentage || 0,
-      // Map any other fields as needed
+      // Compatibility fields
+      date: apiTrade.entry_date.substring(0, 10),
+      pair: apiTrade.symbol,
+      type: apiTrade.direction === 'long' ? 'Buy' as const : 'Sell' as const,
+      entry: apiTrade.entry_price,
+      exit: apiTrade.exit_price || 0,
+      account: apiTrade.account_id || "Main Trading",
+      lotSize: apiTrade.quantity,
+      hashtags: apiTrade.tags || [],
+      commission: apiTrade.fees || 0,
     };
   };
   
@@ -373,7 +437,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
       // Convert filter to API format
       const apiFilter: any = {};
       Object.entries(filter).forEach(([key, value]) => {
-        apiFilter[key] = value;
+        // Map from our property names to API property names
+        const apiKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        apiFilter[apiKey] = value;
       });
       
       const trades = await tradeService.findTradesByFilter(apiFilter);
@@ -389,6 +455,28 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [toast]);
 
+  const addHashtag = useCallback((hashtag: string) => {
+    if (!hashtag.startsWith('#')) {
+      hashtag = `#${hashtag}`;
+    }
+    
+    if (!allHashtags.includes(hashtag)) {
+      setAllHashtags(prev => [...prev, hashtag]);
+    }
+  }, [allHashtags]);
+
+  const addSymbol = useCallback((symbol: Symbol) => {
+    if (!symbols.some(s => s.symbol === symbol.symbol)) {
+      setSymbols(prev => [...prev, symbol]);
+    }
+  }, [symbols]);
+
+  // Create a list of account names for dropdowns
+  const accounts = tradingAccounts.map(account => account.name);
+  
+  // Create a list of pairs for dropdowns
+  const pairs = symbols.map(symbol => symbol.symbol);
+
   return (
     <TradeContext.Provider
       value={{
@@ -400,6 +488,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({
         findTradesByFilter,
         loading,
         error,
+        tradingAccounts,
+        accounts,
+        pairs,
+        symbols,
+        allHashtags,
+        addHashtag,
+        addSymbol
       }}
     >
       {children}

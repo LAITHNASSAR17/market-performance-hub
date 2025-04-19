@@ -136,7 +136,7 @@ const AdminDashboard: React.FC = () => {
       console.error('Error calculating total revenue:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء حساب إجمالي الإيرادات",
+        description: "حدث خطأ أثناء حس��ب إجمالي الإيرادات",
         variant: "destructive"
       });
     }

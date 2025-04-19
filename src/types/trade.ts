@@ -27,7 +27,7 @@ export interface Trade {
   beforeImageUrl?: string;
   afterImageUrl?: string;
   
-  // These properties need to be added to resolve errors
+  // Required fields for compatibility
   riskPercentage: number;
   returnPercentage: number;
   
