@@ -48,9 +48,33 @@ export const tradeService = {
 
   async getAllTrades(): Promise<ITrade[]> {
     try {
+      // Explicitly name the columns to avoid ambiguity issues
       const { data, error } = await supabase
         .from('trades')
-        .select('*');
+        .select(`
+          id, 
+          user_id, 
+          symbol, 
+          entry_price, 
+          exit_price, 
+          quantity, 
+          direction, 
+          entry_date, 
+          exit_date, 
+          profit_loss, 
+          fees, 
+          notes, 
+          tags, 
+          created_at, 
+          updated_at, 
+          rating, 
+          stop_loss, 
+          take_profit, 
+          duration_minutes, 
+          playbook, 
+          followed_rules, 
+          market_session
+        `);
       
       if (error || !data) {
         console.error('Error fetching all trades:', error);
@@ -164,7 +188,32 @@ export const tradeService = {
 
   async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
     try {
-      let query = supabase.from('trades').select('*');
+      let query = supabase
+        .from('trades')
+        .select(`
+          id, 
+          user_id, 
+          symbol, 
+          entry_price, 
+          exit_price, 
+          quantity, 
+          direction, 
+          entry_date, 
+          exit_date, 
+          profit_loss, 
+          fees, 
+          notes, 
+          tags, 
+          created_at, 
+          updated_at, 
+          rating, 
+          stop_loss, 
+          take_profit, 
+          duration_minutes, 
+          playbook, 
+          followed_rules, 
+          market_session
+        `);
       
       Object.entries(filter).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -210,7 +259,7 @@ function formatTrade(data: any): ITrade {
       takeProfit: data.take_profit,
       durationMinutes: data.duration_minutes,
       playbook: data.playbook,
-      followedRules: data.followedRules,
+      followedRules: data.followed_rules,
       marketSession: data.market_session
     };
   } catch (err) {

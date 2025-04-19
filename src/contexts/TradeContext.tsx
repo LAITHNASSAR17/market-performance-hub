@@ -326,7 +326,30 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           console.log('Fetching trades for user:', user.id);
           const { data, error } = await supabase
             .from('trades')
-            .select('*')
+            .select(`
+              id, 
+              user_id, 
+              symbol, 
+              entry_price, 
+              exit_price, 
+              quantity, 
+              direction, 
+              entry_date, 
+              exit_date, 
+              profit_loss, 
+              fees, 
+              notes, 
+              tags, 
+              created_at, 
+              updated_at, 
+              rating, 
+              stop_loss, 
+              take_profit, 
+              duration_minutes, 
+              playbook,
+              followed_rules,
+              market_session
+            `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
@@ -614,7 +637,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!name.trim()) {
       toast({
         title: "خطأ",
-        description: "الرجاء إدخال اسم الحساب",
+        description: "الرجاء إدخال اسم ال��ساب",
         variant: "destructive"
       });
       throw new Error('Account name is required');
