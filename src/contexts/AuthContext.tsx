@@ -13,7 +13,6 @@ interface User {
   isBlocked?: boolean;
   role?: string;
   subscription_tier?: string;
-  avatar_url?: string; // Added this line
 }
 
 interface AuthContextType {

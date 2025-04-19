@@ -9,111 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      alerts: {
-        Row: {
-          created_at: string
-          id: string
-          message: string
-          related_tag: string | null
-          seen: boolean
-          severity: Database["public"]["Enums"]["alert_severity"]
-          title: string
-          type: Database["public"]["Enums"]["alert_type"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          message: string
-          related_tag?: string | null
-          seen?: boolean
-          severity?: Database["public"]["Enums"]["alert_severity"]
-          title: string
-          type: Database["public"]["Enums"]["alert_type"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          message?: string
-          related_tag?: string | null
-          seen?: boolean
-          severity?: Database["public"]["Enums"]["alert_severity"]
-          title?: string
-          type?: Database["public"]["Enums"]["alert_type"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      mentor_notes: {
-        Row: {
-          content: string
-          created_at: string
-          folder: string | null
-          id: string
-          mentee_id: string
-          mentor_id: string
-          template_id: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          folder?: string | null
-          id?: string
-          mentee_id: string
-          mentor_id: string
-          template_id?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          folder?: string | null
-          id?: string
-          mentee_id?: string
-          mentor_id?: string
-          template_id?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      mentorships: {
-        Row: {
-          created_at: string
-          id: string
-          invite_code: string | null
-          invite_email: string | null
-          mentee_id: string | null
-          mentor_id: string
-          status: Database["public"]["Enums"]["mentorship_status"]
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          invite_code?: string | null
-          invite_email?: string | null
-          mentee_id?: string | null
-          mentor_id: string
-          status?: Database["public"]["Enums"]["mentorship_status"]
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          invite_code?: string | null
-          invite_email?: string | null
-          mentee_id?: string | null
-          mentor_id?: string
-          status?: Database["public"]["Enums"]["mentorship_status"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
       note_folders: {
         Row: {
           color: string | null
@@ -604,10 +499,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_mentor_trade_access: {
-        Args: { trade_id: string }
-        Returns: boolean
-      }
       has_playbook_access: {
         Args: {
           playbook_id: string
@@ -622,10 +513,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_mentor_of: {
-        Args: { mentor_id: string; mentee_id: string }
-        Returns: boolean
-      }
       is_playbook_public: {
         Args: { playbook_id: string }
         Returns: boolean
@@ -636,9 +523,6 @@ export type Database = {
       }
     }
     Enums: {
-      alert_severity: "info" | "warning" | "critical"
-      alert_type: "mistake" | "success" | "drop" | "improvement"
-      mentorship_status: "pending" | "accepted" | "rejected"
       share_permission: "view" | "note" | "edit"
       shared_item_type: "trade" | "playbook"
     }
@@ -756,9 +640,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      alert_severity: ["info", "warning", "critical"],
-      alert_type: ["mistake", "success", "drop", "improvement"],
-      mentorship_status: ["pending", "accepted", "rejected"],
       share_permission: ["view", "note", "edit"],
       shared_item_type: ["trade", "playbook"],
     },
