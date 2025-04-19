@@ -34,10 +34,16 @@ const SystemSettingsExtended = () => {
 
       if (error) throw error;
       if (data) {
+        // Ensure we set the company_email properly, adding it if it doesn't exist
         setSettings({
-          ...data,
-          company_email: data.company_email || ''
-        } as SiteSettings);
+          id: data.id,
+          site_name: data.site_name,
+          company_email: data.company_email || '',
+          theme: data.theme || 'light',
+          language: data.language || 'en',
+          created_at: data.created_at,
+          updated_at: data.updated_at
+        });
       }
     } catch (error) {
       console.error('Error fetching settings:', error);

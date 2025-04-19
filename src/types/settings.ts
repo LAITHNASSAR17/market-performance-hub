@@ -130,7 +130,7 @@ export interface HomepageFeature {
   order: number;
 }
 
-// Add the Trade and Note interfaces to fix the import errors in contexts
+// Define a Trade interface
 export interface Trade {
   id: string;
   userId: string;
@@ -162,6 +162,7 @@ export interface Trade {
   marketSession?: string;
 }
 
+// Define a Note interface
 export interface Note {
   id: string;
   userId: string;
@@ -173,5 +174,5 @@ export interface Note {
   tradeId?: string;
 }
 
-// Export a Json type that can be used for features array in HomepageContent
+// Define a Json type for the features array in HomepageContent
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];

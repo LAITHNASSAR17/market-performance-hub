@@ -11,21 +11,10 @@ export const usePlaybooks = () => {
   const fetchPlaybooks = async () => {
     setIsLoading(true);
     try {
-      // Since playbooks table doesn't seem to exist in the database
-      // Let's provide mock data instead of querying a non-existent table
+      // Since playbooks table doesn't exist in the database
+      // We'll provide mock data instead of querying a non-existent table
       
-      // Commenting out the original query
-      /*
-      const { data, error } = await supabase
-        .from('playbooks')
-        .select('*')
-        .order('order', { ascending: true });
-
-      if (error) throw error;
-      setPlaybooks(data as PlaybookEntry[]);
-      */
-      
-      // Use mock data instead
+      // Mock data for development
       const mockPlaybooks: PlaybookEntry[] = [
         {
           id: '1',

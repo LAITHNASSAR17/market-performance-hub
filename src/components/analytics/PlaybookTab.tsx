@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { usePlaybooks } from '@/hooks/usePlaybooks';
 import { Button } from '@/components/ui/button';
@@ -107,7 +108,7 @@ const PlaybookTab: React.FC = () => {
             <PlaybookCard
               key={playbook.id}
               playbook={playbook}
-              onDelete={handleDeletePlaybook}
+              onDelete={() => handleDeletePlaybook(playbook.id)}
             />
           ))}
         </div>

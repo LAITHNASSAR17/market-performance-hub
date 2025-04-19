@@ -67,28 +67,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      // Use auth.users instead of profiles
-      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
-      
-      if (userError) {
-        console.error('Error fetching user:', userError);
-        return null;
-      }
-      
-      if (userData) {
-        const user: User = {
-          id: userData.user.id,
-          name: userData.user.user_metadata?.name || 'Anonymous',
-          email: userData.user.email || '',
-          role: userData.user.user_metadata?.role || 'user',
-          isAdmin: userData.user.user_metadata?.is_admin || false,
-          isBlocked: userData.user.user_metadata?.is_blocked || false,
-        };
+      // Since we don't have direct access to profiles table, we'll use user_preferences
+      // or just return a mock user with default values
+      try {
+        const { data: prefsData, error: prefsError } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (prefsError) {
+          console.warn('No user preferences found, returning default user data');
+        }
+
+        // Try to get user data from auth.admin.getUserById - this may not be available
+        // in client-side code, so we'll handle the error gracefully
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
         
-        return user;
+        if (userError) {
+          console.warn('Could not get user data from auth.admin, using default values');
+          
+          return {
+            id: userId,
+            name: 'User',
+            email: '',
+            role: 'user',
+            isAdmin: false,
+            isBlocked: false,
+            subscription_tier: 'free'
+          };
+        }
+        
+        if (userData) {
+          return {
+            id: userData.user.id,
+            name: userData.user.user_metadata?.name || 'Anonymous',
+            email: userData.user.email || '',
+            role: userData.user.user_metadata?.role || 'user',
+            isAdmin: userData.user.user_metadata?.is_admin || false,
+            isBlocked: userData.user.user_metadata?.is_blocked || false,
+            subscription_tier: userData.user.user_metadata?.subscription_tier || 'free'
+          };
+        }
+      } catch (err) {
+        console.warn('Error fetching user data, using default values', err);
       }
       
-      return null;
+      // Return default user if other methods fail
+      return {
+        id: userId,
+        name: 'User',
+        email: '',
+        role: 'user',
+        isAdmin: false,
+        isBlocked: false,
+        subscription_tier: 'free'
+      };
     } catch (error) {
       console.error('Error in fetchUserProfile:', error);
       return null;
@@ -140,27 +174,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return users;
       }
       
-      // Fetch from a users profile table if it exists
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
-        
-      if (!error && data) {
-        const formattedUsers: User[] = data.map(u => ({
-          id: u.id,
-          name: u.name || 'Unknown',
-          email: u.email || '',
-          role: u.role || 'user',
-          isAdmin: u.is_admin || false,
-          isBlocked: u.is_blocked || false,
-          subscription_tier: u.subscription_tier || 'free'
-        }));
-        
-        setUsers(formattedUsers);
-        return formattedUsers;
-      }
-        
-      // If no data, return a mock list for development
+      // Since profiles table doesn't exist, we'll use mock data
+      // In a real app, you would need to create a profiles table
+      
+      // Create mock users for development
       const mockUsers: User[] = [
         {
           id: '1',
@@ -433,7 +450,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         isAuthenticated,
         user,
-        isAdmin: user?.isAdmin || false,
+        isAdmin,
         users,
         login,
         logout,
