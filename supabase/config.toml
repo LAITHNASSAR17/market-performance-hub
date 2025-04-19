@@ -155,3 +155,9 @@ streaming_response = true
 [functions]
 [functions.generate-trading-insights]
 verify_jwt = false
+
+[functions.generate-trading-advice]
+verify_jwt = false
+
+[functions.generate-trading-tips]
+verify_jwt = false

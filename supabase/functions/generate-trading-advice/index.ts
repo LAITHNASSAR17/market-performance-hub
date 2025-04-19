@@ -76,7 +76,9 @@ serve(async (req) => {
                 Keep the response focused and actionable.
               `
             }
-          ]
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
         }),
       });
 
