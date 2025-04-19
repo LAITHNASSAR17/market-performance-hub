@@ -21,9 +21,9 @@ export interface ITrade {
   stopLoss: number | null;
   takeProfit: number | null;
   durationMinutes: number | null;
-  playbook?: string | null;
-  followedRules?: string[];
-  marketSession?: string | null;
+  playbook: string | null;
+  followedRules: string[];
+  marketSession: string | null;
 }
 
 export const tradeService = {
@@ -34,20 +34,29 @@ export const tradeService = {
       .eq('id', id)
       .single();
     
-    if (error || !data) return null;
+    if (error || !data) {
+      console.error('Error fetching trade by ID:', error);
+      return null;
+    }
     return formatTrade(data);
   },
 
   async getAllTrades(): Promise<ITrade[]> {
     const { data, error } = await supabase
       .from('trades')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
     
-    if (error || !data) return [];
+    if (error || !data) {
+      console.error('Error fetching all trades:', error);
+      return [];
+    }
     return data.map(formatTrade);
   },
 
   async createTrade(tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>): Promise<ITrade> {
+    console.log('Creating trade with data:', tradeData);
+    
     const { data, error } = await supabase
       .from('trades')
       .insert({
@@ -76,7 +85,12 @@ export const tradeService = {
       .select()
       .single();
     
-    if (error || !data) throw new Error(`Error creating trade: ${error?.message}`);
+    if (error || !data) {
+      console.error('Error creating trade:', error);
+      throw new Error(`Error creating trade: ${error?.message}`);
+    }
+    
+    console.log('Trade created successfully:', data);
     return formatTrade(data);
   },
 
@@ -107,10 +121,6 @@ export const tradeService = {
     if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
     if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
     
-    if (tradeData.exitDate !== undefined && tradeData.entryDate) {
-      updateObject.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
-    }
-
     console.log('Updating trade with data:', updateObject);
 
     const { data, error } = await supabase
@@ -133,7 +143,11 @@ export const tradeService = {
       .delete()
       .eq('id', id);
     
-    return !error;
+    if (error) {
+      console.error('Error deleting trade:', error);
+      return false;
+    }
+    return true;
   },
 
   async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
@@ -148,34 +162,42 @@ export const tradeService = {
     
     const { data, error } = await query;
     
-    if (error || !data) return [];
+    if (error || !data) {
+      console.error('Error finding trades by filter:', error);
+      return [];
+    }
     return data.map(formatTrade);
   }
 };
 
 function formatTrade(data: any): ITrade {
-  return {
-    id: data.id,
-    userId: data.user_id,
-    symbol: data.symbol,
-    entryPrice: data.entry_price,
-    exitPrice: data.exit_price,
-    quantity: data.quantity,
-    direction: data.direction,
-    entryDate: new Date(data.entry_date),
-    exitDate: data.exit_date ? new Date(data.exit_date) : null,
-    profitLoss: data.profit_loss,
-    fees: data.fees || 0,
-    notes: data.notes || '',
-    tags: data.tags || [],
-    createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at),
-    rating: data.rating || 0,
-    stopLoss: data.stop_loss,
-    takeProfit: data.take_profit,
-    durationMinutes: data.duration_minutes,
-    playbook: data.playbook,
-    followedRules: data.followed_rules || [],
-    marketSession: data.market_session
-  };
+  try {
+    return {
+      id: data.id,
+      userId: data.user_id,
+      symbol: data.symbol,
+      entryPrice: data.entry_price,
+      exitPrice: data.exit_price,
+      quantity: data.quantity,
+      direction: data.direction,
+      entryDate: new Date(data.entry_date),
+      exitDate: data.exit_date ? new Date(data.exit_date) : null,
+      profitLoss: data.profit_loss,
+      fees: data.fees || 0,
+      notes: data.notes || '',
+      tags: data.tags || [],
+      createdAt: new Date(data.created_at),
+      updatedAt: new Date(data.updated_at),
+      rating: data.rating || 0,
+      stopLoss: data.stop_loss,
+      takeProfit: data.take_profit,
+      durationMinutes: data.duration_minutes,
+      playbook: data.playbook || null,
+      followedRules: data.followed_rules || [],
+      marketSession: data.market_session || null
+    };
+  } catch (error) {
+    console.error('Error formatting trade:', error, data);
+    throw error;
+  }
 }
