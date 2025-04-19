@@ -144,6 +144,36 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          company_email: string
+          copyright_text: string | null
+          created_at: string | null
+          id: string
+          site_name: string
+          support_phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          company_email?: string
+          copyright_text?: string | null
+          created_at?: string | null
+          id?: string
+          site_name?: string
+          support_phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          company_email?: string
+          copyright_text?: string | null
+          created_at?: string | null
+          id?: string
+          site_name?: string
+          support_phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string | null
