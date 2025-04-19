@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -85,6 +86,7 @@ serve(async (req) => {
           - Clear, actionable recommendations for improvement
           
           Return the response as a JSON object with an "analysis" field containing the text.
+          Make sure to write in Arabic language.
         `;
       } else if (purpose === 'tips') {
         userPrompt = `
@@ -97,7 +99,7 @@ serve(async (req) => {
           - Largest win: $${stats.largestWin}
           - Largest loss: $${stats.largestLoss}
 
-          Generate 3-5 specific trading tips in English, focusing on:
+          Generate 3-5 specific trading tips in Arabic, focusing on:
           - Performance improvement
           - Risk management
           - Trading psychology
@@ -105,8 +107,8 @@ serve(async (req) => {
 
           Return the response as a JSON object with an "insights" array, where each item has:
           - id: unique string
-          - title: short tip title
-          - content: detailed explanation
+          - title: short tip title in Arabic
+          - content: detailed explanation in Arabic
           - category: one of ["performance", "risk", "psychology", "strategy"]
           - importance: one of ["high", "medium", "low"]
         `;
@@ -121,25 +123,36 @@ serve(async (req) => {
           - Largest win: $${stats.largestWin}
           - Largest loss: $${stats.largestLoss}
 
-          Generate 4-6 specific trading insights in English, focusing on:
-          - Performance patterns
-          - Risk management opportunities
-          - Psychological aspects
-          - Strategy improvements
-          - Trading patterns
+          ${trades.length >= 10 ? `
+          Analyze the trading patterns and provide 4-6 detailed insights in Arabic focusing on:
+          - Performance trends and patterns
+          - Risk management effectiveness
+          - Psychological aspects of trading
+          - Strategy strengths and weaknesses
+          - Areas for improvement
+          - Potential optimization opportunities
+          ` : `
+          Provide 3-4 initial insights in Arabic about:
+          - Current trading approach
+          - Risk management
+          - Areas to focus on
+          - Next steps for improvement
+          `}
           
           ${playbooks.length > 0 ? `Consider these existing trading playbooks: ${JSON.stringify(playbooks.map(p => p.title))}` : ''}
 
           Return the response as a JSON object with an "insights" array, where each item has:
           - id: unique string
-          - title: short insight title
-          - content: detailed explanation (50-100 words)
+          - title: short insight title in Arabic
+          - content: detailed explanation (50-100 words) in Arabic
           - category: one of ["performance", "psychology", "risk", "strategy", "pattern", "data"]
           - importance: one of ["high", "medium", "low"]
+
+          Make all responses in Arabic language and ensure they are specific and actionable.
         `;
       }
 
-      // Make the API call to Llama API
+      // Make the API call to Together.ai's API
       const response = await fetch('https://api.together.xyz/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -147,18 +160,20 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-maverick:free",
+          model: "meta-llama/llama-4-sonar-small-128k-online",
           messages: [
             {
               role: 'system',
-              content: 'You are a professional trading advisor. Analyze the trading data and provide actionable insights.'
+              content: 'You are an expert trading advisor specializing in technical analysis and trading psychology. Provide detailed insights in Arabic language. Be specific and actionable in your recommendations.'
             },
             {
               role: 'user',
               content: userPrompt
             }
           ],
-          response_format: responseFormat
+          temperature: 0.2,
+          response_format: responseFormat,
+          max_tokens: 2000
         }),
       });
 
@@ -173,7 +188,7 @@ serve(async (req) => {
       const parsedContent = JSON.parse(data.choices[0].message.content);
       
       if (purpose === 'advice' && !parsedContent.insights) {
-        return new Response(JSON.stringify({ analysis: parsedContent.analysis || "Sorry, an error occurred while analyzing the data" }), {
+        return new Response(JSON.stringify({ analysis: parsedContent.analysis || "عذراً، حدث خطأ في تحليل البيانات" }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
@@ -191,29 +206,29 @@ serve(async (req) => {
       const fallbackInsights = [
         {
           id: 'fallback-1',
-          title: 'Improve Win Rate',
-          content: 'Focus on increasing profitable trades while minimizing losses for better overall results.',
+          title: 'تحسين نسبة الربح',
+          content: 'ركز على زيادة الصفقات المربحة مع تقليل الخسائر للحصول على نتائج أفضل.',
           category: 'performance',
           importance: 'high'
         },
         {
           id: 'fallback-2',
-          title: 'Session Analysis',
-          content: 'Focus on trading sessions that yield the best results and avoid sessions with recurring losses.',
+          title: 'تحليل الجلسات',
+          content: 'ركز على جلسات التداول التي تحقق أفضل النتائج وتجنب الجلسات ذات الخسائر المتكررة.',
           category: 'strategy',
           importance: 'medium'
         },
         {
           id: 'fallback-3',
-          title: 'Risk Management',
-          content: 'Ensure clear entry and exit points are defined before entering any trade to improve risk management.',
+          title: 'إدارة المخاطر',
+          content: 'تأكد من تحديد نقاط الدخول والخروج بوضوح قبل الدخول في أي صفقة لتحسين إدارة المخاطر.',
           category: 'risk',
           importance: 'high'
         },
         {
           id: 'fallback-4',
-          title: 'Trading Psychology',
-          content: 'Maintain psychological discipline and avoid emotional decision-making while trading.',
+          title: 'علم النفس التداول',
+          content: 'حافظ على الانضباط النفسي وتجنب اتخاذ القرارات العاطفية أثناء التداول.',
           category: 'psychology',
           importance: 'medium'
         }
@@ -221,7 +236,7 @@ serve(async (req) => {
       
       if (purpose === 'advice') {
         return new Response(JSON.stringify({ 
-          analysis: "Sorry, an error occurred while analyzing the data. Please check your internet connection and try again."
+          analysis: "عذراً، حدث خطأ أثناء تحليل البيانات. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى."
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -235,7 +250,7 @@ serve(async (req) => {
     console.error('Comprehensive error in generate-trading-insights:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'An unexpected error occurred',
+        error: 'حدث خطأ غير متوقع',
         details: error.message
       }),
       {
@@ -245,3 +260,4 @@ serve(async (req) => {
     );
   }
 });
+
