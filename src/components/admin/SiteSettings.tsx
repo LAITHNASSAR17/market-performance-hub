@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
@@ -17,9 +18,7 @@ const SiteSettings: React.FC = () => {
     site_name: '',
     company_email: '',
     support_phone: '',
-    copyright_text: '',
-    theme: 'light',
-    language: 'en'
+    copyright_text: ''
   });
   
   // Load settings on mount
@@ -29,9 +28,7 @@ const SiteSettings: React.FC = () => {
         site_name: settings.site_name || 'Trading Platform',
         company_email: settings.company_email || 'support@tradingplatform.com',
         support_phone: settings.support_phone || '+1 (123) 456-7890',
-        copyright_text: settings.copyright_text || '© 2025 Trading Platform. All rights reserved.',
-        theme: settings.theme || 'light',
-        language: settings.language || 'en'
+        copyright_text: settings.copyright_text || '© 2025 Trading Platform. All rights reserved.'
       });
     }
   }, [settings]);
@@ -47,12 +44,7 @@ const SiteSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       console.log('Saving site settings:', formValues);
-      updateSettings({
-        ...formValues,
-        id: settings?.id || '',
-        created_at: settings?.created_at || '',
-        updated_at: settings?.updated_at || ''
-      });
+      updateSettings(formValues);
       
       setIsEditing(false);
       
@@ -76,9 +68,7 @@ const SiteSettings: React.FC = () => {
         site_name: settings.site_name || 'Trading Platform',
         company_email: settings.company_email || 'support@tradingplatform.com',
         support_phone: settings.support_phone || '+1 (123) 456-7890',
-        copyright_text: settings.copyright_text || '© 2025 Trading Platform. All rights reserved.',
-        theme: settings.theme || 'light',
-        language: settings.language || 'en'
+        copyright_text: settings.copyright_text || '© 2025 Trading Platform. All rights reserved.'
       });
     }
     setIsEditing(false);

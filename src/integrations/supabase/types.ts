@@ -51,42 +51,6 @@ export type Database = {
         }
         Relationships: []
       }
-      journal_entries: {
-        Row: {
-          content: string
-          created_at: string | null
-          date: string
-          id: string
-          mood: number | null
-          tags: string[] | null
-          title: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          date: string
-          id?: string
-          mood?: number | null
-          tags?: string[] | null
-          title: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          date?: string
-          id?: string
-          mood?: number | null
-          tags?: string[] | null
-          title?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       notes: {
         Row: {
           content: string | null
@@ -128,201 +92,35 @@ export type Database = {
           },
         ]
       }
-      playbooks: {
-        Row: {
-          avg_loser: number | null
-          avg_winner: number | null
-          category: string | null
-          created_at: string | null
-          description: string
-          expected_value: number | null
-          id: string
-          is_active: boolean | null
-          is_private: boolean | null
-          missed_trades: number | null
-          name: string
-          net_profit_loss: number | null
-          order_number: number | null
-          profit_factor: number | null
-          r_multiple: number | null
-          rating: number | null
-          rules: Json | null
-          setup: string | null
-          tags: string[] | null
-          total_trades: number | null
-          trade_type: string | null
-          updated_at: string | null
-          user_id: string
-          win_rate: number | null
-        }
-        Insert: {
-          avg_loser?: number | null
-          avg_winner?: number | null
-          category?: string | null
-          created_at?: string | null
-          description: string
-          expected_value?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_private?: boolean | null
-          missed_trades?: number | null
-          name: string
-          net_profit_loss?: number | null
-          order_number?: number | null
-          profit_factor?: number | null
-          r_multiple?: number | null
-          rating?: number | null
-          rules?: Json | null
-          setup?: string | null
-          tags?: string[] | null
-          total_trades?: number | null
-          trade_type?: string | null
-          updated_at?: string | null
-          user_id: string
-          win_rate?: number | null
-        }
-        Update: {
-          avg_loser?: number | null
-          avg_winner?: number | null
-          category?: string | null
-          created_at?: string | null
-          description?: string
-          expected_value?: number | null
-          id?: string
-          is_active?: boolean | null
-          is_private?: boolean | null
-          missed_trades?: number | null
-          name?: string
-          net_profit_loss?: number | null
-          order_number?: number | null
-          profit_factor?: number | null
-          r_multiple?: number | null
-          rating?: number | null
-          rules?: Json | null
-          setup?: string | null
-          tags?: string[] | null
-          total_trades?: number | null
-          trade_type?: string | null
-          updated_at?: string | null
-          user_id?: string
-          win_rate?: number | null
-        }
-        Relationships: []
-      }
       site_settings: {
         Row: {
-          allow_registrations: boolean | null
-          company_email: string | null
-          copyright_text: string | null
           created_at: string
-          currency: string | null
-          custom_domain: string | null
-          default_user_role: string | null
-          favicon_url: string | null
-          google_analytics_id: string | null
           id: string
           language: string | null
-          logo_url: string | null
-          maintenance_mode: boolean | null
-          privacy_url: string | null
           site_name: string
-          subscription_plans_ids: string[] | null
-          support_phone: string | null
-          support_url: string | null
-          terms_url: string | null
           theme: string | null
-          timezone: string | null
           updated_at: string
         }
         Insert: {
-          allow_registrations?: boolean | null
-          company_email?: string | null
-          copyright_text?: string | null
           created_at?: string
-          currency?: string | null
-          custom_domain?: string | null
-          default_user_role?: string | null
-          favicon_url?: string | null
-          google_analytics_id?: string | null
           id?: string
           language?: string | null
-          logo_url?: string | null
-          maintenance_mode?: boolean | null
-          privacy_url?: string | null
           site_name?: string
-          subscription_plans_ids?: string[] | null
-          support_phone?: string | null
-          support_url?: string | null
-          terms_url?: string | null
           theme?: string | null
-          timezone?: string | null
           updated_at?: string
         }
         Update: {
-          allow_registrations?: boolean | null
-          company_email?: string | null
-          copyright_text?: string | null
           created_at?: string
-          currency?: string | null
-          custom_domain?: string | null
-          default_user_role?: string | null
-          favicon_url?: string | null
-          google_analytics_id?: string | null
           id?: string
           language?: string | null
-          logo_url?: string | null
-          maintenance_mode?: boolean | null
-          privacy_url?: string | null
           site_name?: string
-          subscription_plans_ids?: string[] | null
-          support_phone?: string | null
-          support_url?: string | null
-          terms_url?: string | null
           theme?: string | null
-          timezone?: string | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      subscription_plans: {
-        Row: {
-          billing_period: string
-          created_at: string | null
-          description: string
-          features: string[] | null
-          id: string
-          is_active: boolean | null
-          name: string
-          price: number
-          updated_at: string | null
-        }
-        Insert: {
-          billing_period: string
-          created_at?: string | null
-          description: string
-          features?: string[] | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          price: number
-          updated_at?: string | null
-        }
-        Update: {
-          billing_period?: string
-          created_at?: string | null
-          description?: string
-          features?: string[] | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          price?: number
-          updated_at?: string | null
         }
         Relationships: []
       }
       trades: {
         Row: {
-          account_id: string | null
           after_image_url: string | null
           before_image_url: string | null
           created_at: string
@@ -350,7 +148,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          account_id?: string | null
           after_image_url?: string | null
           before_image_url?: string | null
           created_at?: string
@@ -378,7 +175,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          account_id?: string | null
           after_image_url?: string | null
           before_image_url?: string | null
           created_at?: string
@@ -405,15 +201,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "trades_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "trading_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       trading_accounts: {
         Row: {

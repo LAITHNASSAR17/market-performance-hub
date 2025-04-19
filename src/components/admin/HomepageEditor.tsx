@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { HomepageContent, HomepageFeature, Json } from '@/types/settings';
+import { HomepageContent } from '@/types/settings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,7 @@ const HomepageEditor = () => {
             
         setContent({
           ...data,
-          features: parsedFeatures as HomepageFeature[]
+          features: parsedFeatures
         });
       }
     } catch (error) {
@@ -61,16 +61,13 @@ const HomepageEditor = () => {
     setLoading(true);
 
     try {
-      // Cast HomepageFeature[] to Json type for database storage
-      const featuresJson = content.features as unknown as Json;
-      
       const { error } = await supabase
         .from('homepage_content')
         .update({
           title: content.title,
           subtitle: content.subtitle,
           description: content.description,
-          features: featuresJson,
+          features: content.features,
           primary_button_text: content.primary_button_text,
           primary_button_url: content.primary_button_url,
           secondary_button_text: content.secondary_button_text,

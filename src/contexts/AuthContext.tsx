@@ -67,98 +67,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      // Since we don't have direct access to profiles table, we'll use user_preferences
-      // or just return a mock user with default values
-      try {
-        const { data: prefsData, error: prefsError } = await supabase
-          .from('user_preferences')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-
-        if (prefsError) {
-          console.warn('No user preferences found, returning default user data');
-        }
-
-        // Try to get user data from auth.admin.getUserById - this may not be available
-        // in client-side code, so we'll handle the error gracefully
-        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
-        
-        if (userError) {
-          console.warn('Could not get user data from auth.admin, using default values');
-          
-          return {
-            id: userId,
-            name: 'User',
-            email: '',
-            role: 'user',
-            isAdmin: false,
-            isBlocked: false,
-            subscription_tier: 'free'
-          };
-        }
-        
-        if (userData) {
-          return {
-            id: userData.user.id,
-            name: userData.user.user_metadata?.name || 'Anonymous',
-            email: userData.user.email || '',
-            role: userData.user.user_metadata?.role || 'user',
-            isAdmin: userData.user.user_metadata?.is_admin || false,
-            isBlocked: userData.user.user_metadata?.is_blocked || false,
-            subscription_tier: userData.user.user_metadata?.subscription_tier || 'free'
-          };
-        }
-      } catch (err) {
-        console.warn('Error fetching user data, using default values', err);
-      }
+      // Use auth.users instead of profiles
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
       
-      // Return default user if other methods fail
-      return {
-        id: userId,
-        name: 'User',
-        email: '',
-        role: 'user',
-        isAdmin: false,
-        isBlocked: false,
-        subscription_tier: 'free'
-      };
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-      return null;
-    }
-  };
-
-  const getUser = async (userId: string) => {
-    try {
-      // We can't use "profiles" since it doesn't exist in the database
-      // Instead we'll use user_preferences to check if user exists
-      const { data, error } = await supabase
-        .from('user_preferences')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user preferences:', error);
+      if (userError) {
+        console.error('Error fetching user:', userError);
         return null;
       }
-
-      // Get user data from auth.user - we can't directly query this
-      // So we'll create a user object with default values
-      const user: User = {
-        id: userId,
-        name: 'User', // Default name
-        email: '', // We don't have access to email from preferences
-        role: 'user', // Default role
-        isAdmin: false,
-        isBlocked: false,
-        subscription_tier: 'free'
-      };
-
-      return user;
+      
+      if (userData) {
+        const user: User = {
+          id: userData.user.id,
+          name: userData.user.user_metadata?.name || 'Anonymous',
+          email: userData.user.email || '',
+          role: userData.user.user_metadata?.role || 'user',
+          isAdmin: userData.user.user_metadata?.is_admin || false,
+          isBlocked: userData.user.user_metadata?.is_blocked || false,
+        };
+        
+        return user;
+      }
+      
+      return null;
     } catch (error) {
-      console.error('Error in getUser:', error);
+      console.error('Error in fetchUserProfile:', error);
       return null;
     }
   };
@@ -174,10 +106,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return users;
       }
       
-      // Since profiles table doesn't exist, we'll use mock data
-      // In a real app, you would need to create a profiles table
-      
-      // Create mock users for development
+      // Fetch from a users profile table if it exists
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+        
+      if (!error && data) {
+        const formattedUsers: User[] = data.map(u => ({
+          id: u.id,
+          name: u.name || 'Unknown',
+          email: u.email || '',
+          role: u.role || 'user',
+          isAdmin: u.is_admin || false,
+          isBlocked: u.is_blocked || false,
+          subscription_tier: u.subscription_tier || 'free'
+        }));
+        
+        setUsers(formattedUsers);
+        return formattedUsers;
+      }
+        
+      // If no data, return a mock list for development
       const mockUsers: User[] = [
         {
           id: '1',
@@ -450,7 +399,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         isAuthenticated,
         user,
-        isAdmin,
+        isAdmin: user?.isAdmin || false,
         users,
         login,
         logout,
