@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleIcon } from 'lucide-react';
 import DailyPLBarChart from '../DailyPLBarChart';
+import TradingInsights from '../TradingInsights';
 
 interface PerformanceChartsProps {
   dailyPerformanceData: Array<{
