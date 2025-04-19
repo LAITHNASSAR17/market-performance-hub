@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -347,7 +348,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               take_profit, 
               duration_minutes, 
               playbook,
-              followed_rules
+              followed_rules,
+              market_session
             `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
@@ -364,35 +366,44 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
 
           console.log('Fetched trades data:', data);
-          const formattedTrades: Trade[] = data.map(trade => ({
-            id: trade.id,
-            userId: trade.user_id,
-            account: 'Main Trading',
-            date: trade.entry_date.split('T')[0],
-            pair: trade.symbol,
-            type: trade.direction === 'long' ? 'Buy' : 'Sell',
-            entry: trade.entry_price,
-            exit: trade.exit_price || 0,
-            lotSize: trade.quantity,
-            stopLoss: trade.stop_loss || null,
-            takeProfit: trade.take_profit || null,
-            riskPercentage: 0,
-            returnPercentage: 0,
-            profitLoss: trade.profit_loss || 0,
-            commission: trade.fees || 0,
-            total: (trade.profit_loss || 0) - (trade.fees || 0),
-            durationMinutes: trade.duration_minutes || 0,
-            notes: trade.notes || '',
-            imageUrl: null,
-            beforeImageUrl: null,
-            afterImageUrl: null,
-            hashtags: trade.tags || [],
-            createdAt: trade.created_at,
-            rating: trade.rating || 0,
-            playbook: trade.playbook,
-            followedRules: trade.followed_rules || [],
-            ...(trade.market_session && { marketSession: trade.market_session })
-          }));
+          const formattedTrades: Trade[] = data.map(trade => {
+            // Create base trade object with required fields
+            const formattedTrade: Trade = {
+              id: trade.id,
+              userId: trade.user_id,
+              account: 'Main Trading',
+              date: trade.entry_date.split('T')[0],
+              pair: trade.symbol,
+              type: trade.direction === 'long' ? 'Buy' : 'Sell',
+              entry: trade.entry_price,
+              exit: trade.exit_price || 0,
+              lotSize: trade.quantity,
+              stopLoss: trade.stop_loss || null,
+              takeProfit: trade.take_profit || null,
+              riskPercentage: 0,
+              returnPercentage: 0,
+              profitLoss: trade.profit_loss || 0,
+              commission: trade.fees || 0,
+              total: (trade.profit_loss || 0) - (trade.fees || 0),
+              durationMinutes: trade.duration_minutes || 0,
+              notes: trade.notes || '',
+              imageUrl: null,
+              beforeImageUrl: null,
+              afterImageUrl: null,
+              hashtags: trade.tags || [],
+              createdAt: trade.created_at,
+              rating: trade.rating || 0,
+              playbook: trade.playbook,
+              followedRules: trade.followed_rules || []
+            };
+            
+            // Only add marketSession if it exists in the response
+            if (trade.market_session) {
+              formattedTrade.marketSession = trade.market_session;
+            }
+            
+            return formattedTrade;
+          });
 
           console.log('Formatted trades:', formattedTrades);
           setTrades(formattedTrades);
