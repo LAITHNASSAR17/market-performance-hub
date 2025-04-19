@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
   isBlocked: { type: Boolean, default: false },
   subscription_tier: { 
     type: String, 
-    enum: ['free', 'pro', 'elite'],
+    enum: ['free', 'pro', 'elite', 'premium', 'enterprise'],
     default: 'free' 
   },
 }, { timestamps: true });

@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface PaymentButtonProps extends ButtonProps {
   text?: string;
-  tier?: 'premium' | 'enterprise';
+  tier?: 'premium' | 'enterprise' | 'pro' | 'elite';
 }
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({ 
@@ -26,8 +26,11 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   };
 
   // Don't show if user already has this tier or higher
-  if (user?.subscription_tier === 'enterprise' || 
-      (user?.subscription_tier === 'premium' && tier === 'premium')) {
+  if (user?.subscription_tier === tier || 
+      (user?.subscription_tier === 'enterprise' && tier !== 'enterprise') ||
+      (user?.subscription_tier === 'elite' && tier !== 'elite') ||
+      (user?.subscription_tier === 'premium' && tier === 'premium') ||
+      (user?.subscription_tier === 'pro' && tier === 'pro')) {
     return null;
   }
 
