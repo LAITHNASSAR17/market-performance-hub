@@ -1,5 +1,6 @@
 
-import { Toast, ToastActionElement, ToastProps } from "@/components/ui/toast";
+import * as React from "react";
+import { Toast, ToastProps } from "@/components/ui/toast";
 import {
   ToastActionElement as ToastPrimitivesActionElement,
 } from "@radix-ui/react-toast";
@@ -7,7 +8,7 @@ import {
 type ToastType = Omit<ToastProps, "id"> & {
   id?: string;
   action?: ToastActionElement;
-  title?: string;
+  title?: React.ReactNode;
   description?: React.ReactNode;
 };
 
@@ -187,3 +188,4 @@ function useToast() {
 }
 
 export { useToast, toast };
+export type { ToastActionElement } from "@/components/ui/toast";
