@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,7 +54,7 @@ const Register: React.FC = () => {
     try {
       const hashedPassword = hashPassword(password);
       
-      // First, check if user already exists using our new function
+      // Check if user already exists using our secure function
       try {
         const { data: exists, error: checkError } = await supabase
           .rpc('check_user_exists', { email_param: email });
@@ -80,7 +81,7 @@ const Register: React.FC = () => {
       // Generate a unique ID for the user
       const userId = crypto.randomUUID();
 
-      // Create new user with the generated ID
+      // Create new user with the generated ID using an insert directly to users table
       const { data, error: insertError } = await supabase
         .from('users')
         .insert({
