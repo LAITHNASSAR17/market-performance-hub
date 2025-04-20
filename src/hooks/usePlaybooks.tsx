@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ITrade } from '@/services/tradeService';
+import { adaptTradeToITrade } from '@/utils/typeAdapters';
 
 export interface PlaybookRule {
   id: string;
@@ -147,7 +147,6 @@ export const usePlaybooks = () => {
     setPlaybooks(playbooks.filter(p => p.id !== id));
   };
 
-  // Get trades linked to a specific playbook
   const getPlaybookTrades = async (playbookId: string): Promise<ITrade[]> => {
     try {
       const { data, error } = await supabase
@@ -156,14 +155,14 @@ export const usePlaybooks = () => {
         .contains('tags', [playbooks.find(p => p.id === playbookId)?.name]);
       
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map(trade => adaptTradeToITrade(trade));
     } catch (error) {
       console.error('Error fetching playbook trades:', error);
       return [];
     }
   };
 
-  // Calculate performance metrics for a playbook based on linked trades
   const calculatePlaybookMetrics = async (playbookId: string) => {
     try {
       const trades = await getPlaybookTrades(playbookId);
@@ -182,7 +181,6 @@ export const usePlaybooks = () => {
       const avgWinner = winningTrades.length > 0 ? totalProfit / winningTrades.length : 0;
       const avgLoser = losingTrades.length > 0 ? totalLoss / losingTrades.length * -1 : 0;
       
-      // Calculate expectancy: (Win% × Average Win) - (Loss% × Average Loss)
       const expectancy = ((winRate / 100) * avgWinner) + ((1 - winRate / 100) * avgLoser);
       
       updatePlaybook(playbookId, {

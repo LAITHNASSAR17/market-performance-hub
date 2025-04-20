@@ -4,6 +4,23 @@ import { supabase } from '@/integrations/supabase/client';
 // Re-export the client for backward compatibility
 export { supabase };
 
+// Type definition for profiles
+export interface ProfileType {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url?: string;
+  country?: string;
+  created_at?: string;
+  updated_at?: string;
+  is_blocked?: boolean;
+  is_admin?: boolean;
+  role?: string;
+  subscription_tier?: string;
+  password?: string;
+  email_verified?: boolean;
+}
+
 // Function to get site settings
 export const getSiteSettings = async () => {
   const { data, error } = await supabase
@@ -47,7 +64,11 @@ export const getUserByEmail = async (email: string) => {
     return null;
   }
   
-  return data;
+  return data ? {
+    ...data,
+    password: data.password || undefined,
+    email_verified: data.email_verified || false
+  } : null;
 };
 
 // Function to create a new user profile
@@ -61,6 +82,37 @@ export const createUserProfile = async (userData: any) => {
   if (error) {
     console.error('Error creating user profile:', error);
     throw error;
+  }
+  
+  return data;
+};
+
+// Function to update user profile
+export const updateUserProfile = async (userId: string, userData: Partial<ProfileType>) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(userData)
+    .eq('id', userId)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+  
+  return data;
+};
+
+// Function to get all profiles
+export const getAllProfiles = async () => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*');
+    
+  if (error) {
+    console.error('Error fetching all profiles:', error);
+    return [];
   }
   
   return data;

@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { getUserByEmail, createUserProfile } from '@/lib/supabase';
+import { 
+  getUserByEmail, 
+  createUserProfile, 
+  getAllProfiles, 
+  updateUserProfile, 
+  ProfileType 
+} from '@/lib/supabase';
 
 interface User {
   id: string;
@@ -178,12 +184,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const newUser = await createUserProfile(userData);
       
       if (country) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ country })
-          .eq('id', newUser.id);
-          
-        if (profileError) console.error('Error updating profile country:', profileError);
+        await updateUserProfile(newUser.id, { country });
       }
       
       console.log("User registered successfully:", newUser);
@@ -196,7 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       toast({
-        title: "التسجيل ناجح",
+        title: "الت��جيل ناجح",
         description: "تم إنشاء حسابك بنجاح. تحقق من بريدك الإلكتروني للتحقق من حسابك.",
       });
       
@@ -228,12 +229,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('User found, checking password...');
       
-      if (comparePassword(password, userData.password || '')) {
+      if (userData.password && comparePassword(password, userData.password)) {
         if (userData.is_blocked) {
           throw new Error('User is blocked');
         }
         
-        if (!userData.email_verified && userData.email_verified !== undefined) {
+        if (userData.email_verified === false) {
           toast({
             title: "البريد الإلكتروني غير مفعل",
             description: "يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك. تم إرسال رابط التفعيل إلى بريدك الإلكتروني.",
@@ -253,17 +254,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Save email for session recovery
         localStorage.setItem('user_email', email);
         
-        setUser(userData);
-        setIsAdmin(userData.role === 'admin');
+        // Convert DB user to app user format
+        const appUser: User = {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          isAdmin: userData.role === 'admin',
+          isBlocked: userData.is_blocked,
+          role: userData.role,
+          subscription_tier: userData.subscription_tier
+        };
+        
+        setUser(appUser);
+        setIsAdmin(appUser.role === 'admin' || appUser.isAdmin || false);
         setIsAuthenticated(true);
         
-        console.log('Authentication successful, user set:', userData.name);
-        console.log('Role:', userData.role, 'isAdmin:', userData.role === 'admin');
+        console.log('Authentication successful, user set:', appUser.name);
+        console.log('Role:', appUser.role, 'isAdmin:', appUser.isAdmin);
         console.log('isAuthenticated set to true');
         
         toast({
           title: "تم تسجيل الدخول بنجاح",
-          description: `مرحباً بعودتك، ${userData.name}!`,
+          description: `مرحباً بعودتك، ${appUser.name}!`,
         });
         
         return;
@@ -362,7 +374,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (!user) throw new Error('No user logged in');
       
-      const updateData: any = {
+      const updateData: Partial<ProfileType> = {
         name,
         email
       };
@@ -370,19 +382,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (newPassword && currentPassword) {
         const userData = await getUserByEmail(user.email);
           
-        if (!userData || !comparePassword(currentPassword, userData.password || '')) {
+        if (!userData || !userData.password || !comparePassword(currentPassword, userData.password)) {
           throw new Error('Current password is incorrect');
         }
         
         updateData.password = hashPassword(newPassword);
       }
       
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', user.id);
-        
-      if (error) throw error;
+      await updateUserProfile(user.id, updateData);
       
       const updatedUser = {
         ...user,
@@ -409,20 +416,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getAllUsers = async (): Promise<User[]> => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
+      const profiles = await getAllProfiles();
       
-      if (error) throw error;
-      
-      const formattedUsers = data.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isAdmin: user.role === 'admin',
-        isBlocked: user.is_blocked,
-        subscription_tier: user.subscription_tier || 'free'
+      const formattedUsers = profiles.map(profile => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role,
+        isAdmin: profile.role === 'admin',
+        isBlocked: profile.is_blocked,
+        subscription_tier: profile.subscription_tier || 'free'
       }));
       
       setUsers(formattedUsers);
@@ -473,14 +476,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const changePassword = async (email: string, newPassword: string): Promise<void> => {
     try {
+      const userData = await getUserByEmail(email);
+      
+      if (!userData) {
+        throw new Error('User not found');
+      }
+      
       const hashedPassword = hashPassword(newPassword);
       
-      const { error } = await supabase
-        .from('profiles')
-        .update({ password: hashedPassword })
-        .eq('email', email);
-      
-      if (error) throw error;
+      await updateUserProfile(userData.id, { password: hashedPassword });
       
       toast({
         title: "Success", 
