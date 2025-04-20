@@ -53,6 +53,7 @@ export const userService = {
         password: userData.password,
         role: userData.role,
         is_blocked: userData.isBlocked,
+        email_verified: true,
         created_at: now,
         updated_at: now
       })

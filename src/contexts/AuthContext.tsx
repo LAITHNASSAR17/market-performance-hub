@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -73,11 +72,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await registerUser(name, email, password, country);
-      await sendEmailVerification(email);
       
       toast({
         title: "التسجيل ناجح",
-        description: "تم إنشاء حسابك بنجاح. تحقق من بريدك الإلكتروني للتحقق من حسابك.",
+        description: "تم إنشاء حسابك بنجاح.",
       });
       
       navigate('/login');
