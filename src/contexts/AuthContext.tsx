@@ -14,14 +14,21 @@ interface UserContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (access_token: string, new_password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
-  logout: () => Promise<void>; // Added for backward compatibility
-  isAdmin: boolean; // Added for layout components
+  logout: () => Promise<void>; // For backward compatibility
+  isAdmin: boolean; // For layout components
+  users?: User[]; // Admin functionality
+  getAllUsers?: () => Promise<void>; // Admin functionality
+  blockUser?: (user: User) => Promise<void>; // Admin functionality
+  unblockUser?: (user: User) => Promise<void>; // Admin functionality
+  changePassword?: (userId: string, newPassword: string) => Promise<void>; // Admin functionality
+  updateUser?: (user: User) => Promise<void>; // Admin functionality
 }
 
 const AuthContext = createContext<UserContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -247,6 +254,146 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Admin functions
+  const getAllUsers = async () => {
+    if (!isAdmin) return;
+    
+    try {
+      setLoading(true);
+      // This should be replaced with an RPC call or a cloud function
+      // since direct user access is usually restricted
+      const { data, error } = await supabase.functions.invoke('get-all-users');
+      
+      if (error) throw error;
+      
+      if (data) {
+        setUsers(data);
+      }
+    } catch (error: any) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch users",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const blockUser = async (userToBlock: User) => {
+    if (!isAdmin) return;
+    
+    try {
+      // Implement blocking logic through a secure RPC or function
+      const { error } = await supabase.functions.invoke('block-user', {
+        body: { userId: userToBlock.id }
+      });
+      
+      if (error) throw error;
+      
+      setUsers(users.map(u => u.id === userToBlock.id ? {...u, isBlocked: true} : u));
+      
+      toast({
+        title: "Success",
+        description: `User ${userToBlock.name} blocked successfully`,
+      });
+    } catch (error: any) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to block user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const unblockUser = async (userToUnblock: User) => {
+    if (!isAdmin) return;
+    
+    try {
+      // Implement unblocking logic through a secure RPC or function
+      const { error } = await supabase.functions.invoke('unblock-user', {
+        body: { userId: userToUnblock.id }
+      });
+      
+      if (error) throw error;
+      
+      setUsers(users.map(u => u.id === userToUnblock.id ? {...u, isBlocked: false} : u));
+      
+      toast({
+        title: "Success",
+        description: `User ${userToUnblock.name} unblocked successfully`,
+      });
+    } catch (error: any) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unblock user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const changePassword = async (userId: string, newPassword: string) => {
+    if (!isAdmin) return;
+    
+    try {
+      // Implement password change logic through a secure RPC or function
+      const { error } = await supabase.functions.invoke('admin-change-password', {
+        body: { userId, newPassword }
+      });
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Password changed successfully",
+      });
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast({
+        title: "Error",
+        description: "Failed to change password",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateUser = async (userToUpdate: User) => {
+    if (!isAdmin && userToUpdate.id !== user?.id) return;
+    
+    try {
+      // Implement user update logic through a secure RPC or function
+      const { error } = await supabase.functions.invoke('update-user', {
+        body: { user: userToUpdate }
+      });
+      
+      if (error) throw error;
+      
+      if (isAdmin) {
+        setUsers(users.map(u => u.id === userToUpdate.id ? userToUpdate : u));
+      }
+      
+      if (userToUpdate.id === user?.id) {
+        setUser(userToUpdate);
+        setIsAdmin(!!userToUpdate.isAdmin);
+      }
+      
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+    } catch (error: any) {
+      console.error('Error updating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -259,7 +406,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       refreshUser,
       logout,
-      isAdmin
+      isAdmin,
+      users,
+      getAllUsers,
+      blockUser,
+      unblockUser,
+      changePassword,
+      updateUser
     }}>
       {children}
     </AuthContext.Provider>

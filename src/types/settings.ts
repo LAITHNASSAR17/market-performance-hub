@@ -56,6 +56,13 @@ export interface SubscriptionPlan {
   updated_at: string;
 }
 
+export interface PlaybookRule {
+  id: string;
+  description: string;
+  type: 'entry' | 'exit' | 'management' | 'risk' | 'custom';
+  order: number;
+}
+
 export interface PlaybookEntry {
   id: string;
   name: string;
@@ -82,30 +89,7 @@ export interface PlaybookEntry {
   avg_loser?: number;
   missed_trades?: number;
   
-  // For backward compatibility - these will be mapped to the db column names
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  userId?: string;
-  order?: number;
-  isPrivate?: boolean;
-  tradeType?: 'long' | 'short' | 'both';
-  rMultiple?: number;
-  winRate?: number;
-  expectedValue?: number;
-  profitFactor?: number;
-  netProfitLoss?: number;
-  totalTrades?: number;
-  missedTrades?: number;
-  avgWinner?: number;
-  avgLoser?: number;
-}
-
-export interface PlaybookRule {
-  id: string;
-  description: string;
-  type: 'entry' | 'exit' | 'management' | 'risk' | 'custom';
-  order: number;
+  // Remove backward compatibility fields as they're causing confusion
 }
 
 export interface JournalEntry {
