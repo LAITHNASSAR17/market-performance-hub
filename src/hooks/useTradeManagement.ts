@@ -2,9 +2,10 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Trade } from '@/types/trade';
-import { tradeService } from '@/services/tradeService';
+import { tradeService, ITrade } from '@/services/tradeService';
 import { useAuth } from '@/contexts/AuthContext';
 import { mapTradeToDBTrade, mapDBTradeToTrade } from '@/types/trade';
+import { supabase } from '@/lib/supabase';
 
 export const useTradeManagement = (initialTrades: Trade[] = []) => {
   const [trades, setTrades] = useState<Trade[]>(initialTrades);
