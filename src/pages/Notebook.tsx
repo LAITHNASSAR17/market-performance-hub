@@ -11,14 +11,13 @@ import { DialogHeader, DialogFooter, Dialog, DialogContent, DialogTitle, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit2, Trash2, BookOpen, Tag, BookText, RefreshCw, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Plus, Search, Edit2, Trash2, BookOpen, Tag, BookText } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import { cn } from '@/lib/utils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Notebook: React.FC = () => {
-  const { notes, addNote, updateNote, deleteNote, noteTags, loading, error, refreshNotes } = useNotebook();
+  const { notes, addNote, updateNote, deleteNote, noteTags } = useNotebook();
   const { trades } = useTrade();
   const { toast } = useToast();
   
@@ -28,7 +27,6 @@ const Notebook: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -37,7 +35,7 @@ const Notebook: React.FC = () => {
     tags: [] as string[]
   });
 
-  // تطبيق الفلاتر
+  // Apply filters
   const filteredNotes = notes.filter(note => {
     const matchesSearch = searchTerm === '' || 
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -48,7 +46,7 @@ const Notebook: React.FC = () => {
     return matchesSearch && matchesTag;
   });
 
-  // ترتيب الملاحظات حسب تاريخ التحديث (الأحدث أولاً)
+  // Sort notes by updated date (newest first)
   const sortedNotes = [...filteredNotes].sort((a, b) => 
     new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
@@ -66,8 +64,8 @@ const Notebook: React.FC = () => {
     if (!formData.title.trim()) {
       toast({
         variant: "destructive",
-        title: "العنوان مطلوب",
-        description: "الرجاء إدخال عنوان للملاحظة",
+        title: "Title is required",
+        description: "Please enter a title for your note",
       });
       return;
     }
@@ -100,8 +98,8 @@ const Notebook: React.FC = () => {
     if (!formData.title.trim()) {
       toast({
         variant: "destructive",
-        title: "العنوان مطلوب",
-        description: "الرجاء إدخال عنوان للملاحظة",
+        title: "Title is required",
+        description: "Please enter a title for your note",
       });
       return;
     }
@@ -130,77 +128,28 @@ const Notebook: React.FC = () => {
     setIsDeleteDialogOpen(false);
   };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      await refreshNotes();
-      toast({
-        title: "تم التحديث",
-        description: "تم تحديث الملاحظات بنجاح",
-      });
-    } catch (error) {
-      console.error('Failed to refresh notes:', error);
-      toast({
-        variant: "destructive",
-        title: "خطأ",
-        description: "فشل في تحديث الملاحظات",
-      });
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
   return (
     <Layout>
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold mb-1">المفكرة</h1>
-          <p className="text-gray-500">ملاحظات وملاحظات التداول الخاصة بك</p>
+          <h1 className="text-2xl font-bold mb-1">Notebook</h1>
+          <p className="text-gray-500">Your trading notes and observations</p>
         </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh} 
-            disabled={refreshing || loading}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            تحديث
-          </Button>
-          <Button onClick={() => {
-            resetForm();
-            setIsAddDialogOpen(true);
-          }}>
-            <Plus className="ml-2 h-4 w-4" />
-            إضافة ملاحظة
-          </Button>
-        </div>
+        <Button onClick={() => {
+          resetForm();
+          setIsAddDialogOpen(true);
+        }}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Note
+        </Button>
       </div>
 
-      {/* رسالة الخطأ */}
-      {error && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex justify-between items-center">
-            <span>{error}</span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`ml-2 h-3 w-3 ${refreshing ? 'animate-spin' : ''}`} />
-              إعادة المحاولة
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* الفلاتر */}
+      {/* Filters */}
       <div className="flex flex-col md:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="البحث في الملاحظات..."
+            placeholder="Search notes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -209,10 +158,10 @@ const Notebook: React.FC = () => {
         <div className="flex flex-col md:flex-row gap-3">
           <Select value={tagFilter} onValueChange={setTagFilter}>
             <SelectTrigger className="min-w-[150px]">
-              <SelectValue placeholder="جميع العلامات" />
+              <SelectValue placeholder="All tags" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">جميع العلامات</SelectItem>
+              <SelectItem value="all">All tags</SelectItem>
               {noteTags.map(tag => (
                 <SelectItem key={tag} value={tag}>{tag}</SelectItem>
               ))}
@@ -222,18 +171,13 @@ const Notebook: React.FC = () => {
             setSearchTerm('');
             setTagFilter('all');
           }}>
-            مسح الفلاتر
+            Clear Filters
           </Button>
         </div>
       </div>
 
-      {/* قائمة الملاحظات */}
-      {loading ? (
-        <div className="text-center py-16 bg-gray-50 rounded-lg">
-          <div className="animate-spin mx-auto h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-4" />
-          <h3 className="text-lg font-medium text-gray-600">جاري تحميل الملاحظات...</h3>
-        </div>
-      ) : sortedNotes.length > 0 ? (
+      {/* Notes List */}
+      {sortedNotes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedNotes.map(note => {
             const linkedTrade = note.tradeId 
@@ -268,15 +212,15 @@ const Notebook: React.FC = () => {
                   </div>
                   {note.content.length > 200 && (
                     <div className="text-xs text-right mt-2 text-muted-foreground">
-                      [المحتوى مختصر]
+                      [Content truncated]
                     </div>
                   )}
                 </CardContent>
                 <CardFooter className="flex flex-col items-start pt-0">
                   {linkedTrade && (
                     <div className="flex items-center text-xs mb-2 text-blue-600">
-                      <BookText className="h-3 w-3 ml-1" />
-                      <span>مرتبط بتداول: {linkedTrade.pair} ({new Date(linkedTrade.date).toLocaleDateString()})</span>
+                      <BookText className="h-3 w-3 mr-1" />
+                      <span>Linked to trade: {linkedTrade.pair} ({new Date(linkedTrade.date).toLocaleDateString()})</span>
                     </div>
                   )}
                   {note.tags.length > 0 && (
@@ -299,64 +243,64 @@ const Notebook: React.FC = () => {
       ) : (
         <div className="text-center py-16 bg-gray-50 rounded-lg">
           <BookOpen className="mx-auto h-10 w-10 text-gray-400 mb-4" />
-          <h3 className="text-lg font-medium text-gray-600 mb-2">لم يتم العثور على ملاحظات</h3>
+          <h3 className="text-lg font-medium text-gray-600 mb-2">No notes found</h3>
           <p className="text-gray-500 mb-6">
             {notes.length > 0 
-              ? "حاول تغيير عوامل التصفية أو مصطلح البحث"
-              : "ابدأ بإضافة ملاحظتك الأولى"}
+              ? "Try changing your filters or search term"
+              : "Start by adding your first note"}
           </p>
           {notes.length === 0 && (
             <Button onClick={() => {
               resetForm();
               setIsAddDialogOpen(true);
             }}>
-              <Plus className="ml-2 h-4 w-4" />
-              أضف ملاحظتك الأولى
+              <Plus className="mr-2 h-4 w-4" />
+              Add Your First Note
             </Button>
           )}
         </div>
       )}
 
-      {/* إضافة ملاحظة جديدة */}
+      {/* Add Note Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>إضافة ملاحظة جديدة</DialogTitle>
+            <DialogTitle>Add New Note</DialogTitle>
             <DialogDescription>
-              سجل أفكار التداول أو الاستراتيجيات أو التذكيرات
+              Record your trading thoughts, strategies, or reminders
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="title">العنوان</Label>
+              <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
-                placeholder="عنوان الملاحظة"
+                placeholder="Note title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               />
             </div>
             <div>
-              <Label htmlFor="content">المحتوى</Label>
+              <Label htmlFor="content">Content</Label>
               <Textarea
                 id="content"
-                placeholder="اكتب ملاحظتك هنا..."
+                placeholder="Write your note here..."
                 rows={6}
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               />
             </div>
             <div>
-              <Label htmlFor="tradeId">ربط بتداول (اختياري)</Label>
+              <Label htmlFor="tradeId">Link to Trade (Optional)</Label>
               <Select
                 value={formData.tradeId}
                 onValueChange={(value) => setFormData({ ...formData, tradeId: value })}
               >
                 <SelectTrigger id="tradeId">
-                  <SelectValue placeholder="اختر تداول (اختياري)" />
+                  <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">بدون ربط</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}
@@ -366,7 +310,7 @@ const Notebook: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="tags">العلامات</Label>
+              <Label htmlFor="tags">Tags</Label>
               <HashtagInput
                 id="tags"
                 value={formData.tags}
@@ -377,50 +321,50 @@ const Notebook: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              إلغاء
+              Cancel
             </Button>
-            <Button onClick={handleAddNote}>حفظ الملاحظة</Button>
+            <Button onClick={handleAddNote}>Save Note</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* تحرير ملاحظة */}
+      {/* Edit Note Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>تحرير الملاحظة</DialogTitle>
+            <DialogTitle>Edit Note</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-title">العنوان</Label>
+              <Label htmlFor="edit-title">Title</Label>
               <Input
                 id="edit-title"
-                placeholder="عنوان الملاحظة"
+                placeholder="Note title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               />
             </div>
             <div>
-              <Label htmlFor="edit-content">المحتوى</Label>
+              <Label htmlFor="edit-content">Content</Label>
               <Textarea
                 id="edit-content"
-                placeholder="اكتب ملاحظتك هنا..."
+                placeholder="Write your note here..."
                 rows={6}
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               />
             </div>
             <div>
-              <Label htmlFor="edit-tradeId">ربط بتداول (اختياري)</Label>
+              <Label htmlFor="edit-tradeId">Link to Trade (Optional)</Label>
               <Select
                 value={formData.tradeId}
                 onValueChange={(value) => setFormData({ ...formData, tradeId: value })}
               >
                 <SelectTrigger id="edit-tradeId">
-                  <SelectValue placeholder="اختر تداول (اختياري)" />
+                  <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">بدون ربط</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}
@@ -430,7 +374,7 @@ const Notebook: React.FC = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="edit-tags">العلامات</Label>
+              <Label htmlFor="edit-tags">Tags</Label>
               <HashtagInput
                 id="edit-tags"
                 value={formData.tags}
@@ -441,26 +385,26 @@ const Notebook: React.FC = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              إلغاء
+              Cancel
             </Button>
-            <Button onClick={handleEditNote}>تحديث الملاحظة</Button>
+            <Button onClick={handleEditNote}>Update Note</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* تأكيد الحذف */}
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>هل أنت متأكد؟</AlertDialogTitle>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              لا يمكن التراجع عن هذا الإجراء. سيتم حذف هذه الملاحظة بشكل دائم.
+              This action cannot be undone. This will permanently delete this note.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteNote} className="bg-red-500 hover:bg-red-600">
-              حذف
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
