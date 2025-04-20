@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,6 @@ import {
 import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
-import { supabase } from '@/lib/supabase';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
@@ -27,32 +26,64 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
-  const { register, isAuthenticated, loading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      setIsAuthenticated(!!data.session);
+    };
+    
+    checkAuth();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
     if (!name || !email || !password || !confirmPassword || !country) {
       setError(t('register.error.fillAll'));
+      setLoading(false);
       return;
     }
     
     if (password !== confirmPassword) {
       setError(t('register.error.passwordMismatch'));
+      setLoading(false);
       return;
     }
     
     if (password.length < 6) {
       setError(t('register.error.passwordLength'));
+      setLoading(false);
       return;
     }
     
     try {
       console.log('Registering user with email:', email, 'and country:', country);
       
-      // First register the user - but don't rely on the return value for conditional logic
-      await register(name, email, password, country);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            country
+          }
+        }
+      });
+      
+      if (error) throw error;
       
       toast({
         title: t('register.success.title'),
@@ -66,6 +97,8 @@ const Register: React.FC = () => {
         description: t('register.error.description'),
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
