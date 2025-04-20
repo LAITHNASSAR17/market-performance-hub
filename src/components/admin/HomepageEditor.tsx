@@ -91,7 +91,7 @@ const HomepageEditor: React.FC = () => {
           if (data.features) {
             if (typeof data.features === 'string') {
               try {
-                parsedFeatures = JSON.parse(data.features);
+                parsedFeatures = JSON.parse(data.features as string);
               } catch (e) {
                 console.error('Error parsing features:', e);
                 parsedFeatures = defaultContent.features;

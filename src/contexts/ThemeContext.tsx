@@ -37,14 +37,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             setTheme(data.theme as Theme);
           } else {
             // Create initial preference if it doesn't exist
-            const { error: insertError } = await supabase
-              .from('user_preferences')
-              .insert({
-                user_id: user.id,
-                theme: theme
-              });
-              
-            if (insertError) throw insertError;
+            try {
+              const { error: insertError } = await supabase
+                .from('user_preferences')
+                .insert({
+                  user_id: user.id,
+                  theme: theme
+                });
+                
+              if (insertError) throw insertError;
+            } catch (insertErr) {
+              console.error('Error creating theme preference:', insertErr);
+            }
           }
         } catch (error) {
           console.error('Error loading theme preference:', error);
@@ -83,15 +87,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           if (updateError) throw updateError;
         } else {
           // Insert a new record
-          const { error: insertError } = await supabase
-            .from('user_preferences')
-            .insert({
-              user_id: user.id,
-              theme,
-              updated_at: new Date().toISOString()
-            });
+          try {
+            const { error: insertError } = await supabase
+              .from('user_preferences')
+              .insert({
+                user_id: user.id,
+                theme,
+                updated_at: new Date().toISOString()
+              });
 
-          if (insertError) throw insertError;
+            if (insertError) throw insertError;
+          } catch (insertErr) {
+            console.error('Error inserting theme preference:', insertErr);
+          }
         }
       } catch (error) {
         console.error('Error updating theme preference:', error);

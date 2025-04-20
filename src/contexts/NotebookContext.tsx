@@ -54,23 +54,29 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       const fetchedNotes = await noteService.getNotesByUserId(user.id);
       
+      if (!Array.isArray(fetchedNotes)) {
+        console.error('Unexpected response format from getNotesByUserId');
+        setLoading(false);
+        return;
+      }
+      
       // Convert from API format to our Note type
       const formattedNotes: Note[] = fetchedNotes.map(note => ({
-        id: note.id,
-        userId: note.userId,
-        title: note.title,
-        content: note.content,
+        id: note.id || '',
+        userId: note.userId || user.id,
+        title: note.title || '',
+        content: note.content || '',
         tradeId: note.tradeId,
         tags: note.tags || [],
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt
+        createdAt: note.createdAt || new Date().toISOString(),
+        updatedAt: note.updatedAt || new Date().toISOString()
       }));
 
       setNotes(formattedNotes);
 
       // Extract all unique tags
       const uniqueTags = Array.from(new Set(
-        formattedNotes.flatMap(note => note.tags)
+        formattedNotes.flatMap(note => note.tags || [])
       ));
       
       setNoteTags(prevTags => [
