@@ -465,6 +465,7 @@ export type Database = {
       }
       trading_accounts: {
         Row: {
+          balance: number | null
           created_at: string
           id: string
           name: string
@@ -472,6 +473,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          balance?: number | null
           created_at?: string
           id?: string
           name: string
@@ -479,6 +481,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          balance?: number | null
           created_at?: string
           id?: string
           name?: string

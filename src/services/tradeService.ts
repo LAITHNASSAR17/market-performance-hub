@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -121,15 +120,13 @@ export const tradeService = {
   },
 
   async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
-    let query = supabase.from('trades').select('*');
+    const query = supabase.from('trades').select('*');
     
-    // Convert camelCase to snake_case and apply filters
-    for (const [key, value] of Object.entries(filter)) {
-      if (value !== undefined) {
-        const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-        query = query.eq(dbKey, value);
-      }
-    }
+    if (filter.userId) query.eq('user_id', filter.userId);
+    if (filter.symbol) query.eq('symbol', filter.symbol);
+    if (filter.direction) query.eq('direction', filter.direction);
+    if (filter.playbook) query.eq('playbook', filter.playbook);
+    if (filter.marketSession) query.eq('market_session', filter.marketSession);
     
     const { data, error } = await query;
     

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -97,23 +96,12 @@ export const userService = {
   },
 
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
-    let query = supabase.from('profiles').select('*');
+    const query = supabase.from('profiles').select('*');
     
-    // Map IUser properties to database column names
-    const columnMapping: Record<string, string> = {
-      isBlocked: 'is_blocked',
-      createdAt: 'created_at',
-      updatedAt: 'updated_at'
-    };
-    
-    // Apply filters dynamically
-    Object.keys(filter).forEach(key => {
-      const value = (filter as any)[key];
-      if (value !== undefined) {
-        const dbColumn = columnMapping[key] || key;
-        query = query.eq(dbColumn, value);
-      }
-    });
+    if (filter.isBlocked !== undefined) query.eq('is_blocked', filter.isBlocked);
+    if (filter.role !== undefined) query.eq('role', filter.role);
+    if (filter.email !== undefined) query.eq('email', filter.email);
+    if (filter.name !== undefined) query.eq('name', filter.name);
     
     const { data, error } = await query;
     
@@ -137,7 +125,7 @@ export const userService = {
       .insert({
         user_id: userId,
         name: name.trim(),
-        balance: parsedBalance // Add this field to the database
+        balance: parsedBalance
       })
       .select()
       .single();
@@ -151,12 +139,11 @@ export const userService = {
       throw new Error('Failed to create trading account, no data returned');
     }
     
-    // Map the data to our interface
     return {
       id: data.id,
       userId: data.user_id,
       name: data.name,
-      balance: data.balance || 0, // Handle potential missing field
+      balance: data.balance || 0,
       createdAt: data.created_at
     };
   },
@@ -178,12 +165,11 @@ export const userService = {
     
     if (!data) return [];
     
-    // Map the data to our interface
     return data.map(account => ({
       id: account.id,
       userId: account.user_id,
       name: account.name,
-      balance: account.balance || 0, // Use default value if balance is missing
+      balance: account.balance || 0,
       createdAt: account.created_at
     }));
   }
