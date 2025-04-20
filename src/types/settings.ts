@@ -1,16 +1,17 @@
-
 // Extend this file as needed
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role?: string;
-  isAdmin?: boolean;
-  isBlocked?: boolean;
-  subscription_tier?: string;
-  country?: string;
-  avatar_url?: string;
+  role: string;
+  is_admin: boolean;
+  is_blocked: boolean;
+  subscription_tier: string;
+  country: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UserTableColumn {

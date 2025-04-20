@@ -3,41 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { User } from '@/types/settings';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Copy, Edit, Trash2, User as UserIcon, Ban } from 'lucide-react';
-import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSettings } from '@/contexts/SettingsContext';
+import { User } from '@/types/settings';
 
 const AdminDashboard: React.FC = () => {
   const { session, supabase } = useAuth();
@@ -64,7 +32,6 @@ const AdminDashboard: React.FC = () => {
 
   const fetchAllUsers = async () => {
     try {
-      // Instead of querying Supabase directly, use API function
       const response = await fetch('/api/function/get-all-users', {
         method: 'GET',
         headers: {
@@ -90,7 +57,6 @@ const AdminDashboard: React.FC = () => {
 
   const handleSearch = async () => {
     try {
-      // Instead of querying Supabase directly, use API function
       const response = await fetch('/api/function/get-all-users', {
         method: 'GET',
         headers: {
@@ -136,7 +102,7 @@ const AdminDashboard: React.FC = () => {
         title: "Success",
         description: "User blocked successfully",
       });
-      fetchAllUsers(); // Refresh user list
+      fetchAllUsers();
     } catch (error: any) {
       console.error('Error blocking user:', error);
       toast({
@@ -170,7 +136,7 @@ const AdminDashboard: React.FC = () => {
         title: "Success",
         description: "User unblocked successfully",
       });
-      fetchAllUsers(); // Refresh user list
+      fetchAllUsers();
     } catch (error: any) {
       console.error('Error unblocking user:', error);
       toast({
@@ -208,7 +174,7 @@ const AdminDashboard: React.FC = () => {
         title: "Success",
         description: "User updated successfully",
       });
-      fetchAllUsers(); // Refresh user list
+      fetchAllUsers();
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
@@ -232,7 +198,7 @@ const AdminDashboard: React.FC = () => {
         title: "Success",
         description: "User deleted successfully",
       });
-      fetchAllUsers(); // Refresh user list
+      fetchAllUsers();
     } catch (error: any) {
       console.error('Error deleting user:', error);
       toast({
@@ -319,7 +285,6 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={() => setIsEditDialogOpen(false)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
