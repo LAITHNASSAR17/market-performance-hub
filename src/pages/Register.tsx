@@ -17,7 +17,7 @@ import {
 import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
 
 const Register: React.FC = () => {
@@ -85,10 +85,14 @@ const Register: React.FC = () => {
         }
       }
 
-      // Create new user
+      // Generate a unique ID for the user
+      const userId = crypto.randomUUID();
+
+      // Create new user with the generated ID
       const { data, error: insertError } = await supabase
         .from('users')
         .insert({
+          id: userId,
           name,
           email,
           password: hashedPassword,
