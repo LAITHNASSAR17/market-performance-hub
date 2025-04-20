@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -5,7 +6,7 @@ import { TradeProvider } from './contexts/TradeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { NotebookProvider } from './contexts/NotebookContext';
 import { SettingsProvider } from './contexts/SettingsContext';
-import { ThemeProvider } from './components/theme-provider';
+import { ThemeProvider } from './components/theme-provider'; // Corrected import
 import { Toaster } from './components/ui/toaster';
 
 // Import pages
@@ -86,3 +87,4 @@ function App() {
 }
 
 export default App;
+
