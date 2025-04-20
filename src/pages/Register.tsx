@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,21 +53,17 @@ const Register: React.FC = () => {
     try {
       const hashedPassword = hashPassword(password);
       
-      // First, check if user already exists
+      // First, check if user already exists using our new function
       try {
-        const { data: existingUser, error: checkError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', email)
-          .single();
+        const { data: exists, error: checkError } = await supabase
+          .rpc('check_user_exists', { email_param: email });
 
-        if (checkError && checkError.code !== 'PGRST116') {
-          // PGRST116 is the error code for "no rows returned" which is expected if user doesn't exist
+        if (checkError) {
           console.error('Error checking existing user:', checkError);
           throw new Error(checkError.message);
         }
 
-        if (existingUser) {
+        if (exists) {
           setError(t('register.error.emailExists'));
           return;
         }
@@ -79,10 +74,7 @@ const Register: React.FC = () => {
           setError('تعذر الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
           return;
         }
-        // If it's not a connection error and not a "not found" error, rethrow it
-        if (!(checkErr instanceof Error && checkErr.message.includes('PGRST116'))) {
-          throw checkErr;
-        }
+        throw checkErr;
       }
 
       // Generate a unique ID for the user
