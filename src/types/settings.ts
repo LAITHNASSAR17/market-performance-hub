@@ -129,4 +129,9 @@ export interface Note {
   updated_at: string;
   trade_id?: string;
   tags?: string[];
+  // Aliases for compatibility
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  tradeId?: string;
 }

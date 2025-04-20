@@ -39,7 +39,8 @@ export const NotebookProvider: React.FC<{ children: ReactNode }> = ({ children }
         ...note,
         userId: note.user_id,
         createdAt: note.created_at,
-        updatedAt: note.updated_at
+        updatedAt: note.updated_at,
+        tradeId: note.trade_id
       })) || [];
       
       setNotes(formattedNotes);
@@ -68,7 +69,8 @@ export const NotebookProvider: React.FC<{ children: ReactNode }> = ({ children }
         title: note.title,
         content: note.content,
         user_id: note.userId || note.user_id,
-        tags: note.tags || []
+        tags: note.tags || [],
+        trade_id: note.tradeId || note.trade_id
       };
       
       const { data, error } = await supabase
@@ -83,7 +85,8 @@ export const NotebookProvider: React.FC<{ children: ReactNode }> = ({ children }
         ...data,
         userId: data.user_id,
         createdAt: data.created_at,
-        updatedAt: data.updated_at
+        updatedAt: data.updated_at,
+        tradeId: data.trade_id
       };
       
       setNotes(prev => [formattedNote, ...prev]);
@@ -117,6 +120,7 @@ export const NotebookProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (note.title) supabaseNote.title = note.title;
       if (note.content) supabaseNote.content = note.content;
       if (note.tags) supabaseNote.tags = note.tags;
+      if (note.trade_id || note.tradeId) supabaseNote.trade_id = note.trade_id || note.tradeId;
       
       const { data, error } = await supabase
         .from('notes')
@@ -131,7 +135,8 @@ export const NotebookProvider: React.FC<{ children: ReactNode }> = ({ children }
         ...data,
         userId: data.user_id,
         createdAt: data.created_at,
-        updatedAt: data.updated_at
+        updatedAt: data.updated_at,
+        tradeId: data.trade_id
       };
       
       setNotes(prev => prev.map(n => n.id === id ? formattedNote : n));

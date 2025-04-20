@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -11,9 +12,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { User } from '@/types/settings';
 import {
   DropdownMenu,
@@ -22,9 +23,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Copy, Edit, Trash2, User as UserIcon, Ban } from 'lucide-react';
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -32,19 +33,18 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSettings } from '@/contexts/SettingsContext';
+import { supabase } from '@/lib/supabase';
 
 const AdminDashboard: React.FC = () => {
-  const { session, supabase } = useAuth();
+  const { user, isAdmin, getAllUsers } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { siteSettings } = useSettings();
 
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -55,29 +55,19 @@ const AdminDashboard: React.FC = () => {
   const [isBlockingUser, setIsBlockingUser] = useState(false);
 
   useEffect(() => {
-    if (!session) {
+    if (!isAdmin) {
       navigate('/login');
     } else {
       fetchAllUsers();
     }
-  }, [session, navigate]);
+  }, [isAdmin, navigate]);
 
   const fetchAllUsers = async () => {
     try {
-      // Instead of querying Supabase directly, use API function
-      const response = await fetch('/api/function/get-all-users', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        }
-      });
-      
-      if (!response.ok) throw new Error('Failed to fetch users');
-      
-      const users = await response.json();
-      setUsers(users);
-      setFilteredUsers(users);
+      // Fetch users using the context method
+      const fetchedUsers = await getAllUsers();
+      setUsers(fetchedUsers);
+      setFilteredUsers(fetchedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -88,21 +78,18 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleSearch = async () => {
+  const handleSearch = () => {
+    setIsSearching(true);
+    
     try {
-      // Instead of querying Supabase directly, use API function
-      const response = await fetch('/api/function/get-all-users', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        }
-      });
+      // Filter users based on search query
+      const filtered = users.filter(user => 
+        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.role?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
       
-      if (!response.ok) throw new Error('Failed to fetch users');
-      
-      const users = await response.json();
-      setFilteredUsers(users);
+      setFilteredUsers(filtered);
       setIsSearching(false);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -118,19 +105,18 @@ const AdminDashboard: React.FC = () => {
   const handleBlockUser = async (userId: string) => {
     setIsBlockingUser(true);
     try {
-      const response = await fetch('/api/function/block-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({ userId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to block user');
+      // Find user to block
+      const userToBlock = users.find(u => u.id === userId);
+      if (!userToBlock) {
+        throw new Error("User not found");
       }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: true })
+        .eq('id', userId);
+
+      if (error) throw error;
 
       toast({
         title: "Success",
@@ -152,19 +138,18 @@ const AdminDashboard: React.FC = () => {
   const handleUnblockUser = async (userId: string) => {
     setIsBlockingUser(true);
     try {
-      const response = await fetch('/api/function/unblock-user', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({ userId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to unblock user');
+      // Find user to unblock
+      const userToUnblock = users.find(u => u.id === userId);
+      if (!userToUnblock) {
+        throw new Error("User not found");
       }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: false })
+        .eq('id', userId);
+
+      if (error) throw error;
 
       toast({
         title: "Success",
@@ -224,7 +209,12 @@ const AdminDashboard: React.FC = () => {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId)
+      // Note: This is likely to fail without admin privileges in production
+      // Consider creating a Supabase Edge Function for this operation
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
 
       if (error) throw error;
 
@@ -247,13 +237,13 @@ const AdminDashboard: React.FC = () => {
     <Layout>
       <div className="container mx-auto py-10">
         <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">{t('adminDashboard.title') || 'Admin Dashboard'}</h1>
+          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
         </div>
 
         <div className="mb-4">
           <Input
             type="text"
-            placeholder={t('adminDashboard.searchPlaceholder') || "Search users..."}
+            placeholder="Search users..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -261,15 +251,15 @@ const AdminDashboard: React.FC = () => {
 
         <div className="border rounded-md">
           <Table>
-            <TableCaption>{t('adminDashboard.userListCaption') || "A list of all users in your account. Click on a user to edit their profile."}</TableCaption>
+            <TableCaption>A list of all users in your account. Click on a user to edit their profile.</TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[50px]">{t('adminDashboard.idHeader') || "ID"}</TableHead>
-                <TableHead>{t('adminDashboard.nameHeader') || "Name"}</TableHead>
-                <TableHead>{t('adminDashboard.emailHeader') || "Email"}</TableHead>
-                <TableHead>{t('adminDashboard.roleHeader') || "Role"}</TableHead>
-                <TableHead>{t('adminDashboard.subscriptionHeader') || "Subscription"}</TableHead>
-                <TableHead className="text-right">{t('adminDashboard.actionsHeader') || "Actions"}</TableHead>
+                <TableHead className="w-[50px]">ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Subscription</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -284,30 +274,30 @@ const AdminDashboard: React.FC = () => {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">{t('adminDashboard.openMenu') || "Open menu"}</span>
+                          <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>{t('adminDashboard.actionsLabel') || "Actions"}</DropdownMenuLabel>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleEditUser(user)}>
                           <Edit className="mr-2 h-4 w-4" />
-                          {t('adminDashboard.editUser') || "Edit User"}
+                          Edit User
                         </DropdownMenuItem>
                         {user.isBlocked ? (
                           <DropdownMenuItem onClick={() => handleUnblockUser(user.id)} disabled={isBlockingUser}>
                             <UserIcon className="mr-2 h-4 w-4" />
-                            {t('adminDashboard.unblockUser') || "Unblock User"}
+                            Unblock User
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem onClick={() => handleBlockUser(user.id)} disabled={isBlockingUser}>
                             <Ban className="mr-2 h-4 w-4" />
-                            {t('adminDashboard.blockUser') || "Block User"}
+                            Block User
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
                           <Trash2 className="mr-2 h-4 w-4" />
-                          {t('adminDashboard.deleteUser') || "Delete User"}
+                          Delete User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -323,9 +313,9 @@ const AdminDashboard: React.FC = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={() => setIsEditDialogOpen(false)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>{t('adminDashboard.editUserTitle') || "Edit User"}</DialogTitle>
+            <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>
-              {t('adminDashboard.editUserDescription') || "Make changes to the user profile here. Click save when you're done."}
+              Make changes to the user profile here. Click save when you're done.
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
@@ -364,23 +354,23 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, onUpdate, onCancel })
   return (
     <form onSubmit={handleSubmit} className="grid gap-4 py-4">
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="name" className="text-right">{t('adminDashboard.nameLabel') || "Name"}</Label>
+        <Label htmlFor="name" className="text-right">Name</Label>
         <Input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="email" className="text-right">{t('adminDashboard.emailLabel') || "Email"}</Label>
+        <Label htmlFor="email" className="text-right">Email</Label>
         <Input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="col-span-3" />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="isAdmin" className="text-right">{t('adminDashboard.adminLabel') || "Admin"}</Label>
+        <Label htmlFor="isAdmin" className="text-right">Admin</Label>
         <Switch id="isAdmin" checked={isAdmin} onCheckedChange={setIsAdmin} className="col-span-3" />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="isBlocked" className="text-right">{t('adminDashboard.blockedLabel') || "Blocked"}</Label>
+        <Label htmlFor="isBlocked" className="text-right">Blocked</Label>
         <Switch id="isBlocked" checked={isBlocked} onCheckedChange={setIsBlocked} className="col-span-3" />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="subscriptionTier" className="text-right">{t('adminDashboard.subscriptionLabel') || "Subscription"}</Label>
+        <Label htmlFor="subscriptionTier" className="text-right">Subscription</Label>
         <Input
           type="text"
           id="subscriptionTier"
@@ -390,7 +380,7 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, onUpdate, onCancel })
         />
       </div>
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="country" className="text-right">{t('adminDashboard.countryLabel') || "Country"}</Label>
+        <Label htmlFor="country" className="text-right">Country</Label>
         <Input
           type="text"
           id="country"
@@ -401,9 +391,9 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, onUpdate, onCancel })
       </div>
       <div className="flex justify-end">
         <Button type="button" variant="secondary" onClick={onCancel} className="mr-2">
-          {t('adminDashboard.cancelButton') || "Cancel"}
+          Cancel
         </Button>
-        <Button type="submit">{t('adminDashboard.saveButton') || "Save"}</Button>
+        <Button type="submit">Save</Button>
       </div>
     </form>
   );

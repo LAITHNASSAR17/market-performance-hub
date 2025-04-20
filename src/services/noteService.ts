@@ -1,5 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
+import { Note } from '@/types/settings';
 
 export interface INote {
   id: string;
@@ -32,15 +33,21 @@ export const noteService = {
     return data.map(formatNote);
   },
 
-  async createNote(noteData: Omit<INote, 'id' | 'createdAt' | 'updatedAt'>): Promise<INote> {
+  async createNote(noteData: Omit<Note, 'id' | 'created_at' | 'updated_at'>): Promise<INote> {
     const now = new Date().toISOString();
+    
+    // Make sure we use the correct field names for supabase
+    const supabaseNote = {
+      title: noteData.title,
+      content: noteData.content,
+      user_id: noteData.user_id,
+      tags: noteData.tags || [],
+      trade_id: noteData.trade_id
+    };
+    
     const { data, error } = await supabase
       .from('notes')
-      .insert({
-        ...noteData,
-        created_at: now,
-        updated_at: now
-      })
+      .insert(supabaseNote)
       .select()
       .single();
     
@@ -48,14 +55,21 @@ export const noteService = {
     return formatNote(data);
   },
 
-  async updateNote(id: string, noteData: Partial<INote>): Promise<INote | null> {
+  async updateNote(id: string, noteData: Partial<Note>): Promise<INote | null> {
     const now = new Date().toISOString();
+    
+    // Map properties correctly for Supabase
+    const supabaseNote: Record<string, any> = {};
+    if (noteData.title) supabaseNote.title = noteData.title;
+    if (noteData.content) supabaseNote.content = noteData.content;
+    if (noteData.tags) supabaseNote.tags = noteData.tags;
+    if (noteData.trade_id) supabaseNote.trade_id = noteData.trade_id;
+    
+    supabaseNote.updated_at = now;
+    
     const { data, error } = await supabase
       .from('notes')
-      .update({
-        ...noteData,
-        updated_at: now
-      })
+      .update(supabaseNote)
       .eq('id', id)
       .select()
       .single();
@@ -73,13 +87,16 @@ export const noteService = {
     return !error;
   },
 
-  async findNotesByFilter(filter: Partial<INote>): Promise<INote[]> {
+  async findNotesByFilter(filter: Partial<Note>): Promise<INote[]> {
     let query = supabase.from('notes').select('*');
     
     // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined) {
-        query = query.eq(key, value);
+        // Map to correct DB field names
+        const dbField = key === 'userId' ? 'user_id' : 
+                        key === 'tradeId' ? 'trade_id' : key;
+        query = query.eq(dbField, value);
       }
     });
     
@@ -96,7 +113,7 @@ function formatNote(data: any): INote {
     id: data.id,
     userId: data.user_id,
     title: data.title,
-    content: data.content,
+    content: data.content || '',
     tags: data.tags || [],
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at)

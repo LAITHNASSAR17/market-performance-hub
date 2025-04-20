@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -23,8 +22,9 @@ const EmailVerify = () => {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         token: verificationToken,
-        type: 'signup'
-      })
+        type: 'signup',
+        email: ''
+      });
 
       if (error) {
         console.error('Email verification error:', error);
@@ -82,10 +82,8 @@ const EmailVerify = () => {
     }
   };
 
-  // Fix the verifyUser function to use proper tables
   const verifyUser = async (userId: string) => {
     try {
-      // Use Supabase Auth API for email verification
       const { error } = await supabase.auth.updateUser({
         data: { email_verified: true }
       });

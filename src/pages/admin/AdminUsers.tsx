@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import UserTable from '@/components/admin/UserTable';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
+import { User } from '@/types/settings';
 
 const AdminUsers: React.FC = () => {
   const { users, getAllUsers, blockUser, unblockUser, changePassword, updateUser } = useAuth();
@@ -105,20 +105,21 @@ const AdminUsers: React.FC = () => {
 
   const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
     try {
-      const hashedPassword = hashPassword(userData.password);
+      // Create a user in the profiles table - we need to generate a unique ID
+      const newUserId = crypto.randomUUID();
       
       // Create a new user in profiles table
       const { data, error } = await supabase
         .from('profiles')
         .insert({
+          id: newUserId,
           name: userData.name,
           email: userData.email,
           role: userData.isAdmin ? 'admin' : 'user',
           is_admin: userData.isAdmin,
           is_blocked: false,
           subscription_tier: 'free'
-        })
-        .select();
+        });
       
       if (error) throw new Error(error.message);
       

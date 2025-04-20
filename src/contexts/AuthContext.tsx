@@ -16,6 +16,7 @@ interface AuthContextType {
   logout: () => Promise<void>; // For backward compatibility
   login: (email: string, password: string) => Promise<void>; // For backward compatibility
   isAdmin: boolean; // For layout components
+  isAuthenticated: boolean; // For redirects
   users: User[]; // Admin functionality
   getAllUsers: () => Promise<User[]>; // Admin functionality
   blockUser: (user: User) => Promise<void>; // Admin functionality
@@ -23,6 +24,11 @@ interface AuthContextType {
   changePassword: (userId: string, newPassword: string) => Promise<void>; // Admin functionality
   updateUser: (user: User) => Promise<void>; // Admin functionality
   updateSubscriptionTier: (userId: string, tier: string) => Promise<void>; // Admin functionality
+  register: (name: string, email: string, password: string, country: string) => Promise<void>; // For Register page
+  updateProfile: (userData: Partial<User>) => Promise<void>; // For profile settings
+  sendPasswordResetEmail: (email: string) => Promise<void>; // For password reset
+  session: any; // For session access
+  supabase: any; // For direct supabase access
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -58,13 +65,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           setUser(userInfo);
           setIsAdmin(!!userInfo.isAdmin);
+          setIsAuthenticated(true);
         } else {
           setUser(null);
           setIsAdmin(false);
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('Session error:', error);
         setError('Failed to get user session');
+        setIsAuthenticated(false);
       } finally {
         setLoading(false);
       }
@@ -87,9 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         setUser(userInfo);
         setIsAdmin(!!userInfo.isAdmin);
+        setIsAuthenticated(true);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsAdmin(false);
+        setIsAuthenticated(false);
       }
     });
 
@@ -441,6 +453,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const register = async (name: string, email: string, password: string, country: string) => {
+    return signUp(email, password, { name, country });
+  };
+
+  const sendPasswordResetEmail = async (email: string) => {
+    return forgotPassword(email);
+  };
+
+  const updateProfile = async (userData: Partial<User>) => {
+    if (!user?.id) throw new Error("Not authenticated");
+    
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: userData.name,
+          email: userData.email,
+          country: userData.country,
+          // Add other fields as needed
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update local user state
+      setUser(prev => prev ? { ...prev, ...userData } : null);
+      
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    } catch (error: any) {
+      setError(error.message);
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -455,13 +511,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       login,
       isAdmin,
+      isAuthenticated,
       users,
       getAllUsers,
       blockUser,
       unblockUser,
       changePassword,
       updateUser,
-      updateSubscriptionTier
+      updateSubscriptionTier,
+      register,
+      updateProfile,
+      sendPasswordResetEmail,
+      session: supabase.auth.session,
+      supabase
     }}>
       {children}
     </AuthContext.Provider>

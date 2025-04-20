@@ -27,7 +27,9 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
-  const { register, isAuthenticated, loading } = useAuth();
+  const { signUp, loading, user } = useAuth();
+  
+  const isAuthenticated = !!user;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +53,12 @@ const Register: React.FC = () => {
     try {
       console.log('Registering user with email:', email, 'and country:', country);
       
-      // First register the user - but don't rely on the return value for conditional logic
-      await register(name, email, password, country);
+      await signUp(email, password, {
+        name,
+        country,
+        role: 'user',
+        isAdmin: false
+      });
       
       toast({
         title: t('register.success.title'),
