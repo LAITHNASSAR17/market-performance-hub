@@ -196,7 +196,7 @@ const Register: React.FC = () => {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-                  disabled={loading || isSubmitting}
+                  disabled={authLoading || isSubmitting}
                 >
                   {isSubmitting ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
                 </Button>
