@@ -32,10 +32,15 @@ export const getUserByEmail = async (email: string) => {
 };
 
 export const createUserProfile = async (userData: Partial<ProfileType>) => {
-  // Create a properly structured object from the userData
-  const profileData = { ...userData };
+  // Generate an ID if one isn't provided (uuid v4)
+  if (!userData.id) {
+    userData.id = self.crypto.randomUUID();
+  }
   
-  // Ensure we're inserting an array for Supabase
+  // Create a properly structured object from the userData
+  const profileData = createProfileObject(userData);
+  
+  // Ensure we're inserting an object for Supabase
   const { data, error } = await supabase
     .from('profiles')
     .insert(profileData)

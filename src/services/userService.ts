@@ -43,9 +43,12 @@ export const userService = {
 
   async createUser(userData: Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<IUser> {
     const now = new Date().toISOString();
+    const newUserId = self.crypto.randomUUID();
+    
     const { data, error } = await supabase
       .from('profiles')
       .insert({
+        id: newUserId,
         name: userData.name,
         email: userData.email,
         password: userData.password,
