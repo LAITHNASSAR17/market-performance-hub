@@ -400,57 +400,41 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [user, toast]);
 
   const addTrade = async (newTradeData: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول لإضافة تداول",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
-      const entryDate = new Date(newTradeData.date);
-      if (isNaN(entryDate.getTime())) {
-        throw new Error('Invalid date format');
-      }
+      const dbTradeData = mapTradeToDBTrade(newTradeData);
       
-      const { data, error } = await supabase
-        .from('trades')
-        .insert({
-          user_id: user.id,
-          symbol: newTradeData.pair,
-          entry_price: newTradeData.entry,
-          exit_price: newTradeData.exit || null,
-          quantity: newTradeData.lotSize,
-          direction: newTradeData.type === 'Buy' ? 'long' : 'short',
-          entry_date: entryDate.toISOString(),
-          exit_date: newTradeData.exit ? entryDate.toISOString() : null,
-          profit_loss: newTradeData.profitLoss - (newTradeData.commission || 0),
-          fees: newTradeData.commission || 0,
-          notes: newTradeData.notes || '',
-          tags: newTradeData.hashtags || [],
-          stop_loss: newTradeData.stopLoss || null,
-          take_profit: newTradeData.takeProfit || null,
-          duration_minutes: newTradeData.durationMinutes || null,
-          rating: newTradeData.rating || 0
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newTrade: Trade = {
-        ...newTradeData,
-        id: data.id,
-        userId: user.id,
-        createdAt: data.created_at,
-      };
-
+      dbTradeData.userId = user.id;
+      
+      console.log('Creating trade with data:', dbTradeData);
+      
+      const createdTrade = await tradeService.createTrade(dbTradeData);
+      
+      console.log('Trade created successfully:', createdTrade);
+      
+      const newTrade = mapDBTradeToTrade(createdTrade);
+      
       setTrades(prevTrades => [newTrade, ...prevTrades]);
       
       toast({
         title: "تم إضافة التداول",
         description: "تم إضافة التداول بنجاح",
       });
-    } catch (error) {
+      
+      return newTrade;
+    } catch (error: any) {
       console.error('Error adding trade:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء إضافة التداول",
+        description: error.message || "حدث خطأ أثناء إضافة التداول",
         variant: "destructive"
       });
       throw error;
@@ -458,41 +442,47 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateTrade = async (id: string, tradeUpdate: Partial<Trade>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول لتحديث التداول",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
-      const updateData: any = {};
+      const partialDbTrade: Partial<ITrade> = {};
       
-      if (tradeUpdate.pair !== undefined) updateData.symbol = tradeUpdate.pair;
-      if (tradeUpdate.entry !== undefined) updateData.entry_price = tradeUpdate.entry;
-      if (tradeUpdate.exit !== undefined) updateData.exit_price = tradeUpdate.exit;
-      if (tradeUpdate.lotSize !== undefined) updateData.quantity = tradeUpdate.lotSize;
-      if (tradeUpdate.type !== undefined) updateData.direction = tradeUpdate.type === 'Buy' ? 'long' : 'short';
-      if (tradeUpdate.date !== undefined) updateData.entry_date = new Date(tradeUpdate.date).toISOString();
-      if (tradeUpdate.profitLoss !== undefined) updateData.profit_loss = tradeUpdate.profitLoss;
-      if (tradeUpdate.notes !== undefined) updateData.notes = tradeUpdate.notes;
-      if (tradeUpdate.hashtags !== undefined) updateData.tags = tradeUpdate.hashtags;
-      if (tradeUpdate.commission !== undefined) updateData.fees = tradeUpdate.commission;
-      if (tradeUpdate.rating !== undefined) updateData.rating = tradeUpdate.rating;
-      if (tradeUpdate.stopLoss !== undefined) updateData.stop_loss = tradeUpdate.stopLoss;
-      if (tradeUpdate.takeProfit !== undefined) updateData.take_profit = tradeUpdate.takeProfit;
-      if (tradeUpdate.durationMinutes !== undefined) updateData.duration_minutes = tradeUpdate.durationMinutes;
+      if (tradeUpdate.pair !== undefined) partialDbTrade.symbol = tradeUpdate.pair;
+      if (tradeUpdate.entry !== undefined) partialDbTrade.entryPrice = tradeUpdate.entry;
+      if (tradeUpdate.exit !== undefined) partialDbTrade.exitPrice = tradeUpdate.exit;
+      if (tradeUpdate.lotSize !== undefined) partialDbTrade.quantity = tradeUpdate.lotSize;
+      if (tradeUpdate.type !== undefined) partialDbTrade.direction = tradeUpdate.type === 'Buy' ? 'long' : 'short';
+      if (tradeUpdate.date !== undefined) partialDbTrade.entryDate = new Date(tradeUpdate.date);
+      if (tradeUpdate.profitLoss !== undefined) partialDbTrade.profitLoss = tradeUpdate.profitLoss;
+      if (tradeUpdate.notes !== undefined) partialDbTrade.notes = tradeUpdate.notes;
+      if (tradeUpdate.hashtags !== undefined) partialDbTrade.tags = tradeUpdate.hashtags;
+      if (tradeUpdate.commission !== undefined) partialDbTrade.fees = tradeUpdate.commission;
+      if (tradeUpdate.rating !== undefined) partialDbTrade.rating = tradeUpdate.rating;
+      if (tradeUpdate.stopLoss !== undefined) partialDbTrade.stopLoss = tradeUpdate.stopLoss;
+      if (tradeUpdate.takeProfit !== undefined) partialDbTrade.takeProfit = tradeUpdate.takeProfit;
+      if (tradeUpdate.durationMinutes !== undefined) partialDbTrade.durationMinutes = tradeUpdate.durationMinutes;
+      if (tradeUpdate.playbook !== undefined) partialDbTrade.playbook = tradeUpdate.playbook;
+      if (tradeUpdate.followedRules !== undefined) partialDbTrade.followedRules = tradeUpdate.followedRules;
+      if (tradeUpdate.marketSession !== undefined) partialDbTrade.marketSession = tradeUpdate.marketSession;
       
       if (tradeUpdate.exit !== undefined && tradeUpdate.date) {
-        updateData.exit_date = tradeUpdate.exit ? new Date(tradeUpdate.date).toISOString() : null;
+        partialDbTrade.exitDate = tradeUpdate.exit ? new Date(tradeUpdate.date) : null;
       }
 
-      console.log('Updating trade with data:', updateData);
+      console.log('Updating trade with data:', partialDbTrade);
 
-      const { data, error } = await supabase
-        .from('trades')
-        .update(updateData)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const updatedTrade = await tradeService.updateTrade(id, partialDbTrade);
+      
+      if (!updatedTrade) {
+        throw new Error('Failed to update trade');
+      }
 
       setTrades(prevTrades => 
         prevTrades.map(trade => 
@@ -504,11 +494,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         title: "تم تحديث التداول",
         description: "تم تحديث التداول بنجاح",
       });
-    } catch (error) {
+      
+      return mapDBTradeToTrade(updatedTrade);
+    } catch (error: any) {
       console.error('Error updating trade:', error);
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء تحديث التداول",
+        description: error.message || "حدث خطأ أثناء تحديث التداول",
         variant: "destructive"
       });
       throw error;

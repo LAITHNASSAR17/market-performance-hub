@@ -67,6 +67,15 @@ export const tradeService = {
 
   async createTrade(tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>): Promise<ITrade> {
     try {
+      // Format entry and exit dates correctly
+      const entryDateIso = tradeData.entryDate instanceof Date 
+        ? tradeData.entryDate.toISOString() 
+        : new Date(tradeData.entryDate).toISOString();
+      
+      const exitDateIso = tradeData.exitDate instanceof Date 
+        ? tradeData.exitDate?.toISOString() 
+        : tradeData.exitDate ? new Date(tradeData.exitDate).toISOString() : null;
+
       const { data, error } = await supabase
         .from('trades')
         .insert({
@@ -76,24 +85,32 @@ export const tradeService = {
           exit_price: tradeData.exitPrice,
           quantity: tradeData.quantity,
           direction: tradeData.direction,
-          entry_date: tradeData.entryDate.toISOString(),
-          exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
+          entry_date: entryDateIso,
+          exit_date: exitDateIso,
           profit_loss: tradeData.profitLoss,
           fees: tradeData.fees || 0,
           notes: tradeData.notes || '',
           tags: tradeData.tags || [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
           rating: tradeData.rating || 0,
           stop_loss: tradeData.stopLoss,
           take_profit: tradeData.takeProfit,
           duration_minutes: tradeData.durationMinutes,
+          playbook: tradeData.playbook,
+          followed_rules: tradeData.followedRules || [],
           market_session: tradeData.marketSession
         })
         .select()
         .single();
       
-      if (error || !data) throw new Error(`Error creating trade: ${error?.message}`);
+      if (error) {
+        console.error('Error creating trade:', error);
+        throw new Error(`Error creating trade: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error('No data returned after creating trade');
+      }
+      
       return formatTrade(data);
     } catch (error: any) {
       console.error('Error in createTrade:', error);
@@ -112,8 +129,19 @@ export const tradeService = {
       if (tradeData.exitPrice !== undefined) updateObject.exit_price = tradeData.exitPrice;
       if (tradeData.quantity !== undefined) updateObject.quantity = tradeData.quantity;
       if (tradeData.direction !== undefined) updateObject.direction = tradeData.direction;
-      if (tradeData.entryDate !== undefined) updateObject.entry_date = tradeData.entryDate.toISOString();
-      if (tradeData.exitDate !== undefined) updateObject.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
+      
+      if (tradeData.entryDate !== undefined) {
+        updateObject.entry_date = tradeData.entryDate instanceof Date 
+          ? tradeData.entryDate.toISOString() 
+          : new Date(tradeData.entryDate).toISOString();
+      }
+      
+      if (tradeData.exitDate !== undefined) {
+        updateObject.exit_date = tradeData.exitDate instanceof Date 
+          ? tradeData.exitDate?.toISOString() 
+          : tradeData.exitDate ? new Date(tradeData.exitDate).toISOString() : null;
+      }
+      
       if (tradeData.profitLoss !== undefined) updateObject.profit_loss = tradeData.profitLoss;
       if (tradeData.fees !== undefined) updateObject.fees = tradeData.fees;
       if (tradeData.notes !== undefined) updateObject.notes = tradeData.notes;
@@ -123,6 +151,8 @@ export const tradeService = {
       if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
       if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
       if (tradeData.marketSession !== undefined) updateObject.market_session = tradeData.marketSession;
+      if (tradeData.playbook !== undefined) updateObject.playbook = tradeData.playbook;
+      if (tradeData.followedRules !== undefined) updateObject.followed_rules = tradeData.followedRules;
       
       const { data, error } = await supabase
         .from('trades')
@@ -210,7 +240,7 @@ function formatTrade(data: any): ITrade {
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
     playbook: data.playbook,
-    followedRules: data.followedRules || data.followed_rules || [],
+    followedRules: data.followed_rules || [],
     marketSession: data.market_session
   };
 }
