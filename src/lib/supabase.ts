@@ -51,8 +51,8 @@ export const getUserByEmail = async (email: string) => {
 
 // Update other functions similarly to support new fields
 export const createUserProfile = async (userData: Partial<ProfileType>) => {
-  // Create a properly typed object for Supabase
-  const profileData = {
+  // Create a typed object with all possible fields for Supabase
+  const profileData: Partial<ProfileType> = {
     id: userData.id,
     name: userData.name,
     email: userData.email,
@@ -84,7 +84,7 @@ export const createUserProfile = async (userData: Partial<ProfileType>) => {
 
 export const updateUserProfile = async (userId: string, userData: Partial<ProfileType>) => {
   // Create a properly typed object for Supabase
-  const updateData: any = {};
+  const updateData: Partial<ProfileType> = {};
   
   // Only include fields that are provided
   if (userData.name !== undefined) updateData.name = userData.name;

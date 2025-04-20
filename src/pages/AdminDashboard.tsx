@@ -52,6 +52,20 @@ import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
 import { updateUserProfile } from '@/lib/supabase';
 
+interface Hashtag {
+  name: string;
+  count: number;
+  addedBy: string;
+  lastUsed: string;
+}
+
+const sampleHashtagsData: Hashtag[] = [
+  { name: 'trading', count: 145, addedBy: 'Admin', lastUsed: '2023-08-15' },
+  { name: 'forex', count: 87, addedBy: 'Admin', lastUsed: '2023-08-14' },
+  { name: 'crypto', count: 56, addedBy: 'Admin', lastUsed: '2023-08-12' },
+  { name: 'stocks', count: 42, addedBy: 'ModeratorUser', lastUsed: '2023-08-10' },
+];
+
 const AdminDashboard: React.FC = () => {
   const { user, isAdmin, users, getAllUsers, blockUser, unblockUser, changePassword, updateUser } = useAuth();
   const { trades, getAllTrades, deleteTrade } = useTrade();
@@ -61,7 +75,7 @@ const AdminDashboard: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [hashtags, setHashtags] = useState(sampleHashtags);
+  const [hashtags, setHashtags] = useState<Hashtag[]>(sampleHashtagsData);
   const [allTrades, setAllTrades] = useState<any[]>([]);
 
   useEffect(() => {
@@ -172,17 +186,19 @@ const AdminDashboard: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
+      const profileData = {
+        name: userData.name,
+        email: userData.email,
+        password: hashedPassword,
+        role: userData.isAdmin ? 'admin' : 'user',
+        is_blocked: false,
+        subscription_tier: 'free',
+        email_verified: true
+      };
+      
       const { data, error } = await supabase
         .from('profiles')
-        .insert({
-          name: userData.name,
-          email: userData.email,
-          password: hashedPassword,
-          role: userData.isAdmin ? 'admin' : 'user',
-          is_blocked: false,
-          subscription_tier: 'free',
-          email_verified: true
-        })
+        .insert(profileData)
         .select();
       
       if (error) throw new Error(error.message);
@@ -274,6 +290,94 @@ const AdminDashboard: React.FC = () => {
       description: `Viewing user ${userId}`
     });
   };
+
+  const AdminCharts: React.FC<{ className?: string }> = ({ className }) => (
+    <div className={className}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Admin Charts</CardTitle>
+          <CardDescription>Analytics charts will be displayed here.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-8 text-center text-gray-500">
+            <BarChart3 className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium mb-2">Charts Coming Soon</h3>
+            <p>The analytics charts functionality is under development and will be available in a future update.</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const UserTable: React.FC<{
+    users: any[];
+    onBlock: (user: any) => void;
+    onUnblock: (user: any) => void;
+    onChangePassword: (email: string, newPassword: string) => Promise<void>;
+    onViewUser: (userId: string) => void;
+    onSetAdmin: (user: any, isAdmin: boolean) => void;
+    onAddUser: (userData: any) => Promise<void>;
+    searchTerm: string;
+    setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+  }> = (props) => (
+    <div>
+      <div className="text-center p-8 text-gray-500">
+        <Users className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium mb-2">User Table Component</h3>
+        <p>Please create the UserTable component to display user data here.</p>
+      </div>
+    </div>
+  );
+
+  const TradeTable: React.FC<{
+    trades: any[];
+    onViewTrade: (id: string) => void;
+    onEditTrade: (id: string) => void;
+    onDeleteTrade: (id: string) => void;
+    onRefresh: () => void;
+    onExport: () => void;
+  }> = (props) => (
+    <div>
+      <div className="text-center p-8 text-gray-500">
+        <Activity className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium mb-2">Trade Table Component</h3>
+        <p>Please create the TradeTable component to display trade data here.</p>
+      </div>
+    </div>
+  );
+
+  const HashtagsTable: React.FC<{
+    hashtags: Hashtag[];
+    onAddHashtag: (name: string) => void;
+    onEditHashtag: (oldName: string, newName: string) => void;
+    onDeleteHashtag: (name: string) => void;
+  }> = (props) => (
+    <div>
+      <div className="text-center p-8 text-gray-500">
+        <Hash className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium mb-2">Hashtags Table Component</h3>
+        <p>Please create the HashtagsTable component to display hashtag data here.</p>
+      </div>
+    </div>
+  );
+
+  const SystemSettings: React.FC = () => (
+    <div>
+      <Card className="bg-white shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle>System Settings</CardTitle>
+          <CardDescription>Configure system-wide settings.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center p-8 text-gray-500">
+            <Settings className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium mb-2">System Settings Component</h3>
+            <p>Please create the SystemSettings component to manage system settings here.</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   return (
     <Layout>
