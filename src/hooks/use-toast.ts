@@ -9,6 +9,7 @@ export type ToastProps = {
   description?: React.ReactNode;
   action?: React.ReactNode;
   variant?: "default" | "destructive";
+  open?: boolean;
 };
 
 export type ToastActionElement = React.ReactElement<{
@@ -120,13 +121,15 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
-const ToastContext = createContext<{
+type ToastContextType = {
   toasts: ToasterToast[];
-  toast: (props: ToastProps) => void;
+  toast: (props: ToastProps) => string;
   dismiss: (toastId: string) => void;
-}>({
+};
+
+const ToastContext = createContext<ToastContextType>({
   toasts: [],
-  toast: () => {},
+  toast: () => "",
   dismiss: () => {},
 });
 
@@ -140,7 +143,7 @@ const useToast = () => {
 
 let dispatch: React.Dispatch<Action>;
 
-const ToastProvider = (props: { children: React.ReactNode }) => {
+const ToastProvider: React.FC<{ children: React.ReactNode }> = (props) => {
   const [state, _dispatch] = React.useReducer(reducer, { toasts: [] });
   dispatch = _dispatch;
 
@@ -153,7 +156,7 @@ const ToastProvider = (props: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const toast = React.useCallback((props: ToastProps) => {
+  const toast = React.useCallback((props: ToastProps): string => {
     const id = genId();
     
     dispatch({
@@ -175,20 +178,20 @@ const ToastProvider = (props: { children: React.ReactNode }) => {
     });
   }, []);
 
-  return (
-    <ToastContext.Provider
-      value={{
-        toasts: state.toasts,
-        toast,
-        dismiss,
-      }}
-    >
-      {props.children}
-    </ToastContext.Provider>
+  const contextValue: ToastContextType = {
+    toasts: state.toasts,
+    toast,
+    dismiss,
+  };
+
+  return React.createElement(
+    ToastContext.Provider,
+    { value: contextValue },
+    props.children
   );
 };
 
-const toast = (props: ToastProps) => {
+const toast = (props: ToastProps): string => {
   if (dispatch) {
     const id = genId();
     dispatch({
