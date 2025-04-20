@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -22,7 +23,7 @@ const EmailVerify = () => {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         token: verificationToken,
-        type: 'email'
+        type: 'signup'
       })
 
       if (error) {

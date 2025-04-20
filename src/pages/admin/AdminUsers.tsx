@@ -78,7 +78,8 @@ const AdminUsers: React.FC = () => {
       const updatedUser = {
         ...user,
         role: isAdmin ? 'admin' : 'user',
-        isAdmin: isAdmin
+        isAdmin: isAdmin,
+        is_admin: isAdmin
       };
 
       await updateUser(updatedUser);
@@ -106,13 +107,14 @@ const AdminUsers: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
+      // Create a new user in profiles table
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .insert({
           name: userData.name,
           email: userData.email,
-          password: hashedPassword,
           role: userData.isAdmin ? 'admin' : 'user',
+          is_admin: userData.isAdmin,
           is_blocked: false,
           subscription_tier: 'free'
         })
@@ -128,7 +130,6 @@ const AdminUsers: React.FC = () => {
       // Refresh users list
       fetchUsers();
       
-      // Fix the type error by not returning the data
       return;
     } catch (error) {
       console.error('Error adding user:', error);

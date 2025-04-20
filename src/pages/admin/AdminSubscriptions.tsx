@@ -185,7 +185,7 @@ const AdminSubscriptions: React.FC = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {user.isBlocked ? (
+                      {user.is_blocked || user.isBlocked ? (
                         <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
                           <X className="mr-1 h-3 w-3" />
                           Blocked

@@ -57,9 +57,9 @@ const AdminDashboard: React.FC = () => {
 
   // Statistics calculations - now derived from loaded data
   const totalUsers = users ? users.length : 0;
-  const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
-  const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
-  const adminUsers = users ? users.filter(user => user.isAdmin).length : 0;
+  const activeUsers = users ? users.filter(user => !user.is_blocked && !user.isBlocked).length : 0;
+  const blockedUsers = users ? users.filter(user => user.is_blocked || user.isBlocked).length : 0;
+  const adminUsers = users ? users.filter(user => user.is_admin || user.isAdmin).length : 0;
   
   // All trades (from all users) for admin
   const totalTrades = allTrades.length;

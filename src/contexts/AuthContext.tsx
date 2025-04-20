@@ -1,10 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/settings';
 import { useToast } from '@/hooks/use-toast';
 
-interface UserContextType {
+interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
@@ -12,19 +11,21 @@ interface UserContextType {
   signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>;
   signOut: () => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (access_token: string, new_password: string) => Promise<void>;
+  resetPassword: (newPassword: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   logout: () => Promise<void>; // For backward compatibility
+  login: (email: string, password: string) => Promise<void>; // For backward compatibility
   isAdmin: boolean; // For layout components
-  users?: User[]; // Admin functionality
-  getAllUsers?: () => Promise<void>; // Admin functionality
-  blockUser?: (user: User) => Promise<void>; // Admin functionality
-  unblockUser?: (user: User) => Promise<void>; // Admin functionality
-  changePassword?: (userId: string, newPassword: string) => Promise<void>; // Admin functionality
-  updateUser?: (user: User) => Promise<void>; // Admin functionality
+  users: User[]; // Admin functionality
+  getAllUsers: () => Promise<User[]>; // Admin functionality
+  blockUser: (user: User) => Promise<void>; // Admin functionality
+  unblockUser: (user: User) => Promise<void>; // Admin functionality
+  changePassword: (userId: string, newPassword: string) => Promise<void>; // Admin functionality
+  updateUser: (user: User) => Promise<void>; // Admin functionality
+  updateSubscriptionTier: (userId: string, tier: string) => Promise<void>; // Admin functionality
 }
 
-const AuthContext = createContext<UserContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -34,7 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
-  // Check for user session on initial load
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -45,7 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (session?.user) {
-          // Get user metadata
           const userInfo = {
             id: session.user.id,
             name: session.user.user_metadata?.name || '',
@@ -73,10 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkSession();
 
-    // Set up auth state change listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        // Get user data on sign in
         const userInfo = {
           id: session.user.id,
           name: session.user.user_metadata?.name || '',
@@ -119,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   };
+
+  const login = signIn;
 
   const signUp = async (email: string, password: string, userData: Partial<User>) => {
     try {
@@ -171,7 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Alias for signOut to maintain compatibility with existing code
   const logout = signOut;
 
   const forgotPassword = async (email: string) => {
@@ -198,11 +196,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const resetPassword = async (access_token: string, new_password: string) => {
+  const resetPassword = async (newPassword: string) => {
     try {
       setLoading(true);
       const { error } = await supabase.auth.updateUser({
-        password: new_password
+        password: newPassword
       });
       
       if (error) throw error;
@@ -231,7 +229,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       
       if (session?.user) {
-        // Update user info from session metadata
         const userInfo = {
           id: session.user.id,
           name: session.user.user_metadata?.name || '',
@@ -254,21 +251,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Admin functions
   const getAllUsers = async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) return users;
     
     try {
       setLoading(true);
-      // This should be replaced with an RPC call or a cloud function
-      // since direct user access is usually restricted
-      const { data, error } = await supabase.functions.invoke('get-all-users');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
       
       if (error) throw error;
       
       if (data) {
-        setUsers(data);
+        const mappedUsers = data.map(profile => ({
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          isAdmin: profile.is_admin,
+          is_admin: profile.is_admin,
+          isBlocked: profile.is_blocked,
+          is_blocked: profile.is_blocked,
+          subscription_tier: profile.subscription_tier,
+          country: profile.country
+        }));
+        setUsers(mappedUsers);
+        return mappedUsers;
       }
+      return users;
     } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
@@ -276,6 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: "Failed to fetch users",
         variant: "destructive"
       });
+      return users;
     } finally {
       setLoading(false);
     }
@@ -285,14 +296,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isAdmin) return;
     
     try {
-      // Implement blocking logic through a secure RPC or function
-      const { error } = await supabase.functions.invoke('block-user', {
-        body: { userId: userToBlock.id }
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: true })
+        .eq('id', userToBlock.id);
       
       if (error) throw error;
       
-      setUsers(users.map(u => u.id === userToBlock.id ? {...u, isBlocked: true} : u));
+      setUsers(users.map(u => u.id === userToBlock.id ? {...u, isBlocked: true, is_blocked: true} : u));
       
       toast({
         title: "Success",
@@ -312,14 +323,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isAdmin) return;
     
     try {
-      // Implement unblocking logic through a secure RPC or function
-      const { error } = await supabase.functions.invoke('unblock-user', {
-        body: { userId: userToUnblock.id }
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: false })
+        .eq('id', userToUnblock.id);
       
       if (error) throw error;
       
-      setUsers(users.map(u => u.id === userToUnblock.id ? {...u, isBlocked: false} : u));
+      setUsers(users.map(u => u.id === userToUnblock.id ? {...u, isBlocked: false, is_blocked: false} : u));
       
       toast({
         title: "Success",
@@ -339,7 +350,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isAdmin) return;
     
     try {
-      // Implement password change logic through a secure RPC or function
       const { error } = await supabase.functions.invoke('admin-change-password', {
         body: { userId, newPassword }
       });
@@ -364,10 +374,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isAdmin && userToUpdate.id !== user?.id) return;
     
     try {
-      // Implement user update logic through a secure RPC or function
-      const { error } = await supabase.functions.invoke('update-user', {
-        body: { user: userToUpdate }
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          name: userToUpdate.name,
+          email: userToUpdate.email,
+          role: userToUpdate.role,
+          is_admin: userToUpdate.isAdmin || userToUpdate.is_admin,
+          is_blocked: userToUpdate.isBlocked || userToUpdate.is_blocked,
+          subscription_tier: userToUpdate.subscription_tier,
+          country: userToUpdate.country
+        })
+        .eq('id', userToUpdate.id);
       
       if (error) throw error;
       
@@ -377,7 +395,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (userToUpdate.id === user?.id) {
         setUser(userToUpdate);
-        setIsAdmin(!!userToUpdate.isAdmin);
+        setIsAdmin(!!userToUpdate.isAdmin || !!userToUpdate.is_admin);
       }
       
       toast({
@@ -389,6 +407,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast({
         title: "Error",
         description: "Failed to update user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateSubscriptionTier = async (userId: string, tier: string) => {
+    if (!isAdmin) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ subscription_tier: tier })
+        .eq('id', userId);
+      
+      if (error) throw error;
+      
+      setUsers(users.map(u => 
+        u.id === userId ? {...u, subscription_tier: tier} : u
+      ));
+      
+      toast({
+        title: "Success",
+        description: `Subscription updated to ${tier}`,
+      });
+    } catch (error: any) {
+      console.error('Error updating subscription:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update subscription",
         variant: "destructive"
       });
     }
@@ -406,13 +453,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       refreshUser,
       logout,
+      login,
       isAdmin,
       users,
       getAllUsers,
       blockUser,
       unblockUser,
       changePassword,
-      updateUser
+      updateUser,
+      updateSubscriptionTier
     }}>
       {children}
     </AuthContext.Provider>

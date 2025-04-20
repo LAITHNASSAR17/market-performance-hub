@@ -5,10 +5,14 @@ export interface User {
   name: string;
   email: string;
   role?: string;
-  isAdmin?: boolean;
-  isBlocked?: boolean;
+  is_admin?: boolean;
+  isAdmin?: boolean; // Alias for compatibility
+  is_blocked?: boolean;
+  isBlocked?: boolean; // Alias for compatibility
   subscription_tier?: string;
   country?: string;
+  user_id?: string; // For compatibility
+  userId?: string; // For compatibility
 }
 
 export interface UserTableColumn {
