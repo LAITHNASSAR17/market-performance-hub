@@ -5,7 +5,7 @@ import {
 } from "@radix-ui/react-toast";
 
 // Define our own ToastProps interface to avoid circular dependencies
-interface ToastProps {
+export interface ToastProps {
   variant?: "default" | "destructive";
   className?: string;
   open?: boolean;
@@ -13,7 +13,7 @@ interface ToastProps {
   children?: React.ReactNode;
 }
 
-type ToastActionElement = React.ReactElement<typeof ToastPrimitivesActionElement>;
+export type ToastActionElement = React.ReactElement<typeof ToastPrimitivesActionElement>;
 
 type ToastType = Omit<ToastProps, "id"> & {
   id?: string;
@@ -147,7 +147,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">;
 
-function toast({ ...props }: Toast) {
+export function toast({ ...props }: Toast) {
   const id = genId();
 
   const update = (props: ToasterToast) =>
@@ -177,7 +177,7 @@ function toast({ ...props }: Toast) {
   };
 }
 
-function useToast() {
+export function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
 
   React.useEffect(() => {
@@ -196,6 +196,3 @@ function useToast() {
     dismiss: (toastId?: string) => dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
   };
 }
-
-export { useToast, toast };
-export type { ToastActionElement, ToastProps };
