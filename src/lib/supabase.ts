@@ -14,7 +14,7 @@ export const getAllProfiles = async (): Promise<ProfileType[]> => {
       return [];
     }
     
-    return data as ProfileType[];
+    return data as ProfileType[] || [];
   } catch (err) {
     console.error('Exception fetching profiles:', err);
     return [];

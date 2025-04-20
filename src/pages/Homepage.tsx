@@ -65,20 +65,23 @@ const Homepage: React.FC = () => {
         if (data) {
           // Parse features if it's a string or JSON array
           let parsedFeatures: Feature[] = [];
+          
           if (typeof data.features === 'string') {
             try {
               parsedFeatures = JSON.parse(data.features);
             } catch (e) {
               console.error('Error parsing features:', e);
-              parsedFeatures = [];
+              parsedFeatures = content.features;
             }
-          } else if (Array.isArray(data.features)) {
+          } else if (data.features && Array.isArray(data.features)) {
             // Cast and transform JSON features to Feature objects
             parsedFeatures = (data.features as Json[]).map((feature: any) => ({
               title: feature.title || 'Feature',
               description: feature.description || 'Description',
               icon: feature.icon
             }));
+          } else {
+            parsedFeatures = content.features;
           }
           
           // Map database fields to our interface fields

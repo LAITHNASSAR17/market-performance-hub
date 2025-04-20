@@ -59,11 +59,12 @@ const SystemSettingsExtended = () => {
         
         if (data) {
           // Update site name in state and localStorage
-          setSiteName(data.site_name);
-          localStorage.setItem('siteName', data.site_name);
+          const siteNameValue = data.site_name || 'TradeTracker';
+          setSiteName(siteNameValue);
+          localStorage.setItem('siteName', siteNameValue);
           
           // Update document title
-          document.title = data.site_name;
+          document.title = siteNameValue;
         }
       } catch (error) {
         console.error('Error:', error);
@@ -76,11 +77,10 @@ const SystemSettingsExtended = () => {
   const handleSaveSiteName = async () => {
     try {
       // Save to Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('site_settings')
         .update({ site_name: siteName })
-        .eq('site_name', localStorage.getItem('siteName'))
-        .select();
+        .eq('site_name', localStorage.getItem('siteName') || 'TradeTracker');
       
       if (error) {
         throw error;

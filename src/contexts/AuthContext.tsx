@@ -1,188 +1,210 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { useAuthState } from '@/hooks/useAuthState';
-import { AuthContextType, User } from '@/types/auth';
-import { supabase, getUserByEmail, getAllProfiles, updateUserProfile } from '@/lib/supabase';
-import { loginUser, registerUser, updateUserData, sendEmailVerification, sendPasswordReset } from '@/services/authService';
-import { hashPassword, comparePassword } from '@/utils/encryption';
+import { supabase } from '@/lib/supabase';
+import { hashPassword } from '@/utils/encryption';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  is_admin: boolean;
+  is_blocked: boolean;
+  avatar_url: string | null;
+  country: string | null;
+}
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const {
-    user,
-    setUser,
-    isAdmin,
-    setIsAdmin,
-    isAuthenticated,
-    setIsAuthenticated,
-    loading,
-    setLoading,
-    users,
-    setUsers
-  } = useAuthState();
-  
+interface AuthContextProps {
+  user: User | null;
+  userRole: string;
+  isAdmin: boolean;
+  isAuthenticated: boolean;
+  authLoading: boolean;
+  authError: string | null;
+  login: (email: string, password: string) => Promise<User | null>;
+  logout: () => void;
+  register: (email: string, password: string, name: string) => Promise<User | null>;
+  updatePassword: (email: string, newPassword: string) => Promise<boolean>;
+  updateProfile: (email: string, name: string, avatar_url: string) => Promise<void>;
+  getUserProfile: (email: string) => Promise<User | null>;
+  getAllUsers: () => Promise<User[] | null>;
+  updateUserRole: (userId: string, newRole: string) => Promise<void>;
+  blockUser: (userId: string) => Promise<void>;
+  unblockUser: (userId: string) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextProps>({
+  user: null,
+  userRole: 'user',
+  isAdmin: false,
+  isAuthenticated: false,
+  authLoading: false,
+  authError: null,
+  login: async () => null,
+  logout: () => {},
+  register: async () => null,
+  updatePassword: async () => true,
+  updateProfile: async () => {},
+  getUserProfile: async () => null,
+  getAllUsers: async () => null,
+  updateUserRole: async () => {},
+  blockUser: async () => {},
+  unblockUser: async () => {},
+});
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string>('user');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
+    sessionStorage.getItem('auth.isAuthenticated') === 'true'
+  );
+  const [authLoading, setAuthLoading] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'trackmind_user') {
-        const newUser = e.newValue ? JSON.parse(e.newValue) : null;
-        setUser(newUser);
-        setIsAdmin(newUser?.role === 'admin');
-      } else if (e.key === 'trackmind_auth_status') {
-        setIsAuthenticated(e.newValue === 'true');
-        
-        if (e.newValue !== 'true' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-          navigate('/login');
+    // Check if the component is still mounted before setting state
+    if (isMounted.current) {
+      const storedUser = sessionStorage.getItem('auth.user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setUserRole(parsedUser.role || 'user');
+          setIsAdmin(parsedUser.is_admin || false);
+        } catch (error) {
+          console.error('Error parsing user from session storage:', error);
+          logout();
         }
       }
+    }
+    
+    // Cleanup function when component unmounts
+    return () => {
+      isMounted.current = false;
     };
+  }, []);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [navigate, setUser, setIsAdmin, setIsAuthenticated]);
-
-  useEffect(() => {
-    const loadInitialSession = async () => {
-      try {
-        const userEmail = localStorage.getItem('user_email');
-        if (userEmail) {
-          try {
-            const userData = await getUserByEmail(userEmail);
-            
-            if (userData) {
-              setUser(userData);
-              setIsAdmin(userData.role === 'admin');
-              setIsAuthenticated(true);
-            }
-          } catch (error) {
-            console.error('Error loading initial session from Supabase:', error);
-            
-            // Check if we have a local user in localStorage as fallback
-            const localUser = localStorage.getItem('trackmind_user');
-            if (localUser) {
-              const parsedUser = JSON.parse(localUser);
-              setUser(parsedUser);
-              setIsAdmin(parsedUser.role === 'admin');
-              setIsAuthenticated(true);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error loading initial session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInitialSession();
-  }, [setUser, setIsAdmin, setIsAuthenticated, setLoading]);
-
-  const register = async (name: string, email: string, password: string, country?: string) => {
-    setLoading(true);
+  const getUserProfile = async (email: string) => {
     try {
-      await registerUser(name, email, password, country);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
       
-      toast({
-        title: "التسجيل ناجح",
-        description: "تم إنشاء حسابك بنجاح.",
-      });
+      if (error) {
+        console.error('Error fetching user data:', error);
+        return null;
+      }
       
-      navigate('/login');
+      if (!data) {
+        console.warn('No user data found for email:', email);
+        return null;
+      }
+      
+      return data as User;
     } catch (error) {
-      console.error('Registration error:', error);
-      toast({
-        title: "فشل التسجيل",
-        description: (error as Error).message || "تعذر تسجيل المستخدم",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
+      console.error('Exception in getUserProfile:', error);
+      return null;
     }
   };
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
+  const getAllUsers = async () => {
     try {
-      const userData = await loginUser(email, password);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*');
       
-      // Store email for session persistence
-      localStorage.setItem('user_email', email);
-      
-      const appUser: User = {
-        id: userData.id,
-        name: userData.name,
-        email: userData.email,
-        isAdmin: userData.role === 'admin',
-        isBlocked: userData.is_blocked,
-        role: userData.role,
-        subscription_tier: userData.subscription_tier
-      };
-      
-      // Store user data for offline fallback
-      localStorage.setItem('trackmind_user', JSON.stringify(appUser));
-      localStorage.setItem('trackmind_auth_status', 'true');
-      
-      setUser(appUser);
-      setIsAdmin(appUser.role === 'admin' || appUser.isAdmin || false);
-      setIsAuthenticated(true);
-      
-      toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: `مرحباً بعودتك، ${appUser.name}!`,
-      });
-      
-    } catch (error) {
-      console.error('Login error:', error);
-      let errorMessage = "فشل تسجيل الدخول. الرجاء التحقق من بريدك الإلكتروني وكلمة المرور.";
-      
-      if ((error as Error).message === 'Invalid credentials') {
-        errorMessage = "بريد إلكتروني أو كلمة مرور غير صحيحة";
-      } else if ((error as Error).message === 'User is blocked') {
-        errorMessage = "تم حظر هذا الحساب. الرجاء الاتصال بالدعم.";
+      if (error) {
+        console.error('Error fetching all users:', error);
+        return null;
       }
       
-      toast({
-        title: "فشل تسجيل الدخول",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setLoading(false);
+      return data as User[];
+    } catch (error) {
+      console.error('Exception in getAllUsers:', error);
+      return null;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('user_email');
-    localStorage.removeItem('trackmind_user');
-    localStorage.removeItem('trackmind_auth_status');
-    
-    setUser(null);
-    setIsAdmin(false);
-    setIsAuthenticated(false);
-    
-    navigate('/login');
+  const updateUserRole = async (userId: string, newRole: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ role: newRole })
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+      }
+      
+      // If the updated user is the current user, update the local state
+      if (user && user.id === userId) {
+        setUser((prevUser) => prevUser ? { ...prevUser, role: newRole } : null);
+        setUserRole(newRole);
+        sessionStorage.setItem('auth.user', JSON.stringify({ ...user, role: newRole }));
+      }
+    } catch (error) {
+      console.error('Exception in updateUserRole:', error);
+      throw error;
+    }
   };
 
-  const forgotPassword = async (email: string): Promise<void> => {
-    console.log(`Forgot password requested for ${email}`);
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    localStorage.setItem(`resetCode_${email}`, resetCode);
-    console.log(`Reset code for ${email}: ${resetCode}`);
-    toast({
-      title: "Reset Code Generated",
-      description: "Check console for the reset code (would be emailed in a real app)"
-    });
+  const blockUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_blocked: true })
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('Error blocking user:', error);
+        throw error;
+      }
+      
+      // If the blocked user is the current user, log them out
+      if (user && user.id === userId) {
+        logout();
+      }
+    } catch (error) {
+      console.error('Exception in blockUser:', error);
+      throw error;
+    }
   };
 
-  const resetPassword = async (email: string, resetCode: string, newPassword: string): Promise<void> => {
-    const storedResetCode = localStorage.getItem(`resetCode_${email}`);
-    if (storedResetCode === resetCode) {
+  const unblockUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_blocked: false })
+        .eq('id', userId);
+      
+      if (error) {
+        console.error('Error unblocking user:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Exception in unblockUser:', error);
+      throw error;
+    }
+  };
+
+  const updatePassword = async (email: string, newPassword: string) => {
+    try {
       const hashedPassword = hashPassword(newPassword);
       
       const { error } = await supabase
@@ -190,262 +212,174 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .update({ password: hashedPassword })
         .eq('email', email);
       
-      if (error) throw new Error('Failed to reset password');
-      
-      localStorage.removeItem(`resetCode_${email}`);
-      toast({
-        title: "Success",
-        description: "Password reset successfully",
-      });
-      navigate('/login');
-    } else {
-      throw new Error('Invalid reset code');
-    }
-  };
-
-  const updateUser = async (updatedUser: User): Promise<void> => {
-    try {
-      await updateUserData(updatedUser);
-      
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-      
-      if (user && user.id === updatedUser.id) {
-        const updatedCurrentUser = {
-          ...updatedUser,
-          role: updatedUser.role || (updatedUser.isAdmin ? 'admin' : 'user')
-        };
-        setUser(updatedCurrentUser);
-        setIsAdmin(updatedCurrentUser.role === 'admin' || updatedCurrentUser.isAdmin || false);
+      if (error) {
+        console.error('Error updating password:', error);
+        throw error;
       }
+      
+      return true;
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Exception in updatePassword:', error);
       throw error;
     }
   };
 
-  const updateProfile = async (name: string, email: string, currentPassword?: string, newPassword?: string): Promise<void> => {
+  const updateProfile = async (email: string, name: string, avatar_url: string) => {
     try {
-      if (!user) throw new Error('No user logged in');
+      const { error } = await supabase
+        .from('users')
+        .update({ name: name, avatar_url: avatar_url })
+        .eq('email', email);
       
-      const updateData: any = {
-        name,
-        email
-      };
-      
-      if (newPassword && currentPassword) {
-        const userData = await getUserByEmail(user.email);
-          
-        if (!userData || !userData.password || !comparePassword(currentPassword, userData.password)) {
-          throw new Error('Current password is incorrect');
-        }
-        
-        updateData.password = hashPassword(newPassword);
+      if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
       }
       
-      await updateUserProfile(user.id, updateData);
-      
-      const updatedUser = {
-        ...user,
-        name,
-        email
-      };
-      
-      setUser(updatedUser);
-      
-      toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully"
-      });
+      // Update local state if the updated profile is the current user
+      if (user && user.email === email) {
+        const updatedUser = { ...user, name: name, avatar_url: avatar_url };
+        setUser(updatedUser);
+        sessionStorage.setItem('auth.user', JSON.stringify(updatedUser));
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({
-        title: "Update Failed",
-        description: (error as Error).message || "Could not update profile",
-        variant: "destructive",
-      });
       throw error;
     }
   };
 
-  const getAllUsers = async (): Promise<User[]> => {
+  const login = async (email: string, password: string) => {
     try {
-      const profiles = await getAllProfiles();
+      setAuthLoading(true);
       
-      const formattedUsers = profiles.map(profile => ({
-        id: profile.id,
-        name: profile.name,
-        email: profile.email,
-        role: profile.role,
-        isAdmin: profile.role === 'admin',
-        isBlocked: profile.is_blocked,
-        subscription_tier: profile.subscription_tier || 'free'
-      }));
+      const userProfile = await getUserProfile(email);
       
-      setUsers(formattedUsers);
-      return formattedUsers;
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return [];
-    }
-  };
-
-  const blockUser = async (user: User): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_blocked: true })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-      
-      if (user.id === user?.id) {
-        logout();
-      }
-    } catch (error) {
-      console.error('Error blocking user:', error);
-      throw error;
-    }
-  };
-
-  const unblockUser = async (user: User): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ is_blocked: false })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
-      const allUsers = await getAllUsers();
-      setUsers(allUsers);
-    } catch (error) {
-      console.error('Error unblocking user:', error);
-      throw error;
-    }
-  };
-
-  const changePassword = async (email: string, newPassword: string): Promise<void> => {
-    try {
-      const userData = await getUserByEmail(email);
-      
-      if (!userData) {
-        throw new Error('User not found');
+      if (!userProfile) {
+        console.error('User profile not found');
+        throw new Error('Invalid credentials');
       }
       
-      const hashedPassword = hashPassword(newPassword);
+      const hashedPassword = hashPassword(password);
       
-      await updateUserProfile(userData.id, { password: hashedPassword });
-      
-      toast({
-        title: "Success", 
-        description: "Password changed successfully"
-      });
-    } catch (error) {
-      console.error('Error changing password:', error);
-      throw error;
-    }
-  };
-
-  const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ subscription_tier: tier })
-        .eq('id', userId);
-        
-      if (error) throw error;
-      
-      if (user && user.id === userId) {
-        const updatedUser = {
-          ...user,
-          subscription_tier: tier
-        };
-        
-        setUser(updatedUser);
+      if (userProfile.password !== hashedPassword) {
+        console.error('Password mismatch');
+        throw new Error('Invalid credentials');
       }
       
-      await getAllUsers();
+      // If user is blocked, prevent login
+      if (userProfile.is_blocked) {
+        console.error('User is blocked');
+        throw new Error('Your account has been blocked. Please contact support.');
+      }
       
-      toast({
-        title: "Subscription Updated",
-        description: `Subscription tier updated to ${tier}`
-      });
-    } catch (error) {
-      console.error('Error updating subscription tier:', error);
-      toast({
-        title: "Update Failed",
-        description: (error as Error).message || "Could not update subscription",
-        variant: "destructive",
-      });
+      // Set user state with the profile data
+      setUser(userProfile);
+      setUserRole(userProfile.role || 'user');
+      setIsAdmin(userProfile.is_admin || false);
+      setIsAuthenticated(true);
+      setAuthError(null);
+      
+      // Store user data in session storage
+      sessionStorage.setItem('auth.user', JSON.stringify(userProfile));
+      sessionStorage.setItem('auth.isAuthenticated', 'true');
+      
+      return userProfile;
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setAuthError(error.message || 'An error occurred during login');
       throw error;
+    } finally {
+      setAuthLoading(false);
     }
   };
 
-  const sendVerificationEmail = async (email: string) => {
+  const register = async (email: string, password: string, name: string) => {
     try {
-      return await sendEmailVerification(email);
-    } catch (error) {
-      console.error('Error sending verification email:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في إرسال بريد التحقق. حاول مرة أخرى.",
-        variant: "destructive",
-      });
+      setAuthLoading(true);
+      
+      // Check if the email is already registered
+      const existingUser = await getUserProfile(email);
+      if (existingUser) {
+        throw new Error('Email already registered');
+      }
+      
+      const hashedPassword = hashPassword(password);
+      const newUser: Omit<User, 'id' | 'is_admin' | 'is_blocked' | 'avatar_url' | 'country'> = {
+        email: email,
+        name: name,
+        password: hashedPassword,
+        role: 'user',
+      };
+      
+      const { data: createdUser, error } = await supabase
+        .from('users')
+        .insert([{ ...newUser, email_verified: false }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Registration error:', error);
+        throw new Error('Registration failed');
+      }
+      
+      if (!createdUser) {
+        throw new Error('Could not create user');
+      }
+      
+      // Set user state with the created user data
+      setUser(createdUser as User);
+      setUserRole(createdUser.role || 'user');
+      setIsAdmin(createdUser.is_admin || false);
+      setIsAuthenticated(true);
+      setAuthError(null);
+      
+      // Store user data in session storage
+      sessionStorage.setItem('auth.user', JSON.stringify(createdUser));
+      sessionStorage.setItem('auth.isAuthenticated', 'true');
+      
+      return createdUser as User;
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      setAuthError(error.message || 'An error occurred during registration');
       throw error;
+    } finally {
+      setAuthLoading(false);
     }
   };
 
-  const sendPasswordResetEmail = async (email: string) => {
-    try {
-      await sendPasswordReset(email);
-    } catch (error) {
-      console.error('Password reset email error:', error);
-      toast({
-        title: "خطأ",
-        description: "فشل في إرسال بريد إعادة تعيين كلمة المرور",
-        variant: "destructive",
-      });
-      throw error;
-    }
+  const logout = () => {
+    setUser(null);
+    setUserRole('user');
+    setIsAdmin(false);
+    setIsAuthenticated(false);
+    setAuthError(null);
+    sessionStorage.removeItem('auth.user');
+    sessionStorage.removeItem('auth.isAuthenticated');
+    navigate('/login');
   };
 
-  const value = {
+  const value: AuthContextProps = {
     user,
+    userRole,
     isAdmin,
     isAuthenticated,
-    loading,
-    users,
-    register,
+    authLoading,
+    authError,
     login,
     logout,
-    forgotPassword,
-    resetPassword,
-    updateUser,
+    register,
+    updatePassword,
     updateProfile,
+    getUserProfile,
     getAllUsers,
+    updateUserRole,
     blockUser,
     unblockUser,
-    changePassword,
-    updateSubscriptionTier,
-    sendVerificationEmail,
-    sendPasswordResetEmail,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 };

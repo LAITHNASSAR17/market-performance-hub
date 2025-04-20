@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Plus, Trash2, Image } from 'lucide-react';
+import { Json } from '@/integrations/supabase/types';
 
 interface Feature {
   title: string;
@@ -80,9 +81,20 @@ const HomepageEditor: React.FC = () => {
           // Use default content if none exists
         } else if (data) {
           // Parse the features JSON if stored as string
-          const features = typeof data.features === 'string' 
-            ? JSON.parse(data.features) 
-            : data.features;
+          let parsedFeatures: Feature[] = [];
+          
+          if (typeof data.features === 'string') {
+            try {
+              parsedFeatures = JSON.parse(data.features);
+            } catch (e) {
+              console.error('Error parsing features:', e);
+              parsedFeatures = defaultContent.features;
+            }
+          } else if (data.features && Array.isArray(data.features)) {
+            parsedFeatures = data.features as Feature[];
+          } else {
+            parsedFeatures = defaultContent.features;
+          }
           
           // Map database field names to our interface field names
           const mappedData: HomepageContent = {
@@ -93,7 +105,7 @@ const HomepageEditor: React.FC = () => {
             primaryButtonUrl: data.primary_button_url || defaultContent.primaryButtonUrl,
             secondaryButtonText: data.secondary_button_text || defaultContent.secondaryButtonText,
             secondaryButtonUrl: data.secondary_button_url || defaultContent.secondaryButtonUrl,
-            features: features || defaultContent.features
+            features: parsedFeatures
           };
           
           setContent(mappedData);
@@ -122,9 +134,7 @@ const HomepageEditor: React.FC = () => {
         primary_button_url: content.primaryButtonUrl,
         secondary_button_text: content.secondaryButtonText,
         secondary_button_url: content.secondaryButtonUrl,
-        features: typeof content.features === 'object' 
-          ? JSON.stringify(content.features) 
-          : content.features
+        features: content.features as Json
       };
       
       const { error } = await supabase
