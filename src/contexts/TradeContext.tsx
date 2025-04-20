@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
@@ -7,6 +8,7 @@ import { useTradeManagement } from '@/hooks/useTradeManagement';
 import { useSymbolManagement } from '@/hooks/useSymbolManagement';
 import { useTradingAccounts } from '@/hooks/useTradingAccounts';
 import { supabase } from '@/lib/supabase';
+import { checkSupabaseConnection } from '@/integrations/supabase/client';
 
 export type { Trade } from '@/types/trade';
 
@@ -44,6 +46,7 @@ type TradeContextType = {
   tradingAccounts: TradingAccount[];
   createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
   fetchTradingAccounts: () => Promise<void>;
+  connectionStatus: 'checking' | 'connected' | 'disconnected';
 };
 
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
@@ -55,6 +58,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     'setup', 'momentum', 'breakout', 'retracement', 'technical', 'fundamental', 
     'news', 'mistake', 'perfecttrade', 'patience', 'fakeout'
   ]);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
   
   const { user } = useAuth();
   const { trades, setTrades, addTrade, updateTrade, deleteTrade } = useTradeManagement([]);
@@ -77,10 +81,29 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const { toast } = useToast();
 
+  // Check database connection before fetching data
+  useEffect(() => {
+    const checkConnection = async () => {
+      const isConnected = await checkSupabaseConnection();
+      setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+      return isConnected;
+    };
+    
+    checkConnection();
+  }, []);
+
   const fetchTrades = async () => {
     if (!user) {
       setLoading(false);
       setError(null);
+      return;
+    }
+
+    // Check connection first
+    const isConnected = connectionStatus === 'connected' || await checkSupabaseConnection();
+    if (!isConnected) {
+      setError("لا يمكن الاتصال بقاعدة البيانات");
+      setLoading(false);
       return;
     }
 
@@ -150,8 +173,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   useEffect(() => {
-    fetchTrades();
-  }, [user, toast]);
+    if (connectionStatus === 'connected') {
+      fetchTrades();
+    }
+  }, [user, connectionStatus]);
 
   return (
     <TradeContext.Provider value={{
@@ -174,6 +199,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tradingAccounts,
       createTradingAccount,
       fetchTradingAccounts,
+      connectionStatus,
     }}>
       {children}
     </TradeContext.Provider>

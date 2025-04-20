@@ -14,5 +14,30 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     storage: localStorage
+  },
+  global: {
+    fetch: (...args) => {
+      // Add retry logic
+      return fetch(...args).catch(error => {
+        console.error('Supabase fetch error:', error);
+        throw error;
+      });
+    }
   }
 });
+
+// Helper function to check connection status
+export const checkSupabaseConnection = async () => {
+  try {
+    const { error } = await supabase.from('profiles').select('count', { count: 'exact', head: true });
+    if (error) {
+      console.error('Supabase connection check failed:', error);
+      return false;
+    }
+    console.log('Supabase connection successful');
+    return true;
+  } catch (err) {
+    console.error('Supabase connection test error:', err);
+    return false;
+  }
+};

@@ -121,13 +121,21 @@ export const useTradeManagement = (initialTrades: Trade[] = []) => {
     if (!user) return;
     
     try {
-      const { error } = await supabase
-        .from('trades')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+      // First try using the tradeService
+      try {
+        const success = await tradeService.deleteTrade(id);
+        if (!success) throw new Error('Delete operation failed');
+      } catch (serviceError) {
+        console.warn('Trade service delete failed, falling back to direct supabase call:', serviceError);
+        // Fallback to direct Supabase call if tradeService fails
+        const { error } = await supabase
+          .from('trades')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
 
       setTrades(prevTrades => prevTrades.filter(trade => trade.id !== id));
 
