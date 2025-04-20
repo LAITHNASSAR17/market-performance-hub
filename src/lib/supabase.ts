@@ -46,18 +46,31 @@ export const getUserByEmail = async (email: string) => {
     return null;
   }
   
-  return data ? {
-    ...data,
-    password: data.password || undefined,
-    email_verified: data.email_verified || false
-  } : null;
+  return data;
 };
 
 // Update other functions similarly to support new fields
 export const createUserProfile = async (userData: Partial<ProfileType>) => {
+  // Create a properly typed object for Supabase
+  const profileData = {
+    id: userData.id,
+    name: userData.name,
+    email: userData.email,
+    password: userData.password,
+    role: userData.role,
+    is_admin: userData.is_admin,
+    is_blocked: userData.is_blocked,
+    subscription_tier: userData.subscription_tier,
+    email_verified: userData.email_verified,
+    country: userData.country,
+    avatar_url: userData.avatar_url,
+    created_at: userData.created_at,
+    updated_at: userData.updated_at
+  };
+  
   const { data, error } = await supabase
     .from('profiles')
-    .insert(userData)
+    .insert(profileData)
     .select()
     .single();
     
@@ -70,9 +83,24 @@ export const createUserProfile = async (userData: Partial<ProfileType>) => {
 };
 
 export const updateUserProfile = async (userId: string, userData: Partial<ProfileType>) => {
+  // Create a properly typed object for Supabase
+  const updateData: any = {};
+  
+  // Only include fields that are provided
+  if (userData.name !== undefined) updateData.name = userData.name;
+  if (userData.email !== undefined) updateData.email = userData.email;
+  if (userData.password !== undefined) updateData.password = userData.password;
+  if (userData.role !== undefined) updateData.role = userData.role;
+  if (userData.is_admin !== undefined) updateData.is_admin = userData.is_admin;
+  if (userData.is_blocked !== undefined) updateData.is_blocked = userData.is_blocked;
+  if (userData.subscription_tier !== undefined) updateData.subscription_tier = userData.subscription_tier;
+  if (userData.email_verified !== undefined) updateData.email_verified = userData.email_verified;
+  if (userData.country !== undefined) updateData.country = userData.country;
+  if (userData.avatar_url !== undefined) updateData.avatar_url = userData.avatar_url;
+  
   const { data, error } = await supabase
     .from('profiles')
-    .update(userData)
+    .update(updateData)
     .eq('id', userId)
     .select()
     .single();

@@ -44,7 +44,6 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-// Session storage keys
 const USER_STORAGE_KEY = 'trackmind_user';
 const AUTH_STATUS_KEY = 'trackmind_auth_status';
 
@@ -65,7 +64,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Handle storage events to sync auth state across tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === USER_STORAGE_KEY) {
@@ -75,7 +73,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else if (e.key === AUTH_STATUS_KEY) {
         setIsAuthenticated(e.newValue === 'true');
         
-        // If logged out in another tab, redirect to login
         if (e.newValue !== 'true' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
           navigate('/login');
         }
@@ -88,7 +85,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [navigate]);
 
-  // Save auth state to local storage whenever it changes
   useEffect(() => {
     if (user) {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
@@ -165,11 +161,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const hashedPassword = hashPassword(password);
       
-      const userData = {
+      const userData: Partial<ProfileType> = {
         name,
         email,
         password: hashedPassword,
         role: 'user',
+        is_admin: false,
         is_blocked: false,
         subscription_tier: 'free',
         email_verified: false,
@@ -242,10 +239,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           throw new Error('البريد الإلكتروني غير مفعل');
         }
         
-        // Save email for session recovery
         localStorage.setItem('user_email', email);
         
-        // Convert DB user to app user format
         const appUser: User = {
           id: userData.id,
           name: userData.name,
@@ -283,15 +278,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    // Remove current session data
     localStorage.removeItem('user_email');
     
-    // Update state
     setUser(null);
     setIsAdmin(false);
     setIsAuthenticated(false);
     
-    // Navigate to login page
     navigate('/login');
   };
 
@@ -331,18 +323,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const updateUser = async (updatedUser: User): Promise<void> => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: updatedUser.name,
-          email: updatedUser.email,
-          role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
-          is_blocked: updatedUser.isBlocked || false,
-          subscription_tier: updatedUser.subscription_tier || 'free'
-        })
-        .eq('id', updatedUser.id);
+      const updateData: Partial<ProfileType> = {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role || updatedUser.isAdmin ? 'admin' : 'user',
+        is_blocked: updatedUser.isBlocked || false,
+        subscription_tier: updatedUser.subscription_tier || 'free'
+      };
       
-      if (error) throw error;
+      await updateUserProfile(updatedUser.id, updateData);
       
       const allUsers = await getAllUsers();
       setUsers(allUsers);

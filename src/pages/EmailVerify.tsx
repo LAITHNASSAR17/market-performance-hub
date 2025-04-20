@@ -30,7 +30,7 @@ const EmailVerify = () => {
         
         // 1. التحقق من وجود المستخدم
         const { data: userData, error: userError } = await supabase
-          .from('users')
+          .from('profiles')
           .select('*')
           .eq('email', email)
           .single();
@@ -54,7 +54,7 @@ const EmailVerify = () => {
         // 2. تحديث حالة التحقق للمستخدم
         try {
           const { error: updateError } = await supabase
-            .from('users')
+            .from('profiles')
             .update({ email_verified: true })
             .eq('email', email);
 
