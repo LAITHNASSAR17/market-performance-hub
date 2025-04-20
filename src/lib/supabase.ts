@@ -1,10 +1,8 @@
 
-
 import { supabase } from '@/integrations/supabase/client';
 import { hashPassword } from '@/utils/encryption';
 import { ProfileType, createProfileObject } from '@/types/database';
 
-// Export the function to get all profiles
 export const getAllProfiles = async (): Promise<ProfileType[]> => {
   const { data, error } = await supabase
     .from('profiles')
@@ -18,7 +16,6 @@ export const getAllProfiles = async (): Promise<ProfileType[]> => {
   return data as ProfileType[];
 };
 
-// Update existing functions to use the new ProfileType
 export const getUserByEmail = async (email: string) => {
   const { data, error } = await supabase
     .from('profiles')
@@ -34,14 +31,10 @@ export const getUserByEmail = async (email: string) => {
   return data;
 };
 
-// Update other functions similarly to support new fields
 export const createUserProfile = async (userData: Partial<ProfileType>) => {
-  // Create a typed object with all possible fields for Supabase
-  const profileData = createProfileObject(userData);
-  
   const { data, error } = await supabase
     .from('profiles')
-    .insert(profileData)
+    .insert([userData])
     .select()
     .single();
     
@@ -54,12 +47,9 @@ export const createUserProfile = async (userData: Partial<ProfileType>) => {
 };
 
 export const updateUserProfile = async (userId: string, userData: Partial<ProfileType>) => {
-  // Create a properly typed object for Supabase
-  const updateData = createProfileObject(userData);
-  
   const { data, error } = await supabase
     .from('profiles')
-    .update(updateData)
+    .update(userData)
     .eq('id', userId)
     .select()
     .single();
@@ -72,5 +62,4 @@ export const updateUserProfile = async (userId: string, userData: Partial<Profil
   return data;
 };
 
-// Export the Supabase client
 export { supabase };

@@ -3,9 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
-import { ProfileType, createProfileObject } from '@/types/database';
+import { ProfileType } from '@/types/database';
 
-// Simple placeholder for AdminUsers page
 const AdminUsers: React.FC = () => {
   const { getAllUsers } = useAuth();
   const [users, setUsers] = useState<ProfileType[]>([]);
@@ -27,21 +26,18 @@ const AdminUsers: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
-      const profileData = createProfileObject({
-        name: userData.name,
-        email: userData.email,
-        password: hashedPassword,
-        role: userData.isAdmin ? 'admin' : 'user',
-        is_admin: userData.isAdmin,
-        is_blocked: false,
-        subscription_tier: 'free',
-        email_verified: true
-      });
-      
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
-        .insert(profileData)
-        .select();
+        .insert([{
+          name: userData.name,
+          email: userData.email,
+          password: hashedPassword,
+          role: userData.isAdmin ? 'admin' : 'user',
+          is_admin: userData.isAdmin,
+          is_blocked: false,
+          subscription_tier: 'free',
+          email_verified: true
+        }]);
       
       if (error) throw new Error(error.message);
       

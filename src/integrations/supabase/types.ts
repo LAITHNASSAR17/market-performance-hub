@@ -215,10 +215,12 @@ export type Database = {
           country: string | null
           created_at: string | null
           email: string | null
+          email_verified: boolean | null
           id: string
           is_admin: boolean | null
           is_blocked: boolean | null
           name: string | null
+          password: string | null
           role: string | null
           subscription_tier: string | null
           updated_at: string | null
@@ -228,10 +230,12 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           email?: string | null
+          email_verified?: boolean | null
           id: string
           is_admin?: boolean | null
           is_blocked?: boolean | null
           name?: string | null
+          password?: string | null
           role?: string | null
           subscription_tier?: string | null
           updated_at?: string | null
@@ -241,10 +245,12 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           email?: string | null
+          email_verified?: boolean | null
           id?: string
           is_admin?: boolean | null
           is_blocked?: boolean | null
           name?: string | null
+          password?: string | null
           role?: string | null
           subscription_tier?: string | null
           updated_at?: string | null

@@ -1,4 +1,3 @@
-
 import { supabase, getUserByEmail, createUserProfile, getAllProfiles, updateUserProfile } from '@/lib/supabase';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { User } from '@/types/auth';
@@ -24,7 +23,7 @@ export async function loginUser(email: string, password: string): Promise<Profil
 export async function registerUser(name: string, email: string, password: string, country?: string): Promise<void> {
   const hashedPassword = hashPassword(password);
   
-  const userData = createProfileObject({
+  const profileData = createProfileObject({
     name,
     email,
     password: hashedPassword,
@@ -36,7 +35,7 @@ export async function registerUser(name: string, email: string, password: string
     country
   });
   
-  await createUserProfile(userData);
+  await createUserProfile(profileData);
 }
 
 export async function updateUserData(updatedUser: User): Promise<void> {
