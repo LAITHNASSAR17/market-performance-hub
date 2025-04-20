@@ -63,25 +63,42 @@ export interface PlaybookEntry {
   description: string;
   setup: string;
   rules: PlaybookRule[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  order: number;
-  tradeType: 'long' | 'short' | 'both';
+  // Match database column names exactly
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  order_number: number;
+  is_private: boolean;
+  trade_type: 'long' | 'short' | 'both';
   tags: string[];
-  // Adding missing properties from PlaybookCard
+  // Add properties that match the database fields
   category?: string;
-  isPrivate?: boolean;
   rating?: number;
+  r_multiple?: number;
+  win_rate?: number;
+  expected_value?: number;
+  profit_factor?: number;
+  net_profit_loss?: number;
+  total_trades?: number;
+  avg_winner?: number;
+  avg_loser?: number;
+  missed_trades?: number;
+  
+  // For backward compatibility
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  userId?: string;
+  order?: number;
+  isPrivate?: boolean;
+  tradeType?: 'long' | 'short' | 'both';
   rMultiple?: number;
   winRate?: number;
   expectedValue?: number;
   profitFactor?: number;
   netProfitLoss?: number;
   totalTrades?: number;
-  avgWinner?: number;
-  avgLoser?: number;
   missedTrades?: number;
 }
 
@@ -116,4 +133,15 @@ export interface HomepageContent {
   secondary_button_url?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Note {
+  id: string;
+  title: string;
+  content?: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  trade_id?: string;
+  tags?: string[];
 }
