@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -187,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const hashedPassword = hashPassword(newPassword);
       
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ password: hashedPassword })
         .eq('email', email);
       
@@ -294,7 +293,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const blockUser = async (user: User): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ is_blocked: true })
         .eq('id', user.id);
       
@@ -315,7 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const unblockUser = async (user: User): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ is_blocked: false })
         .eq('id', user.id);
       
@@ -354,7 +353,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ subscription_tier: tier })
         .eq('id', userId);
         

@@ -31,7 +31,7 @@ const EmailVerify = () => {
         
         // 1. التحقق من وجود المستخدم
         const { data: userData, error: userError } = await supabase
-          .from('profiles')
+          .from('users')
           .select('*')
           .eq('email', email)
           .single();
@@ -57,7 +57,7 @@ const EmailVerify = () => {
           const updateData = createProfileObject({ email_verified: true });
           
           const { error: updateError } = await supabase
-            .from('profiles')
+            .from('users')
             .update(updateData)
             .eq('email', email);
 

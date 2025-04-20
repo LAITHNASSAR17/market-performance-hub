@@ -40,7 +40,7 @@ const AdminUsers: React.FC = () => {
       });
       
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .insert(profileData);
       
       if (error) throw new Error(error.message);
