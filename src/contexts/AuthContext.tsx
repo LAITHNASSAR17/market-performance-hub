@@ -38,25 +38,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (session?.user) {
-          // Get user data
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (userError && userError.code !== 'PGRST116') {
-            console.error('Error fetching user data:', userError);
-          }
-          
+          // Get user metadata
           const userInfo = {
             id: session.user.id,
-            name: userData?.name || session.user.user_metadata?.name || '',
+            name: session.user.user_metadata?.name || '',
             email: session.user.email || '',
-            role: userData?.role || 'user',
-            isAdmin: userData?.is_admin || false,
-            isBlocked: userData?.is_blocked || false,
-            subscription_tier: userData?.subscription_tier || 'free',
+            role: session.user.user_metadata?.role || 'user',
+            isAdmin: session.user.user_metadata?.isAdmin || false,
+            isBlocked: session.user.user_metadata?.isBlocked || false,
+            subscription_tier: session.user.user_metadata?.subscription_tier || 'free',
+            country: session.user.user_metadata?.country,
           };
           
           setUser(userInfo);
@@ -79,24 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         // Get user data on sign in
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userError && userError.code !== 'PGRST116') {
-          console.error('Error fetching user data:', userError);
-        }
-        
         const userInfo = {
           id: session.user.id,
-          name: userData?.name || session.user.user_metadata?.name || '',
+          name: session.user.user_metadata?.name || '',
           email: session.user.email || '',
-          role: userData?.role || 'user',
-          isAdmin: userData?.is_admin || false,
-          isBlocked: userData?.is_blocked || false,
-          subscription_tier: userData?.subscription_tier || 'free',
+          role: session.user.user_metadata?.role || 'user',
+          isAdmin: session.user.user_metadata?.isAdmin || false,
+          isBlocked: session.user.user_metadata?.isBlocked || false,
+          subscription_tier: session.user.user_metadata?.subscription_tier || 'free',
+          country: session.user.user_metadata?.country,
         };
         
         setUser(userInfo);
@@ -141,6 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             name: userData.name,
             role: 'user',
+            isAdmin: false,
+            isBlocked: false,
+            subscription_tier: 'free'
           }
         }
       });
@@ -239,25 +224,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       
       if (session?.user) {
-        // Get user data
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userError && userError.code !== 'PGRST116') {
-          console.error('Error fetching user data:', userError);
-        }
-        
+        // Update user info from session metadata
         const userInfo = {
           id: session.user.id,
-          name: userData?.name || session.user.user_metadata?.name || '',
+          name: session.user.user_metadata?.name || '',
           email: session.user.email || '',
-          role: userData?.role || 'user',
-          isAdmin: userData?.is_admin || false,
-          isBlocked: userData?.is_blocked || false,
-          subscription_tier: userData?.subscription_tier || 'free',
+          role: session.user.user_metadata?.role || 'user',
+          isAdmin: session.user.user_metadata?.isAdmin || false,
+          isBlocked: session.user.user_metadata?.isBlocked || false,
+          subscription_tier: session.user.user_metadata?.subscription_tier || 'free',
+          country: session.user.user_metadata?.country,
         };
         
         setUser(userInfo);

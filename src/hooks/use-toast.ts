@@ -1,10 +1,8 @@
 
-// Based on shadcn-ui: https://ui.shadcn.com/docs/components/toast
 import * as React from "react";
-import { useState, useEffect, createContext, useContext } from "react";
 
 export type ToastProps = {
-  id?: string;  // Made optional since we'll generate it if not provided
+  id?: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
@@ -25,6 +23,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
+  open?: boolean;
 };
 
 const actionTypes = {
@@ -127,14 +126,14 @@ type ToastContextType = {
   dismiss: (toastId: string) => void;
 };
 
-const ToastContext = createContext<ToastContextType>({
+const ToastContext = React.createContext<ToastContextType>({
   toasts: [],
   toast: () => "",
   dismiss: () => {},
 });
 
 const useToast = () => {
-  const context = useContext(ToastContext);
+  const context = React.useContext(ToastContext);
   if (context === undefined) {
     throw new Error("useToast must be used within a ToastProvider");
   }
@@ -178,15 +177,15 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = (props) => {
     });
   }, []);
 
-  const contextValue: ToastContextType = {
-    toasts: state.toasts,
-    toast,
-    dismiss,
-  };
-
   return React.createElement(
     ToastContext.Provider,
-    { value: contextValue },
+    { 
+      value: {
+        toasts: state.toasts,
+        toast,
+        dismiss,
+      } 
+    },
     props.children
   );
 };
