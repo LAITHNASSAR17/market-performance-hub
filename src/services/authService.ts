@@ -1,3 +1,4 @@
+
 import { supabase, getUserByEmail, createUserProfile, getAllProfiles, updateUserProfile } from '@/lib/supabase';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { User } from '@/types/auth';
@@ -29,9 +30,13 @@ export async function registerUser(name: string, email: string, password: string
     
     const hashedPassword = hashPassword(password);
     
+    // Generate a unique ID for the user
+    const userId = self.crypto.randomUUID();
+    
     const { error } = await supabase
       .from('profiles')
       .insert({
+        id: userId, // Add the required ID field
         name,
         email,
         password: hashedPassword,
