@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
           if (error) throw error;
           
-          if (data?.theme) {
+          if (data && typeof data === 'object' && 'theme' in data && data.theme) {
             setTheme(data.theme as Theme);
           } else {
             // Create initial preference if it doesn't exist
@@ -41,7 +41,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
               const { error: insertError } = await supabase
                 .from('user_preferences')
                 .insert({
-                  user_id: user.id,
+                  user_id: user.id as string,
                   theme: theme
                 });
                 
@@ -91,7 +91,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             const { error: insertError } = await supabase
               .from('user_preferences')
               .insert({
-                user_id: user.id,
+                user_id: user.id as string,
                 theme,
                 updated_at: new Date().toISOString()
               });
