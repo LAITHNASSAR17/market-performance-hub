@@ -1,401 +1,538 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Layout from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { User } from '@/types/settings';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Copy, Edit, Trash2, User as UserIcon, Ban } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Navigate } from 'react-router-dom';
+import { useTrade } from '@/contexts/TradeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { 
+  UserCheck, 
+  UserX, 
+  Search, 
+  Lock, 
+  ShieldAlert, 
+  User, 
+  Users, 
+  BarChart3, 
+  TrendingUp, 
+  DollarSign, 
+  FileText, 
+  Hash, 
+  Calendar, 
+  Activity, 
+  Mail, 
+  Settings, 
+  FileUp, 
+  Bell, 
+  Eye, 
+  Edit, 
+  Trash2, 
+  RefreshCw,
+  Percent,
+  Briefcase
+} from 'lucide-react';
+import Layout from '@/components/Layout';
+import StatCard from '@/components/StatCard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { hashPassword } from '@/utils/encryption';
+
+import UserTable from '@/components/admin/UserTable';
+import TradeTable from '@/components/admin/TradeTable';
+import HashtagsTable from '@/components/admin/HashtagsTable';
+import SystemSettings from '@/components/admin/SystemSettings';
+import AdminCharts from '@/components/admin/AdminCharts';
+
+const sampleHashtags = [
+  { 
+    name: 'setup', 
+    count: 25, 
+    addedBy: 'Admin', 
+    lastUsed: '2025-04-10' 
+  },
+  { 
+    name: 'momentum', 
+    count: 18, 
+    addedBy: 'Admin', 
+    lastUsed: '2025-04-09' 
+  },
+  { 
+    name: 'breakout', 
+    count: 22, 
+    addedBy: 'Admin', 
+    lastUsed: '2025-04-11' 
+  },
+  { 
+    name: 'technical', 
+    count: 15, 
+    addedBy: 'Admin', 
+    lastUsed: '2025-04-08' 
+  },
+  { 
+    name: 'fundamental', 
+    count: 10, 
+    addedBy: 'Admin', 
+    lastUsed: '2025-04-07' 
+  },
+];
 
 const AdminDashboard: React.FC = () => {
-  const { user, isAdmin, getAllUsers } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const { user, isAdmin, users, getAllUsers, blockUser, unblockUser, changePassword, updateUser } = useAuth();
+  const { trades, getAllTrades, deleteTrade } = useTrade();
   const { t } = useLanguage();
-
-  const [users, setUsers] = useState<User[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isBlockingUser, setIsBlockingUser] = useState(false);
+  const isMobile = useIsMobile();
+  const { toast } = useToast();
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [hashtags, setHashtags] = useState(sampleHashtags);
+  const [allTrades, setAllTrades] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!isAdmin) {
-      navigate('/login');
-    } else {
-      fetchAllUsers();
+    if (isAdmin) {
+      handleRefreshData();
     }
-  }, [isAdmin, navigate]);
+  }, [isAdmin]);
 
-  const fetchAllUsers = async () => {
-    try {
-      // Fetch users using the context method
-      const fetchedUsers = await getAllUsers();
-      setUsers(fetchedUsers);
-      setFilteredUsers(fetchedUsers);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch users",
-        variant: "destructive"
-      });
+  const totalUsers = users ? users.length : 0;
+  const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
+  const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
+  
+  const totalTrades = allTrades.length;
+  
+  const allProfitLoss = allTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
+  
+  const winningTrades = allTrades.filter(trade => (trade.profitLoss || 0) > 0).length;
+  const losingTrades = allTrades.filter(trade => (trade.profitLoss || 0) < 0).length;
+  const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
+  
+  const today = new Date().toISOString().split('T')[0];
+  const todayTrades = allTrades.filter(trade => trade.date === today).length;
+  const todayProfit = allTrades
+    .filter(trade => trade.date === today)
+    .reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
+  
+  const pairCount: Record<string, number> = {};
+  allTrades.forEach(trade => {
+    pairCount[trade.pair] = (pairCount[trade.pair] || 0) + 1;
+  });
+  
+  let mostTradedPair = '';
+  let highestCount = 0;
+  
+  for (const pair in pairCount) {
+    if (pairCount[pair] > highestCount) {
+      mostTradedPair = pair;
+      highestCount = pairCount[pair];
     }
-  };
+  }
 
-  const handleSearch = () => {
-    setIsSearching(true);
+  const linkedAccounts = 12;
+  const totalNotes = 87;
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  const handleRefreshData = () => {
+    getAllUsers();
     
+    const allTradesData = trades || [];
+    setAllTrades(allTradesData);
+    
+    setLastRefresh(new Date());
+    
+    toast({
+      title: "Data Refreshed",
+      description: "Admin dashboard data has been updated"
+    });
+  };
+
+  const handleBlockUser = (user: any) => {
+    blockUser({...user, password: '' });
+    toast({
+      title: "User Blocked",
+      description: `${user.name} has been blocked`
+    });
+  };
+
+  const handleUnblockUser = (user: any) => {
+    unblockUser(user);
+    toast({
+      title: "User Unblocked",
+      description: `${user.name} has been unblocked`
+    });
+  };
+
+  const handleSetAdminRole = async (user: any, isAdmin: boolean) => {
     try {
-      // Filter users based on search query
-      const filtered = users.filter(user => 
-        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.role?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      const updatedUser = {
+        ...user,
+        role: isAdmin ? 'admin' : 'user',
+        isAdmin: isAdmin
+      };
+
+      await updateUser(updatedUser);
       
-      setFilteredUsers(filtered);
-      setIsSearching(false);
+      toast({
+        title: isAdmin ? "User promoted" : "User demoted",
+        description: isAdmin 
+          ? `${user.name} has been granted admin privileges` 
+          : `${user.name} admin privileges have been revoked`
+      });
+      
+      getAllUsers();
     } catch (error) {
-      console.error('Error searching users:', error);
+      console.error('Error updating user role:', error);
       toast({
-        title: "Error",
-        description: "Failed to search users",
+        title: "Error updating user role",
+        description: "Failed to update user role. Please try again.",
         variant: "destructive"
       });
-      setIsSearching(false);
     }
   };
 
-  const handleBlockUser = async (userId: string) => {
-    setIsBlockingUser(true);
+  const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
     try {
-      // Find user to block
-      const userToBlock = users.find(u => u.id === userId);
-      if (!userToBlock) {
-        throw new Error("User not found");
-      }
+      const hashedPassword = hashPassword(userData.password);
       
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_blocked: true })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "User blocked successfully",
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true,
+        user_metadata: {
+          name: userData.name,
+          role: userData.isAdmin ? 'admin' : 'user',
+          is_blocked: false,
+          subscription_tier: 'free'
+        }
       });
-      fetchAllUsers(); // Refresh user list
-    } catch (error: any) {
-      console.error('Error blocking user:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to block user",
-        variant: "destructive"
-      });
-    } finally {
-      setIsBlockingUser(false);
-    }
-  };
-
-  const handleUnblockUser = async (userId: string) => {
-    setIsBlockingUser(true);
-    try {
-      // Find user to unblock
-      const userToUnblock = users.find(u => u.id === userId);
-      if (!userToUnblock) {
-        throw new Error("User not found");
-      }
       
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_blocked: false })
-        .eq('id', userId);
-
-      if (error) throw error;
-
+      if (error) throw new Error(error.message);
+      
       toast({
-        title: "Success",
-        description: "User unblocked successfully",
+        title: "User Added",
+        description: `${userData.name} has been added successfully`
       });
-      fetchAllUsers(); // Refresh user list
-    } catch (error: any) {
-      console.error('Error unblocking user:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to unblock user",
-        variant: "destructive"
-      });
-    } finally {
-      setIsBlockingUser(false);
-    }
-  };
-
-  const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleUpdateUser = async (updatedUser: User) => {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: updatedUser.name,
-          email: updatedUser.email,
-          is_admin: updatedUser.isAdmin,
-          is_blocked: updatedUser.isBlocked,
-          subscription_tier: updatedUser.subscription_tier,
-          country: updatedUser.country
-        })
-        .eq('id', updatedUser.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "User updated successfully",
-      });
-      fetchAllUsers(); // Refresh user list
+      
+      getAllUsers();
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Error adding user:', error);
       toast({
-        title: "Error",
-        description: "Failed to update user",
+        title: "Error Adding User",
+        description: "Failed to add new user. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsEditDialogOpen(false);
-      setSelectedUser(null);
+      throw error;
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    try {
-      // Note: This is likely to fail without admin privileges in production
-      // Consider creating a Supabase Edge Function for this operation
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+  const handleAddHashtag = (name: string) => {
+    const newHashtag = {
+      name,
+      count: 0,
+      addedBy: user?.name || 'Admin',
+      lastUsed: new Date().toISOString().split('T')[0]
+    };
+    setHashtags([...hashtags, newHashtag]);
+    toast({
+      title: "Hashtag Added",
+      description: `#${name} has been added to the system`
+    });
+  };
 
-      if (error) throw error;
+  const handleEditHashtag = (oldName: string, newName: string) => {
+    const updatedHashtags = hashtags.map(tag => 
+      tag.name === oldName ? { ...tag, name: newName } : tag
+    );
+    setHashtags(updatedHashtags);
+    toast({
+      title: "Hashtag Updated",
+      description: `#${oldName} has been renamed to #${newName}`
+    });
+  };
 
-      toast({
-        title: "Success",
-        description: "User deleted successfully",
-      });
-      fetchAllUsers(); // Refresh user list
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete user",
-        variant: "destructive"
-      });
-    }
+  const handleDeleteHashtag = (name: string) => {
+    const updatedHashtags = hashtags.filter(tag => tag.name !== name);
+    setHashtags(updatedHashtags);
+    toast({
+      title: "Hashtag Deleted",
+      description: `#${name} has been removed from the system`
+    });
+  };
+
+  const handleViewTrade = (id: string) => {
+    toast({
+      title: "View Trade",
+      description: `Viewing trade ${id}`
+    });
+  };
+
+  const handleEditTrade = (id: string) => {
+    toast({
+      title: "Edit Trade",
+      description: `Editing trade ${id}`
+    });
+  };
+
+  const handleDeleteTrade = (id: string) => {
+    deleteTrade(id);
+    setAllTrades(allTrades.filter(trade => trade.id !== id));
+    toast({
+      title: "Trade Deleted",
+      description: `Trade ${id} has been deleted`
+    });
+  };
+
+  const handleExportTrades = () => {
+    toast({
+      title: "Export Initiated",
+      description: "Trades export started"
+    });
+  };
+
+  const handleViewUser = (userId: string) => {
+    toast({
+      title: "View User",
+      description: `Viewing user ${userId}`
+    });
   };
 
   return (
     <Layout>
-      <div className="container mx-auto py-10">
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        </div>
+      <div className="container mx-auto py-4 md:py-6 px-4 md:px-6">
+        <div className="flex flex-col space-y-6">
+          <header className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center">
+                <ShieldAlert className="mr-2 h-6 md:h-8 w-6 md:w-8 text-purple-600" />
+                Admin Dashboard
+              </h1>
+              <p className="mt-1 text-sm md:text-base text-gray-500">
+                Manage users, trades, and system settings.
+              </p>
+            </div>
+            <div className="mt-4 md:mt-0 flex items-center space-x-2 text-sm text-gray-500">
+              <span className="hidden md:inline">Last refreshed: {lastRefresh.toLocaleTimeString()}</span>
+              <Button 
+                variant="outline" 
+                size={isMobile ? "sm" : "default"} 
+                onClick={handleRefreshData}
+                className="flex items-center"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                {isMobile ? "Refresh" : "Refresh Data"}
+              </Button>
+            </div>
+          </header>
 
-        <div className="mb-4">
-          <Input
-            type="text"
-            placeholder="Search users..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-
-        <div className="border rounded-md">
-          <Table>
-            <TableCaption>A list of all users in your account. Click on a user to edit their profile.</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]">ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Subscription</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.id}</TableCell>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.role || 'User'}</TableCell>
-                  <TableCell>{user.subscription_tier || 'Free'}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit User
-                        </DropdownMenuItem>
-                        {user.isBlocked ? (
-                          <DropdownMenuItem onClick={() => handleUnblockUser(user.id)} disabled={isBlockingUser}>
-                            <UserIcon className="mr-2 h-4 w-4" />
-                            Unblock User
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem onClick={() => handleBlockUser(user.id)} disabled={isBlockingUser}>
-                            <Ban className="mr-2 h-4 w-4" />
-                            Block User
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => handleDeleteUser(user.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete User
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={() => setIsEditDialogOpen(false)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Make changes to the user profile here. Click save when you're done.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <EditUserForm
-              user={selectedUser}
-              onUpdate={handleUpdateUser}
-              onCancel={() => setIsEditDialogOpen(false)}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+            <StatCard
+              title="Total Users"
+              value={totalUsers}
+              icon={<Users className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+              description={`Active: ${activeUsers}`}
             />
-          )}
-        </DialogContent>
-      </Dialog>
+            
+            <StatCard
+              title="Total Trades"
+              value={totalTrades}
+              icon={<Activity className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+              description={`Today: ${todayTrades}`}
+            />
+            
+            <StatCard
+              title="Total P&L"
+              value={`$${allProfitLoss.toFixed(2)}`}
+              icon={<DollarSign className="h-4 md:h-5 w-4 md:w-5" />}
+              color={allProfitLoss > 0 ? "green" : allProfitLoss < 0 ? "red" : "default"}
+              description={`Today: $${todayProfit.toFixed(2)}`}
+              trend={allProfitLoss > 0 ? 'up' : allProfitLoss < 0 ? 'down' : 'neutral'}
+            />
+            
+            <StatCard
+              title="Win Rate"
+              value={`${winRate}%`}
+              icon={<Percent className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+              description={`W: ${winningTrades} / L: ${losingTrades}`}
+            />
+            
+            <StatCard
+              title="Trading Accounts"
+              value={linkedAccounts}
+              icon={<Briefcase className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+            />
+            
+            <StatCard
+              title="Total Notes"
+              value={totalNotes}
+              icon={<FileText className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+            />
+            
+            <StatCard
+              title="Most Traded Pair"
+              value={mostTradedPair || 'N/A'}
+              icon={<TrendingUp className="h-4 md:h-5 w-4 md:w-5" />}
+              color="default"
+              description={highestCount > 0 ? `${highestCount} trades` : 'No trades yet'}
+            />
+            
+            <StatCard
+              title="Blocked Users"
+              value={blockedUsers}
+              icon={<UserX className="h-4 md:h-5 w-4 md:w-5" />}
+              color="red"
+              description={blockedUsers > 0 ? `${blockedUsers} of ${totalUsers}` : 'None'}
+            />
+          </div>
+
+          <AdminCharts className="mt-4" />
+
+          <Tabs defaultValue="users" className="w-full mt-6">
+            <TabsList className="mb-6 bg-white p-1 rounded-md overflow-x-auto flex whitespace-nowrap">
+              <TabsTrigger value="users" className="flex items-center">
+                <User className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">User Management</span>
+                <span className="sm:hidden">Users</span>
+              </TabsTrigger>
+              <TabsTrigger value="trades" className="flex items-center">
+                <Activity className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Trade Management</span>
+                <span className="sm:hidden">Trades</span>
+              </TabsTrigger>
+              <TabsTrigger value="hashtags" className="flex items-center">
+                <Hash className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Hashtag Management</span>
+                <span className="sm:hidden">Tags</span>
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="flex items-center">
+                <FileText className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Notes Management</span>
+                <span className="sm:hidden">Notes</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center">
+                <Settings className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">System Settings</span>
+                <span className="sm:hidden">Settings</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="users" className="mt-0">
+              <Card className="bg-white shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle>User Management</CardTitle>
+                  <CardDescription>View and manage user accounts.</CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  <UserTable 
+                    users={users}
+                    onBlock={handleBlockUser}
+                    onUnblock={handleUnblockUser}
+                    onChangePassword={changePassword}
+                    onViewUser={handleViewUser}
+                    onSetAdmin={handleSetAdminRole}
+                    onAddUser={handleAddUser}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="trades" className="mt-0">
+              <Card className="bg-white shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle>Trade Management</CardTitle>
+                  <CardDescription>View and manage all trades across the platform.</CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  <TradeTable 
+                    trades={allTrades}
+                    onViewTrade={handleViewTrade}
+                    onEditTrade={handleEditTrade}
+                    onDeleteTrade={handleDeleteTrade}
+                    onRefresh={handleRefreshData}
+                    onExport={handleExportTrades}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="hashtags" className="mt-0">
+              <Card className="bg-white shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle>Hashtag Management</CardTitle>
+                  <CardDescription>Manage hashtags used across the platform.</CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  <HashtagsTable 
+                    hashtags={hashtags}
+                    onAddHashtag={handleAddHashtag}
+                    onEditHashtag={handleEditHashtag}
+                    onDeleteHashtag={handleDeleteHashtag}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="notes" className="mt-0">
+              <Card className="bg-white shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle>Notes Management</CardTitle>
+                  <CardDescription>View and manage all user notes.</CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="flex flex-col sm:flex-row mb-4 gap-2">
+                    <div className="relative flex-grow">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Input
+                        className="pl-10 pr-4"
+                        placeholder="Search notes..."
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="overflow-x-auto">
+                    <div className="p-8 text-center text-gray-500">
+                      <FileText className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Notes Module Coming Soon</h3>
+                      <p>The notes management functionality is under development and will be available in a future update.</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="settings" className="mt-0">
+              <SystemSettings />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </Layout>
-  );
-};
-
-interface EditUserFormProps {
-  user: User;
-  onUpdate: (user: User) => void;
-  onCancel: () => void;
-}
-
-const EditUserForm: React.FC<EditUserFormProps> = ({ user, onUpdate, onCancel }) => {
-  const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
-  const [isAdmin, setIsAdmin] = useState(user.isAdmin || false);
-  const [isBlocked, setIsBlocked] = useState(user.isBlocked || false);
-  const [subscriptionTier, setSubscriptionTier] = useState(user.subscription_tier || '');
-  const [country, setCountry] = useState(user.country || '');
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const updatedUser = { ...user, name, email, isAdmin, isBlocked, subscription_tier: subscriptionTier, country };
-    onUpdate(updatedUser);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="name" className="text-right">Name</Label>
-        <Input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="email" className="text-right">Email</Label>
-        <Input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="isAdmin" className="text-right">Admin</Label>
-        <Switch id="isAdmin" checked={isAdmin} onCheckedChange={setIsAdmin} className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="isBlocked" className="text-right">Blocked</Label>
-        <Switch id="isBlocked" checked={isBlocked} onCheckedChange={setIsBlocked} className="col-span-3" />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="subscriptionTier" className="text-right">Subscription</Label>
-        <Input
-          type="text"
-          id="subscriptionTier"
-          value={subscriptionTier}
-          onChange={(e) => setSubscriptionTier(e.target.value)}
-          className="col-span-3"
-        />
-      </div>
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="country" className="text-right">Country</Label>
-        <Input
-          type="text"
-          id="country"
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          className="col-span-3"
-        />
-      </div>
-      <div className="flex justify-end">
-        <Button type="button" variant="secondary" onClick={onCancel} className="mr-2">
-          Cancel
-        </Button>
-        <Button type="submit">Save</Button>
-      </div>
-    </form>
   );
 };
 

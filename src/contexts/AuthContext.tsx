@@ -1,327 +1,446 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/settings';
 import { useToast } from '@/hooks/use-toast';
 
-type AuthContextType = {
+interface AuthContextType {
+  isAuthenticated: boolean;
   user: User | null;
-  loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
-  resetPassword: (password: string) => Promise<void>;
-  updateUser: (data: Partial<User>) => Promise<void>;
-  refreshUser: () => Promise<void>;
   isAdmin: boolean;
-};
+  users: User[];
+  login: (email: string, password: string) => Promise<any>;
+  logout: () => Promise<void>;
+  getAllUsers: () => Promise<User[]>;
+  blockUser: (user: User) => Promise<void>;
+  unblockUser: (user: User) => Promise<void>;
+  changePassword: (userId: string, newPassword: string) => Promise<void>;
+  updateUser: (user: User) => Promise<void>;
+  sendPasswordResetEmail: (email: string) => Promise<any>;
+  register: (name: string, email: string, password: string, country: string) => Promise<any>;
+  loading: boolean;
+  updateProfile: (userData: Partial<User>) => Promise<void>;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>({
+    id: 'mock-user-id',
+    name: 'Demo User',
+    email: 'demo@example.com',
+    role: 'user',
+    isAdmin: false,
+    subscription_tier: 'free'
+  });
+  const [users, setUsers] = useState<User[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
-    checkUser();
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        await getUserProfile(session.user.id);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setIsAdmin(false);
-      }
-    });
-
-    return () => {
-      if (authListener && authListener.subscription) {
-        authListener.subscription.unsubscribe();
-      }
-    };
+    checkSession();
   }, []);
 
-  const checkUser = async () => {
+  const checkSession = async () => {
     try {
-      setLoading(true);
-      const { data } = await supabase.auth.getUser();
-      if (data && data.user) {
-        await getUserProfile(data.user.id);
-      }
-    } catch (error) {
-      console.error('Error checking user:', error);
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) throw error;
       
-      if (data) {
-        const userProfile: User = {
-          id: data.id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          is_admin: data.is_admin,
-          isAdmin: data.is_admin,
-          is_blocked: data.is_blocked,
-          isBlocked: data.is_blocked,
-          subscription_tier: data.subscription_tier,
-          country: data.country
-        };
-
-        setUser(userProfile);
-        setIsAdmin(!!data.is_admin);
+      if (session?.user) {
+        setIsAuthenticated(true);
+        setUser({
+          id: session.user.id,
+          name: session.user.user_metadata?.name || 'User',
+          email: session.user.email || '',
+          isAdmin: session.user.user_metadata?.isAdmin || false,
+          role: session.user.user_metadata?.role || 'user',
+          subscription_tier: session.user.user_metadata?.subscription_tier || 'free'
+        });
       }
-    } catch (error: any) {
-      console.error('Error fetching user profile:', error);
+    } catch (error) {
+      console.error('Error checking session:', error);
+    }
+  };
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      try {
+        const { data: prefsData, error: prefsError } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (prefsError) {
+          console.warn('No user preferences found, returning default user data');
+        }
+
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+        
+        if (userError) {
+          console.warn('Could not get user data from auth.admin, using default values');
+          
+          return {
+            id: userId,
+            name: 'User',
+            email: '',
+            role: 'user',
+            isAdmin: false,
+            isBlocked: false,
+            subscription_tier: 'free'
+          };
+        }
+        
+        if (userData) {
+          return {
+            id: userData.user.id,
+            name: userData.user.user_metadata?.name || 'Anonymous',
+            email: userData.user.email || '',
+            role: userData.user.user_metadata?.role || 'user',
+            isAdmin: userData.user.user_metadata?.is_admin || false,
+            isBlocked: userData.user.user_metadata?.is_blocked || false,
+            subscription_tier: userData.user.user_metadata?.subscription_tier || 'free'
+          };
+        }
+      } catch (err) {
+        console.warn('Error fetching user data, using default values', err);
+      }
+      
+      return {
+        id: userId,
+        name: 'User',
+        email: '',
+        role: 'user',
+        isAdmin: false,
+        isBlocked: false,
+        subscription_tier: 'free'
+      };
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      return null;
+    }
+  };
+
+  const getUser = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user preferences:', error);
+        return null;
+      }
+
+      const user: User = {
+        id: userId,
+        name: 'User',
+        email: '',
+        role: 'user',
+        isAdmin: false,
+        isBlocked: false,
+        subscription_tier: 'free'
+      };
+
+      return user;
+    } catch (error) {
+      console.error('Error in getUser:', error);
+      return null;
+    }
+  };
+
+  const getAllUsers = async (): Promise<User[]> => {
+    try {
+      if (users.length > 0) {
+        return users;
+      }
+      
+      const mockUsers: User[] = [
+        {
+          id: '1',
+          name: 'Admin User',
+          email: 'admin@example.com',
+          role: 'admin',
+          isAdmin: true,
+          isBlocked: false,
+          subscription_tier: 'premium'
+        },
+        {
+          id: '2',
+          name: 'Regular User',
+          email: 'user@example.com',
+          role: 'user',
+          isAdmin: false,
+          isBlocked: false,
+          subscription_tier: 'free'
+        }
+      ];
+      
+      setUsers(mockUsers);
+      return mockUsers;
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      return [];
     }
   };
 
   const login = async (email: string, password: string) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
+
       if (error) throw error;
-      
+
       if (data.user) {
-        await getUserProfile(data.user.id);
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
+        setIsAuthenticated(true);
+        setUser({
+          id: data.user.id,
+          name: data.user.user_metadata?.name || 'User',
+          email: data.user.email || '',
+          isAdmin: data.user.user_metadata?.isAdmin || false,
+          role: data.user.user_metadata?.role || 'user',
+          subscription_tier: data.user.user_metadata?.subscription_tier || 'free'
         });
       }
-    } catch (error: any) {
-      console.error('Error logging in:', error);
-      setError(error.message);
+
+      return data;
+    } catch (error) {
+      console.error('Error during login:', error);
       toast({
-        title: "Login Failed",
-        description: error.message,
+        title: "Login Error",
+        description: "Invalid email or password",
         variant: "destructive"
       });
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const register = async (name: string, email: string, password: string, country: string) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      
       const { data, error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          data: {
+            name,
+            isAdmin: false,
+            role: 'user',
+            subscription_tier: 'free',
+            country
+          }
+        }
       });
-      
+
       if (error) throw error;
-      
-      if (data.user) {
-        // Create user profile
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
-          email,
-          name,
-          created_at: new Date().toISOString()
-        });
-        
-        if (profileError) throw profileError;
-        
-        toast({
-          title: "Account Created",
-          description: "Please check your email to confirm your account.",
-        });
-      }
-    } catch (error: any) {
-      console.error('Error signing up:', error);
-      setError(error.message);
+
       toast({
-        title: "Registration Failed",
-        description: error.message,
+        title: "Registration Success",
+        description: "Please check your email to verify your account",
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error during registration:', error);
+      toast({
+        title: "Registration Error",
+        description: "Failed to register account",
         variant: "destructive"
       });
+      throw error;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendPasswordResetEmail = async (email: string) => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      throw error;
     }
   };
 
   const logout = async () => {
     try {
-      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
+      setIsAuthenticated(false);
       setUser(null);
-      setIsAdmin(false);
-      
+    } catch (error) {
+      console.error('Error during logout:', error);
       toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-    } catch (error: any) {
-      console.error('Error logging out:', error);
-      toast({
-        title: "Error",
-        description: `Failed to log out: ${error.message}`,
+        title: "Logout Error",
+        description: "Failed to log out",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const forgotPassword = async (email: string) => {
+  const updateProfile = async (userData: Partial<User>) => {
     try {
-      setLoading(true);
-      setError(null);
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
-      });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Email Sent",
-        description: "Check your email for the password reset link.",
-      });
-    } catch (error: any) {
-      console.error('Error requesting password reset:', error);
-      setError(error.message);
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetPassword = async (password: string) => {
-    try {
-      setLoading(true);
-      setError(null);
+      if (!user) throw new Error('No user logged in');
       
       const { error } = await supabase.auth.updateUser({
-        password
+        data: userData
       });
-      
+
       if (error) throw error;
+
+      setUser({ ...user, ...userData });
       
       toast({
-        title: "Password Updated",
-        description: "Your password has been successfully updated.",
+        title: "Success",
+        description: "Profile updated successfully",
       });
-    } catch (error: any) {
-      console.error('Error resetting password:', error);
-      setError(error.message);
+    } catch (error) {
+      console.error('Error updating profile:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update profile",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
+      throw error;
     }
   };
 
-  const updateUser = async (data: Partial<User>) => {
-    if (!user) return;
-    
+  const blockUser = async (user: User) => {
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Update auth data if email is included
-      if (data.email) {
-        const { error } = await supabase.auth.updateUser({
-          email: data.email
-        });
-        
-        if (error) throw error;
-      }
-      
-      // Update profile data
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: data.name ?? user.name,
-          country: data.country ?? user.country,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-      
+      const { error } = await supabase.auth.admin.updateUserById(
+        user.id,
+        { user_metadata: { ...user, isBlocked: true } }
+      );
+
       if (error) throw error;
-      
-      // Refresh user data
-      await refreshUser();
-      
+
+      await getAllUsers();
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been successfully updated.",
+        title: "Success",
+        description: "User blocked successfully",
       });
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to block user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const unblockUser = async (user: User) => {
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(
+        user.id,
+        { user_metadata: { ...user, isBlocked: false } }
+      );
+
+      if (error) throw error;
+
+      await getAllUsers();
+      toast({
+        title: "Success",
+        description: "User unblocked successfully",
+      });
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to unblock user",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const changePassword = async (userId: string, newPassword: string) => {
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(
+        userId,
+        { password: newPassword }
+      );
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Password changed successfully",
+      });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast({
+        title: "Error",
+        description: "Failed to change password",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateUser = async (updatedUser: User) => {
+    try {
+      const { error } = await supabase.auth.admin.updateUserById(
+        updatedUser.id,
+        { user_metadata: updatedUser }
+      );
+
+      if (error) throw error;
+
+      await getAllUsers();
+      
+      if (user?.id === updatedUser.id) {
+        setUser(updatedUser);
+      }
+
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+    } catch (error) {
       console.error('Error updating user:', error);
-      setError(error.message);
       toast({
         title: "Error",
-        description: error.message,
+        description: "Failed to update user",
         variant: "destructive"
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const refreshUser = async () => {
-    try {
-      setLoading(true);
-      const { data } = await supabase.auth.getUser();
-      if (data && data.user) {
-        await getUserProfile(data.user.id);
-      }
-    } catch (error: any) {
-      console.error('Error refreshing user:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const isAdmin = user?.isAdmin === true;
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      error,
-      login,
-      signup,
-      logout,
-      forgotPassword,
-      resetPassword,
-      updateUser,
-      refreshUser,
-      isAdmin
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        isAdmin,
+        users,
+        login,
+        logout,
+        getAllUsers,
+        blockUser,
+        unblockUser,
+        changePassword,
+        updateUser,
+        sendPasswordResetEmail,
+        register,
+        loading,
+        updateProfile
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

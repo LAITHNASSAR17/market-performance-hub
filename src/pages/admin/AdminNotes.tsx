@@ -62,12 +62,12 @@ const AdminNotes: React.FC = () => {
   // Filter notes based on criteria
   const filteredNotes = notes.filter(note => {
     const matchesSearch = note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         (note.content?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    const matchesUser = userFilter === 'all' ? true : note.user_id === userFilter || note.userId === userFilter;
-    const matchesTag = tagFilter === 'all' ? true : (note.tags || []).includes(tagFilter);
+                          note.content.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesUser = userFilter === 'all' ? true : note.userId === userFilter;
+    const matchesTag = tagFilter === 'all' ? true : note.tags.includes(tagFilter);
     const matchesType = typeFilter === 'all' ? true : 
-                       (typeFilter === 'psychology' && (note.tags || []).some(tag => tag.includes('psychology'))) ||
-                       (typeFilter === 'strategy' && (note.tags || []).some(tag => tag.includes('strategy')));
+                        (typeFilter === 'psychology' && note.tags.some(tag => tag.includes('psychology'))) ||
+                        (typeFilter === 'strategy' && note.tags.some(tag => tag.includes('strategy')));
     
     return matchesSearch && matchesUser && matchesTag && matchesType;
   });
@@ -138,7 +138,7 @@ const AdminNotes: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Tags</SelectItem>
-              {(noteTags || []).map(tag => (
+              {noteTags.map(tag => (
                 <SelectItem key={tag} value={tag}>#{tag}</SelectItem>
               ))}
             </SelectContent>
@@ -190,12 +190,12 @@ const AdminNotes: React.FC = () => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4 text-gray-500" />
-                        <span>{getUserName(note.user_id || note.userId || '')}</span>
+                        <span>{getUserName(note.userId)}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
-                        {(note.tags || []).map(tag => (
+                        {note.tags.map(tag => (
                           <Badge 
                             key={tag} 
                             variant="outline" 
@@ -209,7 +209,7 @@ const AdminNotes: React.FC = () => {
                     <TableCell>
                       <div className="flex items-center gap-2 text-gray-500">
                         <Calendar className="h-4 w-4" />
-                        <span>{new Date(note.created_at || note.createdAt || '').toLocaleDateString()}</span>
+                        <span>{new Date(note.createdAt).toLocaleDateString()}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">

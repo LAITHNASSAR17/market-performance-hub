@@ -1,6 +1,5 @@
 
 import { supabase } from '@/lib/supabase';
-import { Note } from '@/types/settings';
 
 export interface INote {
   id: string;
@@ -10,6 +9,7 @@ export interface INote {
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
+  tradeId?: string;
 }
 
 export const noteService = {
@@ -33,21 +33,19 @@ export const noteService = {
     return data.map(formatNote);
   },
 
-  async createNote(noteData: Omit<Note, 'id' | 'created_at' | 'updated_at'>): Promise<INote> {
-    const now = new Date().toISOString();
-    
-    // Make sure we use the correct field names for supabase
-    const supabaseNote = {
+  async createNote(noteData: Omit<INote, 'id' | 'createdAt' | 'updatedAt'>): Promise<INote> {
+    // Map the interface fields to DB column names
+    const dbData = {
       title: noteData.title,
       content: noteData.content,
-      user_id: noteData.user_id,
-      tags: noteData.tags || [],
-      trade_id: noteData.trade_id
+      tags: noteData.tags,
+      trade_id: noteData.tradeId,
+      user_id: noteData.userId // Correctly map userId to user_id
     };
     
     const { data, error } = await supabase
       .from('notes')
-      .insert(supabaseNote)
+      .insert(dbData)
       .select()
       .single();
     
@@ -55,25 +53,22 @@ export const noteService = {
     return formatNote(data);
   },
 
-  async updateNote(id: string, noteData: Partial<Note>): Promise<INote | null> {
-    const now = new Date().toISOString();
-    
-    // Map properties correctly for Supabase
-    const supabaseNote: Record<string, any> = {};
-    if (noteData.title) supabaseNote.title = noteData.title;
-    if (noteData.content) supabaseNote.content = noteData.content;
-    if (noteData.tags) supabaseNote.tags = noteData.tags;
-    if (noteData.trade_id) supabaseNote.trade_id = noteData.trade_id;
-    
-    supabaseNote.updated_at = now;
-    
+  async updateNote(id: string, noteData: Partial<INote>): Promise<INote | null> {
+    // Convert Note interface fields to database field names
+    const updateData: any = { updated_at: new Date().toISOString() };
+    if (noteData.title !== undefined) updateData.title = noteData.title;
+    if (noteData.content !== undefined) updateData.content = noteData.content;
+    if (noteData.tags !== undefined) updateData.tags = noteData.tags;
+    if (noteData.tradeId !== undefined) updateData.trade_id = noteData.tradeId;
+    if (noteData.userId !== undefined) updateData.user_id = noteData.userId;
+
     const { data, error } = await supabase
       .from('notes')
-      .update(supabaseNote)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error || !data) return null;
     return formatNote(data);
   },
@@ -87,18 +82,13 @@ export const noteService = {
     return !error;
   },
 
-  async findNotesByFilter(filter: Partial<Note>): Promise<INote[]> {
+  async findNotesByFilter(filter: Partial<INote>): Promise<INote[]> {
     let query = supabase.from('notes').select('*');
     
-    // Apply filters dynamically
-    Object.entries(filter).forEach(([key, value]) => {
-      if (value !== undefined) {
-        // Map to correct DB field names
-        const dbField = key === 'userId' ? 'user_id' : 
-                        key === 'tradeId' ? 'trade_id' : key;
-        query = query.eq(dbField, value);
-      }
-    });
+    // Apply filters dynamically, converting camelCase to snake_case for DB columns
+    if (filter.userId !== undefined) query = query.eq('user_id', filter.userId);
+    if (filter.title !== undefined) query = query.eq('title', filter.title);
+    if (filter.tradeId !== undefined) query = query.eq('trade_id', filter.tradeId);
     
     const { data, error } = await query;
     
@@ -116,6 +106,7 @@ function formatNote(data: any): INote {
     content: data.content || '',
     tags: data.tags || [],
     createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at)
+    updatedAt: new Date(data.updated_at),
+    tradeId: data.trade_id
   };
 }

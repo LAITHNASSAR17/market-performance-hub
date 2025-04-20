@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import UserTable from '@/components/admin/UserTable';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
-import { User } from '@/types/settings';
 
 const AdminUsers: React.FC = () => {
   const { users, getAllUsers, blockUser, unblockUser, changePassword, updateUser } = useAuth();
@@ -78,8 +78,7 @@ const AdminUsers: React.FC = () => {
       const updatedUser = {
         ...user,
         role: isAdmin ? 'admin' : 'user',
-        isAdmin: isAdmin,
-        is_admin: isAdmin
+        isAdmin: isAdmin
       };
 
       await updateUser(updatedUser);
@@ -105,21 +104,18 @@ const AdminUsers: React.FC = () => {
 
   const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
     try {
-      // Create a user in the profiles table - we need to generate a unique ID
-      const newUserId = crypto.randomUUID();
-      
-      // Create a new user in profiles table
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({
-          id: newUserId,
+      // Use Supabase Auth API to create user
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: userData.email,
+        password: userData.password,
+        email_confirm: true,
+        user_metadata: {
           name: userData.name,
-          email: userData.email,
           role: userData.isAdmin ? 'admin' : 'user',
-          is_admin: userData.isAdmin,
           is_blocked: false,
           subscription_tier: 'free'
-        });
+        }
+      });
       
       if (error) throw new Error(error.message);
       
@@ -131,6 +127,7 @@ const AdminUsers: React.FC = () => {
       // Refresh users list
       fetchUsers();
       
+      // Convert the return type to void to match the expected type
       return;
     } catch (error) {
       console.error('Error adding user:', error);

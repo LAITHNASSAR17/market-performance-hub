@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,9 +20,6 @@ const SystemSettings: React.FC = () => {
     if (settings?.site_name) {
       setSiteName(settings.site_name);
     }
-    if (settings?.maintenance_mode !== undefined) {
-      setMaintenanceMode(settings.maintenance_mode);
-    }
   }, [settings]);
 
   const handleSaveSettings = async () => {
@@ -32,7 +28,9 @@ const SystemSettings: React.FC = () => {
       // Use the updateSettings function from the hook
       updateSettings({ 
         site_name: siteName,
-        maintenance_mode: maintenanceMode
+        company_email: settings?.company_email || '',
+        theme: settings?.theme || 'light',
+        language: settings?.language || 'en'
       });
       
       toast({

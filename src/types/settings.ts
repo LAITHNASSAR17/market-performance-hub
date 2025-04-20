@@ -1,3 +1,4 @@
+
 // Extend this file as needed
 
 export interface User {
@@ -5,14 +6,10 @@ export interface User {
   name: string;
   email: string;
   role?: string;
-  is_admin?: boolean;
-  isAdmin?: boolean; // Alias for compatibility
-  is_blocked?: boolean;
-  isBlocked?: boolean; // Alias for compatibility
+  isAdmin?: boolean;
+  isBlocked?: boolean;
   subscription_tier?: string;
   country?: string;
-  user_id?: string; // For compatibility
-  userId?: string; // For compatibility
 }
 
 export interface UserTableColumn {
@@ -60,38 +57,39 @@ export interface SubscriptionPlan {
   updated_at: string;
 }
 
+export interface PlaybookEntry {
+  id: string;
+  name: string;
+  description: string;
+  setup?: string;
+  rules: PlaybookRule[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  order: number;
+  tradeType: 'long' | 'short' | 'both';
+  tags: string[];
+  // Added properties to match component usage
+  category?: 'trend' | 'reversal' | 'breakout' | 'other';
+  isPrivate?: boolean;
+  rating?: number;
+  netProfitLoss?: number;
+  winRate?: number;
+  totalTrades?: number;
+  missedTrades?: number;
+  expectedValue?: number;
+  profitFactor?: number;
+  avgWinner?: number;
+  avgLoser?: number;
+  rMultiple?: number;
+}
+
 export interface PlaybookRule {
   id: string;
   description: string;
   type: 'entry' | 'exit' | 'management' | 'risk' | 'custom';
   order: number;
-}
-
-export interface PlaybookEntry {
-  id: string;
-  name: string;
-  description: string;
-  setup: string;
-  rules: PlaybookRule[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  order_number: number;
-  is_private: boolean;
-  trade_type: 'long' | 'short' | 'both';
-  tags: string[];
-  category?: string;
-  rating?: number;
-  r_multiple?: number;
-  win_rate?: number;
-  expected_value?: number;
-  profit_factor?: number;
-  net_profit_loss?: number;
-  total_trades?: number;
-  avg_winner?: number;
-  avg_loser?: number;
-  missed_trades?: number;
 }
 
 export interface JournalEntry {
@@ -109,29 +107,72 @@ export interface JournalEntry {
 export interface HomepageContent {
   id: string;
   title: string;
-  subtitle?: string;
-  description?: string;
-  features: string[];
-  primary_button_text?: string;
-  primary_button_url?: string;
-  secondary_button_text?: string;
-  secondary_button_url?: string;
+  subtitle: string;
+  description: string;
+  features: HomepageFeature[];
+  primary_button_text: string;
+  primary_button_url: string;
+  secondary_button_text: string;
+  secondary_button_url: string;
   created_at: string;
   updated_at: string;
+  // Keep old properties to avoid other issues
+  hero_title?: string;
+  hero_subtitle?: string;
+  feature_section_title?: string;
 }
 
-export interface Note {
+export interface HomepageFeature {
   id: string;
   title: string;
-  content?: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-  trade_id?: string;
-  tags?: string[];
-  // Aliases for compatibility
-  userId?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  description: string;
+  icon: string;
+  order: number;
+}
+
+// Define a Trade interface
+export interface Trade {
+  id: string;
+  userId: string;
+  pair: string;
+  symbol?: string;
+  type: 'Buy' | 'Sell';
+  entry: number;
+  exit: number | null;
+  lotSize: number;
+  stopLoss: number | null;
+  takeProfit: number | null;
+  riskPercentage: number;
+  returnPercentage: number;
+  profitLoss: number;
+  durationMinutes: number | null;
+  notes: string;
+  date: string;
+  account: string;
+  imageUrl: string | null;
+  beforeImageUrl: string | null;
+  afterImageUrl: string | null;
+  hashtags: string[];
+  createdAt: string;
+  commission: number;
+  rating: number;
+  total: number;
+  playbook?: string;
+  followedRules?: string[];
+  marketSession?: string;
+}
+
+// Define a Note interface
+export interface Note {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
   tradeId?: string;
 }
+
+// Define a Json type for the features array in HomepageContent
+export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];

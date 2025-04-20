@@ -14,7 +14,7 @@ const ForgotPassword: React.FC = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { forgotPassword } = useAuth();
+  const { sendPasswordResetEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -32,8 +32,8 @@ const ForgotPassword: React.FC = () => {
     
     try {
       console.log('ForgotPassword: Sending password reset email to:', email);
-      await forgotPassword(email);
-      console.log('ForgotPassword: Email sent successfully');
+      const response = await sendPasswordResetEmail(email);
+      console.log('ForgotPassword: Response from sendPasswordResetEmail:', response);
       
       setEmailSent(true);
       toast({

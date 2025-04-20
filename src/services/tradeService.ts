@@ -48,29 +48,32 @@ export const tradeService = {
   },
 
   async createTrade(tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>): Promise<ITrade> {
+    // Convert our interface field names to database column names
+    const dbData = {
+      symbol: tradeData.symbol,
+      user_id: tradeData.userId,
+      entry_price: tradeData.entryPrice,
+      exit_price: tradeData.exitPrice,
+      quantity: tradeData.quantity,
+      direction: tradeData.direction,
+      entry_date: tradeData.entryDate.toISOString(),
+      exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
+      profit_loss: tradeData.profitLoss,
+      fees: tradeData.fees || 0,
+      notes: tradeData.notes || '',
+      tags: tradeData.tags || [],
+      rating: tradeData.rating || 0,
+      stop_loss: tradeData.stopLoss,
+      take_profit: tradeData.takeProfit,
+      duration_minutes: tradeData.durationMinutes,
+      market_session: tradeData.marketSession,
+      playbook: tradeData.playbook,
+      followed_rules: tradeData.followedRules
+    };
+
     const { data, error } = await supabase
       .from('trades')
-      .insert({
-        symbol: tradeData.symbol,
-        user_id: tradeData.userId,
-        entry_price: tradeData.entryPrice,
-        exit_price: tradeData.exitPrice,
-        quantity: tradeData.quantity,
-        direction: tradeData.direction,
-        entry_date: tradeData.entryDate.toISOString(),
-        exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
-        profit_loss: tradeData.profitLoss,
-        fees: tradeData.fees || 0,
-        notes: tradeData.notes || '',
-        tags: tradeData.tags || [],
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        rating: tradeData.rating || 0,
-        stop_loss: tradeData.stopLoss,
-        take_profit: tradeData.takeProfit,
-        duration_minutes: tradeData.durationMinutes,
-        market_session: tradeData.marketSession
-      })
+      .insert(dbData)
       .select()
       .single();
     
@@ -79,33 +82,34 @@ export const tradeService = {
   },
 
   async updateTrade(id: string, tradeData: Partial<ITrade>): Promise<ITrade | null> {
-    const updateObject: any = {
+    // Convert our interface field names to database column names
+    const updateData: Record<string, any> = {
       updated_at: new Date().toISOString()
     };
     
-    if (tradeData.profitLoss !== undefined) updateObject.profit_loss = tradeData.profitLoss;
-    if (tradeData.fees !== undefined) updateObject.fees = tradeData.fees;
-    
-    if (tradeData.symbol !== undefined) updateObject.symbol = tradeData.symbol;
-    if (tradeData.entryPrice !== undefined) updateObject.entry_price = tradeData.entryPrice;
-    if (tradeData.exitPrice !== undefined) updateObject.exit_price = tradeData.exitPrice;
-    if (tradeData.quantity !== undefined) updateObject.quantity = tradeData.quantity;
-    if (tradeData.direction !== undefined) updateObject.direction = tradeData.direction;
-    if (tradeData.entryDate !== undefined) updateObject.entry_date = tradeData.entryDate.toISOString();
-    if (tradeData.exitDate !== undefined) updateObject.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
-    if (tradeData.profitLoss !== undefined) updateObject.profit_loss = tradeData.profitLoss;
-    if (tradeData.fees !== undefined) updateObject.fees = tradeData.fees;
-    if (tradeData.notes !== undefined) updateObject.notes = tradeData.notes;
-    if (tradeData.tags !== undefined) updateObject.tags = tradeData.tags;
-    if (tradeData.rating !== undefined) updateObject.rating = tradeData.rating;
-    if (tradeData.stopLoss !== undefined) updateObject.stop_loss = tradeData.stopLoss;
-    if (tradeData.takeProfit !== undefined) updateObject.take_profit = tradeData.takeProfit;
-    if (tradeData.durationMinutes !== undefined) updateObject.duration_minutes = tradeData.durationMinutes;
-    if (tradeData.marketSession !== undefined) updateObject.market_session = tradeData.marketSession;
+    if (tradeData.userId !== undefined) updateData.user_id = tradeData.userId;
+    if (tradeData.symbol !== undefined) updateData.symbol = tradeData.symbol;
+    if (tradeData.entryPrice !== undefined) updateData.entry_price = tradeData.entryPrice;
+    if (tradeData.exitPrice !== undefined) updateData.exit_price = tradeData.exitPrice;
+    if (tradeData.quantity !== undefined) updateData.quantity = tradeData.quantity;
+    if (tradeData.direction !== undefined) updateData.direction = tradeData.direction;
+    if (tradeData.entryDate !== undefined) updateData.entry_date = tradeData.entryDate.toISOString();
+    if (tradeData.exitDate !== undefined) updateData.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
+    if (tradeData.profitLoss !== undefined) updateData.profit_loss = tradeData.profitLoss;
+    if (tradeData.fees !== undefined) updateData.fees = tradeData.fees;
+    if (tradeData.notes !== undefined) updateData.notes = tradeData.notes;
+    if (tradeData.tags !== undefined) updateData.tags = tradeData.tags;
+    if (tradeData.rating !== undefined) updateData.rating = tradeData.rating;
+    if (tradeData.stopLoss !== undefined) updateData.stop_loss = tradeData.stopLoss;
+    if (tradeData.takeProfit !== undefined) updateData.take_profit = tradeData.takeProfit;
+    if (tradeData.durationMinutes !== undefined) updateData.duration_minutes = tradeData.durationMinutes;
+    if (tradeData.marketSession !== undefined) updateData.market_session = tradeData.marketSession;
+    if (tradeData.playbook !== undefined) updateData.playbook = tradeData.playbook;
+    if (tradeData.followedRules !== undefined) updateData.followed_rules = tradeData.followedRules;
     
     const { data, error } = await supabase
       .from('trades')
-      .update(updateObject)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -123,15 +127,16 @@ export const tradeService = {
     return !error;
   },
 
-  async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
+  // Simplified findTradesByFilter method to avoid deep type instantiation
+  async findTradesByFilter(filter: Partial<Record<string, any>>): Promise<ITrade[]> {
     let query = supabase.from('trades').select('*');
     
-    Object.entries(filter).forEach(([key, value]) => {
-      if (value !== undefined) {
-        const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-        query = query.eq(dbKey, value);
-      }
-    });
+    // Convert camelCase fields to snake_case for database queries
+    if (filter.userId) query = query.eq('user_id', filter.userId);
+    if (filter.symbol) query = query.eq('symbol', filter.symbol);
+    if (filter.direction) query = query.eq('direction', filter.direction);
+    if (filter.marketSession) query = query.eq('market_session', filter.marketSession);
+    if (filter.playbook) query = query.eq('playbook', filter.playbook);
     
     const { data, error } = await query;
     
@@ -140,6 +145,7 @@ export const tradeService = {
   }
 };
 
+// Helper function to convert DB field names to our interface
 function formatTrade(data: any): ITrade {
   return {
     id: data.id,
@@ -162,7 +168,7 @@ function formatTrade(data: any): ITrade {
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
     playbook: data.playbook,
-    followedRules: data.followedRules,
+    followedRules: data.followed_rules,
     marketSession: data.market_session
   };
 }

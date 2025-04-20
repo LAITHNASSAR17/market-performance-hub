@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Trade } from '@/types/trade';
+import { Trade } from '@/types/settings';
 import { useToast } from '@/hooks/use-toast';
 
 interface TradeContextType {

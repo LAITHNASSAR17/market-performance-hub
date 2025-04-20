@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +5,7 @@ import { Search, Users, ArrowUp, ArrowDown, Check, X, Badge as BadgeIcon } from 
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/lib/supabase';
 import {
   Table,
   TableBody,
@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/dialog';
 
 const AdminSubscriptions: React.FC = () => {
-  const { users, getAllUsers, updateSubscriptionTier } = useAuth();
+  const { users, getAllUsers, updateUser } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] = useState('all');
@@ -85,7 +85,12 @@ const AdminSubscriptions: React.FC = () => {
     if (!selectedUser || !newTier) return;
     
     try {
-      await updateSubscriptionTier(selectedUser.id, newTier);
+      // Use updateUser from AuthContext
+      await updateUser({
+        ...selectedUser,
+        subscription_tier: newTier
+      });
+      
       setShowUpgradeModal(false);
       
       toast({
@@ -185,7 +190,7 @@ const AdminSubscriptions: React.FC = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {user.is_blocked || user.isBlocked ? (
+                      {user.isBlocked ? (
                         <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
                           <X className="mr-1 h-3 w-3" />
                           Blocked
