@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -41,7 +40,8 @@ export const tradeService = {
   async getAllTrades(): Promise<ITrade[]> {
     const { data, error } = await supabase
       .from('trades')
-      .select('*');
+      .select('*')
+      .order('created_at', { ascending: false });
     
     if (error || !data) return [];
     return data.map(formatTrade);
@@ -55,7 +55,7 @@ export const tradeService = {
       entry_price: tradeData.entryPrice,
       exit_price: tradeData.exitPrice,
       quantity: tradeData.quantity,
-      direction: tradeData.direction,
+      direction: tradeData.direction === 'Buy' ? 'long' : 'short',
       entry_date: tradeData.entryDate.toISOString(),
       exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
       profit_loss: tradeData.profitLoss,
@@ -87,12 +87,11 @@ export const tradeService = {
       updated_at: new Date().toISOString()
     };
     
-    if (tradeData.userId !== undefined) updateData.user_id = tradeData.userId;
     if (tradeData.symbol !== undefined) updateData.symbol = tradeData.symbol;
     if (tradeData.entryPrice !== undefined) updateData.entry_price = tradeData.entryPrice;
     if (tradeData.exitPrice !== undefined) updateData.exit_price = tradeData.exitPrice;
     if (tradeData.quantity !== undefined) updateData.quantity = tradeData.quantity;
-    if (tradeData.direction !== undefined) updateData.direction = tradeData.direction;
+    if (tradeData.direction !== undefined) updateData.direction = tradeData.direction === 'Buy' ? 'long' : 'short';
     if (tradeData.entryDate !== undefined) updateData.entry_date = tradeData.entryDate.toISOString();
     if (tradeData.exitDate !== undefined) updateData.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
     if (tradeData.profitLoss !== undefined) updateData.profit_loss = tradeData.profitLoss;
@@ -127,7 +126,6 @@ export const tradeService = {
     return !error;
   },
 
-  // Simplified findTradesByFilter method to avoid deep type instantiation
   async findTradesByFilter(filter: Partial<Record<string, any>>): Promise<ITrade[]> {
     let query = supabase.from('trades').select('*');
     
@@ -154,7 +152,7 @@ function formatTrade(data: any): ITrade {
     entryPrice: data.entry_price,
     exitPrice: data.exit_price,
     quantity: data.quantity,
-    direction: data.direction,
+    direction: data.direction === 'long' ? 'Buy' : 'Sell',
     entryDate: new Date(data.entry_date),
     exitDate: data.exit_date ? new Date(data.exit_date) : null,
     profitLoss: data.profit_loss,
@@ -168,7 +166,7 @@ function formatTrade(data: any): ITrade {
     takeProfit: data.take_profit,
     durationMinutes: data.duration_minutes,
     playbook: data.playbook,
-    followedRules: data.followed_rules,
+    followedRules: data.followed_rules || [],
     marketSession: data.market_session
   };
 }

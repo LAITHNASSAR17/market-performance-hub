@@ -1,24 +1,23 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Trade } from '@/types/settings';
+import { tradeService } from '@/services/tradeService';
+import type { ITrade } from '@/services/tradeService';
 import { useToast } from '@/hooks/use-toast';
 
 interface TradeContextType {
-  trades: Trade[];
+  trades: ITrade[];
   allHashtags: string[];
   isLoading: boolean;
   error: string | null;
-  addTrade: (trade: Omit<Trade, 'id' | 'createdAt'>) => Promise<void>;
-  updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
+  addTrade: (trade: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateTrade: (id: string, trade: Partial<ITrade>) => Promise<void>;
   deleteTrade: (id: string) => Promise<void>;
   addHashtag: (hashtag: string) => void;
   removeHashtag: (hashtag: string) => void;
-  // Add missing properties
-  getTrade: (id: string) => Trade | undefined;
+  getTrade: (id: string) => ITrade | undefined;
   pairs: string[];
-  accounts: string[];
-  getAllTrades: () => Promise<Trade[]>;
+  getAllTrades: () => Promise<ITrade[]>;
   addSymbol: (symbol: string) => void;
   tradingAccounts: string[];
 }
@@ -26,14 +25,13 @@ interface TradeContextType {
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
 
 export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [trades, setTrades] = useState<Trade[]>([]);
+  const [trades, setTrades] = useState<ITrade[]>([]);
   const [allHashtags, setAllHashtags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const [pairs, setPairs] = useState<string[]>([]);
-  const [accounts, setAccounts] = useState<string[]>(['Demo', 'Main Trading', 'Practice']);
-  const tradingAccounts = accounts; // Alias for components expecting this name
+  const tradingAccounts = ['Demo', 'Main Trading', 'Practice']; // We'll add dynamic accounts later
 
   useEffect(() => {
     fetchTrades();
@@ -41,55 +39,19 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const fetchTrades = async () => {
     try {
-      const { data, error } = await supabase
-        .from('trades')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedTrades: Trade[] = data.map(trade => ({
-        id: trade.id,
-        userId: trade.user_id,
-        pair: trade.symbol,
-        symbol: trade.symbol,
-        type: trade.direction === 'long' ? 'Buy' : 'Sell',
-        entry: trade.entry_price,
-        exit: trade.exit_price,
-        lotSize: trade.quantity,
-        stopLoss: trade.stop_loss,
-        takeProfit: trade.take_profit,
-        riskPercentage: 0, // Calculate or get from trade
-        returnPercentage: 0, // Calculate or get from trade
-        profitLoss: trade.profit_loss || 0,
-        durationMinutes: trade.duration_minutes,
-        notes: trade.notes || '',
-        date: trade.entry_date.split('T')[0],
-        account: 'Demo', // Get from trade or user preferences
-        imageUrl: trade.image_url,
-        beforeImageUrl: trade.before_image_url,
-        afterImageUrl: trade.after_image_url,
-        hashtags: trade.tags || [],
-        createdAt: trade.created_at,
-        commission: trade.fees || 0,
-        rating: trade.rating || 0,
-        total: trade.profit_loss || 0,
-        playbook: trade.playbook,
-        followedRules: trade.followed_rules,
-        marketSession: trade.market_session
-      }));
-
-      setTrades(formattedTrades);
+      setIsLoading(true);
+      const fetchedTrades = await tradeService.getAllTrades();
+      setTrades(fetchedTrades);
       
-      // Extract unique hashtags
+      // Extract unique hashtags from trades
       const hashtags = Array.from(new Set(
-        formattedTrades.flatMap(trade => trade.hashtags)
+        fetchedTrades.flatMap(trade => trade.tags)
       ));
       setAllHashtags(hashtags);
       
       // Extract unique pairs/symbols
       const uniquePairs = Array.from(new Set(
-        formattedTrades.map(trade => trade.symbol)
+        fetchedTrades.map(trade => trade.symbol)
       ));
       setPairs(uniquePairs.length > 0 ? uniquePairs : ['EURUSD', 'GBPUSD', 'USDJPY']);
       
@@ -106,105 +68,28 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Get a single trade by ID
-  const getTrade = (id: string): Trade | undefined => {
+  const getTrade = (id: string): ITrade | undefined => {
     return trades.find(trade => trade.id === id);
   };
 
-  // Get all trades (for admin)
-  const getAllTrades = async (): Promise<Trade[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('trades')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedTrades: Trade[] = data.map(trade => ({
-        id: trade.id,
-        userId: trade.user_id,
-        pair: trade.symbol,
-        symbol: trade.symbol,
-        type: trade.direction === 'long' ? 'Buy' : 'Sell',
-        entry: trade.entry_price,
-        exit: trade.exit_price,
-        lotSize: trade.quantity,
-        stopLoss: trade.stop_loss,
-        takeProfit: trade.take_profit,
-        riskPercentage: 0,
-        returnPercentage: 0,
-        profitLoss: trade.profit_loss || 0,
-        durationMinutes: trade.duration_minutes,
-        notes: trade.notes || '',
-        date: trade.entry_date.split('T')[0],
-        account: 'Demo',
-        imageUrl: trade.image_url,
-        beforeImageUrl: trade.before_image_url,
-        afterImageUrl: trade.after_image_url,
-        hashtags: trade.tags || [],
-        createdAt: trade.created_at,
-        commission: trade.fees || 0,
-        rating: trade.rating || 0,
-        total: trade.profit_loss || 0,
-        playbook: trade.playbook,
-        followedRules: trade.followed_rules,
-        marketSession: trade.market_session
-      }));
-
-      return formattedTrades;
-    } catch (error) {
-      console.error('Error fetching all trades:', error);
-      return [];
-    }
+  const getAllTrades = async (): Promise<ITrade[]> => {
+    return await tradeService.getAllTrades();
   };
 
-  // Add a new trading symbol
   const addSymbol = (symbol: string) => {
     if (!pairs.includes(symbol)) {
       setPairs([...pairs, symbol]);
     }
   };
 
-  const addTrade = async (trade: Omit<Trade, 'id' | 'createdAt'>) => {
+  const addTrade = async (tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const { data, error } = await supabase
-        .from('trades')
-        .insert({
-          user_id: trade.userId,
-          symbol: trade.symbol || trade.pair, // Use either one
-          direction: trade.type === 'Buy' ? 'long' : 'short',
-          entry_price: trade.entry,
-          exit_price: trade.exit,
-          quantity: trade.lotSize,
-          stop_loss: trade.stopLoss,
-          take_profit: trade.takeProfit,
-          profit_loss: trade.profitLoss,
-          duration_minutes: trade.durationMinutes,
-          notes: trade.notes,
-          entry_date: trade.date,
-          image_url: trade.imageUrl,
-          before_image_url: trade.beforeImageUrl,
-          after_image_url: trade.afterImageUrl,
-          tags: trade.hashtags,
-          fees: trade.commission,
-          rating: trade.rating,
-          playbook: trade.playbook,
-          followed_rules: trade.followedRules,
-          market_session: trade.marketSession
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        await fetchTrades(); // Refresh trades list
-        toast({
-          title: "Success",
-          description: "Trade added successfully",
-        });
-      }
+      await tradeService.createTrade(tradeData);
+      await fetchTrades(); // Refresh trades list
+      toast({
+        title: "Success",
+        description: "Trade added successfully",
+      });
     } catch (error) {
       console.error('Error adding trade:', error);
       toast({
@@ -215,37 +100,9 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const updateTrade = async (id: string, trade: Partial<Trade>) => {
+  const updateTrade = async (id: string, tradeData: Partial<ITrade>) => {
     try {
-      const { error } = await supabase
-        .from('trades')
-        .update({
-          symbol: trade.symbol,
-          direction: trade.type,
-          entry_price: trade.entry,
-          exit_price: trade.exit,
-          quantity: trade.lotSize,
-          stop_loss: trade.stopLoss,
-          take_profit: trade.takeProfit,
-          profit_loss: trade.profitLoss,
-          duration_minutes: trade.durationMinutes,
-          notes: trade.notes,
-          entry_date: trade.date,
-          image_url: trade.imageUrl,
-          before_image_url: trade.beforeImageUrl,
-          after_image_url: trade.afterImageUrl,
-          tags: trade.hashtags,
-          fees: trade.commission,
-          rating: trade.rating,
-          playbook: trade.playbook,
-          followed_rules: trade.followedRules,
-          market_session: trade.marketSession,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-
+      await tradeService.updateTrade(id, tradeData);
       await fetchTrades(); // Refresh trades list
       toast({
         title: "Success",
@@ -263,13 +120,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const deleteTrade = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('trades')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
+      await tradeService.deleteTrade(id);
       await fetchTrades(); // Refresh trades list
       toast({
         title: "Success",
@@ -309,7 +160,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         removeHashtag,
         getTrade,
         pairs,
-        accounts,
         getAllTrades,
         addSymbol,
         tradingAccounts
@@ -328,4 +178,4 @@ export const useTrade = () => {
   return context;
 };
 
-export type { Trade };
+export type { ITrade };
