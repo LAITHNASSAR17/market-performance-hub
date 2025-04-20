@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hashPassword, comparePassword } from '@/utils/encryption';
@@ -219,28 +218,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('User found, checking password...');
       
-      // Properly handle the password check with optional chaining
       if (userData.password && comparePassword(password, userData.password)) {
         if (userData.is_blocked) {
           throw new Error('User is blocked');
-        }
-        
-        // Use optional chaining for email_verified check
-        if (userData.email_verified === false) {
-          toast({
-            title: "البريد الإلكتروني غير مفعل",
-            description: "يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك. تم إرسال رابط التفعيل إلى بريدك الإلكتروني.",
-            variant: "destructive",
-          });
-          
-          try {
-            await sendVerificationEmail(email);
-            console.log("Verification email resent successfully");
-          } catch (emailError) {
-            console.error("Error resending verification email:", emailError);
-          }
-          
-          throw new Error('البريد الإلكتروني غير مفعل');
         }
         
         localStorage.setItem('user_email', email);
