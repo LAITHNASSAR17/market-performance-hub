@@ -29,7 +29,7 @@ export interface Trade {
   playbook?: string; // Field to link to a playbook
   followedRules?: string[]; // Rules that were followed in this trade
   marketSession?: string; // Market session when the trade was executed
-  symbol: string; // Used internally to match with database
+  symbol: string; // Make sure this is required to match with database
 }
 
 // Map database trade (ITrade) to frontend trade (Trade)
@@ -67,11 +67,11 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
 });
 
 // Map frontend trade (Trade) to database trade (ITrade)
-export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'createdAt' | 'userId'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => {
+export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'createdAt'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => {
   console.log('Mapping frontend trade to DB trade:', trade);
   return {
     userId: '', // Will be set by the service
-    symbol: trade.pair || trade.symbol, // Use pair if provided, otherwise use symbol
+    symbol: trade.symbol, // Use symbol directly since it's required now
     entryPrice: trade.entry,
     exitPrice: trade.exit,
     quantity: trade.lotSize,

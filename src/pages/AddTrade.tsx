@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTrade } from '@/contexts/TradeContext';
@@ -9,7 +8,7 @@ import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label"; // Re-added the Label import
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import TradePairSelector from '@/components/trade/TradePairSelector';
 import TradeTypeSelector from '@/components/trade/TradeTypeSelector';
@@ -21,7 +20,7 @@ import TradeAccountSelector from '@/components/trade/TradeAccountSelector';
 import MarketSessionSelector from '@/components/trade/MarketSessionSelector';
 import TradeImages from '@/components/trade/TradeImages';
 import { TRADE_TYPES, TradeType } from '@/constants/tradeTypes';
-import { Trade } from '@/types/settings'; // Added the Trade type import
+import { Trade } from '@/types/trade';
 
 const marketSessions = [
   { id: 'asia', name: 'Asia' },
@@ -117,7 +116,7 @@ const AddTrade: React.FC = () => {
   const handleSelectChange = (name: string, value: string) => {
     setTradeData(prev => ({ ...prev, [name]: value }));
     if (name === 'pair') {
-      setTradeData(prev => ({ ...prev, pair: value }));
+      setTradeData(prev => ({ ...prev, pair: value, symbol: value }));
     }
   };
 
@@ -144,10 +143,10 @@ const AddTrade: React.FC = () => {
       
       console.log("Preparing to save trade data:", tradeData);
       
-      // Create a complete trade data object with all required properties
       const finalTradeData: Omit<Trade, 'id' | 'createdAt'> = {
         ...tradeData,
         userId: currentUser.id,
+        symbol: tradeData.symbol || tradeData.pair,
         returnPercentage: calculateReturnPercentage(tradeData),
         riskPercentage: calculateRiskPercentage(tradeData),
         profitLoss: calculateProfitLoss(tradeData)
