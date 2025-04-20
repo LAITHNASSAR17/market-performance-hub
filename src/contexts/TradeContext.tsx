@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,8 +18,8 @@ export type TradingAccount = {
 
 type TradeContextType = {
   trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
-  updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
+  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => Promise<Trade | void>;
+  updateTrade: (id: string, trade: Partial<Trade>) => Promise<Trade | void>;
   deleteTrade: (id: string) => Promise<void>;
   getTrade: (id: string) => Trade | undefined;
   getAllTrades: () => Trade[];
