@@ -88,4 +88,53 @@ export const updateUserProfile = async (userId: string, userData: Partial<Profil
   }
 };
 
+// Helper function to safely update homepage content
+export const updateHomepageContent = async (contentData: any) => {
+  try {
+    // Ensure features is in the correct format for JSONB
+    if (contentData.features && Array.isArray(contentData.features)) {
+      // Cast the features array to Json type
+      contentData.features = contentData.features as unknown as Json;
+    }
+    
+    const { data, error } = await supabase
+      .from('homepage_content')
+      .upsert(contentData)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error updating homepage content:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception updating homepage content:', err);
+    throw err;
+  }
+};
+
+// Helper function to safely update site settings
+export const updateSiteSettings = async (settingsData: any) => {
+  try {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .update(settingsData)
+      .eq('site_name', settingsData.site_name || 'TradeTracker')
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error updating site settings:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception updating site settings:', err);
+    throw err;
+  }
+};
+
 export { supabase };

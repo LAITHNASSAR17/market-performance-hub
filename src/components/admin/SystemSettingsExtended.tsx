@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ThemeToggle from '@/components/ThemeToggle';
-import { supabase } from '@/lib/supabase';
+import { supabase, updateSiteSettings } from '@/lib/supabase';
 
 const SystemSettingsExtended = () => {
   const { toast } = useToast();
@@ -77,14 +76,7 @@ const SystemSettingsExtended = () => {
   const handleSaveSiteName = async () => {
     try {
       // Save to Supabase
-      const { error } = await supabase
-        .from('site_settings')
-        .update({ site_name: siteName })
-        .eq('site_name', localStorage.getItem('siteName') || 'TradeTracker');
-      
-      if (error) {
-        throw error;
-      }
+      await updateSiteSettings({ site_name: siteName });
       
       // Update localStorage
       localStorage.setItem('siteName', siteName);

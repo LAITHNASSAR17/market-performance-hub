@@ -8,17 +8,7 @@ import React, {
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
-
-interface User {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string;
-  is_admin: boolean;
-  is_blocked: boolean;
-  avatar_url: string | null;
-  country: string | null;
-}
+import { User } from '@/types/auth';
 
 interface AuthContextProps {
   user: User | null;
@@ -97,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, []);
 
-  const getUserProfile = async (email: string) => {
+  const getUserProfile = async (email: string): Promise<User | null> => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -203,13 +193,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const updatePassword = async (email: string, newPassword: string) => {
+  const updatePassword = async (email: string, newPassword: string): Promise<boolean> => {
     try {
       const hashedPassword = hashPassword(newPassword);
       
       const { error } = await supabase
         .from('users')
-        .update({ password: hashedPassword })
+        .update({ password: hashedPassword } as any)
         .eq('email', email);
       
       if (error) {

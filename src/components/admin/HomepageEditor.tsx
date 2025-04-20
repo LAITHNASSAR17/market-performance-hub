@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/lib/supabase';
+import { supabase, updateHomepageContent } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Plus, Trash2, Image } from 'lucide-react';
+import { Save, Plus, Trash2 } from 'lucide-react';
 import { Json } from '@/integrations/supabase/types';
 
 interface Feature {
@@ -79,7 +78,11 @@ const HomepageEditor: React.FC = () => {
         if (error) {
           console.error('Error fetching homepage content:', error);
           // Use default content if none exists
-        } else if (data) {
+          setLoading(false);
+          return;
+        }
+          
+        if (data) {
           // Parse the features JSON if stored as string
           let parsedFeatures: Feature[] = [];
           
@@ -134,16 +137,10 @@ const HomepageEditor: React.FC = () => {
         primary_button_url: content.primaryButtonUrl,
         secondary_button_text: content.secondaryButtonText,
         secondary_button_url: content.secondaryButtonUrl,
-        features: content.features as Json
+        features: content.features as unknown as Json
       };
       
-      const { error } = await supabase
-        .from('homepage_content')
-        .upsert(dataToSave, { onConflict: 'id' });
-        
-      if (error) {
-        throw error;
-      }
+      await updateHomepageContent(dataToSave);
       
       toast({
         title: "Homepage Updated",

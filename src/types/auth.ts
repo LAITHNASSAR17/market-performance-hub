@@ -9,6 +9,8 @@ export interface User {
   role?: string;
   subscription_tier?: string;
   email_verified?: boolean;
+  avatar_url?: string | null;
+  country?: string | null;
 }
 
 export interface AuthContextType {

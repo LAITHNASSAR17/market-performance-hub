@@ -55,7 +55,7 @@ const Homepage: React.FC = () => {
         const { data, error } = await supabase
           .from('homepage_content')
           .select('*')
-          .single();
+          .maybeSingle();
           
         if (error) {
           console.error('Error fetching homepage content:', error);
