@@ -1,8 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import * as noteService from '@/services/noteService';
 
 export type Note = {
@@ -80,7 +79,7 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       ]);
     } catch (err) {
       console.error('Error fetching notes:', err);
-      setError("حدث خطأ أثناء جلب الملاحظات");
+      setError("حدث خطأ أثناء جلب الملاحظات. يرجى إعادة المحاولة لاحقاً.");
       toast({
         title: "خطأ",
         description: "حدث خطأ أثناء جلب الملاحظات",
@@ -94,11 +93,18 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Initial fetch on mount or when user changes
   useEffect(() => {
     fetchNotes();
-  }, [user, toast]);
+  }, [user]);
 
   // Add note to Supabase
   const addNote = async (newNoteData: Omit<Note, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول لإضافة ملاحظة",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const data = await noteService.createNote({
@@ -148,7 +154,14 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Update note in Supabase
   const updateNote = async (id: string, noteUpdate: Partial<Note>) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول لتحديث الملاحظة",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       const data = await noteService.updateNote(id, {
@@ -190,7 +203,14 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Delete note from Supabase
   const deleteNote = async (id: string) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: "خطأ",
+        description: "يجب تسجيل الدخول لحذف الملاحظة",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
       await noteService.deleteNote(id);

@@ -8,25 +8,30 @@ export const createNote = async (noteData: {
   userId: string;
   tradeId?: string;
 }) => {
-  const note = {
-    title: noteData.title,
-    content: noteData.content,
-    tags: noteData.tags,
-    user_id: noteData.userId, // Convert camelCase to snake_case
-    trade_id: noteData.tradeId // Add trade_id mapping
-  };
+  try {
+    const note = {
+      title: noteData.title,
+      content: noteData.content,
+      tags: noteData.tags,
+      user_id: noteData.userId, // Convert camelCase to snake_case
+      trade_id: noteData.tradeId // Add trade_id mapping
+    };
 
-  const { data, error } = await supabase
-    .from('notes')
-    .insert(note)
-    .select();
+    const { data, error } = await supabase
+      .from('notes')
+      .insert(note)
+      .select();
 
-  if (error) {
-    console.error('Error creating note:', error);
+    if (error) {
+      console.error('Error creating note:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in createNote:', error);
     throw error;
   }
-
-  return data;
 };
 
 export const getNotesByUserId = async (userId: string) => {
@@ -91,16 +96,21 @@ export const getNoteById = async (noteId: string) => {
   }
 };
 
-export const updateNote = async (noteId: string, noteData: { title?: string; content?: string; tags?: string[]; tradeId?: string }) => {
-  // Convert to database format with snake_case
-  const updateData = {
-    title: noteData.title,
-    content: noteData.content,
-    tags: noteData.tags,
-    trade_id: noteData.tradeId
-  };
-
+export const updateNote = async (noteId: string, noteData: { 
+  title?: string; 
+  content?: string; 
+  tags?: string[]; 
+  tradeId?: string;
+}) => {
   try {
+    // Convert to database format with snake_case
+    const updateData = {
+      title: noteData.title,
+      content: noteData.content,
+      tags: noteData.tags,
+      trade_id: noteData.tradeId
+    };
+
     const { data, error } = await supabase
       .from('notes')
       .update(updateData)
