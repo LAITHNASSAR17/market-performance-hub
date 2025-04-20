@@ -44,6 +44,7 @@ const AddTrade: React.FC = () => {
   const [tradeData, setTradeData] = useState<Omit<Trade, 'id' | 'createdAt'>>({
     userId: user?.id || 'demo-user-id',
     pair: pairs[0] || 'EURUSD',
+    symbol: pairs[0] || 'EURUSD',
     type: TRADE_TYPES.BUY as TradeType,
     entry: 0,
     exit: 0,
@@ -66,8 +67,7 @@ const AddTrade: React.FC = () => {
     total: 0,
     playbook: '',
     followedRules: [],
-    marketSession: marketSessions[0].name,
-    symbol: pairs[0] || 'EURUSD'
+    marketSession: marketSessions[0].name
   });
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
@@ -79,7 +79,7 @@ const AddTrade: React.FC = () => {
         setTradeData({
           userId: trade.userId,
           pair: trade.pair,
-          symbol: trade.symbol || trade.pair,
+          symbol: trade.symbol,
           type: trade.type,
           entry: trade.entry,
           exit: trade.exit || 0,
@@ -129,7 +129,7 @@ const AddTrade: React.FC = () => {
   };
 
   const handleSaveClick = async () => {
-    if (!tradeData.pair || !tradeData.type || !tradeData.entry || !tradeData.exit || !tradeData.lotSize) {
+    if (!tradeData.pair || !tradeData.type || !tradeData.entry || !tradeData.lotSize) {
       toast({
         title: "خطأ",
         description: "يرجى ملء جميع الحقول المطلوبة",
@@ -142,6 +142,8 @@ const AddTrade: React.FC = () => {
       setLoading(true);
       const currentUser = user || { id: 'demo-user-id' };
       
+      console.log("Preparing to save trade data:", tradeData);
+      
       // Create a complete trade data object with all required properties
       const finalTradeData: Omit<Trade, 'id' | 'createdAt'> = {
         ...tradeData,
@@ -150,6 +152,8 @@ const AddTrade: React.FC = () => {
         riskPercentage: calculateRiskPercentage(tradeData),
         profitLoss: calculateProfitLoss(tradeData)
       };
+      
+      console.log("Final trade data being submitted:", finalTradeData);
     
       if (isEditMode && selectedTrade) {
         await updateTrade(selectedTrade.id, finalTradeData);

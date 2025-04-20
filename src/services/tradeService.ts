@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -33,29 +34,40 @@ export const tradeService = {
       .eq('id', id)
       .single();
     
-    if (error || !data) return null;
+    if (error || !data) {
+      console.error('Error fetching trade by ID:', error);
+      return null;
+    }
     return formatTrade(data);
   },
 
   async getAllTrades(): Promise<ITrade[]> {
+    console.log('Fetching all trades from supabase');
     const { data, error } = await supabase
       .from('trades')
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error || !data) return [];
+    if (error) {
+      console.error('Error fetching all trades:', error);
+      return [];
+    }
+    
+    if (!data) return [];
+    console.log(`Fetched ${data.length} trades from database`);
     return data.map(formatTrade);
   },
 
   async createTrade(tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>): Promise<ITrade> {
+    console.log('Creating trade in database:', tradeData);
     // Convert our interface field names to database column names
     const dbData = {
-      symbol: tradeData.symbol,
       user_id: tradeData.userId,
+      symbol: tradeData.symbol,
       entry_price: tradeData.entryPrice,
       exit_price: tradeData.exitPrice,
       quantity: tradeData.quantity,
-      direction: tradeData.direction === 'Buy' ? 'long' : 'short',
+      direction: tradeData.direction,
       entry_date: tradeData.entryDate.toISOString(),
       exit_date: tradeData.exitDate ? tradeData.exitDate.toISOString() : null,
       profit_loss: tradeData.profitLoss,
@@ -77,7 +89,11 @@ export const tradeService = {
       .select()
       .single();
     
-    if (error || !data) throw new Error(`Error creating trade: ${error?.message}`);
+    if (error || !data) {
+      console.error('Error creating trade:', error);
+      throw new Error(`Error creating trade: ${error?.message || 'Unknown error'}`);
+    }
+    console.log('Trade created successfully:', data);
     return formatTrade(data);
   },
 
@@ -91,7 +107,7 @@ export const tradeService = {
     if (tradeData.entryPrice !== undefined) updateData.entry_price = tradeData.entryPrice;
     if (tradeData.exitPrice !== undefined) updateData.exit_price = tradeData.exitPrice;
     if (tradeData.quantity !== undefined) updateData.quantity = tradeData.quantity;
-    if (tradeData.direction !== undefined) updateData.direction = tradeData.direction === 'Buy' ? 'long' : 'short';
+    if (tradeData.direction !== undefined) updateData.direction = tradeData.direction;
     if (tradeData.entryDate !== undefined) updateData.entry_date = tradeData.entryDate.toISOString();
     if (tradeData.exitDate !== undefined) updateData.exit_date = tradeData.exitDate ? tradeData.exitDate.toISOString() : null;
     if (tradeData.profitLoss !== undefined) updateData.profit_loss = tradeData.profitLoss;
@@ -106,6 +122,8 @@ export const tradeService = {
     if (tradeData.playbook !== undefined) updateData.playbook = tradeData.playbook;
     if (tradeData.followedRules !== undefined) updateData.followed_rules = tradeData.followedRules;
     
+    console.log('Updating trade in database:', id, updateData);
+    
     const { data, error } = await supabase
       .from('trades')
       .update(updateData)
@@ -113,17 +131,31 @@ export const tradeService = {
       .select()
       .single();
     
-    if (error || !data) return null;
+    if (error) {
+      console.error('Error updating trade:', error);
+      return null;
+    }
+    
+    if (!data) return null;
+    
+    console.log('Trade updated successfully:', data);
     return formatTrade(data);
   },
 
   async deleteTrade(id: string): Promise<boolean> {
+    console.log('Deleting trade from database:', id);
     const { error } = await supabase
       .from('trades')
       .delete()
       .eq('id', id);
     
-    return !error;
+    if (error) {
+      console.error('Error deleting trade:', error);
+      return false;
+    }
+    
+    console.log('Trade deleted successfully');
+    return true;
   },
 
   async findTradesByFilter(filter: Partial<Record<string, any>>): Promise<ITrade[]> {
@@ -138,7 +170,12 @@ export const tradeService = {
     
     const { data, error } = await query;
     
-    if (error || !data) return [];
+    if (error) {
+      console.error('Error finding trades by filter:', error);
+      return [];
+    }
+    
+    if (!data) return [];
     return data.map(formatTrade);
   }
 };
@@ -152,7 +189,7 @@ function formatTrade(data: any): ITrade {
     entryPrice: data.entry_price,
     exitPrice: data.exit_price,
     quantity: data.quantity,
-    direction: data.direction === 'long' ? 'Buy' : 'Sell',
+    direction: data.direction,
     entryDate: new Date(data.entry_date),
     exitDate: data.exit_date ? new Date(data.exit_date) : null,
     profitLoss: data.profit_loss,

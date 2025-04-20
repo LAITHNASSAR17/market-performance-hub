@@ -2,22 +2,22 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { tradeService } from '@/services/tradeService';
-import type { ITrade } from '@/services/tradeService';
 import { useToast } from '@/hooks/use-toast';
+import { mapDBTradeToTrade, mapTradeToDBTrade, Trade } from '@/types/trade';
 
 interface TradeContextType {
-  trades: ITrade[];
+  trades: Trade[];
   allHashtags: string[];
   isLoading: boolean;
   error: string | null;
-  addTrade: (trade: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  updateTrade: (id: string, trade: Partial<ITrade>) => Promise<void>;
+  addTrade: (trade: Omit<Trade, 'id' | 'createdAt'>) => Promise<void>;
+  updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
   deleteTrade: (id: string) => Promise<void>;
   addHashtag: (hashtag: string) => void;
   removeHashtag: (hashtag: string) => void;
-  getTrade: (id: string) => ITrade | undefined;
+  getTrade: (id: string) => Trade | undefined;
   pairs: string[];
-  getAllTrades: () => Promise<ITrade[]>;
+  getAllTrades: () => Promise<Trade[]>;
   addSymbol: (symbol: string) => void;
   tradingAccounts: string[];
 }
@@ -25,7 +25,7 @@ interface TradeContextType {
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
 
 export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [trades, setTrades] = useState<ITrade[]>([]);
+  const [trades, setTrades] = useState<Trade[]>([]);
   const [allHashtags, setAllHashtags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,18 +40,20 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const fetchTrades = async () => {
     try {
       setIsLoading(true);
-      const fetchedTrades = await tradeService.getAllTrades();
-      setTrades(fetchedTrades);
+      const fetchedDBTrades = await tradeService.getAllTrades();
+      // Convert DB trades to frontend Trade format
+      const mappedTrades = fetchedDBTrades.map(mapDBTradeToTrade);
+      setTrades(mappedTrades);
       
       // Extract unique hashtags from trades
       const hashtags = Array.from(new Set(
-        fetchedTrades.flatMap(trade => trade.tags)
+        mappedTrades.flatMap(trade => trade.hashtags)
       ));
       setAllHashtags(hashtags);
       
       // Extract unique pairs/symbols
       const uniquePairs = Array.from(new Set(
-        fetchedTrades.map(trade => trade.symbol)
+        mappedTrades.map(trade => trade.pair)
       ));
       setPairs(uniquePairs.length > 0 ? uniquePairs : ['EURUSD', 'GBPUSD', 'USDJPY']);
       
@@ -59,8 +61,8 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Error fetching trades:', error);
       setError('Failed to fetch trades');
       toast({
-        title: "Error",
-        description: "Failed to fetch trades",
+        title: "خطأ",
+        description: "فشل في جلب الصفقات",
         variant: "destructive"
       });
     } finally {
@@ -68,12 +70,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const getTrade = (id: string): ITrade | undefined => {
+  const getTrade = (id: string): Trade | undefined => {
     return trades.find(trade => trade.id === id);
   };
 
-  const getAllTrades = async (): Promise<ITrade[]> => {
-    return await tradeService.getAllTrades();
+  const getAllTrades = async (): Promise<Trade[]> => {
+    const dbTrades = await tradeService.getAllTrades();
+    return dbTrades.map(mapDBTradeToTrade);
   };
 
   const addSymbol = (symbol: string) => {
@@ -82,37 +85,45 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const addTrade = async (tradeData: Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addTrade = async (tradeData: Omit<Trade, 'id' | 'createdAt'>) => {
     try {
-      await tradeService.createTrade(tradeData);
-      await fetchTrades(); // Refresh trades list
+      // Convert frontend Trade to DB ITrade format
+      const dbTradeData = mapTradeToDBTrade(tradeData);
+      // Send the trade to the database
+      await tradeService.createTrade(dbTradeData);
+      // Refresh trades to see the new one
+      await fetchTrades();
       toast({
-        title: "Success",
-        description: "Trade added successfully",
+        title: "نجاح",
+        description: "تمت إضافة الصفقة بنجاح",
       });
     } catch (error) {
       console.error('Error adding trade:', error);
       toast({
-        title: "Error",
-        description: "Failed to add trade",
+        title: "خطأ",
+        description: "فشل في إضافة الصفقة",
         variant: "destructive"
       });
     }
   };
 
-  const updateTrade = async (id: string, tradeData: Partial<ITrade>) => {
+  const updateTrade = async (id: string, tradeData: Partial<Trade>) => {
     try {
-      await tradeService.updateTrade(id, tradeData);
-      await fetchTrades(); // Refresh trades list
+      // Convert the frontend partial Trade to DB ITrade format
+      const dbTradeData = { ...mapTradeToDBTrade(tradeData as Omit<Trade, 'id' | 'createdAt'>) };
+      // Update the trade in the database
+      await tradeService.updateTrade(id, dbTradeData);
+      // Refresh trades to see the updated one
+      await fetchTrades();
       toast({
-        title: "Success",
-        description: "Trade updated successfully",
+        title: "نجاح",
+        description: "تم تحديث الصفقة بنجاح",
       });
     } catch (error) {
       console.error('Error updating trade:', error);
       toast({
-        title: "Error",
-        description: "Failed to update trade",
+        title: "خطأ",
+        description: "فشل في تحديث الصفقة",
         variant: "destructive"
       });
     }
@@ -123,14 +134,14 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       await tradeService.deleteTrade(id);
       await fetchTrades(); // Refresh trades list
       toast({
-        title: "Success",
-        description: "Trade deleted successfully",
+        title: "نجاح",
+        description: "تم حذف الصفقة بنجاح",
       });
     } catch (error) {
       console.error('Error deleting trade:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete trade",
+        title: "خطأ",
+        description: "فشل في حذف الصفقة",
         variant: "destructive"
       });
     }
@@ -178,4 +189,4 @@ export const useTrade = () => {
   return context;
 };
 
-export type { ITrade };
+export type { Trade };
