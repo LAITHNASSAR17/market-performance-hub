@@ -20,6 +20,8 @@ import { Switch } from "@/components/ui/switch";
 import { usePlaybooks } from '@/hooks/usePlaybooks';
 import { PlaybookEntry } from '@/types/settings';
 import HashtagInput from '@/components/HashtagInput';
+import TradingSessionSelector from '@/components/TradingSessionSelector';
+import AddPairDialog from '@/components/AddPairDialog';
 
 interface TradeFormValues {
   pair: string;
@@ -56,7 +58,7 @@ const AddTrade: React.FC = () => {
   const [date, setDate] = React.useState<DateRange>({
     from: new Date(),
     to: addDays(new Date(), 0),
-  })
+  });
   const { playbooks } = usePlaybooks();
   const [formState, setFormState] = useState<Partial<TradeFormValues>>({
     pair: '',
@@ -80,6 +82,7 @@ const AddTrade: React.FC = () => {
     followedRules: [],
     marketSession: 'Asia'
   });
+  const [isAddPairDialogOpen, setIsAddPairDialogOpen] = useState(false);
 
   useEffect(() => {
     if (tradeId) {
@@ -112,7 +115,6 @@ const AddTrade: React.FC = () => {
   }, [tradeId, getTrade]);
 
   useEffect(() => {
-    // Calculate profit, return, and risk percentages whenever entry/exit changes
     if (formState.entry && formState.exit && formState.lotSize) {
       const profit = (formState.type === 'Buy' ? 1 : -1) * (formState.exit - formState.entry) * formState.lotSize;
       setTotalProfit(profit);
@@ -151,7 +153,6 @@ const AddTrade: React.FC = () => {
     try {
       setIsSaving(true);
 
-      // Validate required fields
       if (!formState.pair || !formState.type || !formState.entry || !formState.exit || !formState.lotSize || !formState.date) {
         toast({
           title: "Error",
@@ -161,7 +162,6 @@ const AddTrade: React.FC = () => {
         return;
       }
 
-      // Basic validation for numbers
       if (formState.entry <= 0 || formState.exit <= 0 || formState.lotSize <= 0) {
         toast({
           title: "Error",
@@ -171,7 +171,6 @@ const AddTrade: React.FC = () => {
         return;
       }
 
-      // Now when creating the trade object to save, add the userId property
       const tradeToSave = {
         pair: formState.pair,
         type: formState.type as 'Buy' | 'Sell',
@@ -197,8 +196,7 @@ const AddTrade: React.FC = () => {
         playbook: formState.playbook,
         followedRules: formState.followedRules,
         marketSession: formState.marketSession,
-        // Add this line to include userId
-        userId: 'current-user' // This will be replaced with the actual user ID by the backend
+        userId: 'current-user'
       };
 
       if (tradeId) {
@@ -229,14 +227,15 @@ const AddTrade: React.FC = () => {
   };
 
   const handleAddPair = () => {
-    const newPair = prompt("Enter the new pair/symbol:");
-    if (newPair) {
-      addSymbol(newPair);
-      setFormState(prevState => ({
-        ...prevState,
-        pair: newPair
-      }));
-    }
+    setIsAddPairDialogOpen(true);
+  };
+
+  const handlePairAdded = (symbol: string) => {
+    setFormState(prevState => ({
+      ...prevState,
+      pair: symbol
+    }));
+    setIsAddPairDialogOpen(false);
   };
 
   return (
@@ -391,7 +390,7 @@ const AddTrade: React.FC = () => {
                 </Popover>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="durationMinutes">Duration (Minutes)</Label>
                   <Input
@@ -494,7 +493,7 @@ const AddTrade: React.FC = () => {
                       <SelectValue placeholder="Select playbook" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {playbooks.map(playbook => (
                         <SelectItem key={playbook.id} value={playbook.id}>{playbook.name}</SelectItem>
                       ))}
@@ -503,16 +502,10 @@ const AddTrade: React.FC = () => {
                 </div>
                 <div>
                   <Label htmlFor="marketSession">Market Session</Label>
-                  <Select value={formState.marketSession} onValueChange={(value) => handleSelectChange('marketSession', value)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select session" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Asia">Asia</SelectItem>
-                      <SelectItem value="London">London</SelectItem>
-                      <SelectItem value="New York">New York</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <TradingSessionSelector 
+                    value={formState.marketSession} 
+                    onValueChange={(value) => handleSelectChange('marketSession', value)} 
+                  />
                 </div>
               </div>
 
@@ -538,6 +531,12 @@ const AddTrade: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+      
+      <AddPairDialog 
+        isOpen={isAddPairDialogOpen} 
+        onClose={() => setIsAddPairDialogOpen(false)} 
+        onPairAdded={handlePairAdded} 
+      />
     </div>
   );
 };
