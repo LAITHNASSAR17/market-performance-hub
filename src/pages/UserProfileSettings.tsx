@@ -75,7 +75,9 @@ const UserProfileSettings: React.FC = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  
+
+  const countryOptions = Array.isArray(countries) ? countries : [];
+
   useEffect(() => {
     if (user) {
       setName(user.name || '');
@@ -469,7 +471,7 @@ const UserProfileSettings: React.FC = () => {
                             className="w-full justify-between"
                           >
                             {country
-                              ? countries.find((c) => c.value === country)?.label
+                              ? countryOptions.find((c) => c.value === country)?.label || "Select country"
                               : 'Select country'}
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
@@ -484,7 +486,7 @@ const UserProfileSettings: React.FC = () => {
                               No results found
                             </CommandEmpty>
                             <CommandGroup className="max-h-[300px] overflow-auto">
-                              {countries.map((c) => (
+                              {countryOptions.map((c) => (
                                 <CommandItem
                                   key={c.value}
                                   value={c.value}
