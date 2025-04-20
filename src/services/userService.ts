@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -22,7 +23,7 @@ export interface ITradingAccount {
 export const userService = {
   async getUserById(id: string): Promise<IUser | null> {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('id', id)
       .single();
@@ -33,7 +34,7 @@ export const userService = {
 
   async getAllUsers(): Promise<IUser[]> {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*');
     
     if (error || !data) return [];
@@ -45,7 +46,7 @@ export const userService = {
     const newUserId = self.crypto.randomUUID();
     
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .insert({
         id: newUserId,
         name: userData.name,
@@ -77,7 +78,7 @@ export const userService = {
     if (userData.isBlocked !== undefined) updateData.is_blocked = userData.isBlocked;
     
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -89,7 +90,7 @@ export const userService = {
 
   async deleteUser(id: string): Promise<boolean> {
     const { error } = await supabase
-      .from('profiles')
+      .from('users')
       .delete()
       .eq('id', id);
     
@@ -101,7 +102,7 @@ export const userService = {
     const newUserId = self.crypto.randomUUID();
     
     const { data, error } = await supabase
-      .from('profiles')
+      .from('users')
       .insert({
         id: newUserId,
         name: userData.name,
@@ -122,7 +123,7 @@ export const userService = {
   },
 
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
-    let query = supabase.from('profiles').select('*');
+    let query = supabase.from('users').select('*');
     
     // Manually specify each filter to avoid recursion issues
     if (filter.isBlocked !== undefined) query = query.eq('is_blocked', filter.isBlocked);
