@@ -6,7 +6,7 @@ import { TradeProvider } from './contexts/TradeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { NotebookProvider } from './contexts/NotebookContext';
 import { SettingsProvider } from './contexts/SettingsContext';
-import { ThemeProvider } from './components/theme-provider'; // Corrected import
+import { ThemeProvider } from './components/theme-provider';
 import { Toaster } from './components/ui/toaster';
 
 // Import pages
@@ -26,6 +26,7 @@ import Journal from './pages/Journal';
 import Notebook from './pages/Notebook';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -87,4 +88,3 @@ function App() {
 }
 
 export default App;
-
