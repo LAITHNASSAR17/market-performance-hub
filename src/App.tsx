@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Routes, Navigate } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -64,16 +64,18 @@ function App() {
 }
 
 function AnimatedRoutes() {
+  const location = useLocation();
+  
   return (
     <PageTransition>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Routes location={location}>
+        <Route path="/" element={<Index />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/verify-email" element={<EmailVerify />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/email-verify" element={<EmailVerify />} />
         <Route path="/trades" element={<Trades />} />
         <Route path="/add-trade" element={<AddTrade />} />
         <Route path="/edit-trade/:id" element={<AddTrade />} />

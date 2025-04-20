@@ -104,18 +104,19 @@ const AdminUsers: React.FC = () => {
 
   const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
     try {
-      // Use Supabase Auth API to create user
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        email_confirm: true,
-        user_metadata: {
+      const hashedPassword = hashPassword(userData.password);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
           name: userData.name,
+          email: userData.email,
+          password: hashedPassword,
           role: userData.isAdmin ? 'admin' : 'user',
           is_blocked: false,
           subscription_tier: 'free'
-        }
-      });
+        })
+        .select();
       
       if (error) throw new Error(error.message);
       
@@ -127,7 +128,7 @@ const AdminUsers: React.FC = () => {
       // Refresh users list
       fetchUsers();
       
-      // Convert the return type to void to match the expected type
+      // Fix the type error by not returning the data
       return;
     } catch (error) {
       console.error('Error adding user:', error);

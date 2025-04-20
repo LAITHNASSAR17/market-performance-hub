@@ -46,10 +46,9 @@ import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { countries } from '@/utils/countries';
-import { userService, IUserProfile } from '@/services/userService';
 
 const UserProfileSettings: React.FC = () => {
-  const { user, updateProfile, logout } = useAuth();
+  const { user, updateProfile, logout, updateSubscriptionTier, changePassword } = useAuth();
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
   
@@ -61,7 +60,6 @@ const UserProfileSettings: React.FC = () => {
   const [countryOpen, setCountryOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [userProfile, setUserProfile] = useState<IUserProfile | null>(null);
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -75,9 +73,7 @@ const UserProfileSettings: React.FC = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  const countryOptions = Array.isArray(countries) ? countries : [];
-
+  
   useEffect(() => {
     if (user) {
       setName(user.name || '');
@@ -88,13 +84,16 @@ const UserProfileSettings: React.FC = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user?.id) {
-          const profileData = await userService.getUserProfile(session.user.id);
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
           
-          if (profileData) {
-            setUserProfile(profileData);
-            setCountry(profileData.country || '');
-            if (profileData.avatar_url) {
-              setProfilePicture(profileData.avatar_url);
+          if (data && !error) {
+            setCountry(data.country || '');
+            if (data.avatar_url) {
+              setProfilePicture(data.avatar_url);
             }
           }
         }
@@ -132,12 +131,16 @@ const UserProfileSettings: React.FC = () => {
         
       const avatarUrl = data.publicUrl;
       
-      // Update user profile with avatar URL
-      if (userProfile) {
-        await userService.updateUserProfile(userId, {
-          ...userProfile,
-          avatar_url: avatarUrl
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({ 
+          id: userId, 
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString()
         });
+        
+      if (updateError) {
+        throw updateError;
       }
       
       setProfilePicture(avatarUrl);
@@ -203,17 +206,22 @@ const UserProfileSettings: React.FC = () => {
     try {
       setIsUpdating(true);
       
-      await updateProfile({name, email});
+      await updateProfile(name, email);
       
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id && userProfile) {
-        const updatedProfile = await userService.updateUserProfile(session.user.id, {
-          ...userProfile,
-          country
-        });
-        
-        if (updatedProfile) {
-          setUserProfile(updatedProfile);
+      if (session?.user?.id) {
+        console.log('Updating profile with country:', country);
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .upsert({ 
+            id: session.user.id, 
+            country: country,
+            updated_at: new Date().toISOString()
+          });
+          
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          throw updateError;
         }
       }
       
@@ -254,9 +262,7 @@ const UserProfileSettings: React.FC = () => {
     
     try {
       setIsChangingPassword(true);
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      
-      if (error) throw error;
+      await updateProfile(user?.name || '', user?.email || '', currentPassword, newPassword);
       
       setCurrentPassword('');
       setNewPassword('');
@@ -471,7 +477,7 @@ const UserProfileSettings: React.FC = () => {
                             className="w-full justify-between"
                           >
                             {country
-                              ? countryOptions.find((c) => c.value === country)?.label || "Select country"
+                              ? countries.find((c) => c.value === country)?.label
                               : 'Select country'}
                             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
@@ -486,7 +492,7 @@ const UserProfileSettings: React.FC = () => {
                               No results found
                             </CommandEmpty>
                             <CommandGroup className="max-h-[300px] overflow-auto">
-                              {countryOptions.map((c) => (
+                              {countries.map((c) => (
                                 <CommandItem
                                   key={c.value}
                                   value={c.value}

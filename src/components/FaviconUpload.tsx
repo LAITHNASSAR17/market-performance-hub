@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, X } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import ImageUpload from '@/components/ImageUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useSiteSettings } from '@/hooks/useSiteSettings';
@@ -17,7 +17,6 @@ interface FaviconUploadProps {
 const FaviconUpload: React.FC<FaviconUploadProps> = ({ isOpen, onClose }) => {
   const { t } = useLanguage();
   const [favicon, setFavicon] = React.useState<string | null>(null);
-  const { toast } = useToast();
   const { updateFavicon } = useSiteSettings();
 
   React.useEffect(() => {
@@ -37,7 +36,7 @@ const FaviconUpload: React.FC<FaviconUploadProps> = ({ isOpen, onClose }) => {
       // Save favicon to localStorage for persistence
       localStorage.setItem('favicon', favicon);
       
-      // Update the favicon in the document - make sure updateFavicon accepts a string
+      // Update the favicon in the document
       updateFavicon(favicon);
 
       toast({

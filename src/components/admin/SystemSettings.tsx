@@ -12,26 +12,23 @@ import FaviconUpload from '@/components/FaviconUpload';
 
 const SystemSettings: React.FC = () => {
   const { toast } = useToast();
-  const { siteSettings, updateSettings, loading } = useSiteSettings();
+  const { settings, updateSettings, isUpdating } = useSiteSettings();
   const [siteName, setSiteName] = useState('');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [showFaviconUpload, setShowFaviconUpload] = useState(false);
   
   useEffect(() => {
-    if (siteSettings?.site_name) {
-      setSiteName(siteSettings.site_name);
+    if (settings?.site_name) {
+      setSiteName(settings.site_name);
     }
-  }, [siteSettings]);
+  }, [settings]);
 
   const handleSaveSettings = async () => {
     try {
       console.log('Saving site name:', siteName);
       // Use the updateSettings function from the hook
       updateSettings({ 
-        site_name: siteName,
-        company_email: siteSettings?.company_email || '',
-        theme: siteSettings?.theme || 'light',
-        language: siteSettings?.language || 'en'
+        site_name: siteName 
       });
       
       toast({
@@ -96,11 +93,11 @@ const SystemSettings: React.FC = () => {
       <CardFooter>
         <Button 
           onClick={handleSaveSettings} 
-          disabled={loading}
+          disabled={isUpdating}
           className="w-full flex items-center justify-center gap-2"
         >
           <Save className="h-4 w-4" />
-          {loading ? 'Saving...' : 'Save Settings'}
+          {isUpdating ? 'Saving...' : 'Save Settings'}
         </Button>
       </CardFooter>
 

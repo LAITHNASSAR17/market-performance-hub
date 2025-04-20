@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, Settings, Scroll, CreditCard } from 'lucide-react';
@@ -18,14 +17,28 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout, isAdmin } = useAuth();
-  const { toast } = useToast();
-  const { t } = useLanguage();
+const Layout: React.FC<LayoutProps> = ({
+  children
+}) => {
+  const {
+    isAuthenticated,
+    logout,
+    user,
+    isAdmin
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    t
+  } = useLanguage();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  const { theme, toggleTheme } = useTheme();
+  const {
+    theme,
+    toggleTheme
+  } = useTheme();
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
 
   useEffect(() => {
@@ -35,6 +48,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       setSidebarOpen(true);
     }
   }, [isMobile]);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   const navigation = [{
     name: 'Dashboard',
