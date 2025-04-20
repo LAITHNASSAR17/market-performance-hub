@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, LineChart, AlertCircle } from 'lucide-react';
+import { createProfileObject } from '@/types/database';
 
 const EmailVerify = () => {
   const [searchParams] = useSearchParams();
@@ -53,9 +54,11 @@ const EmailVerify = () => {
 
         // 2. تحديث حالة التحقق للمستخدم
         try {
+          const updateData = createProfileObject({ email_verified: true });
+          
           const { error: updateError } = await supabase
             .from('profiles')
-            .update({ email_verified: true })
+            .update(updateData)
             .eq('email', email);
 
           if (updateError) {

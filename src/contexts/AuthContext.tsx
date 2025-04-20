@@ -1,8 +1,10 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
-import { supabase, getUserByEmail, createUserProfile, getAllProfiles, updateUserProfile, ProfileType } from '@/lib/supabase';
+import { supabase, getUserByEmail, createUserProfile, getAllProfiles, updateUserProfile } from '@/lib/supabase';
+import { ProfileType, createProfileObject } from '@/types/database';
 
 interface User {
   id: string;
@@ -161,7 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const hashedPassword = hashPassword(password);
       
-      const userData: Partial<ProfileType> = {
+      const userData = createProfileObject({
         name,
         email,
         password: hashedPassword,
@@ -171,7 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         subscription_tier: 'free',
         email_verified: false,
         country
-      };
+      });
       
       const newUser = await createUserProfile(userData);
       
@@ -217,11 +219,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       console.log('User found, checking password...');
       
+      // Properly handle the password check with optional chaining
       if (userData.password && comparePassword(password, userData.password)) {
         if (userData.is_blocked) {
           throw new Error('User is blocked');
         }
         
+        // Use optional chaining for email_verified check
         if (userData.email_verified === false) {
           toast({
             title: "البريد الإلكتروني غير مفعل",

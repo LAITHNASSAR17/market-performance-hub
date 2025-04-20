@@ -50,7 +50,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
-import { updateUserProfile } from '@/lib/supabase';
+import { createProfileObject } from '@/types/database';
 
 interface Hashtag {
   name: string;
@@ -186,15 +186,16 @@ const AdminDashboard: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
-      const profileData = {
+      const profileData = createProfileObject({
         name: userData.name,
         email: userData.email,
         password: hashedPassword,
         role: userData.isAdmin ? 'admin' : 'user',
+        is_admin: userData.isAdmin,
         is_blocked: false,
         subscription_tier: 'free',
         email_verified: true
-      };
+      });
       
       const { data, error } = await supabase
         .from('profiles')
