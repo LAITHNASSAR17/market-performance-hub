@@ -28,7 +28,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           const { data, error } = await supabase
             .from('user_preferences')
             .select('theme')
-            .eq('user_id', user.id)
+            .eq('user_id', user.id as string)
             .maybeSingle();
 
           if (error) throw error;
@@ -69,7 +69,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const { data: existingRecord, error: checkError } = await supabase
           .from('user_preferences')
           .select('user_id')
-          .eq('user_id', user.id)
+          .eq('user_id', user.id as string)
           .maybeSingle();
 
         if (checkError) throw checkError;
@@ -82,7 +82,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
               theme,
               updated_at: new Date().toISOString()
             })
-            .eq('user_id', user.id);
+            .eq('user_id', user.id as string);
 
           if (updateError) throw updateError;
         } else {
