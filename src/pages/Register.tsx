@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,11 +55,17 @@ const Register: React.FC = () => {
       const hashedPassword = hashPassword(password);
       
       // First, check if user already exists
-      const { data: existingUser } = await supabase
+      const { data: existingUser, error: checkError } = await supabase
         .from('users')
         .select('id')
         .eq('email', email)
         .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        // PGRST116 is the error code for "no rows returned" which is expected if user doesn't exist
+        console.error('Error checking existing user:', checkError);
+        throw new Error(checkError.message);
+      }
 
       if (existingUser) {
         setError(t('register.error.emailExists'));
@@ -88,8 +95,8 @@ const Register: React.FC = () => {
       console.log('User registered successfully:', data);
       
       toast({
-        title: t('register.success.title'),
-        description: t('register.success.description'),
+        title: "تم التسجيل بنجاح",
+        description: "تم إنشاء حسابك بنجاح. الرجاء تسجيل الدخول الآن",
       });
 
       // After successful registration, navigate to login
@@ -97,10 +104,17 @@ const Register: React.FC = () => {
 
     } catch (err) {
       console.error('Registration error:', err);
-      setError(t('register.error.failed'));
+      
+      // Use localized error messages or fallback to generic message
+      const errorMessage = typeof err === 'object' && err !== null && 'message' in err 
+        ? (err as Error).message 
+        : t('register.error.failed');
+      
+      setError(errorMessage);
+      
       toast({
-        title: t('register.error.title'),
-        description: t('register.error.description'),
+        title: "فشل التسجيل",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -228,7 +242,7 @@ const Register: React.FC = () => {
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? t('register.registering') : t('register.createAccount')}
+                  {loading ? "جاري التسجيل..." : "إنشاء حساب"}
                 </Button>
               </div>
             </form>
