@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -94,6 +93,31 @@ export const userService = {
       .eq('id', id);
     
     return !error;
+  },
+
+  async createAdminUser(userData: Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<IUser> {
+    const now = new Date().toISOString();
+    const newUserId = self.crypto.randomUUID();
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert({
+        id: newUserId,
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        role: 'admin',
+        is_admin: true,
+        is_blocked: false,
+        email_verified: true,
+        created_at: now,
+        updated_at: now
+      })
+      .select()
+      .single();
+    
+    if (error || !data) throw new Error(`Error creating admin user: ${error?.message}`);
+    return formatUser(data);
   },
 
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {

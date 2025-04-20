@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -70,8 +69,6 @@ const Login: React.FC = () => {
         errorMessage = "بريد إلكتروني أو كلمة مرور غير صحيحة";
       } else if (error.message === 'User is blocked') {
         errorMessage = "تم حظر هذا الحساب. الرجاء الاتصال بالدعم.";
-      } else if (error.message === 'Email is not activated' || error.message === 'البريد الإلكتروني غير مفعل') {
-        errorMessage = "البريد الإلكتروني غير مفعل. يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك.";
       }
       
       setError(errorMessage);
