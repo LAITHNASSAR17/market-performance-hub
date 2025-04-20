@@ -96,8 +96,8 @@ export async function registerUser(name: string, email: string, password: string
     const userId = self.crypto.randomUUID();
     console.log('Generated user ID:', userId);
     
-    // Create a properly structured profile object
-    const profileData = {
+    // Create a properly structured user object
+    const userData = {
       id: userId,
       name,
       email,
@@ -109,10 +109,10 @@ export async function registerUser(name: string, email: string, password: string
       country
     };
     
-    // Use the proper supabase method to insert
+    // Use the proper supabase method to insert into users table
     const { error } = await supabase
       .from('users')
-      .insert(profileData);
+      .insert(userData);
     
     if (error) {
       console.error('Supabase registration error:', error);
