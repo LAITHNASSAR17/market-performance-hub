@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { tradeService } from '@/services/tradeService';
+import * as tradeService from '@/services/trade';
 import { useToast } from '@/hooks/use-toast';
 import { mapDBTradeToTrade, mapTradeToDBTrade, Trade } from '@/types/trade';
 
@@ -43,14 +44,16 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const mappedTrades = fetchedDBTrades.map(mapDBTradeToTrade);
       setTrades(mappedTrades);
       
+      // Fix type issue by explicitly casting hashtags as string[]
       const hashtags = Array.from(new Set(
         mappedTrades.flatMap(trade => trade.hashtags)
-      ));
+      )) as string[];
       setAllHashtags(hashtags);
       
+      // Fix type issue by explicitly casting pairs as string[]
       const uniquePairs = Array.from(new Set(
         mappedTrades.map(trade => trade.pair)
-      ));
+      )) as string[];
       setPairs(uniquePairs.length > 0 ? uniquePairs : ['EURUSD', 'GBPUSD', 'USDJPY']);
       
     } catch (error) {

@@ -1,5 +1,5 @@
 
-import { ITrade } from '@/services/tradeService';
+import { ITrade } from '@/services/trade/types';
 
 export interface Trade {
   id: string;
