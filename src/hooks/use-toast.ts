@@ -1,9 +1,19 @@
 
 import * as React from "react";
-import { Toast, ToastProps } from "@/components/ui/toast";
 import {
   ToastActionElement as ToastPrimitivesActionElement,
 } from "@radix-ui/react-toast";
+
+// Define our own ToastProps interface to avoid circular dependencies
+interface ToastProps {
+  variant?: "default" | "destructive";
+  className?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children?: React.ReactNode;
+}
+
+type ToastActionElement = React.ReactElement<typeof ToastPrimitivesActionElement>;
 
 type ToastType = Omit<ToastProps, "id"> & {
   id?: string;
@@ -188,4 +198,4 @@ function useToast() {
 }
 
 export { useToast, toast };
-export type { ToastActionElement } from "@/components/ui/toast";
+export type { ToastActionElement, ToastProps };
