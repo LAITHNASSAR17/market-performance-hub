@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Re-export the client for backward compatibility
@@ -27,6 +28,38 @@ export const updateSiteSettings = async (settings: any) => {
     
   if (error) {
     console.error('Error updating site settings:', error);
+    throw error;
+  }
+  
+  return data;
+};
+
+// Function to get user profile by email
+export const getUserByEmail = async (email: string) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('email', email)
+    .maybeSingle();
+    
+  if (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
+  
+  return data;
+};
+
+// Function to create a new user profile
+export const createUserProfile = async (userData: any) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert(userData)
+    .select()
+    .single();
+    
+  if (error) {
+    console.error('Error creating user profile:', error);
     throw error;
   }
   

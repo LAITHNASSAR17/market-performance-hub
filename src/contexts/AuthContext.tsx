@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getUserByEmail, createUserProfile } from '@/lib/supabase';
 
 interface User {
   id: string;
@@ -102,36 +103,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAdminUser = async () => {
       try {
         console.log('Checking for admin user...');
-        const { data, error } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', 'lnmr2001@gmail.com')
-          .single();
+        const adminEmail = 'lnmr2001@gmail.com';
+        const adminUser = await getUserByEmail(adminEmail);
 
-        if (error) {
+        if (!adminUser) {
           console.log('Admin user not found, creating...');
-          const adminEmail = 'lnmr2001@gmail.com';
           const adminPassword = hashPassword('password123');
           
-          const { error: insertError } = await supabase
-            .from('users')
-            .insert({
-              name: 'Admin User',
-              email: adminEmail,
-              password: adminPassword,
-              role: 'admin',
-              is_blocked: false,
-              subscription_tier: 'premium',
-              email_verified: true
-            });
-            
-          if (insertError) {
-            console.error('Error creating admin user:', insertError);
-          } else {
+          const userData = {
+            name: 'Admin User',
+            email: adminEmail,
+            password: adminPassword,
+            role: 'admin',
+            is_blocked: false,
+            subscription_tier: 'premium',
+            email_verified: true
+          };
+          
+          try {
+            await createUserProfile(userData);
             console.log('Test admin user created:', adminEmail);
+          } catch (insertError) {
+            console.error('Error creating admin user:', insertError);
           }
         } else {
-          console.log('Admin user exists:', data.email);
+          console.log('Admin user exists:', adminUser.email);
         }
       } catch (err) {
         console.error('Error in admin user initialization:', err);
@@ -144,16 +140,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const loadInitialSession = async () => {
       try {
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', localStorage.getItem('user_email'))
-          .single();
-
-        if (data) {
-          setUser(data);
-          setIsAdmin(data.role === 'admin');
-          setIsAuthenticated(true);
+        const userEmail = localStorage.getItem('user_email');
+        if (userEmail) {
+          const userData = await getUserByEmail(userEmail);
+          
+          if (userData) {
+            setUser(userData);
+            setIsAdmin(userData.role === 'admin');
+            setIsAuthenticated(true);
+          }
         }
       } catch (error) {
         console.error('Error loading initial session:', error);
@@ -170,34 +165,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const hashedPassword = hashPassword(password);
       
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name,
-          email,
-          password: hashedPassword,
-          role: 'user',
-          is_blocked: false,
-          subscription_tier: 'free',
-          email_verified: false
-        })
-        .select()
-        .single();
+      const userData = {
+        name,
+        email,
+        password: hashedPassword,
+        role: 'user',
+        is_blocked: false,
+        subscription_tier: 'free',
+        email_verified: false
+      };
       
-      if (error) throw new Error(error.message);
+      const newUser = await createUserProfile(userData);
       
       if (country) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
-            id: data.id,
-            country: country
-          });
+          .update({ country })
+          .eq('id', newUser.id);
           
-        if (profileError) console.error('Error creating profile:', profileError);
+        if (profileError) console.error('Error updating profile country:', profileError);
       }
       
-      console.log("User registered successfully:", data);
+      console.log("User registered successfully:", newUser);
       
       try {
         await sendVerificationEmail(email);
@@ -230,30 +219,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('Attempting login for:', email);
       
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+      const userData = await getUserByEmail(email);
       
-      if (error) {
-        console.error('Error fetching user:', error);
-        throw new Error('Invalid credentials');
-      }
-      
-      if (!data) {
+      if (!userData) {
         console.error('No user found with email:', email);
         throw new Error('Invalid credentials');
       }
       
       console.log('User found, checking password...');
       
-      if (comparePassword(password, data.password)) {
-        if (data.is_blocked) {
+      if (comparePassword(password, userData.password || '')) {
+        if (userData.is_blocked) {
           throw new Error('User is blocked');
         }
         
-        if (!data.email_verified && data.email_verified !== undefined) {
+        if (!userData.email_verified && userData.email_verified !== undefined) {
           toast({
             title: "البريد الإلكتروني غير مفعل",
             description: "يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك. تم إرسال رابط التفعيل إلى بريدك الإلكتروني.",
@@ -273,17 +253,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Save email for session recovery
         localStorage.setItem('user_email', email);
         
-        setUser(data);
-        setIsAdmin(data.role === 'admin');
+        setUser(userData);
+        setIsAdmin(userData.role === 'admin');
         setIsAuthenticated(true);
         
-        console.log('Authentication successful, user set:', data.name);
-        console.log('Role:', data.role, 'isAdmin:', data.role === 'admin');
+        console.log('Authentication successful, user set:', userData.name);
+        console.log('Role:', userData.role, 'isAdmin:', userData.role === 'admin');
         console.log('isAuthenticated set to true');
         
         toast({
           title: "تم تسجيل الدخول بنجاح",
-          description: `مرحباً بعودتك، ${data.name}!`,
+          description: `مرحباً بعودتك، ${userData.name}!`,
         });
         
         return;
@@ -329,7 +309,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const hashedPassword = hashPassword(newPassword);
       
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ password: hashedPassword })
         .eq('email', email);
       
@@ -349,7 +329,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateUser = async (updatedUser: User): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({
           name: updatedUser.name,
           email: updatedUser.email,
@@ -388,13 +368,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
       
       if (newPassword && currentPassword) {
-        const { data } = await supabase
-          .from('users')
-          .select('password')
-          .eq('id', user.id)
-          .single();
+        const userData = await getUserByEmail(user.email);
           
-        if (!data || !comparePassword(currentPassword, data.password)) {
+        if (!userData || !comparePassword(currentPassword, userData.password || '')) {
           throw new Error('Current password is incorrect');
         }
         
@@ -402,7 +378,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update(updateData)
         .eq('id', user.id);
         
@@ -434,7 +410,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const getAllUsers = async (): Promise<User[]> => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*');
       
       if (error) throw error;
@@ -460,7 +436,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const blockUser = async (user: User): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ is_blocked: true })
         .eq('id', user.id);
       
@@ -481,7 +457,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const unblockUser = async (user: User): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ is_blocked: false })
         .eq('id', user.id);
       
@@ -500,7 +476,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const hashedPassword = hashPassword(newPassword);
       
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ password: hashedPassword })
         .eq('email', email);
       
@@ -519,7 +495,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateSubscriptionTier = async (userId: string, tier: string): Promise<void> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ subscription_tier: tier })
         .eq('id', userId);
         
@@ -600,14 +576,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log(`Sending password reset email to ${email}`);
       
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+      const userData = await getUserByEmail(email);
       
-      if (userError || !userData) {
-        console.error('User not found:', userError);
+      if (!userData) {
+        console.error('User not found');
         toast({
           title: "خطأ",
           description: "البريد الإلكتروني غير مسجل في النظام",
