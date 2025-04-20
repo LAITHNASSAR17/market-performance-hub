@@ -5,7 +5,7 @@ import { ProfileType, createProfileObject } from '@/types/database';
 
 export const getAllProfiles = async (): Promise<ProfileType[]> => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*');
   
   if (error) {
@@ -18,7 +18,7 @@ export const getAllProfiles = async (): Promise<ProfileType[]> => {
 
 export const getUserByEmail = async (email: string) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('email', email)
     .maybeSingle();
@@ -32,17 +32,14 @@ export const getUserByEmail = async (email: string) => {
 };
 
 export const createUserProfile = async (userData: Partial<ProfileType>) => {
-  // Generate an ID if one isn't provided (uuid v4)
   if (!userData.id) {
     userData.id = self.crypto.randomUUID();
   }
   
-  // Create a properly structured object from the userData
   const profileData = createProfileObject(userData);
   
-  // Ensure we're inserting an object for Supabase
   const { data, error } = await supabase
-    .from('profiles')
+    .from('users')
     .insert(profileData)
     .select()
     .single();
@@ -57,7 +54,7 @@ export const createUserProfile = async (userData: Partial<ProfileType>) => {
 
 export const updateUserProfile = async (userId: string, userData: Partial<ProfileType>) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('users')
     .update(userData)
     .eq('id', userId)
     .select()

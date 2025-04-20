@@ -1,4 +1,3 @@
-
 import { supabase, getUserByEmail, createUserProfile, getAllProfiles, updateUserProfile } from '@/lib/supabase';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { User } from '@/types/auth';
@@ -111,7 +110,7 @@ export async function registerUser(name: string, email: string, password: string
     
     // Use the proper supabase method to insert
     const { error } = await supabase
-      .from('profiles')
+      .from('users')
       .insert(profileData);
     
     if (error) {
@@ -141,7 +140,7 @@ export async function createTestAccount(): Promise<void> {
         
         try {
           const { error } = await supabase
-            .from('profiles')
+            .from('users')
             .insert({
               id: userId,
               name: 'حساب اختباري',
@@ -171,7 +170,7 @@ export async function createTestAccount(): Promise<void> {
         const hashedPassword = hashPassword('123456');
         
         await supabase
-          .from('profiles')
+          .from('users')
           .insert({
             id: userId,
             name: 'حساب اختباري',
