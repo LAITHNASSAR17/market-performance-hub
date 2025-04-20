@@ -29,31 +29,31 @@ const SupabaseConnectionStatus: React.FC = () => {
     );
   }
 
-  if (isConnected) {
-    return null; // Don't show anything if connected successfully
+  if (!isConnected) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertCircle className="h-5 w-5" />
+        <AlertTitle>مشكلة اتصال</AlertTitle>
+        <AlertDescription>
+          تعذر الاتصال بقاعدة البيانات. لن تتمكن من إنشاء حساب جديد أو تسجيل الدخول.
+          <div className="mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={checkConnection}
+              disabled={isChecking}
+              className="flex items-center gap-2"
+            >
+              {isChecking && <RefreshCw className="h-3 w-3 animate-spin" />}
+              إعادة المحاولة
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    );
   }
 
-  return (
-    <Alert variant="destructive" className="mb-4">
-      <AlertCircle className="h-5 w-5" />
-      <AlertTitle>مشكلة اتصال</AlertTitle>
-      <AlertDescription>
-        تعذر الاتصال بقاعدة البيانات. لن تتمكن من إنشاء حساب جديد أو تسجيل الدخول.
-        <div className="mt-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={checkConnection}
-            disabled={isChecking}
-            className="flex items-center gap-2"
-          >
-            {isChecking && <RefreshCw className="h-3 w-3 animate-spin" />}
-            إعادة المحاولة
-          </Button>
-        </div>
-      </AlertDescription>
-    </Alert>
-  );
+  return null;
 };
 
 export default SupabaseConnectionStatus;
