@@ -38,7 +38,7 @@ const SupabaseConnectionStatus: React.FC = () => {
       <AlertCircle className="h-5 w-5" />
       <AlertTitle>مشكلة اتصال</AlertTitle>
       <AlertDescription>
-        تعذر الاتصال بقاعدة البيانات. لن تتمكن من جلب التداولات والملاحظات.
+        تعذر الاتصال بقاعدة البيانات. لن تتمكن من إنشاء حساب جديد أو تسجيل الدخول.
         <div className="mt-2">
           <Button 
             variant="outline" 

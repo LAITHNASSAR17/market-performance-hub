@@ -17,6 +17,7 @@ import {
 import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
+import SupabaseConnectionStatus from '@/components/SupabaseConnectionStatus';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
@@ -27,24 +28,29 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, isAuthenticated, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
     
     if (!name || !email || !password || !confirmPassword || !country) {
       setError('الرجاء إكمال جميع البيانات المطلوبة');
+      setIsSubmitting(false);
       return;
     }
     
     if (password !== confirmPassword) {
       setError('كلمات المرور غير متطابقة');
+      setIsSubmitting(false);
       return;
     }
     
     if (password.length < 6) {
       setError('يجب أن تكون كلمة المرور ٦ أحرف على الأقل');
+      setIsSubmitting(false);
       return;
     }
     
@@ -58,10 +64,11 @@ const Register: React.FC = () => {
     } catch (err) {
       console.error('خطأ في إنشاء الحساب:', err);
       
-      if ((err as Error).message?.includes('duplicate key value violates unique constraint')) {
+      if ((err as Error).message?.includes('duplicate key value violates unique constraint') || 
+          (err as Error).message?.includes('البريد الإلكتروني مستخدم بالفعل')) {
         setError('البريد الإلكتروني مستخدم مسبقاً');
       } else {
-        setError('حدث خطأ. الرجاء المحاولة مرة أخرى');
+        setError((err as Error).message || 'حدث خطأ. الرجاء المحاولة مرة أخرى');
       }
       
       toast({
@@ -69,6 +76,8 @@ const Register: React.FC = () => {
         description: 'يرجى المحاولة مرة أخرى لاحقاً',
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -93,6 +102,9 @@ const Register: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* حالة الاتصال بقاعدة البيانات */}
+            <SupabaseConnectionStatus />
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-800 rounded-lg flex items-center gap-2">
@@ -184,9 +196,9 @@ const Register: React.FC = () => {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-                  disabled={loading}
+                  disabled={loading || isSubmitting}
                 >
-                  {loading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
+                  {isSubmitting ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
                 </Button>
               </div>
             </form>

@@ -1,3 +1,4 @@
+
 import { supabase, getUserByEmail, createUserProfile, getAllProfiles, updateUserProfile } from '@/lib/supabase';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { User } from '@/types/auth';
@@ -82,6 +83,7 @@ export async function registerUser(name: string, email: string, password: string
   try {
     console.log('Registering new user:', email);
     
+    // Check if the user already exists
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
       console.log('Email already exists:', email);
@@ -94,27 +96,30 @@ export async function registerUser(name: string, email: string, password: string
     const userId = self.crypto.randomUUID();
     console.log('Generated user ID:', userId);
     
+    // Create a properly structured profile object
+    const profileData = {
+      id: userId,
+      name,
+      email,
+      password: hashedPassword,
+      role: 'user',
+      is_admin: false,
+      is_blocked: false,
+      email_verified: true,
+      country
+    };
+    
+    // Use the proper supabase method to insert
     const { error } = await supabase
       .from('profiles')
-      .insert({
-        id: userId, // Add the required ID field
-        name,
-        email,
-        password: hashedPassword,
-        role: 'user',
-        is_admin: false,
-        is_blocked: false,
-        email_verified: true,
-        country
-      });
-
+      .insert(profileData);
+    
     if (error) {
-      console.error('Supabase error during registration:', error);
-      throw error;
+      console.error('Supabase registration error:', error);
+      throw new Error(error.message || 'فشل في تسجيل المستخدم الجديد');
     }
     
-    console.log('User registered successfully');
-    
+    console.log('User registered successfully:', email);
   } catch (error) {
     console.error('Registration error:', error);
     throw error;
