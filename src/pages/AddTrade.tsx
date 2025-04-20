@@ -187,6 +187,7 @@ const AddTrade: React.FC = () => {
 
     try {
       const tradeData = {
+        userId: '', // This will be set by the trade service
         pair,
         type,
         entry: parseFloat(entry),

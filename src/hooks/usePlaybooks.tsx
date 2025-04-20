@@ -51,7 +51,7 @@ export const usePlaybooks = () => {
           user_id: item.user_id,
           order_number: item.order_number || 0,
           is_private: item.is_private || false,
-          trade_type: item.trade_type || 'both',
+          trade_type: (item.trade_type as 'long' | 'short' | 'both') || 'both',
           tags: item.tags || [],
           category: item.category,
           rating: item.rating,

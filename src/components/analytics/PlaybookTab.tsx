@@ -69,13 +69,13 @@ const PlaybookTab = () => {
     
     if (activeTab === 'my-playbooks') {
       if (!showPrivate) {
-        filtered = filtered.filter(p => !p.isPrivate);
+        filtered = filtered.filter(p => !p.is_private);
       }
       if (!showShared) {
-        filtered = filtered.filter(p => p.isPrivate);
+        filtered = filtered.filter(p => p.is_private);
       }
     } else {
-      filtered = filtered.filter(p => !p.isPrivate);
+      filtered = filtered.filter(p => !p.is_private);
     }
     
     if (filterCategory !== 'all') {
@@ -98,13 +98,13 @@ const PlaybookTab = () => {
         case 'rating':
           return (b.rating || 0) - (a.rating || 0);
         case 'profitability':
-          return (b.netProfitLoss || 0) - (a.netProfitLoss || 0);
+          return (b.net_profit_loss || 0) - (a.net_profit_loss || 0);
         case 'winRate':
-          return (b.winRate || 0) - (a.winRate || 0);
+          return (b.win_rate || 0) - (a.win_rate || 0);
         case 'usage':
-          return (b.totalTrades || 0) - (a.totalTrades || 0);
+          return (b.total_trades || 0) - (a.total_trades || 0);
         case 'expectancy':
-          return (b.expectedValue || 0) - (a.expectedValue || 0);
+          return (b.expected_value || 0) - (a.expected_value || 0);
         default:
           return 0;
       }
@@ -203,24 +203,7 @@ const PlaybookTab = () => {
         total_trades: 0,
         avg_winner: 0,
         avg_loser: 0,
-        missed_trades: 0,
-        
-        isPrivate: data.isPrivate || false,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        userId: 'current-user',
-        order: 0,
-        tradeType: 'both',
-        rMultiple: 0,
-        winRate: 0,
-        expectedValue: 0,
-        profitFactor: 0,
-        netProfitLoss: 0,
-        totalTrades: 0,
-        avgWinner: 0,
-        avgLoser: 0,
-        missedTrades: 0
+        missed_trades: 0
       };
       
       await addPlaybook(newPlaybook);
@@ -598,12 +581,12 @@ const PlaybookTab = () => {
                 </h3>
                 <ol className="space-y-1">
                   {playbooks
-                    .sort((a, b) => (b.netProfitLoss || 0) - (a.netProfitLoss || 0))
+                    .sort((a, b) => (b.net_profit_loss || 0) - (a.net_profit_loss || 0))
                     .slice(0, 3)
                     .map((playbook, index) => (
                       <li key={playbook.id} className="text-sm flex justify-between">
                         <span>{index + 1}. {playbook.name}</span>
-                        <span className="font-medium text-green-500">${playbook.netProfitLoss?.toFixed(2) || '0.00'}</span>
+                        <span className="font-medium text-green-500">${playbook.net_profit_loss?.toFixed(2) || '0.00'}</span>
                       </li>
                     ))}
                 </ol>
@@ -617,12 +600,12 @@ const PlaybookTab = () => {
                 </h3>
                 <ol className="space-y-1">
                   {playbooks
-                    .sort((a, b) => (b.winRate || 0) - (a.winRate || 0))
+                    .sort((a, b) => (b.win_rate || 0) - (a.win_rate || 0))
                     .slice(0, 3)
                     .map((playbook, index) => (
                       <li key={playbook.id} className="text-sm flex justify-between">
                         <span>{index + 1}. {playbook.name}</span>
-                        <span className="font-medium">{playbook.winRate}%</span>
+                        <span className="font-medium">{playbook.win_rate}%</span>
                       </li>
                     ))}
                 </ol>
@@ -636,12 +619,12 @@ const PlaybookTab = () => {
                 </h3>
                 <ol className="space-y-1">
                   {playbooks
-                    .sort((a, b) => (b.expectedValue || 0) - (a.expectedValue || 0))
+                    .sort((a, b) => (b.expected_value || 0) - (a.expected_value || 0))
                     .slice(0, 3)
                     .map((playbook, index) => (
                       <li key={playbook.id} className="text-sm flex justify-between">
                         <span>{index + 1}. {playbook.name}</span>
-                        <span className="font-medium">{playbook.expectedValue}</span>
+                        <span className="font-medium">{playbook.expected_value}</span>
                       </li>
                     ))}
                 </ol>

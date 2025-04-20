@@ -88,8 +88,6 @@ export interface PlaybookEntry {
   avg_winner?: number;
   avg_loser?: number;
   missed_trades?: number;
-  
-  // Remove backward compatibility fields as they're causing confusion
 }
 
 export interface JournalEntry {

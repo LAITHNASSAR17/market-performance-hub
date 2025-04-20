@@ -28,14 +28,9 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
   const { t } = useLanguage();
   const [showDetails, setShowDetails] = React.useState(false);
   
-  // Helper to safely get property values considering both naming conventions
-  const getPropertyValue = <K extends keyof PlaybookEntry>(
-    prop: K, 
-    altProp?: keyof PlaybookEntry
-  ): PlaybookEntry[K] => {
-    if (playbook[prop] !== undefined) return playbook[prop];
-    if (altProp && playbook[altProp] !== undefined) return playbook[altProp] as unknown as PlaybookEntry[K];
-    return undefined as unknown as PlaybookEntry[K];
+  // Helper to get property values considering both naming conventions
+  const getPropertyValue = (prop: keyof PlaybookEntry): any => {
+    return playbook[prop];
   };
   
   // Get category colors
@@ -48,18 +43,17 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
     }
   };
 
-  const isActiveValue = getPropertyValue('is_active', 'isActive');
-  const isPrivateValue = getPropertyValue('is_private', 'isPrivate');
-  const rMultipleValue = getPropertyValue('r_multiple', 'rMultiple');
-  const winRateValue = getPropertyValue('win_rate', 'winRate');
-  const expectedValueValue = getPropertyValue('expected_value', 'expectedValue');
-  const profitFactorValue = getPropertyValue('profit_factor', 'profitFactor');
-  const netProfitLossValue = getPropertyValue('net_profit_loss', 'netProfitLoss');
-  const totalTradesValue = getPropertyValue('total_trades', 'totalTrades');
-  const avgWinnerValue = getPropertyValue('avg_winner', 'avgWinner');
-  const avgLoserValue = getPropertyValue('avg_loser', 'avgLoser');
-  const missedTradesValue = getPropertyValue('missed_trades', 'missedTrades');
-  
+  const isActiveValue = getPropertyValue('is_active');
+  const isPrivateValue = getPropertyValue('is_private');
+  const rMultipleValue = getPropertyValue('r_multiple');
+  const winRateValue = getPropertyValue('win_rate');
+  const expectedValueValue = getPropertyValue('expected_value');
+  const profitFactorValue = getPropertyValue('profit_factor');
+  const netProfitLossValue = getPropertyValue('net_profit_loss');
+  const totalTradesValue = getPropertyValue('total_trades');
+  const avgWinnerValue = getPropertyValue('avg_winner');
+  const avgLoserValue = getPropertyValue('avg_loser');
+  const missedTradesValue = getPropertyValue('missed_trades');
   
   return (
     <>
