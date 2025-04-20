@@ -49,7 +49,7 @@ const HomepageEditor = () => {
         setContent({
           ...data,
           features: parsedFeatures
-        });
+        } as HomepageContent);
       }
     } catch (error) {
       console.error('Error fetching content:', error);
@@ -113,7 +113,7 @@ const HomepageEditor = () => {
             <label htmlFor="subtitle">Subtitle</label>
             <Input
               id="subtitle"
-              value={content.subtitle}
+              value={content.subtitle || ''}
               onChange={(e) => setContent({ ...content, subtitle: e.target.value })}
             />
           </div>
@@ -122,7 +122,7 @@ const HomepageEditor = () => {
             <label htmlFor="description">Description</label>
             <Textarea
               id="description"
-              value={content.description}
+              value={content.description || ''}
               onChange={(e) => setContent({ ...content, description: e.target.value })}
             />
           </div>

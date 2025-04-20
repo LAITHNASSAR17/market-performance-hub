@@ -41,6 +41,8 @@ export interface SiteSettings {
   allow_registrations?: boolean;
   custom_domain?: string;
   google_analytics_id?: string;
+  support_phone?: string;
+  copyright_text?: string;
 }
 
 export interface SubscriptionPlan {
@@ -68,6 +70,19 @@ export interface PlaybookEntry {
   order: number;
   tradeType: 'long' | 'short' | 'both';
   tags: string[];
+  // Adding missing properties from PlaybookCard
+  category?: string;
+  isPrivate?: boolean;
+  rating?: number;
+  rMultiple?: number;
+  winRate?: number;
+  expectedValue?: number;
+  profitFactor?: number;
+  netProfitLoss?: number;
+  totalTrades?: number;
+  avgWinner?: number;
+  avgLoser?: number;
+  missedTrades?: number;
 }
 
 export interface PlaybookRule {
@@ -87,4 +102,18 @@ export interface JournalEntry {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HomepageContent {
+  id: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  features: string[];
+  primary_button_text?: string;
+  primary_button_url?: string;
+  secondary_button_text?: string;
+  secondary_button_url?: string;
+  created_at: string;
+  updated_at: string;
 }

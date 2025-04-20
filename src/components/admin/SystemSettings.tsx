@@ -21,6 +21,9 @@ const SystemSettings: React.FC = () => {
     if (settings?.site_name) {
       setSiteName(settings.site_name);
     }
+    if (settings?.maintenance_mode !== undefined) {
+      setMaintenanceMode(settings.maintenance_mode);
+    }
   }, [settings]);
 
   const handleSaveSettings = async () => {
@@ -28,7 +31,8 @@ const SystemSettings: React.FC = () => {
       console.log('Saving site name:', siteName);
       // Use the updateSettings function from the hook
       updateSettings({ 
-        site_name: siteName 
+        site_name: siteName,
+        maintenance_mode: maintenanceMode
       });
       
       toast({

@@ -11,6 +11,7 @@ const SystemSettingsExtended = () => {
   const [settings, setSettings] = useState<SiteSettings>({
     id: '',
     site_name: '',
+    company_email: '',
     theme: 'light',
     language: 'en',
     created_at: '',
@@ -32,7 +33,7 @@ const SystemSettingsExtended = () => {
         .single();
 
       if (error) throw error;
-      if (data) setSettings(data);
+      if (data) setSettings(data as SiteSettings);
     } catch (error) {
       console.error('Error fetching settings:', error);
     }

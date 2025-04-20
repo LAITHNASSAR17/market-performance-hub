@@ -23,6 +23,7 @@ const defaultSettings: SiteSettings = {
 export const useSiteSettings = () => {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const { toast } = useToast();
 
   const fetchSettings = async () => {
@@ -53,19 +54,28 @@ export const useSiteSettings = () => {
     }
   };
 
-  const updateSettings = async (updatedSettings: SiteSettings) => {
-    setLoading(true);
+  const updateSettings = async (updatedSettings: Partial<SiteSettings>) => {
+    setIsUpdating(true);
     try {
+      // Merge current settings with updates
+      const newSettings = { 
+        ...settings, 
+        ...updatedSettings,
+        updated_at: new Date().toISOString()
+      };
+      
       // In a real app, you would update your database
-      // const { error } = await supabase.from('site_settings').update(updatedSettings).eq('id', updatedSettings.id);
+      // const { error } = await supabase.from('site_settings').update(newSettings).eq('id', settings.id);
       
       // For now, we'll use localStorage
-      localStorage.setItem('siteSettings', JSON.stringify(updatedSettings));
+      localStorage.setItem('siteSettings', JSON.stringify(newSettings));
       
       // Update site name in local storage for immediate use elsewhere
-      localStorage.setItem('siteName', updatedSettings.site_name);
+      if (updatedSettings.site_name) {
+        localStorage.setItem('siteName', updatedSettings.site_name);
+      }
       
-      setSettings(updatedSettings);
+      setSettings(newSettings);
       
       toast({
         title: 'Success',
@@ -79,50 +89,76 @@ export const useSiteSettings = () => {
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setIsUpdating(false);
     }
   };
 
-  const updateFavicon = async (file: File) => {
+  const updateFavicon = async (faviconData: string | File) => {
+    setIsUpdating(true);
     try {
-      // In a real implementation, you would upload the file to storage
-      // const { data, error } = await supabase.storage
-      //   .from('public')
-      //   .upload(`favicons/${file.name}`, file);
+      let faviconUrl: string;
       
-      // For our mock implementation, we'll use a data URL
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          // Update the settings with the new favicon URL
-          const updatedSettings = {
-            ...settings,
-            favicon_url: reader.result as string,
-            updated_at: new Date().toISOString()
+      // Handle File or string (URL) input
+      if (typeof faviconData === 'string') {
+        faviconUrl = faviconData;
+      } else {
+        // In a real implementation, you would upload the file to storage
+        // For our mock implementation, we'll use a data URL
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            // Get URL from file reader
+            faviconUrl = reader.result as string;
+            
+            // Update the settings with the new favicon URL
+            const updatedSettings = {
+              ...settings,
+              favicon_url: faviconUrl,
+              updated_at: new Date().toISOString()
+            };
+            
+            // Save the updated settings
+            localStorage.setItem('siteSettings', JSON.stringify(updatedSettings));
+            setSettings(updatedSettings);
+            
+            // Resolve with the URL
+            resolve(faviconUrl);
+            
+            toast({
+              title: 'Success',
+              description: 'Favicon uploaded successfully',
+            });
           };
-          
-          // Save the updated settings
-          localStorage.setItem('siteSettings', JSON.stringify(updatedSettings));
-          setSettings(updatedSettings);
-          
-          // Resolve with the URL
-          resolve(reader.result as string);
-          
-          toast({
-            title: 'Success',
-            description: 'Favicon uploaded successfully',
-          });
-        };
-        reader.readAsDataURL(file);
+          reader.readAsDataURL(faviconData);
+        });
+      }
+      
+      // If we have a direct URL (string input)
+      const updatedSettings = {
+        ...settings,
+        favicon_url: faviconUrl,
+        updated_at: new Date().toISOString()
+      };
+      
+      localStorage.setItem('siteSettings', JSON.stringify(updatedSettings));
+      setSettings(updatedSettings);
+      
+      toast({
+        title: 'Success',
+        description: 'Favicon updated successfully',
       });
+      
+      return faviconUrl;
     } catch (error) {
-      console.error('Error uploading favicon:', error);
+      console.error('Error updating favicon:', error);
       toast({
         title: 'Error',
-        description: 'Failed to upload favicon',
+        description: 'Failed to update favicon',
         variant: 'destructive',
       });
       throw error;
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -133,6 +169,7 @@ export const useSiteSettings = () => {
   return {
     settings,
     loading,
+    isUpdating,
     updateSettings,
     updateFavicon
   };

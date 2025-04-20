@@ -44,7 +44,12 @@ const SiteSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       console.log('Saving site settings:', formValues);
-      updateSettings(formValues);
+      updateSettings({
+        site_name: formValues.site_name,
+        company_email: formValues.company_email,
+        support_phone: formValues.support_phone,
+        copyright_text: formValues.copyright_text
+      });
       
       setIsEditing(false);
       
