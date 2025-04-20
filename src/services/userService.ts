@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -96,12 +97,13 @@ export const userService = {
   },
 
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
-    const query = supabase.from('profiles').select('*');
+    let query = supabase.from('profiles').select('*');
     
-    if (filter.isBlocked !== undefined) query.eq('is_blocked', filter.isBlocked);
-    if (filter.role !== undefined) query.eq('role', filter.role);
-    if (filter.email !== undefined) query.eq('email', filter.email);
-    if (filter.name !== undefined) query.eq('name', filter.name);
+    // Manually specify each filter to avoid recursion issues
+    if (filter.isBlocked !== undefined) query = query.eq('is_blocked', filter.isBlocked);
+    if (filter.role !== undefined) query = query.eq('role', filter.role);
+    if (filter.email !== undefined) query = query.eq('email', filter.email);
+    if (filter.name !== undefined) query = query.eq('name', filter.name);
     
     const { data, error } = await query;
     

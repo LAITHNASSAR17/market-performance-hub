@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface ITrade {
@@ -120,13 +121,14 @@ export const tradeService = {
   },
 
   async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
-    const query = supabase.from('trades').select('*');
+    let query = supabase.from('trades').select('*');
     
-    if (filter.userId) query.eq('user_id', filter.userId);
-    if (filter.symbol) query.eq('symbol', filter.symbol);
-    if (filter.direction) query.eq('direction', filter.direction);
-    if (filter.playbook) query.eq('playbook', filter.playbook);
-    if (filter.marketSession) query.eq('market_session', filter.marketSession);
+    // Manually list all possible filter fields to avoid recursion
+    if (filter.userId) query = query.eq('user_id', filter.userId);
+    if (filter.symbol) query = query.eq('symbol', filter.symbol);
+    if (filter.direction) query = query.eq('direction', filter.direction);
+    if (filter.playbook) query = query.eq('playbook', filter.playbook);
+    if (filter.marketSession) query = query.eq('market_session', filter.marketSession);
     
     const { data, error } = await query;
     
