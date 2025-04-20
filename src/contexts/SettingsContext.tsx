@@ -1,51 +1,27 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { SiteSettings } from '@/types/settings';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
 
-interface SiteSettings {
-  id: string;
-  site_name: string;
-  company_email: string;
-  theme: string;
-  language: string;
-  logo_url?: string;
-  favicon_url?: string;
-  created_at: string;
-  updated_at: string;
-  currency?: string;
-  timezone?: string;
-  maintenance_mode?: boolean;
-  terms_url?: string;
-  privacy_url?: string;
-  support_url?: string;
-  default_user_role?: string;
-  allow_registrations?: boolean;
-  custom_domain?: string;
-  google_analytics_id?: string;
-  support_phone?: string;
-  copyright_text?: string;
-}
-
-interface SettingsContextType {
-  siteSettings: SiteSettings | null;
+type SettingsContextType = {
+  settings: SiteSettings | null;
   loading: boolean;
-  updateSiteSettings: (settings: Partial<SiteSettings>) => Promise<void>;
-  refreshSettings: () => Promise<void>;
-}
+  error: string | null;
+  updateSettings: (settings: Partial<SiteSettings>) => Promise<void>;
+};
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSiteSettings();
+    fetchSettings();
   }, []);
 
-  const fetchSiteSettings = async () => {
+  const fetchSettings = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -54,52 +30,37 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .single();
 
       if (error) throw error;
-      setSiteSettings(data);
-    } catch (error) {
-      console.error('Error fetching site settings:', error);
+
+      setSettings(data as SiteSettings);
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+      setError('Failed to load settings');
     } finally {
       setLoading(false);
     }
   };
 
-  const updateSiteSettings = async (settings: Partial<SiteSettings>) => {
+  const updateSettings = async (newSettings: Partial<SiteSettings>) => {
     try {
-      if (!siteSettings?.id) throw new Error('No settings to update');
+      if (!settings) return;
 
       const { error } = await supabase
         .from('site_settings')
-        .update(settings)
-        .eq('id', siteSettings.id);
+        .update(newSettings)
+        .eq('id', settings.id);
 
       if (error) throw error;
-      
-      setSiteSettings(prev => prev ? { ...prev, ...settings } : null);
-      toast({ 
-        title: "Success", 
-        description: "Site settings updated successfully" 
-      });
-    } catch (error) {
-      console.error('Error updating site settings:', error);
-      toast({ 
-        title: "Error", 
-        description: "Failed to update site settings", 
-        variant: "destructive" 
-      });
-      throw error;
+
+      setSettings(prev => prev ? { ...prev, ...newSettings } : null);
+    } catch (err) {
+      console.error('Error updating settings:', err);
+      setError('Failed to update settings');
+      throw err;
     }
   };
 
-  const refreshSettings = async () => {
-    await fetchSiteSettings();
-  };
-
   return (
-    <SettingsContext.Provider value={{ 
-      siteSettings, 
-      loading, 
-      updateSiteSettings,
-      refreshSettings
-    }}>
+    <SettingsContext.Provider value={{ settings, loading, error, updateSettings }}>
       {children}
     </SettingsContext.Provider>
   );

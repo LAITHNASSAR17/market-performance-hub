@@ -7,8 +7,6 @@ export interface User {
   role: string;
   is_admin: boolean;
   is_blocked: boolean;
-  isAdmin?: boolean; // Alias for is_admin for compatibility
-  isBlocked?: boolean; // Alias for is_blocked for compatibility
   subscription_tier: string;
   country: string;
   avatar_url: string | null;
