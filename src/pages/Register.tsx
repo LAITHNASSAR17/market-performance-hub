@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,7 +16,7 @@ import {
 import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
-import SupabaseConnectionStatus from '@/components/SupabaseConnectionStatus';
+import { supabase } from '@/lib/supabase';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
@@ -28,56 +27,45 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, isAuthenticated, authLoading } = useAuth();
+  const { register, isAuthenticated, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsSubmitting(true);
     
     if (!name || !email || !password || !confirmPassword || !country) {
-      setError('الرجاء إكمال جميع البيانات المطلوبة');
-      setIsSubmitting(false);
+      setError(t('register.error.fillAll'));
       return;
     }
     
     if (password !== confirmPassword) {
-      setError('كلمات المرور غير متطابقة');
-      setIsSubmitting(false);
+      setError(t('register.error.passwordMismatch'));
       return;
     }
     
     if (password.length < 6) {
-      setError('يجب أن تكون كلمة المرور ٦ أحرف على الأقل');
-      setIsSubmitting(false);
+      setError(t('register.error.passwordLength'));
       return;
     }
     
     try {
-      await register(email, password, name, country);
+      console.log('Registering user with email:', email, 'and country:', country);
+      
+      // First register the user - but don't rely on the return value for conditional logic
+      await register(name, email, password, country);
       
       toast({
-        title: 'تم إنشاء الحساب بنجاح',
-        description: 'مرحباً بك في منصتنا',
+        title: t('register.success.title'),
+        description: t('register.success.checkEmail'),
       });
     } catch (err) {
-      console.error('خطأ في إنشاء الحساب:', err);
-      
-      if ((err as Error).message?.includes('duplicate key value violates unique constraint') || 
-          (err as Error).message?.includes('البريد الإلكتروني مستخدم بالفعل')) {
-        setError('البريد الإلكتروني مستخدم مسبقاً');
-      } else {
-        setError((err as Error).message || 'حدث خطأ. الرجاء المحاولة مرة أخرى');
-      }
-      
+      console.error('Registration error:', err);
+      setError(t('register.error.failed'));
       toast({
-        title: 'خطأ في إنشاء الحساب',
-        description: 'يرجى المحاولة مرة أخرى لاحقاً',
+        title: t('register.error.title'),
+        description: t('register.error.description'),
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -86,71 +74,70 @@ const Register: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-full shadow-lg">
+        <div className="flex justify-center mb-8 relative">
+          <div className="bg-blue-500 p-3 rounded-full">
             <LineChart className="h-8 w-8 text-white" />
           </div>
         </div>
         
-        <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-center text-2xl font-bold text-gray-800">إنشاء حساب جديد</CardTitle>
-            <CardDescription className="text-center text-gray-600">
-              انضم إلينا وابدأ رحلتك التداولية
+            <CardTitle className="text-center">{t('register.title')}</CardTitle>
+            <CardDescription className="text-center">
+              {t('register.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* حالة الاتصال بقاعدة البيانات */}
-            <SupabaseConnectionStatus />
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit}>
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-800 rounded-lg flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <div className="mb-4 p-3 bg-red-50 text-red-800 rounded-md flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
                   <span className="text-sm">{error}</span>
                 </div>
               )}
               
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="name">الاسم الكامل</Label>
-                  <div className="flex items-center border border-gray-200 rounded-lg mt-1.5 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 bg-white">
-                    <User className="h-4 w-4 mx-3 text-gray-400" />
+                <div className="grid gap-2">
+                  <Label htmlFor="name">{t('register.fullName')}</Label>
+                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <User className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="name"
                       type="text"
-                      placeholder="أدخل اسمك الكامل"
+                      placeholder={t('register.fullName')}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
-                  <div className="flex items-center border border-gray-200 rounded-lg mt-1.5 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 bg-white">
-                    <Mail className="h-4 w-4 mx-3 text-gray-400" />
+                <div className="grid gap-2">
+                  <Label htmlFor="email">{t('register.email')}</Label>
+                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <Mail className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="أدخل بريدك الإلكتروني"
+                      placeholder={t('register.email')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="country">الدولة</Label>
+                <div className="grid gap-2">
+                  <Label htmlFor="country">{t('register.country')}</Label>
                   <Select value={country} onValueChange={setCountry}>
-                    <SelectTrigger className="w-full mt-1.5 bg-white border-gray-200">
+                    <SelectTrigger className="w-full">
                       <div className="flex items-center gap-2">
-                        <Map className="h-4 w-4 text-gray-400" />
-                        <SelectValue placeholder="اختر دولتك" />
+                        <Map className="h-4 w-4 text-gray-500" />
+                        <SelectValue placeholder={t('register.selectCountry')} />
                       </div>
                     </SelectTrigger>
                     <SelectContent>
@@ -163,51 +150,53 @@ const Register: React.FC = () => {
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="password">كلمة المرور</Label>
-                  <div className="flex items-center border border-gray-200 rounded-lg mt-1.5 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 bg-white">
-                    <Lock className="h-4 w-4 mx-3 text-gray-400" />
+                <div className="grid gap-2">
+                  <Label htmlFor="password">{t('register.password')}</Label>
+                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <Lock className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="password"
                       type="password"
-                      placeholder="أدخل كلمة المرور"
+                      placeholder={t('register.password')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
-                  <div className="flex items-center border border-gray-200 rounded-lg mt-1.5 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 bg-white">
-                    <Lock className="h-4 w-4 mx-3 text-gray-400" />
+                <div className="grid gap-2">
+                  <Label htmlFor="confirmPassword">{t('register.confirmPassword')}</Label>
+                  <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+                    <Lock className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="أعد إدخال كلمة المرور"
+                      placeholder={t('register.confirmPassword')}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      required
                     />
                   </div>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
-                  disabled={authLoading || isSubmitting}
+                  className="w-full"
+                  disabled={loading}
                 >
-                  {isSubmitting ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
+                  {loading ? t('register.registering') : t('register.createAccount')}
                 </Button>
               </div>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              لديك حساب بالفعل؟{' '}
-              <Link to="/login" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">
-                تسجيل الدخول
+              {t('register.haveAccount')}{' '}
+              <Link to="/login" className="text-blue-600 hover:underline">
+                {t('register.login')}
               </Link>
             </p>
           </CardFooter>

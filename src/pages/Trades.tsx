@@ -14,7 +14,6 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import HashtagBadge from '@/components/HashtagBadge';
 import { useToast } from '@/components/ui/use-toast';
-import SupabaseConnectionStatus from '@/components/SupabaseConnectionStatus';
 
 const Trades: React.FC = () => {
   const { trades, deleteTrade, pairs } = useTrade();
@@ -79,17 +78,12 @@ const Trades: React.FC = () => {
   return (
     <Layout>
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <div className="w-full">
-          <SupabaseConnectionStatus />
-        </div>
-        
         <div>
           <h1 className="text-2xl font-bold mb-1">Your Trades</h1>
           <p className="text-gray-500 truncate">
             {sortedTrades.length} trades found
           </p>
         </div>
-        
         <div className="flex gap-2">
           <Select value={accountFilter} onValueChange={setAccountFilter}>
             <SelectTrigger className="w-[180px]">

@@ -10,9 +10,7 @@ import {
   Filter, 
   User, 
   Calendar, 
-  Trash2,
-  RefreshCw,
-  AlertCircle
+  Trash2 
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -50,7 +48,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 const AdminNotes: React.FC = () => {
-  const { notes, deleteNote, noteTags, loading, error, refreshNotes } = useNotebook();
+  const { notes, deleteNote, noteTags } = useNotebook();
   const { users } = useAuth();
   const { toast } = useToast();
   
@@ -60,7 +58,6 @@ const AdminNotes: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Filter notes based on criteria
   const filteredNotes = notes.filter(note => {
@@ -98,82 +95,6 @@ const AdminNotes: React.FC = () => {
       setNoteToDelete(null);
     }
   };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refreshNotes();
-      toast({
-        title: "Notes Refreshed",
-        description: "The notes list has been updated"
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to refresh notes",
-        variant: "destructive"
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  // Error state
-  if (error) {
-    return (
-      <div className="p-6">
-        <header className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-            Notes Management
-          </h1>
-          <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-            View and manage all user notes across the platform.
-          </p>
-        </header>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 flex flex-col items-center justify-center py-10">
-          <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
-          <h2 className="text-xl font-bold mb-2">Error Loading Notes</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <Button onClick={handleRefresh} disabled={isRefreshing}>
-            {isRefreshing ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Refreshing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (loading) {
-    return (
-      <div className="p-6">
-        <header className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-            Notes Management
-          </h1>
-          <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-            View and manage all user notes across the platform.
-          </p>
-        </header>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 flex flex-col items-center justify-center py-10">
-          <RefreshCw className="h-16 w-16 text-blue-500 mb-4 animate-spin" />
-          <h2 className="text-xl font-bold mb-2">Loading Notes</h2>
-          <p className="text-gray-600">Please wait while we fetch the notes data...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -246,16 +167,6 @@ const AdminNotes: React.FC = () => {
           >
             <Filter className="h-4 w-4" />
             Clear Filters
-          </Button>
-
-          <Button 
-            variant="outline" 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-1"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Refresh
           </Button>
         </div>
         

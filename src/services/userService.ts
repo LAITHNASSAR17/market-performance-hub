@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -43,18 +42,10 @@ export const userService = {
 
   async createUser(userData: Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<IUser> {
     const now = new Date().toISOString();
-    const newUserId = self.crypto.randomUUID();
-    
     const { data, error } = await supabase
       .from('users')
       .insert({
-        id: newUserId,
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        role: userData.role,
-        is_blocked: userData.isBlocked,
-        email_verified: true,
+        ...userData,
         created_at: now,
         updated_at: now
       })
@@ -67,19 +58,12 @@ export const userService = {
 
   async updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null> {
     const now = new Date().toISOString();
-    const updateData: Record<string, any> = {
-      updated_at: now
-    };
-    
-    if (userData.name) updateData.name = userData.name;
-    if (userData.email) updateData.email = userData.email;
-    if (userData.password) updateData.password = userData.password;
-    if (userData.role) updateData.role = userData.role;
-    if (userData.isBlocked !== undefined) updateData.is_blocked = userData.isBlocked;
-    
     const { data, error } = await supabase
       .from('users')
-      .update(updateData)
+      .update({
+        ...userData,
+        updated_at: now
+      })
       .eq('id', id)
       .select()
       .single();
@@ -97,39 +81,15 @@ export const userService = {
     return !error;
   },
 
-  async createAdminUser(userData: Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<IUser> {
-    const now = new Date().toISOString();
-    const newUserId = self.crypto.randomUUID();
-    
-    const { data, error } = await supabase
-      .from('users')
-      .insert({
-        id: newUserId,
-        name: userData.name,
-        email: userData.email,
-        password: userData.password,
-        role: 'admin',
-        is_admin: true,
-        is_blocked: false,
-        email_verified: true,
-        created_at: now,
-        updated_at: now
-      })
-      .select()
-      .single();
-    
-    if (error || !data) throw new Error(`Error creating admin user: ${error?.message}`);
-    return formatUser(data);
-  },
-
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
     let query = supabase.from('users').select('*');
     
-    // Manually specify each filter to avoid recursion issues
-    if (filter.isBlocked !== undefined) query = query.eq('is_blocked', filter.isBlocked);
-    if (filter.role !== undefined) query = query.eq('role', filter.role);
-    if (filter.email !== undefined) query = query.eq('email', filter.email);
-    if (filter.name !== undefined) query = query.eq('name', filter.name);
+    // Apply filters dynamically
+    Object.entries(filter).forEach(([key, value]) => {
+      if (value !== undefined) {
+        query = query.eq(key, value);
+      }
+    });
     
     const { data, error } = await query;
     
@@ -137,7 +97,7 @@ export const userService = {
     return data.map(formatUser);
   },
   
-  async createTradingAccount(userId: string, name: string, initialBalance: number): Promise<ITradingAccount> {
+  async createTradingAccount(userId: string, name: string, balance: number): Promise<ITradingAccount> {
     if (!userId) {
       throw new Error('User ID is required to create a trading account');
     }
@@ -146,7 +106,7 @@ export const userService = {
       throw new Error('Account name is required');
     }
     
-    const parsedBalance = Number(initialBalance) || 0;
+    const parsedBalance = Number(balance) || 0;
     
     const { data, error } = await supabase
       .from('trading_accounts')
@@ -171,7 +131,7 @@ export const userService = {
       id: data.id,
       userId: data.user_id,
       name: data.name,
-      balance: data.balance || 0,
+      balance: Number(data.balance),
       createdAt: data.created_at
     };
   },
@@ -197,7 +157,7 @@ export const userService = {
       id: account.id,
       userId: account.user_id,
       name: account.name,
-      balance: account.balance || 0,
+      balance: Number(account.balance),
       createdAt: account.created_at
     }));
   }
@@ -208,7 +168,7 @@ function formatUser(data: any): IUser {
     id: data.id,
     name: data.name,
     email: data.email,
-    password: data.password || '',
+    password: data.password,
     role: data.role || 'user',
     isBlocked: data.is_blocked || false,
     createdAt: new Date(data.created_at),

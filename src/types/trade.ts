@@ -65,7 +65,7 @@ export const mapDBTradeToTrade = (dbTrade: ITrade): Trade => ({
 });
 
 // Make sure mapTradeToDBTrade passes the correct values
-export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => ({
+export const mapTradeToDBTrade = (trade: Omit<Trade, 'id' | 'userId'>): Omit<ITrade, 'id' | 'createdAt' | 'updatedAt'> => ({
   userId: '', // Will be set by the service
   symbol: trade.pair,
   entryPrice: trade.entry,

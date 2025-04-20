@@ -1,64 +1,169 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import UserTable from '@/components/admin/UserTable';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
-import { ProfileType, createProfileObject } from '@/types/database';
 
 const AdminUsers: React.FC = () => {
-  const { getAllUsers } = useAuth();
-  const [users, setUsers] = useState<ProfileType[]>([]);
-  
+  const { users, getAllUsers, blockUser, unblockUser, changePassword, updateUser } = useAuth();
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const fetchedUsers = await getAllUsers();
-        setUsers(fetchedUsers);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
-    
     fetchUsers();
-  }, [getAllUsers]);
-  
-  const handleAddUser = async (userData: { name: string; email: string; password: string; isAdmin: boolean }) => {
+  }, []);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      await getAllUsers();
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "خطأ في جلب البيانات",
+        description: "تعذر جلب بيانات المستخدمين، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleViewUser = (userId: string) => {
+    toast({
+      title: "عرض المستخدم",
+      description: `جاري عرض بيانات المستخدم ${userId}`
+    });
+  };
+
+  const handleBlockUser = async (user: any) => {
+    try {
+      await blockUser({...user, password: '' });
+      toast({
+        title: "تم حظر المستخدم",
+        description: `تم حظر ${user.name} بنجاح`
+      });
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      toast({
+        title: "خطأ في حظر المستخدم",
+        description: "تعذر حظر المستخدم، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleUnblockUser = async (user: any) => {
+    try {
+      await unblockUser(user);
+      toast({
+        title: "تم إلغاء الحظر",
+        description: `تم إلغاء حظر ${user.name} بنجاح`
+      });
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+      toast({
+        title: "خطأ في إلغاء الحظر",
+        description: "تعذر إلغاء حظر المستخدم، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSetAdminRole = async (user: any, isAdmin: boolean) => {
+    try {
+      const updatedUser = {
+        ...user,
+        role: isAdmin ? 'admin' : 'user',
+        isAdmin: isAdmin
+      };
+
+      await updateUser(updatedUser);
+      
+      toast({
+        title: isAdmin ? "تمت الترقية بنجاح" : "تم تخفيض الصلاحية بنجاح",
+        description: isAdmin 
+          ? `تم منح ${user.name} صلاحيات الأدمن بنجاح` 
+          : `تم إزالة صلاحيات الأدمن من ${user.name} بنجاح`
+      });
+      
+      // Refresh users list
+      fetchUsers();
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: "خطأ في تحديث الصلاحيات",
+        description: "تعذر تحديث صلاحيات المستخدم، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAddUser = async (userData: { name: string, email: string, password: string, isAdmin: boolean }) => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
-      // Create a profile object with required id field
-      const profileData = createProfileObject({
-        id: self.crypto.randomUUID(), // Generate a new UUID for the user
-        name: userData.name,
-        email: userData.email,
-        password: hashedPassword,
-        role: userData.isAdmin ? 'admin' : 'user',
-        is_admin: userData.isAdmin,
-        is_blocked: false,
-        subscription_tier: 'free',
-        email_verified: true
-      });
-      
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('users')
-        .insert(profileData);
+        .insert({
+          name: userData.name,
+          email: userData.email,
+          password: hashedPassword,
+          role: userData.isAdmin ? 'admin' : 'user',
+          is_blocked: false,
+          subscription_tier: 'free'
+        })
+        .select();
       
       if (error) throw new Error(error.message);
       
-      // Refresh the user list
-      await getAllUsers();
+      toast({
+        title: "تم إضافة المستخدم بنجاح",
+        description: `تم إضافة ${userData.name} إلى النظام بنجاح`
+      });
+      
+      // Refresh users list
+      fetchUsers();
+      
+      // Fix the type error by not returning the data
+      return;
     } catch (error) {
       console.error('Error adding user:', error);
-      throw error;
+      toast({
+        title: "خطأ في إضافة المستخدم",
+        description: "تعذر إضافة المستخدم الجديد، يرجى المحاولة مرة أخرى",
+        variant: "destructive"
+      });
+      throw error; // Rethrow for the component to handle
     }
   };
-  
+
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">User Management</h1>
-      <div className="bg-gray-100 p-8 rounded-lg text-center">
-        <p>This is a placeholder for the AdminUsers page.</p>
-        <p>Total users: {users.length}</p>
+    <div>
+      <header className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+          إدارة المستخدمين
+        </h1>
+        <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
+          عرض وإدارة حسابات المستخدمين على المنصة.
+        </p>
+      </header>
+
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+        <UserTable 
+          users={users}
+          onBlock={handleBlockUser}
+          onUnblock={handleUnblockUser}
+          onChangePassword={changePassword}
+          onViewUser={handleViewUser}
+          onSetAdmin={handleSetAdminRole}
+          onAddUser={handleAddUser}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+        />
       </div>
     </div>
   );

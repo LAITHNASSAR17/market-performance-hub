@@ -186,26 +186,16 @@ const AddTrade: React.FC = () => {
     }
 
     try {
-      setIsLoading(true);
-      
-      const entryPriceValue = parseFloat(entry);
-      const exitPriceValue = exit ? parseFloat(exit) : null;
-      const lotSizeValue = parseFloat(lotSize);
-      
-      if (isNaN(entryPriceValue) || (exit && isNaN(exitPriceValue)) || isNaN(lotSizeValue)) {
-        throw new Error('Invalid price or lot size values');
-      }
-      
       const tradeData = {
         pair,
         type,
-        entry: entryPriceValue,
-        exit: exitPriceValue,
-        lotSize: lotSizeValue,
+        entry: parseFloat(entry),
+        exit: exit ? parseFloat(exit) : null,
+        lotSize: parseFloat(lotSize),
         stopLoss: stopLoss ? parseFloat(stopLoss) : null,
         takeProfit: takeProfit ? parseFloat(takeProfit) : null,
         date,
-        durationMinutes: durationMinutes ? parseInt(durationMinutes) : null,
+        durationMinutes: durationMinutes ? parseInt(durationMinutes) : 0,
         notes,
         account,
         hashtags: [...hashtags, ...selectedMistakes, ...selectedSetups, ...selectedHabits],
@@ -223,8 +213,6 @@ const AddTrade: React.FC = () => {
         marketSession
       };
 
-      console.log('Submitting trade data:', tradeData);
-
       if (isEditing && id) {
         await updateTrade(id, tradeData);
         toast({
@@ -240,15 +228,13 @@ const AddTrade: React.FC = () => {
       }
       
       navigate('/trades');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error saving trade:', error);
       toast({
         title: "Error",
-        description: error.message || "An error occurred while saving the trade",
+        description: "An error occurred while saving the trade",
         variant: "destructive"
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -694,22 +680,13 @@ const AddTrade: React.FC = () => {
               type="button" 
               variant="outline" 
               onClick={() => navigate('/trades')}
-              disabled={isLoading}
             >
               Cancel
             </Button>
             <Button 
               type="submit"
-              disabled={isLoading}
             >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <span className="mr-2">Saving...</span>
-                  <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                isEditing ? 'Update Trade' : 'Add Trade'
-              )}
+              {isEditing ? 'Update Trade' : 'Add Trade'}
             </Button>
           </div>
         </form>

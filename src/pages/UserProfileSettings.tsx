@@ -85,7 +85,7 @@ const UserProfileSettings: React.FC = () => {
         
         if (session?.user?.id) {
           const { data, error } = await supabase
-            .from('users')
+            .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
@@ -132,7 +132,7 @@ const UserProfileSettings: React.FC = () => {
       const avatarUrl = data.publicUrl;
       
       const { error: updateError } = await supabase
-        .from('users')
+        .from('profiles')
         .upsert({ 
           id: userId, 
           avatar_url: avatarUrl,
@@ -212,7 +212,7 @@ const UserProfileSettings: React.FC = () => {
       if (session?.user?.id) {
         console.log('Updating profile with country:', country);
         const { error: updateError } = await supabase
-          .from('users')
+          .from('profiles')
           .upsert({ 
             id: session.user.id, 
             country: country,

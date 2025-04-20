@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { supabase, updateHomepageContent } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { Save, Plus, Trash2 } from 'lucide-react';
-import { Json } from '@/integrations/supabase/types';
+import { Save, Plus, Trash2, Image } from 'lucide-react';
 
 interface Feature {
   title: string;
@@ -79,45 +78,15 @@ const HomepageEditor: React.FC = () => {
         if (error) {
           console.error('Error fetching homepage content:', error);
           // Use default content if none exists
-          setLoading(false);
-          return;
-        }
-          
-        if (data) {
+        } else if (data) {
           // Parse the features JSON if stored as string
-          let parsedFeatures: Feature[] = [];
-          
-          // Safety check: make sure we have data and features exist
-          if (data.features) {
-            if (typeof data.features === 'string') {
-              try {
-                parsedFeatures = JSON.parse(data.features as string);
-              } catch (e) {
-                console.error('Error parsing features:', e);
-                parsedFeatures = defaultContent.features;
-              }
-            } else if (Array.isArray(data.features)) {
-              parsedFeatures = data.features as Feature[];
-            } else {
-              parsedFeatures = defaultContent.features;
-            }
-          } else {
-            parsedFeatures = defaultContent.features;
-          }
-          
-          // Map database field names to our interface field names with safety checks
-          const mappedData: HomepageContent = {
-            title: data.title || defaultContent.title,
-            subtitle: data.subtitle || defaultContent.subtitle,
-            description: data.description || defaultContent.description,
-            primaryButtonText: data.primary_button_text || defaultContent.primaryButtonText,
-            primaryButtonUrl: data.primary_button_url || defaultContent.primaryButtonUrl,
-            secondaryButtonText: data.secondary_button_text || defaultContent.secondaryButtonText,
-            secondaryButtonUrl: data.secondary_button_url || defaultContent.secondaryButtonUrl,
-            features: parsedFeatures
+          const parsedData = {
+            ...data,
+            features: typeof data.features === 'string' 
+              ? JSON.parse(data.features) 
+              : data.features
           };
-          
-          setContent(mappedData);
+          setContent(parsedData);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -134,19 +103,21 @@ const HomepageEditor: React.FC = () => {
     setSaving(true);
     
     try {
-      // Map our interface field names to database field names
+      // Convert features to string if needed for database storage
       const dataToSave = {
-        title: content.title,
-        subtitle: content.subtitle,
-        description: content.description,
-        primary_button_text: content.primaryButtonText,
-        primary_button_url: content.primaryButtonUrl,
-        secondary_button_text: content.secondaryButtonText,
-        secondary_button_url: content.secondaryButtonUrl,
-        features: content.features as unknown as Json
+        ...content,
+        features: typeof content.features === 'object' 
+          ? JSON.stringify(content.features) 
+          : content.features
       };
       
-      await updateHomepageContent(dataToSave);
+      const { error } = await supabase
+        .from('homepage_content')
+        .upsert(dataToSave, { onConflict: 'id' });
+        
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: "Homepage Updated",

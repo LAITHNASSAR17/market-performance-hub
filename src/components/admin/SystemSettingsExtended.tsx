@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ThemeToggle from '@/components/ThemeToggle';
-import { supabase, updateSiteSettings } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 const SystemSettingsExtended = () => {
   const { toast } = useToast();
@@ -58,12 +59,11 @@ const SystemSettingsExtended = () => {
         
         if (data) {
           // Update site name in state and localStorage
-          const siteNameValue = data.site_name || 'TradeTracker';
-          setSiteName(siteNameValue);
-          localStorage.setItem('siteName', siteNameValue);
+          setSiteName(data.site_name);
+          localStorage.setItem('siteName', data.site_name);
           
           // Update document title
-          document.title = siteNameValue;
+          document.title = data.site_name;
         }
       } catch (error) {
         console.error('Error:', error);
@@ -76,7 +76,15 @@ const SystemSettingsExtended = () => {
   const handleSaveSiteName = async () => {
     try {
       // Save to Supabase
-      await updateSiteSettings({ site_name: siteName });
+      const { data, error } = await supabase
+        .from('site_settings')
+        .update({ site_name: siteName })
+        .eq('site_name', localStorage.getItem('siteName'))
+        .select();
+      
+      if (error) {
+        throw error;
+      }
       
       // Update localStorage
       localStorage.setItem('siteName', siteName);
