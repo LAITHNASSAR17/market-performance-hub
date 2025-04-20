@@ -209,48 +209,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          country: string | null
-          created_at: string | null
-          email: string | null
-          id: string
-          is_admin: boolean | null
-          is_blocked: boolean | null
-          name: string | null
-          role: string | null
-          subscription_tier: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          country?: string | null
-          created_at?: string | null
-          email?: string | null
-          id: string
-          is_admin?: boolean | null
-          is_blocked?: boolean | null
-          name?: string | null
-          role?: string | null
-          subscription_tier?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          country?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          is_admin?: boolean | null
-          is_blocked?: boolean | null
-          name?: string | null
-          role?: string | null
-          subscription_tier?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       site_settings: {
         Row: {
           allow_registrations: boolean | null

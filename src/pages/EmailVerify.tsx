@@ -1,92 +1,139 @@
-
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { useToast } from '@/hooks/use-toast';
 
-const EmailVerify: React.FC = () => {
-  const [searchParams] = useSearchParams();
+const EmailVerify = () => {
+  const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const [verifying, setVerifying] = useState(true);
-  const [verified, setVerified] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
+  const { toast } = useToast();
 
   useEffect(() => {
-    const verifyEmail = async () => {
-      try {
-        const token = searchParams.get('token');
-        if (!token) {
-          setError('Verification token is missing.');
-          setVerifying(false);
-          return;
-        }
+    if (token) {
+      verifyEmail(token);
+    } else {
+      setVerificationStatus('error');
+    }
+  }, [token, navigate]);
 
-        // Handle based on Supabase version - verifyOtp might not be the right API
-        try {
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: 'email'
-          });
-          
-          if (error) throw error;
-          
-          setVerified(true);
-        } catch (e) {
-          // Fallback to older API if needed
-          console.log("Verification with token_hash failed, trying email confirmation");
-          const { error } = await supabase.auth.api.updateUser(token);
-          if (error) throw error;
-          setVerified(true);
-        }
-      } catch (err) {
-        console.error('Error verifying email:', err);
-        setError('Failed to verify your email. The token may be invalid or expired.');
-      } finally {
-        setVerifying(false);
+  const verifyEmail = async (verificationToken: string) => {
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        token: verificationToken,
+        type: 'email'
+      })
+
+      if (error) {
+        console.error('Email verification error:', error);
+        setVerificationStatus('error');
+        toast({
+          title: "Error",
+          description: "Email verification failed. Please try again.",
+          variant: "destructive"
+        });
+        return;
       }
-    };
 
-    verifyEmail();
-  }, [searchParams]);
+      if (data) {
+        const userId = data.user?.id;
+        if (userId) {
+          const isVerified = await verifyUser(userId);
+          if (isVerified) {
+            setVerificationStatus('success');
+            toast({
+              title: "Success",
+              description: "Email verified successfully!",
+            });
+          } else {
+            setVerificationStatus('error');
+            toast({
+              title: "Error",
+              description: "Failed to update user status after verification.",
+              variant: "destructive"
+            });
+          }
+        } else {
+          setVerificationStatus('error');
+          toast({
+            title: "Error",
+            description: "User ID not found after verification.",
+            variant: "destructive"
+          });
+        }
+      } else {
+        setVerificationStatus('error');
+        toast({
+          title: "Error",
+          description: "Invalid verification data.",
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      console.error('Unexpected error during email verification:', err);
+      setVerificationStatus('error');
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred during verification.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Fix the verifyUser function to use proper tables
+  const verifyUser = async (userId: string) => {
+    try {
+      // Use Supabase Auth API for email verification
+      const { error } = await supabase.auth.updateUser({
+        data: { email_verified: true }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error verifying user:', error);
+      return false;
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl">Email Verification</CardTitle>
-          <CardDescription className="text-center">
-            {verifying
-              ? 'Verifying your email address...'
-              : verified
-                ? 'Your email has been verified!'
-                : 'Email verification failed'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center py-6">
-          {verifying ? (
-            <div className="h-16 w-16 border-4 border-t-blue-500 border-b-blue-500 rounded-full animate-spin" />
-          ) : verified ? (
-            <CheckCircle className="h-16 w-16 text-green-500" />
-          ) : (
-            <XCircle className="h-16 w-16 text-red-500" />
-          )}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          {!verifying && (
-            <>
-              {error && <p className="text-red-500 text-center">{error}</p>}
-              <Button
-                onClick={() => navigate(verified ? '/dashboard' : '/login')}
-                className="w-full"
-              >
-                {verified ? 'Go to Dashboard' : 'Go to Login'}
-              </Button>
-            </>
-          )}
-        </CardFooter>
-      </Card>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+        {verificationStatus === 'verifying' && (
+          <>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Verifying Email...</h2>
+            <p className="text-gray-600 dark:text-gray-400">Please wait while we verify your email address.</p>
+          </>
+        )}
+
+        {verificationStatus === 'success' && (
+          <>
+            <h2 className="text-2xl font-semibold text-green-600 dark:text-green-400 mb-4">Email Verified!</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Your email has been successfully verified. You can now access all features.
+            </p>
+            <Button asChild>
+              <Link to="/login">Go to Login</Link>
+            </Button>
+          </>
+        )}
+
+        {verificationStatus === 'error' && (
+          <>
+            <h2 className="text-2xl font-semibold text-red-600 dark:text-red-400 mb-4">Verification Failed</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              There was an error verifying your email. Please ensure the link is correct or request a new verification email.
+            </p>
+            <Button asChild variant="outline">
+              <Link to="/register">Register</Link>
+            </Button>
+          </>
+        )}
+      </div>
     </div>
   );
 };

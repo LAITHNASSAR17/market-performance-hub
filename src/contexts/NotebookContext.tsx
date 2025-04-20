@@ -1,171 +1,153 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
 import { Note } from '@/types/settings';
+import { useToast } from '@/hooks/use-toast';
 
 interface NotebookContextType {
   notes: Note[];
-  noteTags: string[];
+  fetchNotes: () => Promise<void>;
   addNote: (note: Omit<Note, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateNote: (id: string, note: Partial<Note>) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
+  loading: boolean;
+  selectedNote: Note | null;
+  setSelectedNote: (note: Note | null) => void;
 }
 
 const NotebookContext = createContext<NotebookContextType | undefined>(undefined);
 
-export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const NotebookProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [notes, setNotes] = useState<Note[]>([]);
-  const [noteTags, setNoteTags] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchNotes();
-  }, []);
 
   const fetchNotes = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('notes')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      // Convert to Note[] type
-      const fetchedNotes: Note[] = data || [];
-      setNotes(fetchedNotes);
-      
-      // Extract unique tags
-      const allTags = fetchedNotes.flatMap(note => note.tags || []);
-      setNoteTags(Array.from(new Set(allTags)));
-    } catch (error) {
+      setNotes(data || []);
+    } catch (error: any) {
       console.error('Error fetching notes:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch notes",
+        description: `Failed to fetch notes: ${error.message}`,
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const addNote = async (note: Omit<Note, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('notes')
-        .insert({
-          ...note,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select();
+        .insert([note])
+        .select()
+        .single();
 
       if (error) throw error;
-
-      if (data) {
-        setNotes(prev => [data[0] as Note, ...prev]);
-        
-        // Update tags
-        if (note.tags && note.tags.length > 0) {
-          setNoteTags(prev => {
-            const newTags = note.tags?.filter(tag => !prev.includes(tag)) || [];
-            return [...prev, ...newTags];
-          });
-        }
-
-        toast({
-          title: "Success",
-          description: "Note added successfully",
-        });
-      }
-    } catch (error) {
+      
+      setNotes(prev => [data, ...prev]);
+      toast({
+        title: "Success",
+        description: "Note created successfully"
+      });
+    } catch (error: any) {
       console.error('Error adding note:', error);
       toast({
         title: "Error",
-        description: "Failed to add note",
+        description: `Failed to create note: ${error.message}`,
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateNote = async (id: string, note: Partial<Note>) => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('notes')
-        .update({
-          ...note,
-          updated_at: new Date().toISOString()
-        })
+        .update(note)
         .eq('id', id)
-        .select();
+        .select()
+        .single();
 
       if (error) throw error;
-
-      if (data) {
-        setNotes(prev => prev.map(n => n.id === id ? { ...n, ...data[0] } : n));
-        
-        // Update tags
-        if (note.tags) {
-          const allTags = notes.flatMap(n => n.id === id ? [] : (n.tags || [])).concat(note.tags);
-          setNoteTags(Array.from(new Set(allTags)));
-        }
-
-        toast({
-          title: "Success",
-          description: "Note updated successfully",
-        });
+      
+      setNotes(prev => prev.map(n => n.id === id ? data : n));
+      if (selectedNote && selectedNote.id === id) {
+        setSelectedNote(data);
       }
-    } catch (error) {
+      
+      toast({
+        title: "Success",
+        description: "Note updated successfully"
+      });
+    } catch (error: any) {
       console.error('Error updating note:', error);
       toast({
         title: "Error",
-        description: "Failed to update note",
+        description: `Failed to update note: ${error.message}`,
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteNote = async (id: string) => {
     try {
+      setLoading(true);
       const { error } = await supabase
         .from('notes')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
-
-      setNotes(prev => prev.filter(n => n.id !== id));
       
-      // Update tags
-      const remainingTags = notes
-        .filter(n => n.id !== id)
-        .flatMap(n => n.tags || []);
-      setNoteTags(Array.from(new Set(remainingTags)));
-
+      setNotes(prev => prev.filter(n => n.id !== id));
+      if (selectedNote && selectedNote.id === id) {
+        setSelectedNote(null);
+      }
+      
       toast({
         title: "Success",
-        description: "Note deleted successfully",
+        description: "Note deleted successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting note:', error);
       toast({
         title: "Error",
-        description: "Failed to delete note",
+        description: `Failed to delete note: ${error.message}`,
         variant: "destructive"
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <NotebookContext.Provider
-      value={{
-        notes,
-        noteTags,
-        addNote,
-        updateNote,
-        deleteNote
-      }}
-    >
+    <NotebookContext.Provider value={{
+      notes,
+      fetchNotes,
+      addNote,
+      updateNote,
+      deleteNote,
+      loading,
+      selectedNote,
+      setSelectedNote
+    }}>
       {children}
     </NotebookContext.Provider>
   );
@@ -178,5 +160,3 @@ export const useNotebook = () => {
   }
   return context;
 };
-
-export type { Note };

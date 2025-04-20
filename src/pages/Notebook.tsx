@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
-import { useNotebook } from '@/contexts/NotebookContext';
-import { Note } from '@/types/settings';
+import { useNotebook, Note } from '@/contexts/NotebookContext';
 import { useTrade } from '@/contexts/TradeContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, Search, Edit2, Trash2, BookOpen, Tag, BookText } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import { cn } from '@/lib/utils';
 
@@ -32,7 +31,7 @@ const Notebook: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    trade_id: '',
+    tradeId: '',
     tags: [] as string[]
   });
 
@@ -40,23 +39,23 @@ const Notebook: React.FC = () => {
   const filteredNotes = notes.filter(note => {
     const matchesSearch = searchTerm === '' || 
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      (note.content?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+      note.content.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesTag = tagFilter === 'all' || (note.tags?.includes(tagFilter) ?? false);
+    const matchesTag = tagFilter === 'all' || note.tags.includes(tagFilter);
     
     return matchesSearch && matchesTag;
   });
 
   // Sort notes by updated date (newest first)
   const sortedNotes = [...filteredNotes].sort((a, b) => 
-    new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 
   const resetForm = () => {
     setFormData({
       title: '',
       content: '',
-      trade_id: '',
+      tradeId: '',
       tags: []
     });
   };
@@ -74,9 +73,8 @@ const Notebook: React.FC = () => {
     addNote({
       title: formData.title,
       content: formData.content,
-      trade_id: formData.trade_id || undefined,
-      tags: formData.tags,
-      user_id: 'current-user' // This will be replaced with actual user ID by the backend
+      tradeId: formData.tradeId || undefined,
+      tags: formData.tags
     });
 
     resetForm();
@@ -86,9 +84,9 @@ const Notebook: React.FC = () => {
   const handleEditClick = (note: Note) => {
     setFormData({
       title: note.title,
-      content: note.content || '',
-      trade_id: note.trade_id || '',
-      tags: note.tags || []
+      content: note.content,
+      tradeId: note.tradeId || '',
+      tags: note.tags
     });
     setCurrentNoteId(note.id);
     setIsEditDialogOpen(true);
@@ -109,7 +107,7 @@ const Notebook: React.FC = () => {
     updateNote(currentNoteId, {
       title: formData.title,
       content: formData.content,
-      trade_id: formData.trade_id || undefined,
+      tradeId: formData.tradeId || undefined,
       tags: formData.tags
     });
 
@@ -182,8 +180,8 @@ const Notebook: React.FC = () => {
       {sortedNotes.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedNotes.map(note => {
-            const linkedTrade = note.trade_id 
-              ? trades.find(trade => trade.id === note.trade_id) 
+            const linkedTrade = note.tradeId 
+              ? trades.find(trade => trade.id === note.tradeId) 
               : undefined;
               
             return (
@@ -201,18 +199,18 @@ const Notebook: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-xs text-gray-500">
-                    {new Date(note.updated_at).toLocaleString()}
+                    {new Date(note.updatedAt).toLocaleString()}
                   </div>
                 </CardHeader>
                 <CardContent className="flex-1">
                   <div className="max-h-32 overflow-hidden text-ellipsis">
-                    {note.content?.split('\n').map((paragraph, i) => (
+                    {note.content.split('\n').map((paragraph, i) => (
                       <p key={i} className={i > 0 ? 'mt-2' : ''}>
                         {paragraph}
                       </p>
                     ))}
                   </div>
-                  {(note.content?.length ?? 0) > 200 && (
+                  {note.content.length > 200 && (
                     <div className="text-xs text-right mt-2 text-muted-foreground">
                       [Content truncated]
                     </div>
@@ -225,7 +223,7 @@ const Notebook: React.FC = () => {
                       <span>Linked to trade: {linkedTrade.pair} ({new Date(linkedTrade.date).toLocaleDateString()})</span>
                     </div>
                   )}
-                  {note.tags && note.tags.length > 0 && (
+                  {note.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1">
                       {note.tags.map(tag => (
                         <span 
@@ -293,16 +291,16 @@ const Notebook: React.FC = () => {
               />
             </div>
             <div>
-              <Label htmlFor="trade_id">Link to Trade (Optional)</Label>
+              <Label htmlFor="tradeId">Link to Trade (Optional)</Label>
               <Select
-                value={formData.trade_id}
-                onValueChange={(value) => setFormData({ ...formData, trade_id: value })}
+                value={formData.tradeId}
+                onValueChange={(value) => setFormData({ ...formData, tradeId: value })}
               >
-                <SelectTrigger id="trade_id">
+                <SelectTrigger id="tradeId">
                   <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}
@@ -357,16 +355,16 @@ const Notebook: React.FC = () => {
               />
             </div>
             <div>
-              <Label htmlFor="edit-trade_id">Link to Trade (Optional)</Label>
+              <Label htmlFor="edit-tradeId">Link to Trade (Optional)</Label>
               <Select
-                value={formData.trade_id}
-                onValueChange={(value) => setFormData({ ...formData, trade_id: value })}
+                value={formData.tradeId}
+                onValueChange={(value) => setFormData({ ...formData, tradeId: value })}
               >
-                <SelectTrigger id="edit-trade_id">
+                <SelectTrigger id="edit-tradeId">
                   <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}

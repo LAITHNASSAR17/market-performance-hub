@@ -4,14 +4,11 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
-  is_admin: boolean;
-  is_blocked: boolean;
-  subscription_tier: string;
-  country: string;
-  avatar_url: string | null;
-  created_at: string;
-  updated_at: string;
+  role?: string;
+  isAdmin?: boolean;
+  isBlocked?: boolean;
+  subscription_tier?: string;
+  country?: string;
 }
 
 export interface UserTableColumn {
@@ -95,14 +92,14 @@ export interface PlaybookEntry {
 
 export interface JournalEntry {
   id: string;
-  user_id: string;
+  userId: string;
   date: string;
   title: string;
   content: string;
   mood: number;
   tags: string[];
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface HomepageContent {
@@ -128,19 +125,4 @@ export interface Note {
   updated_at: string;
   trade_id?: string;
   tags?: string[];
-}
-
-// Create a profile interface that matches what AdminDashboard and UserProfileSettings expect
-export interface Profile {
-  id: string;
-  name?: string;
-  email?: string;
-  role?: string;
-  is_admin?: boolean;
-  is_blocked?: boolean;
-  subscription_tier?: string;
-  country?: string;
-  avatar_url?: string;
-  created_at?: string;
-  updated_at?: string;
 }
