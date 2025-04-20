@@ -23,24 +23,15 @@ const EmailVerify: React.FC = () => {
           return;
         }
 
-        // Handle based on Supabase version - verifyOtp might not be the right API
-        try {
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: 'email'
-          });
-          
-          if (error) throw error;
-          
-          setVerified(true);
-        } catch (e) {
-          // Fallback to older API if needed
-          console.log("Verification with token_hash failed, trying email confirmation");
-          const { error } = await supabase.auth.api.updateUser(token);
-          if (error) throw error;
-          setVerified(true);
-        }
-      } catch (err) {
+        // Handle email verification based on Supabase version
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: token,
+          type: 'email_signup'
+        });
+        
+        if (error) throw error;
+        setVerified(true);
+      } catch (err: any) {
         console.error('Error verifying email:', err);
         setError('Failed to verify your email. The token may be invalid or expired.');
       } finally {
