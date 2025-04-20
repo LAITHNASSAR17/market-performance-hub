@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export const createNote = async (noteData: { 
@@ -10,7 +11,7 @@ export const createNote = async (noteData: {
     title: noteData.title,
     content: noteData.content,
     tags: noteData.tags,
-    user_id: noteData.userId
+    user_id: noteData.userId // Convert camelCase to snake_case
   };
 
   const { data, error } = await supabase

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 
 export interface IUser {
@@ -22,7 +23,7 @@ export interface ITradingAccount {
 export const userService = {
   async getUserById(id: string): Promise<IUser | null> {
     const { data, error } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*')
       .eq('id', id)
       .single();
@@ -33,7 +34,7 @@ export const userService = {
 
   async getAllUsers(): Promise<IUser[]> {
     const { data, error } = await supabase
-      .from('users')
+      .from('profiles')
       .select('*');
     
     if (error || !data) return [];
@@ -43,12 +44,12 @@ export const userService = {
   async createUser(userData: Omit<IUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<IUser> {
     const now = new Date().toISOString();
     const { data, error } = await supabase
-      .from('users')
-      .insert({
+      .from('profiles')
+      .insert([{
         ...userData,
         created_at: now,
         updated_at: now
-      })
+      }])
       .select()
       .single();
     
@@ -59,7 +60,7 @@ export const userService = {
   async updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null> {
     const now = new Date().toISOString();
     const { data, error } = await supabase
-      .from('users')
+      .from('profiles')
       .update({
         ...userData,
         updated_at: now
@@ -74,7 +75,7 @@ export const userService = {
 
   async deleteUser(id: string): Promise<boolean> {
     const { error } = await supabase
-      .from('users')
+      .from('profiles')
       .delete()
       .eq('id', id);
     
@@ -82,7 +83,7 @@ export const userService = {
   },
 
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
-    let query = supabase.from('users').select('*');
+    let query = supabase.from('profiles').select('*');
     
     // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
@@ -110,11 +111,11 @@ export const userService = {
     
     const { data, error } = await supabase
       .from('trading_accounts')
-      .insert({
+      .insert([{
         user_id: userId,
         name: name.trim(),
         balance: parsedBalance
-      })
+      }])
       .select()
       .single();
     

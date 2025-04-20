@@ -32,6 +32,7 @@ export const getUserByEmail = async (email: string) => {
 };
 
 export const createUserProfile = async (userData: Partial<ProfileType>) => {
+  // Ensure we're inserting an array for Supabase
   const { data, error } = await supabase
     .from('profiles')
     .insert([userData])

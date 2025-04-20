@@ -1,11 +1,12 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthState } from '@/hooks/useAuthState';
 import { AuthContextType, User } from '@/types/auth';
-import { getUserByEmail, getAllProfiles, updateUserProfile } from '@/lib/supabase';
+import { supabase, getUserByEmail, getAllProfiles, updateUserProfile } from '@/lib/supabase';
 import { loginUser, registerUser, updateUserData, sendEmailVerification, sendPasswordReset } from '@/services/authService';
-import { hashPassword } from '@/utils/encryption';
+import { hashPassword, comparePassword } from '@/utils/encryption';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -123,9 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Login error:', error);
       let errorMessage = "فشل تسجيل الدخول. الرجاء التحقق من بريدك الإلكتروني وكلمة المرور.";
       
-      if (error.message === 'Invalid credentials') {
+      if ((error as Error).message === 'Invalid credentials') {
         errorMessage = "بريد إلكتروني أو كلمة مرور غير صحيحة";
-      } else if (error.message === 'User is blocked') {
+      } else if ((error as Error).message === 'User is blocked') {
         errorMessage = "تم حظر هذا الحساب. الرجاء الاتصال بالدعم.";
       }
       
@@ -209,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       if (!user) throw new Error('No user logged in');
       
-      const updateData = {
+      const updateData: any = {
         name,
         email
       };
