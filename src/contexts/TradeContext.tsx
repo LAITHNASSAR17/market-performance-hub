@@ -30,9 +30,10 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [pairs, setPairs] = useState<string[]>([]);
+  const [pairs, setPairs] = useState<string[]>(['EURUSD', 'GBPUSD', 'USDJPY']);
   const tradingAccounts = ['Demo', 'Main Trading', 'Practice']; 
 
+  // Fetch trades on component mount
   useEffect(() => {
     fetchTrades();
   }, []);
@@ -44,13 +45,13 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const mappedTrades = fetchedDBTrades.map(mapDBTradeToTrade);
       setTrades(mappedTrades);
       
-      // Fix type issue by explicitly casting hashtags as string[]
+      // Extract unique hashtags from trades
       const hashtags = Array.from(new Set(
         mappedTrades.flatMap(trade => trade.hashtags)
       )) as string[];
       setAllHashtags(hashtags);
       
-      // Fix type issue by explicitly casting pairs as string[]
+      // Extract unique trading pairs
       const uniquePairs = Array.from(new Set(
         mappedTrades.map(trade => trade.pair)
       )) as string[];
@@ -80,7 +81,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addSymbol = (symbol: string) => {
     if (!pairs.includes(symbol)) {
-      setPairs([...pairs, symbol]);
+      setPairs(prevPairs => [...prevPairs, symbol]);
     }
   };
 
@@ -95,7 +96,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.log("Mapped to DB trade data:", dbTradeData);
       
       await tradeService.createTrade(dbTradeData);
-      await fetchTrades();
+      await fetchTrades(); // Refresh trades from database
       toast({
         title: "نجاح",
         description: "تمت إضافة الصفقة بنجاح",
@@ -114,7 +115,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const dbTradeData = { ...mapTradeToDBTrade(tradeData as Omit<Trade, 'id' | 'createdAt'>) };
       await tradeService.updateTrade(id, dbTradeData);
-      await fetchTrades();
+      await fetchTrades(); // Refresh trades from database
       toast({
         title: "نجاح",
         description: "تم تحديث الصفقة بنجاح",
@@ -132,7 +133,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const deleteTrade = async (id: string) => {
     try {
       await tradeService.deleteTrade(id);
-      await fetchTrades();
+      await fetchTrades(); // Refresh trades from database
       toast({
         title: "نجاح",
         description: "تم حذف الصفقة بنجاح",
