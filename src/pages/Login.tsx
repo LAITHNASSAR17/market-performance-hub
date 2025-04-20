@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { LineChart, Mail, LockKeyhole, AlertCircle, CheckCircle2 } from 'lucide-
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Toaster } from '@/components/ui/toaster';
+import { createTestAccount } from '@/services/authService';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +22,21 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [debug, setDebug] = useState<string>('');
+
+  // حاول إنشاء حساب اختباري عند تحميل الصفحة
+  useEffect(() => {
+    const setupTestAccount = async () => {
+      try {
+        await createTestAccount();
+        console.log('تمت محاولة إنشاء حساب اختباري');
+      } catch (err) {
+        console.error('خطأ أثناء إنشاء حساب اختباري:', err);
+      }
+    };
+    
+    setupTestAccount();
+  }, []);
 
   useEffect(() => {
     if (location.state?.verified) {
@@ -51,9 +68,12 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
     setSuccessMessage('');
+    setDebug('');
     
     try {
       console.log('Login page: Starting login for', email);
+      setDebug(`محاولة تسجيل الدخول باستخدام: ${email}`);
+      
       await login(email, password);
       
       toast({
@@ -72,6 +92,8 @@ const Login: React.FC = () => {
       }
       
       setError(errorMessage);
+      setDebug(`خطأ: ${error.message}`);
+      
       toast({
         title: "فشل تسجيل الدخول",
         description: errorMessage,
@@ -87,6 +109,11 @@ const Login: React.FC = () => {
     e.stopPropagation();
     console.log('Login page: Navigating to forgot password page');
     navigate('/forgot-password');
+  };
+
+  const fillTestCredentials = () => {
+    setEmail('test@example.com');
+    setPassword('123456');
   };
 
   return (
@@ -170,7 +197,24 @@ const Login: React.FC = () => {
               >
                 {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </Button>
+              
+              <div className="mt-3 text-center">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="text-xs"
+                  onClick={fillTestCredentials}
+                >
+                  استخدام حساب اختباري
+                </Button>
+              </div>
             </form>
+            
+            {debug && (
+              <div className="mt-4 p-2 bg-gray-100 text-xs text-gray-500 rounded-md">
+                <p className="font-mono">{debug}</p>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
