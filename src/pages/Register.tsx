@@ -17,7 +17,7 @@ import {
 import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { hashPassword } from '@/utils/encryption';
 
 const Register: React.FC = () => {
@@ -55,21 +55,34 @@ const Register: React.FC = () => {
       const hashedPassword = hashPassword(password);
       
       // First, check if user already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .single();
+      try {
+        const { data: existingUser, error: checkError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', email)
+          .single();
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        // PGRST116 is the error code for "no rows returned" which is expected if user doesn't exist
-        console.error('Error checking existing user:', checkError);
-        throw new Error(checkError.message);
-      }
+        if (checkError && checkError.code !== 'PGRST116') {
+          // PGRST116 is the error code for "no rows returned" which is expected if user doesn't exist
+          console.error('Error checking existing user:', checkError);
+          throw new Error(checkError.message);
+        }
 
-      if (existingUser) {
-        setError(t('register.error.emailExists'));
-        return;
+        if (existingUser) {
+          setError(t('register.error.emailExists'));
+          return;
+        }
+      } catch (checkErr) {
+        console.error('Error checking user existence:', checkErr);
+        // If it's a connection error, show a specific message
+        if (checkErr instanceof Error && checkErr.message.includes('Failed to fetch')) {
+          setError('تعذر الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
+          return;
+        }
+        // If it's not a connection error and not a "not found" error, rethrow it
+        if (!(checkErr instanceof Error && checkErr.message.includes('PGRST116'))) {
+          throw checkErr;
+        }
       }
 
       // Create new user
@@ -105,10 +118,15 @@ const Register: React.FC = () => {
     } catch (err) {
       console.error('Registration error:', err);
       
-      // Use localized error messages or fallback to generic message
-      const errorMessage = typeof err === 'object' && err !== null && 'message' in err 
-        ? (err as Error).message 
-        : t('register.error.failed');
+      // Handle connection errors specifically
+      let errorMessage = t('register.error.failed');
+      if (err instanceof Error) {
+        if (err.message.includes('Failed to fetch')) {
+          errorMessage = 'تعذر الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
       
       setError(errorMessage);
       

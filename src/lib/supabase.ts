@@ -1,10 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Using the values directly to avoid environment variable issues
-const supabaseUrl = "https://gworvqqjzirypwfffapt.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3b3J2cXFqemlyeXB3ZmZmYXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0OTMwMTEsImV4cCI6MjA2MDA2OTAxMX0.djQ7IteaNoWH8Eeo9hTCwbdaB6jPVkdBfxqrCGr2KdI";
+const supabaseUrl = "https://hqmpfnjiunjqwyppscad.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhxbXBmbmppdW5qcXd5cHBzY2FkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxMDI1MzksImV4cCI6MjA2MDY3ODUzOX0.C9HNymy6S9cp1Fd36SdKRufN_RduTuCt2f95dGGowgg";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});
 
 // Function to get site settings
 export const getSiteSettings = async () => {
