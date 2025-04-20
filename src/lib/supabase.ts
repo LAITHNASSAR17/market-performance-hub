@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { hashPassword } from '@/utils/encryption';
 
 // Update ProfileType to include new fields
 export interface ProfileType {
@@ -17,6 +18,20 @@ export interface ProfileType {
   password?: string;
   email_verified?: boolean;
 }
+
+// Export the function to get all profiles
+export const getAllProfiles = async (): Promise<ProfileType[]> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*');
+  
+  if (error) {
+    console.error('Error fetching profiles:', error);
+    return [];
+  }
+  
+  return data as ProfileType[];
+};
 
 // Update existing functions to use the new ProfileType
 export const getUserByEmail = async (email: string) => {
@@ -69,3 +84,6 @@ export const updateUserProfile = async (userId: string, userData: Partial<Profil
   
   return data;
 };
+
+// Export the Supabase client
+export { supabase };

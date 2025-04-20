@@ -2,14 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  getUserByEmail, 
-  createUserProfile, 
-  getAllProfiles, 
-  updateUserProfile, 
-  ProfileType 
-} from '@/lib/supabase';
+import { supabase, getUserByEmail, createUserProfile, getAllProfiles, updateUserProfile, ProfileType } from '@/lib/supabase';
 
 interface User {
   id: string;
@@ -20,6 +13,7 @@ interface User {
   isBlocked?: boolean;
   role?: string;
   subscription_tier?: string;
+  email_verified?: boolean;
 }
 
 interface AuthContextType {
@@ -178,14 +172,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role: 'user',
         is_blocked: false,
         subscription_tier: 'free',
-        email_verified: false
+        email_verified: false,
+        country
       };
       
       const newUser = await createUserProfile(userData);
-      
-      if (country) {
-        await updateUserProfile(newUser.id, { country });
-      }
       
       console.log("User registered successfully:", newUser);
       
@@ -197,7 +188,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       toast({
-        title: "الت��جيل ناجح",
+        title: "التسجيل ناجح",
         description: "تم إنشاء حسابك بنجاح. تحقق من بريدك الإلكتروني للتحقق من حسابك.",
       });
       
