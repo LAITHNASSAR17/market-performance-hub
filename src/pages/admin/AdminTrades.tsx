@@ -1,11 +1,11 @@
 
 import React from 'react';
 import { useTrade } from '@/contexts/TradeContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import TradeTable from '@/components/admin/TradeTable';
 
 const AdminTrades: React.FC = () => {
-  const { trades, deleteTrade } = useTrade();
+  const { trades, deleteTrade, loading, error, refreshTrades } = useTrade();
   const { toast } = useToast();
 
   const handleViewTrade = (id: string) => {
@@ -31,6 +31,7 @@ const AdminTrades: React.FC = () => {
   };
 
   const handleRefreshTrades = () => {
+    refreshTrades();
     toast({
       title: "Trades Refreshed",
       description: "Trade list has been updated"
@@ -48,10 +49,10 @@ const AdminTrades: React.FC = () => {
     <div>
       <header className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-          Trade Management
+          إدارة التداولات
         </h1>
         <p className="mt-1 text-sm md:text-base text-gray-500 dark:text-gray-400">
-          View and manage all trades across the platform.
+          عرض وإدارة جميع التداولات عبر المنصة.
         </p>
       </header>
 
@@ -63,6 +64,8 @@ const AdminTrades: React.FC = () => {
           onDeleteTrade={handleDeleteTrade}
           onRefresh={handleRefreshTrades}
           onExport={handleExportTrades}
+          isLoading={loading}
+          error={error}
         />
       </div>
     </div>
