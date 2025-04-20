@@ -1,4 +1,3 @@
-
 import { supabase, getUserByEmail, createUserProfile, getAllProfiles, updateUserProfile } from '@/lib/supabase';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { User } from '@/types/auth';
@@ -22,27 +21,33 @@ export async function loginUser(email: string, password: string): Promise<Profil
 }
 
 export async function registerUser(name: string, email: string, password: string, country?: string): Promise<void> {
-  // First check if the email already exists
-  const existingUser = await getUserByEmail(email);
-  if (existingUser) {
-    throw new Error('البريد الإلكتروني مستخدم بالفعل. الرجاء استخدام بريد إلكتروني آخر.');
+  try {
+    const existingUser = await getUserByEmail(email);
+    if (existingUser) {
+      throw new Error('البريد الإلكتروني مستخدم بالفعل');
+    }
+    
+    const hashedPassword = hashPassword(password);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .insert({
+        name,
+        email,
+        password: hashedPassword,
+        role: 'user',
+        is_admin: false,
+        is_blocked: false,
+        email_verified: true,
+        country
+      });
+
+    if (error) throw error;
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    throw error;
   }
-  
-  const hashedPassword = hashPassword(password);
-  
-  const profileData = createProfileObject({
-    name,
-    email,
-    password: hashedPassword,
-    role: 'user',
-    is_admin: false,
-    is_blocked: false,
-    subscription_tier: 'free',
-    email_verified: true,
-    country
-  });
-  
-  await createUserProfile(profileData);
 }
 
 export async function updateUserData(updatedUser: User): Promise<void> {
