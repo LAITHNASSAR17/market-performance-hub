@@ -16,9 +16,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage
   },
   global: {
-    fetch: (...args) => {
+    fetch: function customFetch(input, init) {
       // Add retry logic
-      return fetch(...args).catch(error => {
+      return fetch(input, init).catch(error => {
         console.error('Supabase fetch error:', error);
         throw error;
       });
