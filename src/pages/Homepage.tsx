@@ -78,13 +78,17 @@ const Homepage: React.FC = () => {
           console.error('Error fetching homepage content:', error);
           setContent(defaultContent);
         } else if (data) {
-          const parsedData = {
-            ...data,
-            features: typeof data.features === 'string' 
-              ? JSON.parse(data.features) 
-              : data.features
+          const transformedContent = {
+            title: data.title,
+            subtitle: data.subtitle || '',
+            description: data.description || '',
+            primaryButtonText: data.primary_button_text || '',
+            primaryButtonUrl: data.primary_button_url || '',
+            secondaryButtonText: data.secondary_button_text || '',
+            secondaryButtonUrl: data.secondary_button_url || '',
+            features: data.features || []
           };
-          setContent(parsedData);
+          setContent(transformedContent);
         }
       } catch (error) {
         console.error('Error:', error);

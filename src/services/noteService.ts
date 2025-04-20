@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 export const createNote = async (noteData: { 
@@ -16,7 +15,7 @@ export const createNote = async (noteData: {
 
   const { data, error } = await supabase
     .from('notes')
-    .insert([note])
+    .insert(note)
     .select();
 
   if (error) {

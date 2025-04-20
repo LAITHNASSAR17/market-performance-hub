@@ -17,6 +17,7 @@ export interface ProfileType {
 
 export function createProfileObject(data: Partial<ProfileType>): Partial<ProfileType> {
   return {
+    id: data.id,
     name: data.name,
     email: data.email,
     avatar_url: data.avatar_url,
@@ -29,6 +30,5 @@ export function createProfileObject(data: Partial<ProfileType>): Partial<Profile
     email_verified: data.email_verified,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    id: data.id,
   };
 }

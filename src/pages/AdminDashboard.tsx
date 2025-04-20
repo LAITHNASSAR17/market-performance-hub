@@ -186,7 +186,7 @@ const AdminDashboard: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
-      const profileData = createProfileObject({
+      const profileData = {
         name: userData.name,
         email: userData.email,
         password: hashedPassword,
@@ -195,7 +195,7 @@ const AdminDashboard: React.FC = () => {
         is_blocked: false,
         subscription_tier: 'free',
         email_verified: true
-      });
+      };
       
       const { data, error } = await supabase
         .from('profiles')

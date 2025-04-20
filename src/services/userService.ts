@@ -45,11 +45,15 @@ export const userService = {
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('profiles')
-      .insert([{
-        ...userData,
+      .insert({
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role,
+        is_blocked: userData.isBlocked,
         created_at: now,
         updated_at: now
-      }])
+      })
       .select()
       .single();
     
@@ -59,12 +63,19 @@ export const userService = {
 
   async updateUser(id: string, userData: Partial<IUser>): Promise<IUser | null> {
     const now = new Date().toISOString();
+    const updateData: Record<string, any> = {
+      updated_at: now
+    };
+    
+    if (userData.name) updateData.name = userData.name;
+    if (userData.email) updateData.email = userData.email;
+    if (userData.password) updateData.password = userData.password;
+    if (userData.role) updateData.role = userData.role;
+    if (userData.isBlocked !== undefined) updateData.is_blocked = userData.isBlocked;
+    
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        ...userData,
-        updated_at: now
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
@@ -85,10 +96,18 @@ export const userService = {
   async findUsersByFilter(filter: Partial<IUser>): Promise<IUser[]> {
     let query = supabase.from('profiles').select('*');
     
+    // Map IUser properties to database column names
+    const columnMapping: Record<string, string> = {
+      isBlocked: 'is_blocked',
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
+    };
+    
     // Apply filters dynamically
     Object.entries(filter).forEach(([key, value]) => {
       if (value !== undefined) {
-        query = query.eq(key, value);
+        const dbColumn = columnMapping[key] || key;
+        query = query.eq(dbColumn, value);
       }
     });
     
@@ -111,11 +130,11 @@ export const userService = {
     
     const { data, error } = await supabase
       .from('trading_accounts')
-      .insert([{
+      .insert({
         user_id: userId,
         name: name.trim(),
         balance: parsedBalance
-      }])
+      })
       .select()
       .single();
     
@@ -169,7 +188,7 @@ function formatUser(data: any): IUser {
     id: data.id,
     name: data.name,
     email: data.email,
-    password: data.password,
+    password: data.password || '',
     role: data.role || 'user',
     isBlocked: data.is_blocked || false,
     createdAt: new Date(data.created_at),

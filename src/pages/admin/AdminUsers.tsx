@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
-import { ProfileType } from '@/types/database';
+import { ProfileType, createProfileObject } from '@/types/database';
 
 const AdminUsers: React.FC = () => {
   const { getAllUsers } = useAuth();
@@ -26,18 +26,20 @@ const AdminUsers: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
+      const profileData = {
+        name: userData.name,
+        email: userData.email,
+        password: hashedPassword,
+        role: userData.isAdmin ? 'admin' : 'user',
+        is_admin: userData.isAdmin,
+        is_blocked: false,
+        subscription_tier: 'free',
+        email_verified: true
+      };
+      
       const { error } = await supabase
         .from('profiles')
-        .insert([{
-          name: userData.name,
-          email: userData.email,
-          password: hashedPassword,
-          role: userData.isAdmin ? 'admin' : 'user',
-          is_admin: userData.isAdmin,
-          is_blocked: false,
-          subscription_tier: 'free',
-          email_verified: true
-        }]);
+        .insert(profileData);
       
       if (error) throw new Error(error.message);
       
