@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hashPassword, comparePassword } from '@/utils/encryption';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -100,32 +100,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initializeAdminUser = async () => {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', 'lnmr2001@gmail.com')
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        const adminEmail = 'lnmr2001@gmail.com';
-        const adminPassword = hashPassword('password123');
-        
-        const { error: insertError } = await supabase
+      try {
+        console.log('Checking for admin user...');
+        const { data, error } = await supabase
           .from('users')
-          .insert({
-            name: 'Admin User',
-            email: adminEmail,
-            password: adminPassword,
-            role: 'admin',
-            is_blocked: false,
-            subscription_tier: 'premium'
-          });
+          .select('*')
+          .eq('email', 'lnmr2001@gmail.com')
+          .single();
+
+        if (error) {
+          console.log('Admin user not found, creating...');
+          const adminEmail = 'lnmr2001@gmail.com';
+          const adminPassword = hashPassword('password123');
           
-        if (insertError) {
-          console.error('Error creating admin user:', insertError);
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              name: 'Admin User',
+              email: adminEmail,
+              password: adminPassword,
+              role: 'admin',
+              is_blocked: false,
+              subscription_tier: 'premium',
+              email_verified: true
+            });
+            
+          if (insertError) {
+            console.error('Error creating admin user:', insertError);
+          } else {
+            console.log('Test admin user created:', adminEmail);
+          }
         } else {
-          console.log('Test admin user created:', adminEmail);
+          console.log('Admin user exists:', data.email);
         }
+      } catch (err) {
+        console.error('Error in admin user initialization:', err);
       }
     };
 
@@ -219,23 +228,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     try {
+      console.log('Attempting login for:', email);
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', email)
         .single();
       
-      if (error || !data) throw new Error('Invalid credentials');
+      if (error) {
+        console.error('Error fetching user:', error);
+        throw new Error('Invalid credentials');
+      }
       
-      console.log('Login attempt:', email);
-      console.log('Found user:', data ? 'Yes' : 'No');
+      if (!data) {
+        console.error('No user found with email:', email);
+        throw new Error('Invalid credentials');
+      }
+      
+      console.log('User found, checking password...');
       
       if (comparePassword(password, data.password)) {
         if (data.is_blocked) {
           throw new Error('User is blocked');
         }
         
-        if (!data.email_verified) {
+        if (!data.email_verified && data.email_verified !== undefined) {
           toast({
             title: "البريد الإلكتروني غير مفعل",
             description: "يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك. تم إرسال رابط التفعيل إلى بريدك الإلكتروني.",
@@ -264,12 +282,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('isAuthenticated set to true');
         
         toast({
-          title: "Login Successful",
-          description: `Welcome back, ${data.name}!`,
+          title: "تم تسجيل الدخول بنجاح",
+          description: `مرحباً بعودتك، ${data.name}!`,
         });
         
         return;
       } else {
+        console.error('Password mismatch for user:', email);
         throw new Error('Invalid credentials');
       }
     } catch (error) {

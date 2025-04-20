@@ -1,17 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 
-// Using the values directly to avoid environment variable issues
-const supabaseUrl = "https://gworvqqjzirypwfffapt.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3b3J2cXFqemlyeXB3ZmZmYXB0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ0OTMwMTEsImV4cCI6MjA2MDA2OTAxMX0.djQ7IteaNoWH8Eeo9hTCwbdaB6jPVkdBfxqrCGr2KdI";
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Re-export the client for backward compatibility
+export { supabase };
 
 // Function to get site settings
 export const getSiteSettings = async () => {
   const { data, error } = await supabase
     .from('site_settings')
     .select('*')
-    .single();
+    .maybeSingle();
     
   if (error) {
     console.error('Error fetching site settings:', error);
@@ -36,8 +33,7 @@ export const updateSiteSettings = async (settings: any) => {
   return data;
 };
 
-// SQL definitions for our tables
-// This is just for reference, you'll need to create these tables in the Supabase dashboard
+// SQL definitions for our tables are kept for reference
 
 /*
 -- Users Table

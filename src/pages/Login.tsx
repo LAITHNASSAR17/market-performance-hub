@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, Mail, LockKeyhole, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Toaster } from '@/components/ui/toaster';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -184,6 +185,7 @@ const Login: React.FC = () => {
           </CardFooter>
         </Card>
       </div>
+      <Toaster />
     </div>
   );
 };
