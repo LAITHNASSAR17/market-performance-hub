@@ -79,12 +79,9 @@ export const tradeService = {
   },
 
   async updateTrade(id: string, tradeData: Partial<ITrade>): Promise<ITrade | null> {
-    const updateObject: any = {
+    const updateObject: Record<string, any> = {
       updated_at: new Date().toISOString()
     };
-    
-    if (tradeData.profitLoss !== undefined) updateObject.profit_loss = tradeData.profitLoss;
-    if (tradeData.fees !== undefined) updateObject.fees = tradeData.fees;
     
     if (tradeData.symbol !== undefined) updateObject.symbol = tradeData.symbol;
     if (tradeData.entryPrice !== undefined) updateObject.entry_price = tradeData.entryPrice;
@@ -126,12 +123,13 @@ export const tradeService = {
   async findTradesByFilter(filter: Partial<ITrade>): Promise<ITrade[]> {
     let query = supabase.from('trades').select('*');
     
-    Object.entries(filter).forEach(([key, value]) => {
+    // Convert camelCase to snake_case and apply filters
+    for (const [key, value] of Object.entries(filter)) {
       if (value !== undefined) {
         const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         query = query.eq(dbKey, value);
       }
-    });
+    }
     
     const { data, error } = await query;
     

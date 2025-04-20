@@ -106,7 +106,7 @@ export const userService = {
       updatedAt: 'updated_at'
     };
     
-    // Apply filters dynamically without recursion
+    // Apply filters dynamically
     Object.keys(filter).forEach(key => {
       const value = (filter as any)[key];
       if (value !== undefined) {
@@ -156,7 +156,7 @@ export const userService = {
       id: data.id,
       userId: data.user_id,
       name: data.name,
-      balance: data.balance !== undefined ? Number(data.balance) : 0, // Handle potential missing field
+      balance: data.balance || 0, // Handle potential missing field
       createdAt: data.created_at
     };
   },
@@ -178,12 +178,12 @@ export const userService = {
     
     if (!data) return [];
     
-    // Map the data to our interface and handle potentially missing balance field
+    // Map the data to our interface
     return data.map(account => ({
       id: account.id,
       userId: account.user_id,
       name: account.name,
-      balance: account.balance !== undefined ? Number(account.balance) : 0,
+      balance: account.balance || 0, // Use default value if balance is missing
       createdAt: account.created_at
     }));
   }

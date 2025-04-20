@@ -17,10 +17,14 @@ export const adaptTradeToITrade = (dbTrade: any): ITrade => {
     fees: dbTrade.fees,
     notes: dbTrade.notes,
     tags: dbTrade.tags || [],
-    // Add any other required fields with appropriate defaults
-    pair: dbTrade.symbol,
-    type: dbTrade.direction === 'long' ? 'buy' : 'sell',
-    size: dbTrade.quantity,
-    pnl: dbTrade.profit_loss
+    createdAt: dbTrade.created_at ? new Date(dbTrade.created_at) : new Date(),
+    updatedAt: dbTrade.updated_at ? new Date(dbTrade.updated_at) : new Date(),
+    rating: dbTrade.rating || 0,
+    stopLoss: dbTrade.stop_loss,
+    takeProfit: dbTrade.take_profit,
+    durationMinutes: dbTrade.duration_minutes,
+    playbook: dbTrade.playbook,
+    followedRules: dbTrade.followedRules,
+    marketSession: dbTrade.market_session
   };
 };
