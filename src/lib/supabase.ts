@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { hashPassword } from '@/utils/encryption';
 import { User } from '@/types/auth';
@@ -115,7 +116,7 @@ export const getAllProfiles = async (): Promise<User[]> => {
       return [];
     }
     
-    return data as User[] || [];
+    return data.map(mapUserRowToUser) || [];
   } catch (err) {
     console.error('Exception fetching profiles:', err);
     return [];
@@ -124,9 +125,9 @@ export const getAllProfiles = async (): Promise<User[]> => {
 
 export const updateHomepageContent = async (contentData: any) => {
   try {
-    // Ensure features is in the correct format for JSONB
-    if (contentData.features && Array.isArray(contentData.features)) {
-      // Cast the features array to Json type
+    // Handle features data for JSONB column
+    if (contentData.features) {
+      // Make sure it's in the correct format for JSONB
       contentData.features = contentData.features as unknown as Json;
     }
     
@@ -145,6 +146,44 @@ export const updateHomepageContent = async (contentData: any) => {
   } catch (err) {
     console.error('Exception updating homepage content:', err);
     throw err;
+  }
+};
+
+export const getHomepageContent = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('homepage_content')
+      .select('*')
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error fetching homepage content:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception fetching homepage content:', err);
+    return null;
+  }
+};
+
+export const getSiteSettings = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('site_settings')
+      .select('*')
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error fetching site settings:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception fetching site settings:', err);
+    return null;
   }
 };
 

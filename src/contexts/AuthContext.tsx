@@ -1,9 +1,10 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+
+import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
 import { User } from '@/types/auth';
-import { getUserByEmail, createUserProfile, updateUserProfile } from '@/lib/supabase';
+import { getUserByEmail, createUserProfile, updateUserProfile, getAllProfiles } from '@/lib/supabase';
 
 interface AuthContextProps {
   user: User | null;
@@ -14,7 +15,7 @@ interface AuthContextProps {
   authError: string | null;
   login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
-  register: (email: string, password: string, name: string) => Promise<User | null>;
+  register: (email: string, password: string, name: string, country?: string) => Promise<User | null>;
   updatePassword: (email: string, newPassword: string) => Promise<boolean>;
   updateProfile: (email: string, name: string, avatar_url: string) => Promise<void>;
   getUserProfile: (email: string) => Promise<User | null>;
@@ -84,23 +85,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getUserProfile = async (email: string): Promise<User | null> => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching user data:', error);
-        return null;
-      }
-      
-      if (!data) {
-        console.warn('No user data found for email:', email);
-        return null;
-      }
-      
-      return data as User;
+      const userProfile = await getUserByEmail(email);
+      return userProfile;
     } catch (error) {
       console.error('Exception in getUserProfile:', error);
       return null;
@@ -109,16 +95,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getAllUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*');
-      
-      if (error) {
-        console.error('Error fetching all users:', error);
-        return null;
-      }
-      
-      return data as User[];
+      const users = await getAllProfiles();
+      return users;
     } catch (error) {
       console.error('Exception in getAllUsers:', error);
       return null;
@@ -129,8 +107,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ role: newRole })
-        .eq('id', userId);
+        .update({ role: newRole } as any)
+        .eq('id', userId as any);
       
       if (error) {
         console.error('Error updating user role:', error);
@@ -153,8 +131,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ is_blocked: true })
-        .eq('id', userId);
+        .update({ is_blocked: true } as any)
+        .eq('id', userId as any);
       
       if (error) {
         console.error('Error blocking user:', error);
@@ -175,8 +153,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ is_blocked: false })
-        .eq('id', userId);
+        .update({ is_blocked: false } as any)
+        .eq('id', userId as any);
       
       if (error) {
         console.error('Error unblocking user:', error);
@@ -195,7 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { error } = await supabase
         .from('users')
         .update({ password: hashedPassword } as any)
-        .eq('email', email);
+        .eq('email', email as any);
       
       if (error) {
         console.error('Error updating password:', error);
@@ -213,8 +191,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { error } = await supabase
         .from('users')
-        .update({ name: name, avatar_url: avatar_url })
-        .eq('email', email);
+        .update({ name: name, avatar_url: avatar_url } as any)
+        .eq('email', email as any);
       
       if (error) {
         console.error('Error updating profile:', error);
@@ -278,7 +256,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (email: string, password: string, name: string, country?: string) => {
     try {
       setAuthLoading(true);
       
@@ -297,25 +275,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         is_admin: false,
         is_blocked: false,
         email_verified: false,
+        country: country || null
       };
       
-      const { data: createdUser, error } = await supabase
-        .from('users')
-        .insert([newUser])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Registration error:', error);
-        throw new Error('Registration failed');
-      }
+      const createdUser = await createUserProfile(newUser);
       
       if (!createdUser) {
         throw new Error('Could not create user');
       }
       
       // Set user state with the created user data
-      setUser(createdUser as User);
+      setUser(createdUser);
       setUserRole(createdUser.role || 'user');
       setIsAdmin(createdUser.is_admin || false);
       setIsAuthenticated(true);
@@ -325,7 +295,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       sessionStorage.setItem('auth.user', JSON.stringify(createdUser));
       sessionStorage.setItem('auth.isAuthenticated', 'true');
       
-      return createdUser as User;
+      return createdUser;
     } catch (error: any) {
       console.error('Registration error:', error);
       setAuthError(error.message || 'An error occurred during registration');

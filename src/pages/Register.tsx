@@ -29,7 +29,7 @@ const Register: React.FC = () => {
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, isAuthenticated, loading } = useAuth();
+  const { register, isAuthenticated, authLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +55,7 @@ const Register: React.FC = () => {
     }
     
     try {
-      await register(name, email, password, country);
+      await register(email, password, name, country);
       
       toast({
         title: 'تم إنشاء الحساب بنجاح',

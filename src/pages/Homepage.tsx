@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { getHomepageContent } from '@/lib/supabase';
 import { Json } from '@/integrations/supabase/types';
 
 interface Feature {
@@ -52,50 +52,42 @@ const Homepage: React.FC = () => {
   useEffect(() => {
     const fetchHomepageContent = async () => {
       try {
-        const { data, error } = await supabase
-          .from('homepage_content')
-          .select('*')
-          .maybeSingle();
+        const data = await getHomepageContent();
           
-        if (error) {
-          console.error('Error fetching homepage content:', error);
-          return;
-        }
+        if (!data) return; // Use defaults if no data is returned
         
-        if (data) {
-          // Parse features if it's a string or JSON array
-          let parsedFeatures: Feature[] = [];
-          
-          if (typeof data.features === 'string') {
-            try {
-              parsedFeatures = JSON.parse(data.features);
-            } catch (e) {
-              console.error('Error parsing features:', e);
-              parsedFeatures = content.features;
-            }
-          } else if (data.features && Array.isArray(data.features)) {
-            // Cast and transform JSON features to Feature objects
-            parsedFeatures = (data.features as Json[]).map((feature: any) => ({
-              title: feature.title || 'Feature',
-              description: feature.description || 'Description',
-              icon: feature.icon
-            }));
-          } else {
+        // Parse features if it's a string or JSON array
+        let parsedFeatures: Feature[] = [];
+        
+        if (typeof data.features === 'string') {
+          try {
+            parsedFeatures = JSON.parse(data.features);
+          } catch (e) {
+            console.error('Error parsing features:', e);
             parsedFeatures = content.features;
           }
-          
-          // Map database fields to our interface fields
-          setContent({
-            title: data.title || content.title,
-            subtitle: data.subtitle || content.subtitle,
-            description: data.description || content.description,
-            primaryButtonText: data.primary_button_text || content.primaryButtonText,
-            primaryButtonUrl: data.primary_button_url || content.primaryButtonUrl,
-            secondaryButtonText: data.secondary_button_text || content.secondaryButtonText,
-            secondaryButtonUrl: data.secondary_button_url || content.secondaryButtonUrl,
-            features: parsedFeatures.length > 0 ? parsedFeatures : content.features
-          });
+        } else if (data.features && Array.isArray(data.features)) {
+          // Cast and transform JSON features to Feature objects
+          parsedFeatures = (data.features as any[]).map((feature: any) => ({
+            title: feature.title || 'Feature',
+            description: feature.description || 'Description',
+            icon: feature.icon
+          }));
+        } else {
+          parsedFeatures = content.features;
         }
+        
+        // Map database fields to our interface fields
+        setContent({
+          title: data.title || content.title,
+          subtitle: data.subtitle || content.subtitle,
+          description: data.description || content.description,
+          primaryButtonText: data.primary_button_text || content.primaryButtonText,
+          primaryButtonUrl: data.primary_button_url || content.primaryButtonUrl,
+          secondaryButtonText: data.secondary_button_text || content.secondaryButtonText,
+          secondaryButtonUrl: data.secondary_button_url || content.secondaryButtonUrl,
+          features: parsedFeatures.length > 0 ? parsedFeatures : content.features
+        });
       } catch (error) {
         console.error('Error:', error);
       }
