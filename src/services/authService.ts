@@ -22,6 +22,12 @@ export async function loginUser(email: string, password: string): Promise<Profil
 }
 
 export async function registerUser(name: string, email: string, password: string, country?: string): Promise<void> {
+  // First check if the email already exists
+  const existingUser = await getUserByEmail(email);
+  if (existingUser) {
+    throw new Error('البريد الإلكتروني مستخدم بالفعل. الرجاء استخدام بريد إلكتروني آخر.');
+  }
+  
   const hashedPassword = hashPassword(password);
   
   const profileData = createProfileObject({
@@ -32,7 +38,7 @@ export async function registerUser(name: string, email: string, password: string
     is_admin: false,
     is_blocked: false,
     subscription_tier: 'free',
-    email_verified: false,
+    email_verified: true,
     country
   });
   

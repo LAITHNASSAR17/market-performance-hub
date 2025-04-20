@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,17 +35,17 @@ const Register: React.FC = () => {
     setError('');
     
     if (!name || !email || !password || !confirmPassword || !country) {
-      setError(t('register.error.fillAll'));
+      setError('الرجاء ملء جميع الحقول المطلوبة');
       return;
     }
     
     if (password !== confirmPassword) {
-      setError(t('register.error.passwordMismatch'));
+      setError('كلمات المرور غير متطابقة');
       return;
     }
     
     if (password.length < 6) {
-      setError(t('register.error.passwordLength'));
+      setError('يجب أن تتكون كلمة المرور من 6 أحرف على الأقل');
       return;
     }
     
@@ -55,15 +56,22 @@ const Register: React.FC = () => {
       await register(name, email, password, country);
       
       toast({
-        title: t('register.success.title'),
-        description: t('register.success.checkEmail'),
+        title: 'تم التسجيل بنجاح',
+        description: 'تم إنشاء حسابك بنجاح.',
       });
     } catch (err) {
       console.error('Registration error:', err);
-      setError(t('register.error.failed'));
+      
+      // Set specific error message based on the error
+      if ((err as Error).message?.includes('duplicate key value violates unique constraint')) {
+        setError('البريد الإلكتروني مستخدم بالفعل. الرجاء استخدام بريد إلكتروني آخر.');
+      } else {
+        setError('فشل في إنشاء الحساب. الرجاء المحاولة مرة أخرى لاحقًا.');
+      }
+      
       toast({
-        title: t('register.error.title'),
-        description: t('register.error.description'),
+        title: 'خطأ في التسجيل',
+        description: 'حدث خطأ أثناء محاولة إنشاء حسابك. الرجاء المحاولة مرة أخرى.',
         variant: "destructive",
       });
     }
