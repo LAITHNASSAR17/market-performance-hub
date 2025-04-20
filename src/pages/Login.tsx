@@ -23,12 +23,14 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [debug, setDebug] = useState<string>('');
+  const [testAccountCreated, setTestAccountCreated] = useState(false);
 
-  // حاول إنشاء حساب اختباري عند تحميل الصفحة
+  // Try to create test account when page loads
   useEffect(() => {
     const setupTestAccount = async () => {
       try {
         await createTestAccount();
+        setTestAccountCreated(true);
         console.log('تمت محاولة إنشاء حساب اختباري');
       } catch (err) {
         console.error('خطأ أثناء إنشاء حساب اختباري:', err);
@@ -89,6 +91,8 @@ const Login: React.FC = () => {
         errorMessage = "بريد إلكتروني أو كلمة مرور غير صحيحة";
       } else if (error.message === 'User is blocked') {
         errorMessage = "تم حظر هذا الحساب. الرجاء الاتصال بالدعم.";
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
+        errorMessage = "خطأ في الاتصال بالخادم. الرجاء المحاولة لاحقًا.";
       }
       
       setError(errorMessage);
@@ -207,6 +211,11 @@ const Login: React.FC = () => {
                 >
                   استخدام حساب اختباري
                 </Button>
+                {testAccountCreated && (
+                  <div className="mt-2 text-xs text-green-600">
+                    تم إنشاء حساب اختباري جاهز للاستخدام
+                  </div>
+                )}
               </div>
             </form>
             

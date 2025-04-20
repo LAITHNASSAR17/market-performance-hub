@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -50,12 +51,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const userEmail = localStorage.getItem('user_email');
         if (userEmail) {
-          const userData = await getUserByEmail(userEmail);
-          
-          if (userData) {
-            setUser(userData);
-            setIsAdmin(userData.role === 'admin');
-            setIsAuthenticated(true);
+          try {
+            const userData = await getUserByEmail(userEmail);
+            
+            if (userData) {
+              setUser(userData);
+              setIsAdmin(userData.role === 'admin');
+              setIsAuthenticated(true);
+            }
+          } catch (error) {
+            console.error('Error loading initial session from Supabase:', error);
+            
+            // Check if we have a local user in localStorage as fallback
+            const localUser = localStorage.getItem('trackmind_user');
+            if (localUser) {
+              const parsedUser = JSON.parse(localUser);
+              setUser(parsedUser);
+              setIsAdmin(parsedUser.role === 'admin');
+              setIsAuthenticated(true);
+            }
           }
         }
       } catch (error) {
@@ -97,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userData = await loginUser(email, password);
       
+      // Store email for session persistence
       localStorage.setItem('user_email', email);
       
       const appUser: User = {
@@ -108,6 +123,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: userData.role,
         subscription_tier: userData.subscription_tier
       };
+      
+      // Store user data for offline fallback
+      localStorage.setItem('trackmind_user', JSON.stringify(appUser));
+      localStorage.setItem('trackmind_auth_status', 'true');
       
       setUser(appUser);
       setIsAdmin(appUser.role === 'admin' || appUser.isAdmin || false);
@@ -141,6 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('user_email');
+    localStorage.removeItem('trackmind_user');
+    localStorage.removeItem('trackmind_auth_status');
     
     setUser(null);
     setIsAdmin(false);
