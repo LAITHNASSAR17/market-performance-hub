@@ -55,7 +55,7 @@ export async function loginUser(email: string, password: string): Promise<Profil
     console.error('Login error details:', error);
     
     // Special case for the test account when database connection fails
-    if (email === 'test@example.com' && comparePassword(password, '123456')) {
+    if (email === 'test@example.com' && comparePassword(password, hashPassword('123456'))) {
       console.log('Using fallback authentication after error for test user');
       // Return a mock user profile when database connection fails
       return {
@@ -80,9 +80,9 @@ export async function loginUser(email: string, password: string): Promise<Profil
 }
 
 export async function registerUser(name: string, email: string, password: string, country?: string): Promise<void> {
+  console.log('Registering new user:', email);
+  
   try {
-    console.log('Registering new user:', email);
-    
     // Check if the user already exists
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
@@ -108,6 +108,8 @@ export async function registerUser(name: string, email: string, password: string
       email_verified: true,
       country
     };
+    
+    console.log('Attempting to insert user with data:', { ...userData, password: '***REDACTED***' });
     
     // Use the proper supabase method to insert into users table
     const { error } = await supabase

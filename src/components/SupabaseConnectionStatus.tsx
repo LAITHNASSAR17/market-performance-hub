@@ -8,17 +8,36 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 const SupabaseConnectionStatus: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
+  const [checkAttempts, setCheckAttempts] = useState(0);
 
   const checkConnection = async () => {
     setIsChecking(true);
-    const connected = await checkSupabaseConnection();
-    setIsConnected(connected);
-    setIsChecking(false);
+    try {
+      const connected = await checkSupabaseConnection();
+      console.log('Connection check result:', connected);
+      setIsConnected(connected);
+    } catch (error) {
+      console.error('Error checking connection:', error);
+      setIsConnected(false);
+    } finally {
+      setIsChecking(false);
+      setCheckAttempts(prev => prev + 1);
+    }
   };
 
   useEffect(() => {
     checkConnection();
-  }, []);
+    
+    // Check connection again after 2 seconds if first attempt failed
+    const timer = setTimeout(() => {
+      if (isConnected === false && checkAttempts < 2) {
+        console.log('Retrying connection check automatically');
+        checkConnection();
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [isConnected, checkAttempts]);
 
   if (isConnected === null || isChecking) {
     return (
@@ -47,6 +66,9 @@ const SupabaseConnectionStatus: React.FC = () => {
               {isChecking && <RefreshCw className="h-3 w-3 animate-spin" />}
               إعادة المحاولة
             </Button>
+          </div>
+          <div className="mt-2 text-sm">
+            يمكنك استخدام الحساب التجريبي: test@example.com / كلمة المرور: 123456
           </div>
         </AlertDescription>
       </Alert>

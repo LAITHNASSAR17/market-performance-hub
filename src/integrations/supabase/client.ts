@@ -17,11 +17,22 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   global: {
     fetch: function customFetch(input, init) {
-      // Add retry logic
-      return fetch(input, init).catch(error => {
-        console.error('Supabase fetch error:', error);
-        throw error;
+      // Add custom logging and timeout for debugging
+      console.log('Supabase fetch request:', typeof input === 'string' ? input : input.url);
+      
+      // Create a promise that rejects after 15 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Supabase request timeout')), 15000);
       });
+      
+      // Race the fetch with the timeout
+      return Promise.race([
+        fetch(input, init).catch(error => {
+          console.error('Supabase fetch error:', error);
+          throw error;
+        }),
+        timeoutPromise
+      ]);
     }
   }
 });
@@ -29,11 +40,19 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 // Helper function to check connection status
 export const checkSupabaseConnection = async () => {
   try {
+    console.log('Testing Supabase connection...');
+    const startTime = Date.now();
+    
     const { error } = await supabase.from('users').select('count', { count: 'exact', head: true });
+    
+    const duration = Date.now() - startTime;
+    console.log(`Supabase connection test took ${duration}ms`);
+    
     if (error) {
       console.error('Supabase connection check failed:', error);
       return false;
     }
+    
     console.log('Supabase connection successful');
     return true;
   } catch (err) {

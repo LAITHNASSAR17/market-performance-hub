@@ -4,68 +4,88 @@ import { hashPassword } from '@/utils/encryption';
 import { ProfileType, createProfileObject } from '@/types/database';
 
 export const getAllProfiles = async (): Promise<ProfileType[]> => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*');
-  
-  if (error) {
-    console.error('Error fetching profiles:', error);
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching profiles:', error);
+      return [];
+    }
+    
+    return data as ProfileType[];
+  } catch (err) {
+    console.error('Exception fetching profiles:', err);
     return [];
   }
-  
-  return data as ProfileType[];
 };
 
 export const getUserByEmail = async (email: string) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', email)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
     
-  if (error) {
-    console.error('Error fetching user profile:', error);
+    return data;
+  } catch (err) {
+    console.error('Exception fetching user profile:', err);
     return null;
   }
-  
-  return data;
 };
 
 export const createUserProfile = async (userData: Partial<ProfileType>) => {
-  if (!userData.id) {
-    userData.id = self.crypto.randomUUID();
-  }
-  
-  const profileData = createProfileObject(userData);
-  
-  const { data, error } = await supabase
-    .from('users')
-    .insert(profileData)
-    .select()
-    .single();
+  try {
+    if (!userData.id) {
+      userData.id = self.crypto.randomUUID();
+    }
     
-  if (error) {
-    console.error('Error creating user profile:', error);
-    throw error;
+    const profileData = createProfileObject(userData);
+    
+    const { data, error } = await supabase
+      .from('users')
+      .insert(profileData)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error creating user profile:', error);
+      throw error;
+    }
+    
+    return data;
+  } catch (err) {
+    console.error('Exception creating user profile:', err);
+    throw err;
   }
-  
-  return data;
 };
 
 export const updateUserProfile = async (userId: string, userData: Partial<ProfileType>) => {
-  const { data, error } = await supabase
-    .from('users')
-    .update(userData)
-    .eq('id', userId)
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update(userData)
+      .eq('id', userId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
     
-  if (error) {
-    console.error('Error updating user profile:', error);
-    throw error;
+    return data;
+  } catch (err) {
+    console.error('Exception updating user profile:', err);
+    throw err;
   }
-  
-  return data;
 };
 
 export { supabase };
