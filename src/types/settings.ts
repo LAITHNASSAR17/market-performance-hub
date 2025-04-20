@@ -88,7 +88,7 @@ export interface PlaybookEntry {
 export interface PlaybookRule {
   id: string;
   description: string;
-  type: 'entry' | 'exit' | 'management';
+  type: 'entry' | 'exit' | 'management' | 'risk' | 'custom';
   order: number;
 }
 

@@ -1,6 +1,21 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useForm, Controller } from "react-hook-form";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, 
+  DialogDescription, DialogFooter
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   PlusCircle, Filter, ArrowDownUp, Calendar, Lock, Unlock, 
   BookOpen, Users, Star, TrendingUp, BarChart4, Percent, Coins
@@ -8,6 +23,7 @@ import {
 import { usePlaybooks } from '@/hooks/usePlaybooks';
 import { PlaybookEntry, PlaybookRule } from '@/types/settings';
 import PlaybookCard from './PlaybookCard';
+import { useToast } from '@/hooks/use-toast';
 
 interface PlaybookFormData {
   name: string;
@@ -110,6 +126,7 @@ const PlaybookTab = () => {
   const onSubmit = async (data: PlaybookFormData) => {
     try {
       const rules: PlaybookRule[] = [];
+      let ruleOrder = 0;
       
       if (data.entryRules) {
         data.entryRules.forEach((rule, index) => {
@@ -117,7 +134,8 @@ const PlaybookTab = () => {
             rules.push({
               id: `entry-${Date.now()}-${index}`,
               type: 'entry',
-              description: rule.trim()
+              description: rule.trim(),
+              order: ruleOrder++
             });
           }
         });
@@ -129,7 +147,8 @@ const PlaybookTab = () => {
             rules.push({
               id: `exit-${Date.now()}-${index}`,
               type: 'exit',
-              description: rule.trim()
+              description: rule.trim(),
+              order: ruleOrder++
             });
           }
         });
@@ -141,7 +160,8 @@ const PlaybookTab = () => {
             rules.push({
               id: `risk-${Date.now()}-${index}`,
               type: 'risk',
-              description: rule.trim()
+              description: rule.trim(),
+              order: ruleOrder++
             });
           }
         });
@@ -153,20 +173,40 @@ const PlaybookTab = () => {
             rules.push({
               id: `custom-${Date.now()}-${index}`,
               type: 'custom',
-              description: rule.trim()
+              description: rule.trim(),
+              order: ruleOrder++
             });
           }
         });
       }
       
-      await addPlaybook({
-        ...data,
+      const newPlaybook: Omit<PlaybookEntry, 'id'> = {
+        name: data.name,
+        description: data.description,
         tags: data.tags || [],
         rating: 0,
         category: data.category || 'other',
         isPrivate: data.isPrivate || false,
-        rules
-      });
+        rules: rules,
+        setup: '',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        userId: 'current-user',
+        order: 0,
+        tradeType: 'both',
+        rMultiple: 0,
+        winRate: 0,
+        expectedValue: 0,
+        profitFactor: 0,
+        netProfitLoss: 0,
+        totalTrades: 0,
+        avgWinner: 0,
+        avgLoser: 0,
+        missedTrades: 0
+      };
+      
+      await addPlaybook(newPlaybook);
       
       toast({
         title: "Playbook Created",
