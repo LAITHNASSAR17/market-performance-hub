@@ -17,6 +17,7 @@ import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
 import { supabase } from '@/lib/supabase';
+import { hashPassword } from '@/utils/encryption';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
@@ -27,6 +28,7 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
+  const [redirect, setRedirect] = useState('');
   const { register, isAuthenticated, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,15 +51,50 @@ const Register: React.FC = () => {
     }
     
     try {
-      console.log('Registering user with email:', email, 'and country:', country);
+      const hashedPassword = hashPassword(password);
       
-      // First register the user - but don't rely on the return value for conditional logic
-      await register(name, email, password, country);
+      // First, check if user already exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+
+      if (existingUser) {
+        setError(t('register.error.emailExists'));
+        return;
+      }
+
+      // Create new user
+      const { data, error: insertError } = await supabase
+        .from('users')
+        .insert({
+          name,
+          email,
+          password: hashedPassword,
+          country,
+          role: 'user',
+          email_verified: false,
+          subscription_tier: 'free'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Registration error:', insertError);
+        throw new Error(insertError.message);
+      }
+
+      console.log('User registered successfully:', data);
       
       toast({
         title: t('register.success.title'),
-        description: t('register.success.checkEmail'),
+        description: t('register.success.description'),
       });
+
+      // After successful registration, navigate to login
+      setRedirect('/login');
+
     } catch (err) {
       console.error('Registration error:', err);
       setError(t('register.error.failed'));
@@ -71,6 +108,10 @@ const Register: React.FC = () => {
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" />;
+  }
+
+  if (redirect) {
+    return <Navigate to={redirect} />;
   }
 
   return (

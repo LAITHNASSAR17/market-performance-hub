@@ -9,279 +9,314 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      note_folders: {
+      homepage_content: {
         Row: {
-          color: string | null
           created_at: string
-          icon: string | null
+          description: string | null
+          features: Json | null
           id: string
-          name: string
+          primary_button_text: string | null
+          primary_button_url: string | null
+          secondary_button_text: string | null
+          secondary_button_url: string | null
+          subtitle: string | null
+          title: string
           updated_at: string
-          user_id: string
         }
         Insert: {
-          color?: string | null
           created_at?: string
-          icon?: string | null
+          description?: string | null
+          features?: Json | null
           id?: string
-          name: string
+          primary_button_text?: string | null
+          primary_button_url?: string | null
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          subtitle?: string | null
+          title?: string
           updated_at?: string
-          user_id: string
         }
         Update: {
-          color?: string | null
           created_at?: string
-          icon?: string | null
+          description?: string | null
+          features?: Json | null
           id?: string
-          name?: string
+          primary_button_text?: string | null
+          primary_button_url?: string | null
+          secondary_button_text?: string | null
+          secondary_button_url?: string | null
+          subtitle?: string | null
+          title?: string
           updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
-      note_templates: {
+      journal_entries: {
         Row: {
-          category: string | null
           content: string
-          created_at: string
+          created_at: string | null
+          date: string
           id: string
-          is_default: boolean | null
-          is_favorite: boolean | null
+          mood: number | null
+          tags: string[] | null
           title: string
-          updated_at: string
-          user_id: string | null
+          updated_at: string | null
+          user_id: string
         }
         Insert: {
-          category?: string | null
           content: string
-          created_at?: string
+          created_at?: string | null
+          date: string
           id?: string
-          is_default?: boolean | null
-          is_favorite?: boolean | null
+          mood?: number | null
+          tags?: string[] | null
           title: string
-          updated_at?: string
-          user_id?: string | null
+          updated_at?: string | null
+          user_id: string
         }
         Update: {
-          category?: string | null
           content?: string
-          created_at?: string
+          created_at?: string | null
+          date?: string
           id?: string
-          is_default?: boolean | null
-          is_favorite?: boolean | null
+          mood?: number | null
+          tags?: string[] | null
           title?: string
-          updated_at?: string
-          user_id?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
       notes: {
         Row: {
-          content: string
+          content: string | null
           created_at: string
-          deleted_at: string | null
-          folder_id: string | null
           id: string
-          is_favorite: boolean | null
-          tags: string[]
-          template_id: string | null
+          tags: string[] | null
           title: string
-          trade_data: Json | null
+          trade_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          content: string
+          content?: string | null
           created_at?: string
-          deleted_at?: string | null
-          folder_id?: string | null
           id?: string
-          is_favorite?: boolean | null
-          tags?: string[]
-          template_id?: string | null
+          tags?: string[] | null
           title: string
-          trade_data?: Json | null
+          trade_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          content?: string
+          content?: string | null
           created_at?: string
-          deleted_at?: string | null
-          folder_id?: string | null
           id?: string
-          is_favorite?: boolean | null
-          tags?: string[]
-          template_id?: string | null
+          tags?: string[] | null
           title?: string
-          trade_data?: Json | null
+          trade_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
-      }
-      playbooks: {
-        Row: {
-          average_profit: number | null
-          avg_loser: number | null
-          avg_winner: number | null
-          category: string | null
-          created_at: string
-          description: string | null
-          expected_value: number | null
-          id: string
-          is_private: boolean | null
-          missed_trades: number | null
-          name: string
-          net_profit_loss: number | null
-          profit_factor: number | null
-          r_multiple: number | null
-          rating: number | null
-          rules: Json | null
-          tags: string[] | null
-          total_trades: number | null
-          updated_at: string
-          user_id: string | null
-          win_rate: number | null
-        }
-        Insert: {
-          average_profit?: number | null
-          avg_loser?: number | null
-          avg_winner?: number | null
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          expected_value?: number | null
-          id?: string
-          is_private?: boolean | null
-          missed_trades?: number | null
-          name: string
-          net_profit_loss?: number | null
-          profit_factor?: number | null
-          r_multiple?: number | null
-          rating?: number | null
-          rules?: Json | null
-          tags?: string[] | null
-          total_trades?: number | null
-          updated_at?: string
-          user_id?: string | null
-          win_rate?: number | null
-        }
-        Update: {
-          average_profit?: number | null
-          avg_loser?: number | null
-          avg_winner?: number | null
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          expected_value?: number | null
-          id?: string
-          is_private?: boolean | null
-          missed_trades?: number | null
-          name?: string
-          net_profit_loss?: number | null
-          profit_factor?: number | null
-          r_multiple?: number | null
-          rating?: number | null
-          rules?: Json | null
-          tags?: string[] | null
-          total_trades?: number | null
-          updated_at?: string
-          user_id?: string | null
-          win_rate?: number | null
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          avatar_url: string | null
-          country: string | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          avatar_url?: string | null
-          country?: string | null
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          avatar_url?: string | null
-          country?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      shared_items: {
-        Row: {
-          created_at: string
-          id: string
-          item_id: string
-          item_type: Database["public"]["Enums"]["shared_item_type"]
-          permission: Database["public"]["Enums"]["share_permission"]
-          shared_by: string
-          shared_with: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          item_id: string
-          item_type: Database["public"]["Enums"]["shared_item_type"]
-          permission?: Database["public"]["Enums"]["share_permission"]
-          shared_by: string
-          shared_with: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          item_id?: string
-          item_type?: Database["public"]["Enums"]["shared_item_type"]
-          permission?: Database["public"]["Enums"]["share_permission"]
-          shared_by?: string
-          shared_with?: string
-          updated_at?: string
-        }
         Relationships: [
           {
-            foreignKeyName: "shared_items_shared_by_fkey"
-            columns: ["shared_by"]
+            foreignKeyName: "notes_trade_id_fkey"
+            columns: ["trade_id"]
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shared_items_shared_with_fkey"
-            columns: ["shared_with"]
-            isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "trades"
             referencedColumns: ["id"]
           },
         ]
       }
+      playbooks: {
+        Row: {
+          avg_loser: number | null
+          avg_winner: number | null
+          category: string | null
+          created_at: string | null
+          description: string
+          expected_value: number | null
+          id: string
+          is_active: boolean | null
+          is_private: boolean | null
+          missed_trades: number | null
+          name: string
+          net_profit_loss: number | null
+          order_number: number | null
+          profit_factor: number | null
+          r_multiple: number | null
+          rating: number | null
+          rules: Json | null
+          setup: string | null
+          tags: string[] | null
+          total_trades: number | null
+          trade_type: string | null
+          updated_at: string | null
+          user_id: string
+          win_rate: number | null
+        }
+        Insert: {
+          avg_loser?: number | null
+          avg_winner?: number | null
+          category?: string | null
+          created_at?: string | null
+          description: string
+          expected_value?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_private?: boolean | null
+          missed_trades?: number | null
+          name: string
+          net_profit_loss?: number | null
+          order_number?: number | null
+          profit_factor?: number | null
+          r_multiple?: number | null
+          rating?: number | null
+          rules?: Json | null
+          setup?: string | null
+          tags?: string[] | null
+          total_trades?: number | null
+          trade_type?: string | null
+          updated_at?: string | null
+          user_id: string
+          win_rate?: number | null
+        }
+        Update: {
+          avg_loser?: number | null
+          avg_winner?: number | null
+          category?: string | null
+          created_at?: string | null
+          description?: string
+          expected_value?: number | null
+          id?: string
+          is_active?: boolean | null
+          is_private?: boolean | null
+          missed_trades?: number | null
+          name?: string
+          net_profit_loss?: number | null
+          order_number?: number | null
+          profit_factor?: number | null
+          r_multiple?: number | null
+          rating?: number | null
+          rules?: Json | null
+          setup?: string | null
+          tags?: string[] | null
+          total_trades?: number | null
+          trade_type?: string | null
+          updated_at?: string | null
+          user_id?: string
+          win_rate?: number | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
-          company_email: string
+          allow_registrations: boolean | null
+          company_email: string | null
           copyright_text: string | null
+          created_at: string
+          currency: string | null
+          custom_domain: string | null
+          default_user_role: string | null
+          favicon_url: string | null
+          google_analytics_id: string | null
+          id: string
+          language: string | null
+          logo_url: string | null
+          maintenance_mode: boolean | null
+          privacy_url: string | null
           site_name: string
+          subscription_plans_ids: string[] | null
           support_phone: string | null
+          support_url: string | null
+          terms_url: string | null
+          theme: string | null
+          timezone: string | null
           updated_at: string
         }
         Insert: {
-          company_email: string
+          allow_registrations?: boolean | null
+          company_email?: string | null
           copyright_text?: string | null
-          site_name: string
+          created_at?: string
+          currency?: string | null
+          custom_domain?: string | null
+          default_user_role?: string | null
+          favicon_url?: string | null
+          google_analytics_id?: string | null
+          id?: string
+          language?: string | null
+          logo_url?: string | null
+          maintenance_mode?: boolean | null
+          privacy_url?: string | null
+          site_name?: string
+          subscription_plans_ids?: string[] | null
           support_phone?: string | null
+          support_url?: string | null
+          terms_url?: string | null
+          theme?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
-          company_email?: string
+          allow_registrations?: boolean | null
+          company_email?: string | null
           copyright_text?: string | null
+          created_at?: string
+          currency?: string | null
+          custom_domain?: string | null
+          default_user_role?: string | null
+          favicon_url?: string | null
+          google_analytics_id?: string | null
+          id?: string
+          language?: string | null
+          logo_url?: string | null
+          maintenance_mode?: boolean | null
+          privacy_url?: string | null
           site_name?: string
+          subscription_plans_ids?: string[] | null
           support_phone?: string | null
+          support_url?: string | null
+          terms_url?: string | null
+          theme?: string | null
+          timezone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          billing_period: string
+          created_at: string | null
+          description: string
+          features: string[] | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          billing_period: string
+          created_at?: string | null
+          description: string
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price: number
+          updated_at?: string | null
+        }
+        Update: {
+          billing_period?: string
+          created_at?: string | null
+          description?: string
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -301,6 +336,7 @@ export type Database = {
           followed_rules: string[] | null
           id: string
           image_url: string | null
+          market_session: string | null
           notes: string | null
           playbook: string | null
           profit_loss: number | null
@@ -328,6 +364,7 @@ export type Database = {
           followed_rules?: string[] | null
           id?: string
           image_url?: string | null
+          market_session?: string | null
           notes?: string | null
           playbook?: string | null
           profit_loss?: number | null
@@ -355,6 +392,7 @@ export type Database = {
           followed_rules?: string[] | null
           id?: string
           image_url?: string | null
+          market_session?: string | null
           notes?: string | null
           playbook?: string | null
           profit_loss?: number | null
@@ -369,162 +407,119 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "fk_trade_account"
+            foreignKeyName: "trades_account_id_fkey"
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "trading_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trades_playbook_fkey"
-            columns: ["playbook"]
-            isOneToOne: false
-            referencedRelation: "playbooks"
             referencedColumns: ["id"]
           },
         ]
       }
       trading_accounts: {
         Row: {
-          account_number: string | null
-          account_type: string | null
           balance: number | null
-          broker: string | null
-          created_at: string | null
+          created_at: string
           id: string
           name: string
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
-          account_number?: string | null
-          account_type?: string | null
           balance?: number | null
-          broker?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           name: string
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
-          account_number?: string | null
-          account_type?: string | null
           balance?: number | null
-          broker?: string | null
-          created_at?: string | null
+          created_at?: string
           id?: string
           name?: string
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
       user_preferences: {
         Row: {
-          created_at: string | null
-          language: string | null
+          id: string
           theme: string | null
-          updated_at: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string | null
-          language?: string | null
+          id?: string
           theme?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string | null
-          language?: string | null
+          id?: string
           theme?: string | null
-          updated_at?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
       users: {
         Row: {
-          created_at: string
-          default_account_id: string | null
-          email: string
+          avatar_url: string | null
+          country: string | null
+          created_at: string | null
+          email: string | null
           email_verified: boolean | null
           id: string
-          is_blocked: boolean
-          name: string
-          password: string
-          role: string
+          is_admin: boolean | null
+          is_blocked: boolean | null
+          name: string | null
+          password: string | null
+          role: string | null
           subscription_tier: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
-          default_account_id?: string | null
-          email: string
+          avatar_url?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
           email_verified?: boolean | null
-          id?: string
-          is_blocked?: boolean
-          name: string
-          password: string
-          role?: string
+          id: string
+          is_admin?: boolean | null
+          is_blocked?: boolean | null
+          name?: string | null
+          password?: string | null
+          role?: string | null
           subscription_tier?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
-          default_account_id?: string | null
-          email?: string
+          avatar_url?: string | null
+          country?: string | null
+          created_at?: string | null
+          email?: string | null
           email_verified?: boolean | null
           id?: string
-          is_blocked?: boolean
-          name?: string
-          password?: string
-          role?: string
+          is_admin?: boolean | null
+          is_blocked?: boolean | null
+          name?: string | null
+          password?: string | null
+          role?: string | null
           subscription_tier?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "fk_default_account"
-            columns: ["default_account_id"]
-            isOneToOne: false
-            referencedRelation: "trading_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      has_playbook_access: {
-        Args: {
-          playbook_id: string
-          required_permission?: Database["public"]["Enums"]["share_permission"]
-        }
-        Returns: boolean
-      }
-      has_trade_access: {
-        Args: {
-          trade_id: string
-          required_permission?: Database["public"]["Enums"]["share_permission"]
-        }
-        Returns: boolean
-      }
-      is_playbook_public: {
-        Args: { playbook_id: string }
-        Returns: boolean
-      }
-      is_trade_public: {
-        Args: { trade_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      share_permission: "view" | "note" | "edit"
-      shared_item_type: "trade" | "playbook"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -639,9 +634,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      share_permission: ["view", "note", "edit"],
-      shared_item_type: ["trade", "playbook"],
-    },
+    Enums: {},
   },
 } as const
