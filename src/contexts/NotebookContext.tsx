@@ -107,27 +107,34 @@ export const NotebookProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
-      const data = await noteService.createNote({
+      const response = await noteService.createNote({
         title: newNoteData.title,
         content: newNoteData.content,
         tags: newNoteData.tags || [],
         userId: user.id,
         tradeId: newNoteData.tradeId
       });
-
-      if (!data || data.length === 0) {
+      
+      // Safety check for data
+      if (!response || !Array.isArray(response) || response.length === 0) {
         throw new Error("Failed to create note");
+      }
+      
+      const data = response[0];
+      
+      if (!data || !data.id) {
+        throw new Error("Invalid data returned from createNote");
       }
 
       const newNote: Note = {
-        id: data[0].id,
-        userId: data[0].user_id,
-        title: data[0].title,
-        content: data[0].content || '',
-        tradeId: data[0].trade_id,
-        tags: data[0].tags || [],
-        createdAt: data[0].created_at,
-        updatedAt: data[0].updated_at
+        id: data.id,
+        userId: data.user_id || user.id,
+        title: data.title || newNoteData.title,
+        content: data.content || newNoteData.content || '',
+        tradeId: data.trade_id,
+        tags: data.tags || newNoteData.tags || [],
+        createdAt: data.created_at || new Date().toISOString(),
+        updatedAt: data.updated_at || new Date().toISOString()
       };
 
       setNotes(prevNotes => [newNote, ...prevNotes]);

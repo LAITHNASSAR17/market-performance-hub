@@ -116,7 +116,7 @@ export const getAllProfiles = async (): Promise<User[]> => {
       return [];
     }
     
-    return data.map(mapUserRowToUser) || [];
+    return data && Array.isArray(data) ? data.map(mapUserRowToUser) : [];
   } catch (err) {
     console.error('Exception fetching profiles:', err);
     return [];

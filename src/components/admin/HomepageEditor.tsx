@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -86,20 +87,25 @@ const HomepageEditor: React.FC = () => {
           // Parse the features JSON if stored as string
           let parsedFeatures: Feature[] = [];
           
-          if (typeof data.features === 'string') {
-            try {
-              parsedFeatures = JSON.parse(data.features);
-            } catch (e) {
-              console.error('Error parsing features:', e);
+          // Safety check: make sure we have data and features exist
+          if (data.features) {
+            if (typeof data.features === 'string') {
+              try {
+                parsedFeatures = JSON.parse(data.features);
+              } catch (e) {
+                console.error('Error parsing features:', e);
+                parsedFeatures = defaultContent.features;
+              }
+            } else if (Array.isArray(data.features)) {
+              parsedFeatures = data.features as Feature[];
+            } else {
               parsedFeatures = defaultContent.features;
             }
-          } else if (data.features && Array.isArray(data.features)) {
-            parsedFeatures = data.features as Feature[];
           } else {
             parsedFeatures = defaultContent.features;
           }
           
-          // Map database field names to our interface field names
+          // Map database field names to our interface field names with safety checks
           const mappedData: HomepageContent = {
             title: data.title || defaultContent.title,
             subtitle: data.subtitle || defaultContent.subtitle,

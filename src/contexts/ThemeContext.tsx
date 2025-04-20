@@ -23,7 +23,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Load theme preference from Supabase when user logs in
   useEffect(() => {
     const loadThemePreference = async () => {
-      if (user) {
+      if (user?.id) {
         try {
           const { data, error } = await supabase
             .from('user_preferences')
@@ -37,9 +37,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             setTheme(data.theme as Theme);
           } else {
             // Create initial preference if it doesn't exist
-            await supabase
+            const { error: insertError } = await supabase
               .from('user_preferences')
-              .insert({ user_id: user.id, theme });
+              .insert({
+                user_id: user.id,
+                theme: theme
+              });
+              
+            if (insertError) throw insertError;
           }
         } catch (error) {
           console.error('Error loading theme preference:', error);
@@ -53,19 +58,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Update theme in Supabase when it changes - with better error handling
   useEffect(() => {
     const updateThemePreference = async () => {
-      if (!user) return; // Don't proceed if no user
+      if (!user?.id) return; // Don't proceed if no user
 
       try {
         // Check if record exists first
-        const { data: existingRecord } = await supabase
+        const { data: existingRecord, error: checkError } = await supabase
           .from('user_preferences')
           .select('user_id')
           .eq('user_id', user.id)
           .maybeSingle();
 
+        if (checkError) throw checkError;
+
         if (existingRecord) {
           // Update the existing record
-          const { error } = await supabase
+          const { error: updateError } = await supabase
             .from('user_preferences')
             .update({
               theme,
@@ -73,10 +80,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
             })
             .eq('user_id', user.id);
 
-          if (error) throw error;
+          if (updateError) throw updateError;
         } else {
           // Insert a new record
-          const { error } = await supabase
+          const { error: insertError } = await supabase
             .from('user_preferences')
             .insert({
               user_id: user.id,
@@ -84,7 +91,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
               updated_at: new Date().toISOString()
             });
 
-          if (error) throw error;
+          if (insertError) throw insertError;
         }
       } catch (error) {
         console.error('Error updating theme preference:', error);
@@ -93,7 +100,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Only run after initial user load
-    if (user) {
+    if (user?.id) {
       updateThemePreference();
     }
   }, [theme, user]);
