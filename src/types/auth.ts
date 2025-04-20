@@ -4,9 +4,9 @@ export interface User {
   name: string;
   email: string;
   password?: string;
-  isAdmin?: boolean;
-  isBlocked?: boolean;
   role?: string;
+  is_admin?: boolean;
+  is_blocked?: boolean;
   subscription_tier?: string;
   email_verified?: boolean;
   avatar_url?: string | null;

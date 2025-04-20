@@ -1,14 +1,9 @@
-import React, {
-  createContext,
-  useState,
-  useEffect,
-  useContext,
-  useRef,
-} from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
 import { User } from '@/types/auth';
+import { getUserByEmail, createUserProfile, updateUserProfile } from '@/lib/supabase';
 
 interface AuthContextProps {
   user: User | null;
@@ -294,16 +289,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       const hashedPassword = hashPassword(password);
-      const newUser: Omit<User, 'id' | 'is_admin' | 'is_blocked' | 'avatar_url' | 'country'> = {
+      const newUser: Partial<User> = {
         email: email,
         name: name,
         password: hashedPassword,
         role: 'user',
+        is_admin: false,
+        is_blocked: false,
+        email_verified: false,
       };
       
       const { data: createdUser, error } = await supabase
         .from('users')
-        .insert([{ ...newUser, email_verified: false }])
+        .insert([newUser])
         .select()
         .single();
       

@@ -1,27 +1,11 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { hashPassword } from '@/utils/encryption';
-import { ProfileType, createProfileObject } from '@/types/database';
+import { User } from '@/types/auth';
+import { Database } from '@/integrations/supabase/types';
 
-export const getAllProfiles = async (): Promise<ProfileType[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*');
-    
-    if (error) {
-      console.error('Error fetching profiles:', error);
-      return [];
-    }
-    
-    return data as ProfileType[] || [];
-  } catch (err) {
-    console.error('Exception fetching profiles:', err);
-    return [];
-  }
-};
+type UserRow = Database['public']['Tables']['users']['Row'];
 
-export const getUserByEmail = async (email: string) => {
+export const getUserByEmail = async (email: string): Promise<User | null> => {
   try {
     const { data, error } = await supabase
       .from('users')
@@ -34,24 +18,26 @@ export const getUserByEmail = async (email: string) => {
       return null;
     }
     
-    return data;
+    if (!data) return null;
+
+    return mapUserRowToUser(data);
   } catch (err) {
     console.error('Exception fetching user profile:', err);
     return null;
   }
 };
 
-export const createUserProfile = async (userData: Partial<ProfileType>) => {
+export const createUserProfile = async (userData: Partial<User>): Promise<User | null> => {
   try {
     if (!userData.id) {
       userData.id = self.crypto.randomUUID();
     }
     
-    const profileData = createProfileObject(userData);
+    const userRow = mapUserToUserRow(userData);
     
     const { data, error } = await supabase
       .from('users')
-      .insert(profileData)
+      .insert(userRow)
       .select()
       .single();
       
@@ -60,18 +46,20 @@ export const createUserProfile = async (userData: Partial<ProfileType>) => {
       throw error;
     }
     
-    return data;
+    return data ? mapUserRowToUser(data) : null;
   } catch (err) {
     console.error('Exception creating user profile:', err);
     throw err;
   }
 };
 
-export const updateUserProfile = async (userId: string, userData: Partial<ProfileType>) => {
+export const updateUserProfile = async (userId: string, userData: Partial<User>): Promise<User | null> => {
   try {
+    const userRow = mapUserToUserRow(userData);
+    
     const { data, error } = await supabase
       .from('users')
-      .update(userData)
+      .update(userRow)
       .eq('id', userId)
       .select()
       .single();
@@ -81,14 +69,59 @@ export const updateUserProfile = async (userId: string, userData: Partial<Profil
       throw error;
     }
     
-    return data;
+    return data ? mapUserRowToUser(data) : null;
   } catch (err) {
     console.error('Exception updating user profile:', err);
     throw err;
   }
 };
 
-// Helper function to safely update homepage content
+// Helper functions to map between User type and Database Row type
+const mapUserRowToUser = (row: UserRow): User => ({
+  id: row.id,
+  name: row.name || '',
+  email: row.email || '',
+  role: row.role,
+  is_admin: row.is_admin,
+  is_blocked: row.is_blocked,
+  subscription_tier: row.subscription_tier,
+  email_verified: row.email_verified,
+  avatar_url: row.avatar_url,
+  country: row.country
+});
+
+const mapUserToUserRow = (user: Partial<User>): Partial<UserRow> => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  password: user.password,
+  role: user.role,
+  is_admin: user.is_admin,
+  is_blocked: user.is_blocked,
+  subscription_tier: user.subscription_tier,
+  email_verified: user.email_verified,
+  avatar_url: user.avatar_url,
+  country: user.country
+});
+
+export const getAllProfiles = async (): Promise<User[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching profiles:', error);
+      return [];
+    }
+    
+    return data as User[] || [];
+  } catch (err) {
+    console.error('Exception fetching profiles:', err);
+    return [];
+  }
+};
+
 export const updateHomepageContent = async (contentData: any) => {
   try {
     // Ensure features is in the correct format for JSONB
@@ -115,7 +148,6 @@ export const updateHomepageContent = async (contentData: any) => {
   }
 };
 
-// Helper function to safely update site settings
 export const updateSiteSettings = async (settingsData: any) => {
   try {
     const { data, error } = await supabase
