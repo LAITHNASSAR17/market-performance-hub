@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,34 +53,24 @@ const Register: React.FC = () => {
     try {
       const hashedPassword = hashPassword(password);
       
-      // Check if user already exists using our secure function
-      try {
-        const { data: exists, error: checkError } = await supabase
-          .rpc('check_user_exists', { email_param: email });
+      // Check if user already exists
+      const { data: exists, error: checkError } = await supabase
+        .rpc('check_user_exists', { email_param: email });
 
-        if (checkError) {
-          console.error('Error checking existing user:', checkError);
-          throw new Error(checkError.message);
-        }
+      if (checkError) {
+        console.error('Error checking existing user:', checkError);
+        throw new Error(checkError.message);
+      }
 
-        if (exists) {
-          setError(t('register.error.emailExists'));
-          return;
-        }
-      } catch (checkErr) {
-        console.error('Error checking user existence:', checkErr);
-        // If it's a connection error, show a specific message
-        if (checkErr instanceof Error && checkErr.message.includes('Failed to fetch')) {
-          setError('تعذر الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.');
-          return;
-        }
-        throw checkErr;
+      if (exists) {
+        setError(t('register.error.emailExists'));
+        return;
       }
 
       // Generate a unique ID for the user
       const userId = crypto.randomUUID();
 
-      // Create new user with the generated ID using an insert directly to users table
+      // Create new user with the generated ID
       const { data, error: insertError } = await supabase
         .from('users')
         .insert({
@@ -89,10 +78,10 @@ const Register: React.FC = () => {
           name,
           email,
           password: hashedPassword,
-          country,
           role: 'user',
           email_verified: false,
-          subscription_tier: 'free'
+          subscription_tier: 'free',
+          country
         })
         .select()
         .single();
