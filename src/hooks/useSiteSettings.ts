@@ -4,9 +4,9 @@ import { supabase } from '@/lib/supabase';
 import { SiteSettings } from '@/types/settings';
 
 export const useSiteSettings = () => {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
 
   // Fetch settings on mount
   useEffect(() => {
@@ -15,6 +15,7 @@ export const useSiteSettings = () => {
 
   const fetchSettings = async () => {
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('site_settings')
         .select('*')
@@ -23,38 +24,40 @@ export const useSiteSettings = () => {
       if (error) throw error;
       
       if (data) {
-        setSettings(data as SiteSettings);
+        setSiteSettings(data as SiteSettings);
       }
     } catch (err) {
       console.error('Error fetching site settings:', err);
       setError('Failed to load settings');
+    } finally {
+      setLoading(false);
     }
   };
 
   // Update settings
   const updateSettings = async (updatedSettings: Partial<SiteSettings>) => {
-    if (!settings?.id) return;
+    if (!siteSettings?.id) return;
     
-    setIsUpdating(true);
-    setError(null);
+    setLoading(true);
+    setError('');
     
     try {
       const { error } = await supabase
         .from('site_settings')
         .update(updatedSettings)
-        .eq('id', settings.id);
+        .eq('id', siteSettings.id);
 
       if (error) throw error;
       
       // Update local state
-      setSettings(prev => prev ? { ...prev, ...updatedSettings } : null);
+      setSiteSettings(prev => prev ? { ...prev, ...updatedSettings } : null);
       
     } catch (err) {
       console.error('Error updating settings:', err);
       setError('Failed to update settings');
       throw err;
     } finally {
-      setIsUpdating(false);
+      setLoading(false);
     }
   };
 
@@ -68,7 +71,7 @@ export const useSiteSettings = () => {
       document.getElementsByTagName('head')[0].appendChild(link);
       
       // Optionally update in settings if needed
-      if (settings) {
+      if (siteSettings) {
         updateSettings({ favicon_url: faviconUrl });
       }
       
@@ -80,8 +83,8 @@ export const useSiteSettings = () => {
   };
 
   return {
-    settings,
-    isUpdating,
+    siteSettings,
+    loading,
     error,
     updateSettings,
     updateFavicon,
@@ -89,4 +92,5 @@ export const useSiteSettings = () => {
   };
 };
 
+// Export a default version for easier imports
 export default useSiteSettings;

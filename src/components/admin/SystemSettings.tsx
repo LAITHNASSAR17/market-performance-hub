@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,16 +12,16 @@ import FaviconUpload from '@/components/FaviconUpload';
 
 const SystemSettings: React.FC = () => {
   const { toast } = useToast();
-  const { settings, updateSettings, isUpdating } = useSiteSettings();
+  const { siteSettings, updateSettings, loading } = useSiteSettings();
   const [siteName, setSiteName] = useState('');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [showFaviconUpload, setShowFaviconUpload] = useState(false);
   
   useEffect(() => {
-    if (settings?.site_name) {
-      setSiteName(settings.site_name);
+    if (siteSettings?.site_name) {
+      setSiteName(siteSettings.site_name);
     }
-  }, [settings]);
+  }, [siteSettings]);
 
   const handleSaveSettings = async () => {
     try {
@@ -28,9 +29,9 @@ const SystemSettings: React.FC = () => {
       // Use the updateSettings function from the hook
       updateSettings({ 
         site_name: siteName,
-        company_email: settings?.company_email || '',
-        theme: settings?.theme || 'light',
-        language: settings?.language || 'en'
+        company_email: siteSettings?.company_email || '',
+        theme: siteSettings?.theme || 'light',
+        language: siteSettings?.language || 'en'
       });
       
       toast({
@@ -95,11 +96,11 @@ const SystemSettings: React.FC = () => {
       <CardFooter>
         <Button 
           onClick={handleSaveSettings} 
-          disabled={isUpdating}
+          disabled={loading}
           className="w-full flex items-center justify-center gap-2"
         >
           <Save className="h-4 w-4" />
-          {isUpdating ? 'Saving...' : 'Save Settings'}
+          {loading ? 'Saving...' : 'Save Settings'}
         </Button>
       </CardFooter>
 

@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSiteSettings } from '@/hooks/useSiteSettings';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -10,7 +11,7 @@ import { Pencil, Save, Globe } from 'lucide-react';
 
 const SiteSettings: React.FC = () => {
   const { toast } = useToast();
-  const { settings, updateSettings, isUpdating } = useSiteSettings();
+  const { siteSettings, updateSettings, loading } = useSiteSettings();
   
   const [isEditing, setIsEditing] = useState(false);
   const [formValues, setFormValues] = useState({
@@ -24,17 +25,17 @@ const SiteSettings: React.FC = () => {
   
   // Load settings on mount
   useEffect(() => {
-    if (settings) {
+    if (siteSettings) {
       setFormValues({
-        site_name: settings.site_name || 'Trading Platform',
-        company_email: settings.company_email || 'support@tradingplatform.com',
-        support_phone: settings.support_phone || '+1 (123) 456-7890',
-        copyright_text: settings.copyright_text || '© 2025 Trading Platform. All rights reserved.',
-        theme: settings.theme || 'light',
-        language: settings.language || 'en'
+        site_name: siteSettings.site_name || 'Trading Platform',
+        company_email: siteSettings.company_email || 'support@tradingplatform.com',
+        support_phone: siteSettings.support_phone || '+1 (123) 456-7890',
+        copyright_text: siteSettings.copyright_text || '© 2025 Trading Platform. All rights reserved.',
+        theme: siteSettings.theme || 'light',
+        language: siteSettings.language || 'en'
       });
     }
-  }, [settings]);
+  }, [siteSettings]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,9 +50,9 @@ const SiteSettings: React.FC = () => {
       console.log('Saving site settings:', formValues);
       updateSettings({
         ...formValues,
-        id: settings?.id || '',
-        created_at: settings?.created_at || '',
-        updated_at: settings?.updated_at || ''
+        id: siteSettings?.id || '',
+        created_at: siteSettings?.created_at || '',
+        updated_at: siteSettings?.updated_at || ''
       });
       
       setIsEditing(false);
@@ -71,14 +72,14 @@ const SiteSettings: React.FC = () => {
   };
   
   const handleCancel = () => {
-    if (settings) {
+    if (siteSettings) {
       setFormValues({
-        site_name: settings.site_name || 'Trading Platform',
-        company_email: settings.company_email || 'support@tradingplatform.com',
-        support_phone: settings.support_phone || '+1 (123) 456-7890',
-        copyright_text: settings.copyright_text || '© 2025 Trading Platform. All rights reserved.',
-        theme: settings.theme || 'light',
-        language: settings.language || 'en'
+        site_name: siteSettings.site_name || 'Trading Platform',
+        company_email: siteSettings.company_email || 'support@tradingplatform.com',
+        support_phone: siteSettings.support_phone || '+1 (123) 456-7890',
+        copyright_text: siteSettings.copyright_text || '© 2025 Trading Platform. All rights reserved.',
+        theme: siteSettings.theme || 'light',
+        language: siteSettings.language || 'en'
       });
     }
     setIsEditing(false);
@@ -104,9 +105,6 @@ const SiteSettings: React.FC = () => {
             </Button>
           ) : null}
         </CardTitle>
-        <CardDescription>
-          Configure global site settings and branding
-        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -180,11 +178,11 @@ const SiteSettings: React.FC = () => {
               </Button>
               <Button 
                 onClick={handleSave} 
-                disabled={isUpdating}
+                disabled={loading}
                 className="flex items-center gap-1"
               >
                 <Save className="h-4 w-4" />
-                {isUpdating ? "Saving..." : "Save Changes"}
+                {loading ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           )}
