@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +28,16 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
   const { t } = useLanguage();
   const [showDetails, setShowDetails] = React.useState(false);
   
+  // Helper to safely get property values considering both naming conventions
+  const getPropertyValue = <K extends keyof PlaybookEntry>(
+    prop: K, 
+    altProp?: keyof PlaybookEntry
+  ): PlaybookEntry[K] => {
+    if (playbook[prop] !== undefined) return playbook[prop];
+    if (altProp && playbook[altProp] !== undefined) return playbook[altProp] as unknown as PlaybookEntry[K];
+    return undefined as unknown as PlaybookEntry[K];
+  };
+  
   // Get category colors
   const getCategoryColor = (category?: string) => {
     switch(category) {
@@ -38,6 +47,19 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
       default: return 'bg-gray-500';
     }
   };
+
+  const isActiveValue = getPropertyValue('is_active', 'isActive');
+  const isPrivateValue = getPropertyValue('is_private', 'isPrivate');
+  const rMultipleValue = getPropertyValue('r_multiple', 'rMultiple');
+  const winRateValue = getPropertyValue('win_rate', 'winRate');
+  const expectedValueValue = getPropertyValue('expected_value', 'expectedValue');
+  const profitFactorValue = getPropertyValue('profit_factor', 'profitFactor');
+  const netProfitLossValue = getPropertyValue('net_profit_loss', 'netProfitLoss');
+  const totalTradesValue = getPropertyValue('total_trades', 'totalTrades');
+  const avgWinnerValue = getPropertyValue('avg_winner', 'avgWinner');
+  const avgLoserValue = getPropertyValue('avg_loser', 'avgLoser');
+  const missedTradesValue = getPropertyValue('missed_trades', 'missedTrades');
+  
   
   return (
     <>
@@ -50,7 +72,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <CardTitle className="text-lg truncate pr-1">
                   {playbook.name}
                 </CardTitle>
-                {playbook.isPrivate ? (
+                {isPrivateValue ? (
                   <Lock className="h-4 w-4 ml-1 text-muted-foreground flex-shrink-0" />
                 ) : (
                   <Unlock className="h-4 w-4 ml-1 text-muted-foreground flex-shrink-0" />
@@ -65,7 +87,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                     <Star 
                       key={star} 
                       className={`h-3 w-3 flex-shrink-0 ${
-                        star <= Math.round(playbook.rating) 
+                        star <= Math.round(playbook.rating || 0) 
                           ? "fill-yellow-400 text-yellow-400" 
                           : "text-muted-foreground"
                       }`}
@@ -89,7 +111,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <TrendingUp className="h-3 w-3 mr-1 flex-shrink-0" />
                 <span className="truncate">R Multiple</span>
               </div>
-              <div className="text-base font-semibold truncate text-center">{playbook.rMultiple || 0}R</div>
+              <div className="text-base font-semibold truncate text-center">{rMultipleValue || 0}R</div>
             </div>
             
             <div className="flex flex-col p-2 border rounded-md">
@@ -97,7 +119,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <Percent className="h-3 w-3 mr-1 flex-shrink-0" />
                 <span className="truncate">Win Rate</span>
               </div>
-              <div className="text-base font-semibold truncate text-center">{playbook.winRate || 0}%</div>
+              <div className="text-base font-semibold truncate text-center">{winRateValue || 0}%</div>
             </div>
           </div>
           
@@ -108,10 +130,10 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Exp. Value</span>
               </div>
               <div className={`text-sm font-semibold truncate text-center ${
-                (playbook.expectedValue || 0) > 0 ? 'text-green-500' : 
-                (playbook.expectedValue || 0) < 0 ? 'text-red-500' : ''
+                (expectedValueValue || 0) > 0 ? 'text-green-500' : 
+                (expectedValueValue || 0) < 0 ? 'text-red-500' : ''
               }`}>
-                {playbook.expectedValue || 0}
+                {expectedValueValue || 0}
               </div>
             </div>
             
@@ -121,9 +143,9 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Profit Factor</span>
               </div>
               <div className={`text-sm font-semibold truncate text-center ${
-                (playbook.profitFactor || 0) > 1 ? 'text-green-500' : 'text-red-500'
+                (profitFactorValue || 0) > 1 ? 'text-green-500' : 'text-red-500'
               }`}>
-                {playbook.profitFactor?.toFixed(2) || '0.00'}
+                {profitFactorValue?.toFixed(2) || '0.00'}
               </div>
             </div>
             
@@ -133,10 +155,10 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Net P/L</span>
               </div>
               <div className={`text-sm font-semibold truncate text-center ${
-                (playbook.netProfitLoss || 0) > 0 ? 'text-green-500' : 
-                (playbook.netProfitLoss || 0) < 0 ? 'text-red-500' : ''
+                (netProfitLossValue || 0) > 0 ? 'text-green-500' : 
+                (netProfitLossValue || 0) < 0 ? 'text-red-500' : ''
               }`}>
-                ${playbook.netProfitLoss?.toFixed(2) || '0.00'}
+                ${netProfitLossValue?.toFixed(2) || '0.00'}
               </div>
             </div>
           </div>
@@ -147,7 +169,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <Hash className="h-3 w-3 mr-1 flex-shrink-0" />
                 <span className="truncate">Trades</span>
               </div>
-              <div className="text-sm font-semibold truncate text-center">{playbook.totalTrades || 0}</div>
+              <div className="text-sm font-semibold truncate text-center">{totalTradesValue || 0}</div>
             </div>
             
             <div className="flex flex-col p-2 border rounded-md">
@@ -156,7 +178,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Avg Winner</span>
               </div>
               <div className="text-sm font-semibold truncate text-center text-green-500">
-                ${playbook.avgWinner?.toFixed(2) || '0.00'}
+                ${avgWinnerValue?.toFixed(2) || '0.00'}
               </div>
             </div>
             
@@ -166,7 +188,7 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                 <span className="truncate">Avg Loser</span>
               </div>
               <div className="text-sm font-semibold truncate text-center text-red-500">
-                ${playbook.avgLoser?.toFixed(2) || '0.00'}
+                ${avgLoserValue?.toFixed(2) || '0.00'}
               </div>
             </div>
           </div>
@@ -209,14 +231,14 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                   <Star 
                     key={star} 
                     className={`inline-block h-4 w-4 ${
-                      star <= Math.round(playbook.rating) 
+                      star <= Math.round(playbook.rating || 0) 
                         ? "fill-yellow-400 text-yellow-400" 
                         : "text-muted-foreground"
                     }`}
                   />
                 ))}
               </span>
-              {playbook.isPrivate ? (
+              {isPrivateValue ? (
                 <Badge variant="outline" className="ml-2 gap-1">
                   <Lock className="h-3 w-3" /> Private
                 </Badge>
@@ -246,49 +268,49 @@ const PlaybookCard: React.FC<PlaybookCardProps> = ({
                   <div className="text-sm text-muted-foreground flex items-center">
                     <Percent className="h-3 w-3 mr-1" /> Win Rate
                   </div>
-                  <div className="text-xl font-bold">{playbook.winRate || 0}%</div>
+                  <div className="text-xl font-bold">{winRateValue || 0}%</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <TrendingUp className="h-3 w-3 mr-1" /> R-Multiple
                   </div>
-                  <div className="text-xl font-bold">{playbook.rMultiple || 0}R</div>
+                  <div className="text-xl font-bold">{rMultipleValue || 0}R</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <BarChart className="h-3 w-3 mr-1" /> Profit Factor
                   </div>
-                  <div className="text-xl font-bold">{playbook.profitFactor?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xl font-bold">{profitFactorValue?.toFixed(2) || '0.00'}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <ArrowRightLeft className="h-3 w-3 mr-1" /> Expectancy
                   </div>
-                  <div className="text-xl font-bold">{playbook.expectedValue || 0}</div>
+                  <div className="text-xl font-bold">{expectedValueValue || 0}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <Hash className="h-3 w-3 mr-1" /> Total Trades
                   </div>
-                  <div className="text-xl font-bold">{playbook.totalTrades || 0}</div>
+                  <div className="text-xl font-bold">{totalTradesValue || 0}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <AlertTriangle className="h-3 w-3 mr-1" /> Missed Trades
                   </div>
-                  <div className="text-xl font-bold">{playbook.missedTrades || 0}</div>
+                  <div className="text-xl font-bold">{missedTradesValue || 0}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <Trophy className="h-3 w-3 mr-1" /> Avg. Winner
                   </div>
-                  <div className="text-xl font-bold text-green-500">${playbook.avgWinner?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xl font-bold text-green-500">${avgWinnerValue?.toFixed(2) || '0.00'}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <AlertTriangle className="h-3 w-3 mr-1" /> Avg. Loser
                   </div>
-                  <div className="text-xl font-bold text-red-500">${playbook.avgLoser?.toFixed(2) || '0.00'}</div>
+                  <div className="text-xl font-bold text-red-500">${avgLoserValue?.toFixed(2) || '0.00'}</div>
                 </div>
               </div>
             </div>

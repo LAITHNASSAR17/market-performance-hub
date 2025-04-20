@@ -14,6 +14,8 @@ interface UserContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (access_token: string, new_password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
+  logout: () => Promise<void>; // Added for backward compatibility
+  isAdmin: boolean; // Added for layout components
 }
 
 const AuthContext = createContext<UserContextType | undefined>(undefined);
@@ -22,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   // Check for user session on initial load
@@ -46,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error('Error fetching user data:', userError);
           }
           
-          setUser({
+          const userInfo = {
             id: session.user.id,
             name: userData?.name || session.user.user_metadata?.name || '',
             email: session.user.email || '',
@@ -54,9 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isAdmin: userData?.is_admin || false,
             isBlocked: userData?.is_blocked || false,
             subscription_tier: userData?.subscription_tier || 'free',
-          });
+          };
+          
+          setUser(userInfo);
+          setIsAdmin(!!userInfo.isAdmin);
         } else {
           setUser(null);
+          setIsAdmin(false);
         }
       } catch (error) {
         console.error('Session error:', error);
@@ -82,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Error fetching user data:', userError);
         }
         
-        setUser({
+        const userInfo = {
           id: session.user.id,
           name: userData?.name || session.user.user_metadata?.name || '',
           email: session.user.email || '',
@@ -90,9 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isAdmin: userData?.is_admin || false,
           isBlocked: userData?.is_blocked || false,
           subscription_tier: userData?.subscription_tier || 'free',
-        });
+        };
+        
+        setUser(userInfo);
+        setIsAdmin(!!userInfo.isAdmin);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setIsAdmin(false);
       }
     });
 
@@ -168,6 +179,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Alias for signOut to maintain compatibility with existing code
+  const logout = signOut;
+
   const forgotPassword = async (email: string) => {
     try {
       setLoading(true);
@@ -236,7 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error('Error fetching user data:', userError);
         }
         
-        setUser({
+        const userInfo = {
           id: session.user.id,
           name: userData?.name || session.user.user_metadata?.name || '',
           email: session.user.email || '',
@@ -244,7 +258,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isAdmin: userData?.is_admin || false,
           isBlocked: userData?.is_blocked || false,
           subscription_tier: userData?.subscription_tier || 'free',
-        });
+        };
+        
+        setUser(userInfo);
+        setIsAdmin(!!userInfo.isAdmin);
       }
     } catch (error: any) {
       console.error('Refresh user error:', error);
@@ -264,7 +281,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut, 
       forgotPassword, 
       resetPassword,
-      refreshUser
+      refreshUser,
+      logout,
+      isAdmin
     }}>
       {children}
     </AuthContext.Provider>

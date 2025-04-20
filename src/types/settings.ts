@@ -1,4 +1,3 @@
-
 // Extend this file as needed
 
 export interface User {
@@ -63,7 +62,6 @@ export interface PlaybookEntry {
   description: string;
   setup: string;
   rules: PlaybookRule[];
-  // Match database column names exactly
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -72,7 +70,6 @@ export interface PlaybookEntry {
   is_private: boolean;
   trade_type: 'long' | 'short' | 'both';
   tags: string[];
-  // Add properties that match the database fields
   category?: string;
   rating?: number;
   r_multiple?: number;
@@ -85,7 +82,7 @@ export interface PlaybookEntry {
   avg_loser?: number;
   missed_trades?: number;
   
-  // For backward compatibility
+  // For backward compatibility - these will be mapped to the db column names
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -100,6 +97,8 @@ export interface PlaybookEntry {
   netProfitLoss?: number;
   totalTrades?: number;
   missedTrades?: number;
+  avgWinner?: number;
+  avgLoser?: number;
 }
 
 export interface PlaybookRule {

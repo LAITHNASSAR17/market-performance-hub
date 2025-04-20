@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -187,9 +186,26 @@ const PlaybookTab = () => {
         tags: data.tags || [],
         rating: 0,
         category: data.category || 'other',
-        isPrivate: data.isPrivate || false,
+        is_private: data.isPrivate || false,
         rules: rules,
         setup: '',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        user_id: 'current-user',
+        order_number: 0,
+        trade_type: 'both',
+        r_multiple: 0,
+        win_rate: 0,
+        expected_value: 0,
+        profit_factor: 0,
+        net_profit_loss: 0,
+        total_trades: 0,
+        avg_winner: 0,
+        avg_loser: 0,
+        missed_trades: 0,
+        
+        isPrivate: data.isPrivate || false,
         isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

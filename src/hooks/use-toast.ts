@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useEffect, createContext, useContext } from "react";
 
 export type ToastProps = {
-  id: string;
+  id?: string;  // Made optional since we'll generate it if not provided
   title?: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
@@ -157,7 +157,7 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = (props) => {
   }, []);
 
   const toast = React.useCallback((props: ToastProps): string => {
-    const id = genId();
+    const id = props.id || genId();
     
     dispatch({
       type: actionTypes.ADD_TOAST,
@@ -193,7 +193,7 @@ const ToastProvider: React.FC<{ children: React.ReactNode }> = (props) => {
 
 const toast = (props: ToastProps): string => {
   if (dispatch) {
-    const id = genId();
+    const id = props.id || genId();
     dispatch({
       type: actionTypes.ADD_TOAST,
       toast: {
