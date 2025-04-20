@@ -15,11 +15,14 @@ export interface ProfileType {
   email_verified?: boolean;
 }
 
-export function createProfileObject(data: Partial<ProfileType>): Partial<ProfileType> {
+export function createProfileObject(data: Partial<ProfileType>): ProfileType {
+  // Ensure id is always present, generate one if not provided
+  const id = data.id || self.crypto.randomUUID();
+  
   return {
-    id: data.id,
-    name: data.name,
-    email: data.email,
+    id,
+    name: data.name || '',
+    email: data.email || '',
     avatar_url: data.avatar_url,
     role: data.role,
     is_admin: data.is_admin,

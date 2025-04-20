@@ -18,7 +18,6 @@ export const adaptTradeToITrade = (dbTrade: any): ITrade => {
     notes: dbTrade.notes,
     tags: dbTrade.tags || [],
     // Add any other required fields with appropriate defaults
-    date: dbTrade.entry_date ? new Date(dbTrade.entry_date).toISOString().split('T')[0] : '',
     pair: dbTrade.symbol,
     type: dbTrade.direction === 'long' ? 'buy' : 'sell',
     size: dbTrade.quantity,

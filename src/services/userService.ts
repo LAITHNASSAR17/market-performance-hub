@@ -106,8 +106,9 @@ export const userService = {
       updatedAt: 'updated_at'
     };
     
-    // Apply filters dynamically
-    Object.entries(filter).forEach(([key, value]) => {
+    // Apply filters dynamically without recursion
+    Object.keys(filter).forEach(key => {
+      const value = (filter as any)[key];
       if (value !== undefined) {
         const dbColumn = columnMapping[key] || key;
         query = query.eq(dbColumn, value);
@@ -120,7 +121,7 @@ export const userService = {
     return data.map(formatUser);
   },
   
-  async createTradingAccount(userId: string, name: string, balance: number): Promise<ITradingAccount> {
+  async createTradingAccount(userId: string, name: string, initialBalance: number): Promise<ITradingAccount> {
     if (!userId) {
       throw new Error('User ID is required to create a trading account');
     }
@@ -129,14 +130,14 @@ export const userService = {
       throw new Error('Account name is required');
     }
     
-    const parsedBalance = Number(balance) || 0;
+    const parsedBalance = Number(initialBalance) || 0;
     
     const { data, error } = await supabase
       .from('trading_accounts')
       .insert({
         user_id: userId,
         name: name.trim(),
-        balance: parsedBalance
+        balance: parsedBalance // Add this field to the database
       })
       .select()
       .single();
@@ -150,11 +151,12 @@ export const userService = {
       throw new Error('Failed to create trading account, no data returned');
     }
     
+    // Map the data to our interface
     return {
       id: data.id,
       userId: data.user_id,
       name: data.name,
-      balance: Number(data.balance),
+      balance: data.balance !== undefined ? Number(data.balance) : 0, // Handle potential missing field
       createdAt: data.created_at
     };
   },
@@ -176,11 +178,12 @@ export const userService = {
     
     if (!data) return [];
     
+    // Map the data to our interface and handle potentially missing balance field
     return data.map(account => ({
       id: account.id,
       userId: account.user_id,
       name: account.name,
-      balance: Number(account.balance),
+      balance: account.balance !== undefined ? Number(account.balance) : 0,
       createdAt: account.created_at
     }));
   }

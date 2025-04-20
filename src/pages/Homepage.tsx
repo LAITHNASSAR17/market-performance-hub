@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { Json } from '@/integrations/supabase/types';
 
 interface Feature {
   title: string;
@@ -61,7 +63,7 @@ const Homepage: React.FC = () => {
         }
         
         if (data) {
-          // Parse features if it's a string
+          // Parse features if it's a string or JSON array
           let parsedFeatures: Feature[] = [];
           if (typeof data.features === 'string') {
             try {
@@ -71,7 +73,12 @@ const Homepage: React.FC = () => {
               parsedFeatures = [];
             }
           } else if (Array.isArray(data.features)) {
-            parsedFeatures = data.features as Feature[];
+            // Cast and transform JSON features to Feature objects
+            parsedFeatures = (data.features as Json[]).map((feature: any) => ({
+              title: feature.title || 'Feature',
+              description: feature.description || 'Description',
+              icon: feature.icon
+            }));
           }
           
           // Map database fields to our interface fields
@@ -83,7 +90,7 @@ const Homepage: React.FC = () => {
             primaryButtonUrl: data.primary_button_url || content.primaryButtonUrl,
             secondaryButtonText: data.secondary_button_text || content.secondaryButtonText,
             secondaryButtonUrl: data.secondary_button_url || content.secondaryButtonUrl,
-            features: parsedFeatures || content.features
+            features: parsedFeatures.length > 0 ? parsedFeatures : content.features
           });
         }
       } catch (error) {

@@ -26,6 +26,7 @@ const AdminUsers: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
+      // Create a profile object with required id field
       const profileData = createProfileObject({
         id: self.crypto.randomUUID(), // Generate a new UUID for the user
         name: userData.name,
