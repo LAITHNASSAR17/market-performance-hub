@@ -3,6 +3,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import TradeForm from '@/components/trade/TradeForm';
+import AddPairDialog from '@/components/AddPairDialog';
 import { useTradeForm } from '@/hooks/useTradeForm';
 
 const AddTrade: React.FC = () => {
@@ -13,7 +14,10 @@ const AddTrade: React.FC = () => {
     pairs,
     tradingAccounts,
     handleAddSymbol,
-    handleSave
+    handleSave,
+    isAddPairDialogOpen,
+    setIsAddPairDialogOpen,
+    handlePairAdded
   } = useTradeForm(id);
 
   return (
@@ -27,6 +31,11 @@ const AddTrade: React.FC = () => {
           onAddSymbol={handleAddSymbol}
           onSave={handleSave}
           loading={loading}
+        />
+        <AddPairDialog 
+          isOpen={isAddPairDialogOpen} 
+          onClose={() => setIsAddPairDialogOpen(false)} 
+          onPairAdded={handlePairAdded} 
         />
       </div>
     </Layout>

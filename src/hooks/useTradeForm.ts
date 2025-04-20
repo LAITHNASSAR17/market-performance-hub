@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTrade } from '@/contexts/TradeContext';
@@ -16,6 +15,7 @@ export const useTradeForm = (id?: string) => {
   const { toast } = useToast();
   const { validateTradeForm } = useTradeFormValidation();
   const [loading, setLoading] = useState(false);
+  const [isAddPairDialogOpen, setIsAddPairDialogOpen] = useState(false);
 
   const selectedTrade = id ? getTrade(id) : undefined;
   
@@ -76,10 +76,14 @@ export const useTradeForm = (id?: string) => {
   };
 
   const handleAddSymbol = () => {
-    const newSymbol = prompt("Enter new trading pair symbol:");
+    setIsAddPairDialogOpen(true);
+  };
+
+  const handlePairAdded = (newSymbol: string) => {
     if (newSymbol) {
-      addSymbol(newSymbol);
+      addSymbol(newSymbol.toUpperCase());
     }
+    setIsAddPairDialogOpen(false);
   };
 
   const handleSave = async (tradeData: Omit<Trade, 'id' | 'createdAt'>) => {
@@ -137,6 +141,9 @@ export const useTradeForm = (id?: string) => {
     pairs,
     tradingAccounts,
     handleAddSymbol,
-    handleSave
+    handleSave,
+    isAddPairDialogOpen,
+    setIsAddPairDialogOpen,
+    handlePairAdded
   };
 };

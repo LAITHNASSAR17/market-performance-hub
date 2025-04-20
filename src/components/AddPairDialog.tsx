@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useTrade } from '@/contexts/TradeContext';
 
 interface AddPairDialogProps {
   isOpen: boolean;
@@ -15,9 +14,8 @@ interface AddPairDialogProps {
 const AddPairDialog: React.FC<AddPairDialogProps> = ({ isOpen, onClose, onPairAdded }) => {
   const [symbol, setSymbol] = useState('');
   const [error, setError] = useState('');
-  const { addSymbol } = useTrade();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!symbol) {
@@ -26,14 +24,19 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({ isOpen, onClose, onPairAd
     }
 
     const formattedSymbol = symbol.toUpperCase();
-    addSymbol(formattedSymbol);
     onPairAdded(formattedSymbol);
     setSymbol('');
     setError('');
   };
 
+  const handleClose = () => {
+    setSymbol('');
+    setError('');
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add New Trading Pair</DialogTitle>
@@ -47,12 +50,13 @@ const AddPairDialog: React.FC<AddPairDialogProps> = ({ isOpen, onClose, onPairAd
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value)}
                 placeholder="Enter trading pair (e.g., EURUSD)"
+                autoFocus
               />
               {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
             <Button type="submit">Add Pair</Button>
