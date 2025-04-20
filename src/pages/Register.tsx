@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,8 +71,8 @@ const Register: React.FC = () => {
       // Generate a unique ID for the user
       const userId = crypto.randomUUID();
 
-      // Create new user with the generated ID
-      const { data, error: insertError } = await supabase
+      // First, let's insert the user record
+      const { error: insertError } = await supabase
         .from('users')
         .insert({
           id: userId,
@@ -80,18 +81,17 @@ const Register: React.FC = () => {
           password: hashedPassword,
           role: 'user',
           email_verified: false,
-          subscription_tier: 'free',
-          country
-        })
-        .select()
-        .single();
+          subscription_tier: 'free'
+        });
 
       if (insertError) {
         console.error('Registration error:', insertError);
         throw new Error(insertError.message);
       }
 
-      console.log('User registered successfully:', data);
+      // The profile entry will be created automatically via the trigger we set up
+      
+      console.log('User registered successfully with ID:', userId);
       
       toast({
         title: "تم التسجيل بنجاح",
