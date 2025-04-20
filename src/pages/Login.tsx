@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Please enter your email and password');
+      setError('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
       return;
     }
 
@@ -56,25 +57,25 @@ const Login: React.FC = () => {
       await login(email, password);
       
       toast({
-        title: "Login successful",
-        description: "Welcome back!",
+        title: "تم تسجيل الدخول بنجاح",
+        description: "مرحبًا بعودتك!",
       });
       
     } catch (error: any) {
       console.error('Login error:', error);
-      let errorMessage = "Login failed. Please check your email and password.";
+      let errorMessage = "فشل تسجيل الدخول. الرجاء التحقق من بريدك الإلكتروني وكلمة المرور.";
       
       if (error.message === 'Invalid credentials') {
-        errorMessage = "Invalid email or password";
+        errorMessage = "بريد إلكتروني أو كلمة مرور غير صحيحة";
       } else if (error.message === 'User is blocked') {
-        errorMessage = "This account has been blocked. Please contact support.";
-      } else if (error.message === 'Email is not activated') {
-        errorMessage = "Email is not activated. Please check your email to activate your account.";
+        errorMessage = "تم حظر هذا الحساب. الرجاء الاتصال بالدعم.";
+      } else if (error.message === 'Email is not activated' || error.message === 'البريد الإلكتروني غير مفعل') {
+        errorMessage = "البريد الإلكتروني غير مفعل. يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك.";
       }
       
       setError(errorMessage);
       toast({
-        title: "Login failed",
+        title: "فشل تسجيل الدخول",
         description: errorMessage,
         variant: "destructive",
       });
@@ -101,9 +102,9 @@ const Login: React.FC = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle>تسجيل الدخول</CardTitle>
             <CardDescription>
-              Enter your credentials to access your account
+              أدخل بيانات الاعتماد الخاصة بك للوصول إلى حسابك
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -123,13 +124,13 @@ const Login: React.FC = () => {
             
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">البريد الإلكتروني</Label>
                 <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                   <Mail className="h-4 w-4 mx-3 text-gray-500" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="أدخل بريدك الإلكتروني"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -140,14 +141,14 @@ const Login: React.FC = () => {
               
               <div className="mb-2">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">كلمة المرور</Label>
                   <Button 
                     variant="link" 
                     className="p-0 h-auto text-sm text-blue-600" 
                     onClick={handleForgotPassword}
                     type="button"
                   >
-                    Forgot Password?
+                    نسيت كلمة المرور؟
                   </Button>
                 </div>
                 <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
@@ -155,7 +156,7 @@ const Login: React.FC = () => {
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder="أدخل كلمة المرور"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -169,15 +170,15 @@ const Login: React.FC = () => {
                 className="w-full mt-6"
                 disabled={loading}
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              ليس لديك حساب؟{' '}
               <Link to="/register" className="text-blue-600 hover:underline">
-                Create Account
+                إنشاء حساب
               </Link>
             </p>
           </CardFooter>
