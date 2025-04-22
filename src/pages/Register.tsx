@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +17,6 @@ import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
 import { supabase } from '@/lib/supabase';
-import { hashPassword } from '@/utils/encryption';
 
 const Register: React.FC = () => {
   const { t } = useLanguage();
@@ -29,7 +27,6 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
-  const [redirect, setRedirect] = useState('');
   const { register, isAuthenticated, loading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,73 +49,21 @@ const Register: React.FC = () => {
     }
     
     try {
-      const hashedPassword = hashPassword(password);
+      console.log('Registering user with email:', email, 'and country:', country);
       
-      // Check if user already exists
-      const { data: exists, error: checkError } = await supabase
-        .rpc('check_user_exists', { email_param: email });
-
-      if (checkError) {
-        console.error('Error checking existing user:', checkError);
-        throw new Error(checkError.message);
-      }
-
-      if (exists) {
-        setError(t('register.error.emailExists'));
-        return;
-      }
-
-      // Generate a unique ID for the user
-      const userId = crypto.randomUUID();
-
-      // First, let's insert the user record
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert({
-          id: userId,
-          name,
-          email,
-          password: hashedPassword,
-          role: 'user',
-          email_verified: false,
-          subscription_tier: 'free'
-        });
-
-      if (insertError) {
-        console.error('Registration error:', insertError);
-        throw new Error(insertError.message);
-      }
-
-      // The profile entry will be created automatically via the trigger we set up
-      
-      console.log('User registered successfully with ID:', userId);
+      // First register the user - but don't rely on the return value for conditional logic
+      await register(name, email, password, country);
       
       toast({
-        title: "تم التسجيل بنجاح",
-        description: "تم إنشاء حسابك بنجاح. الرجاء تسجيل الدخول الآن",
+        title: t('register.success.title'),
+        description: t('register.success.checkEmail'),
       });
-
-      // After successful registration, navigate to login
-      setRedirect('/login');
-
     } catch (err) {
       console.error('Registration error:', err);
-      
-      // Handle connection errors specifically
-      let errorMessage = t('register.error.failed');
-      if (err instanceof Error) {
-        if (err.message.includes('Failed to fetch')) {
-          errorMessage = 'تعذر الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.';
-        } else {
-          errorMessage = err.message;
-        }
-      }
-      
-      setError(errorMessage);
-      
+      setError(t('register.error.failed'));
       toast({
-        title: "فشل التسجيل",
-        description: errorMessage,
+        title: t('register.error.title'),
+        description: t('register.error.description'),
         variant: "destructive",
       });
     }
@@ -126,10 +71,6 @@ const Register: React.FC = () => {
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" />;
-  }
-
-  if (redirect) {
-    return <Navigate to={redirect} />;
   }
 
   return (
@@ -246,7 +187,7 @@ const Register: React.FC = () => {
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? "جاري التسجيل..." : "إنشاء حساب"}
+                  {loading ? t('register.registering') : t('register.createAccount')}
                 </Button>
               </div>
             </form>
