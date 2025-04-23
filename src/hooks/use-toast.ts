@@ -102,7 +102,6 @@ export const reducer = (state: State, action: Action): State => {
           t.id === toastId || toastId === undefined
             ? {
                 ...t,
-                open: false,
               }
             : t
         ),
@@ -171,8 +170,7 @@ function toast(props: Toast) {
     toast: {
       ...props,
       id,
-      open: true,
-      onOpenChange: (open) => {
+      onOpenChange: (open: boolean) => {
         if (!open) dismiss();
       },
     },
@@ -185,6 +183,9 @@ function toast(props: Toast) {
   };
 }
 
+// Export the toast function so it can be imported elsewhere
+export { toast };
+
 toast.dismiss = (toastId?: string) => {
-  dispatch({ type: "DISMISS_TOAST", toastId })
-}
+  dispatch({ type: "DISMISS_TOAST", toastId });
+};
