@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
@@ -12,12 +13,7 @@ import Journal from './pages/Journal';
 import Insights from './pages/Insights';
 import NotFound from './pages/NotFound';
 import UserProfileSettings from './pages/UserProfileSettings';
-import './App.css';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { Toaster } from './components/ui/toaster';
-import { LanguageProvider } from './contexts/LanguageContext';
-import { TradeProvider } from './contexts/TradeContext';
-import { NotebookProvider } from './contexts/NotebookContext';
 import TradeTracking from './pages/TradeTracking';
 import TradingChart from './pages/TradingChart';
 import Notebook from './pages/Notebook';
@@ -38,28 +34,22 @@ import Reports from './pages/Reports';
 import Subscriptions from './pages/Subscriptions';
 import PaymentSuccess from './pages/PaymentSuccess';
 import Payment from './pages/Payment';
-import { AuthProvider } from './contexts/AuthContext';
 import { TooltipProvider } from './components/ui/tooltip';
-import { TagsProvider } from './contexts/TagsContext';
 
 function App() {
+  // Setup light mode as default
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+  }, []);
+
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <LanguageProvider>
-          <TagsProvider>
-            <TradeProvider>
-              <NotebookProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <AnimatedRoutes />
-                </TooltipProvider>
-              </NotebookProvider>
-            </TradeProvider>
-          </TagsProvider>
-        </LanguageProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <>
+      <TooltipProvider>
+        <Toaster />
+        <AnimatedRoutes />
+      </TooltipProvider>
+    </>
   );
 }
 

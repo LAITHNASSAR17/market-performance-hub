@@ -1,7 +1,6 @@
+
 import React, { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,10 +15,9 @@ import {
 import { LineChart, AlertCircle, Mail, Lock, User, Map } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/utils/countries';
-import { supabase } from '@/lib/supabase';
 
 const Register: React.FC = () => {
-  const { t } = useLanguage();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -27,51 +25,51 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
-  const { register, isAuthenticated, loading } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
     if (!name || !email || !password || !confirmPassword || !country) {
-      setError(t('register.error.fillAll'));
+      setError('Please fill all required fields');
       return;
     }
     
     if (password !== confirmPassword) {
-      setError(t('register.error.passwordMismatch'));
+      setError('Passwords do not match');
       return;
     }
     
     if (password.length < 6) {
-      setError(t('register.error.passwordLength'));
+      setError('Password must be at least 6 characters');
       return;
     }
     
     try {
+      setLoading(true);
       console.log('Registering user with email:', email, 'and country:', country);
       
-      // First register the user - but don't rely on the return value for conditional logic
-      await register(name, email, password, country);
-      
-      toast({
-        title: t('register.success.title'),
-        description: t('register.success.checkEmail'),
-      });
+      // Mock successful registration
+      setTimeout(() => {
+        toast({
+          title: "Registration successful",
+          description: "Please check your email to verify your account.",
+        });
+        navigate('/login');
+      }, 1500);
     } catch (err) {
       console.error('Registration error:', err);
-      setError(t('register.error.failed'));
+      setError('Registration failed');
       toast({
-        title: t('register.error.title'),
-        description: t('register.error.description'),
+        title: "Registration failed",
+        description: "There was an error during registration. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" />;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -84,9 +82,9 @@ const Register: React.FC = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle className="text-center">{t('register.title')}</CardTitle>
+            <CardTitle className="text-center">Create Account</CardTitle>
             <CardDescription className="text-center">
-              {t('register.description')}
+              Enter your details to create a new account
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -100,13 +98,13 @@ const Register: React.FC = () => {
               
               <div className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="name">{t('register.fullName')}</Label>
+                  <Label htmlFor="name">Full Name</Label>
                   <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <User className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="name"
                       type="text"
-                      placeholder={t('register.fullName')}
+                      placeholder="Full Name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -116,13 +114,13 @@ const Register: React.FC = () => {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="email">{t('register.email')}</Label>
+                  <Label htmlFor="email">Email</Label>
                   <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <Mail className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder={t('register.email')}
+                      placeholder="Email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -132,12 +130,12 @@ const Register: React.FC = () => {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="country">{t('register.country')}</Label>
+                  <Label htmlFor="country">Country</Label>
                   <Select value={country} onValueChange={setCountry}>
                     <SelectTrigger className="w-full">
                       <div className="flex items-center gap-2">
                         <Map className="h-4 w-4 text-gray-500" />
-                        <SelectValue placeholder={t('register.selectCountry')} />
+                        <SelectValue placeholder="Select your country" />
                       </div>
                     </SelectTrigger>
                     <SelectContent>
@@ -151,13 +149,13 @@ const Register: React.FC = () => {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="password">{t('register.password')}</Label>
+                  <Label htmlFor="password">Password</Label>
                   <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <Lock className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="password"
                       type="password"
-                      placeholder={t('register.password')}
+                      placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -167,13 +165,13 @@ const Register: React.FC = () => {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="confirmPassword">{t('register.confirmPassword')}</Label>
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <Lock className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder={t('register.confirmPassword')}
+                      placeholder="Confirm Password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -187,16 +185,16 @@ const Register: React.FC = () => {
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? t('register.registering') : t('register.createAccount')}
+                  {loading ? 'Creating Account...' : 'Create Account'}
                 </Button>
               </div>
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              {t('register.haveAccount')}{' '}
+              Already have an account?{' '}
               <Link to="/login" className="text-blue-600 hover:underline">
-                {t('register.login')}
+                Sign In
               </Link>
             </p>
           </CardFooter>

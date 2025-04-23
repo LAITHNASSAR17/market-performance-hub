@@ -1,8 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,11 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ResetPassword: React.FC = () => {
-  const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { changePassword } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,7 +28,7 @@ const ResetPassword: React.FC = () => {
       setEmail(emailParam);
       console.log('ResetPassword: Email from URL:', emailParam);
     } else {
-      setError('البريد الإلكتروني غير متوفر في الرابط');
+      setError('Email not provided in the link');
       console.error('ResetPassword: No email provided in URL');
     }
   }, [location]);
@@ -42,46 +38,47 @@ const ResetPassword: React.FC = () => {
     setError('');
 
     if (!email) {
-      setError('البريد الإلكتروني مطلوب');
+      setError('Email is required');
       return;
     }
 
     if (!password) {
-      setError('كلمة المرور مطلوبة');
+      setError('Password is required');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('كلمة المرور غير متطابقة');
+      setError('Passwords do not match');
       return;
     }
 
     if (password.length < 6) {
-      setError('كلمة المرور يجب أن تكون على الأقل 6 أحرف');
+      setError('Password must be at least 6 characters');
       return;
     }
 
     setLoading(true);
     try {
       console.log('ResetPassword: Resetting password for email:', email);
-      await changePassword(email, password);
-      console.log('ResetPassword: Password reset successful');
       
-      setSuccess(true);
-      toast({
-        title: "تم تغيير كلمة المرور",
-        description: "تم تغيير كلمة المرور بنجاح، يمكنك الآن تسجيل الدخول",
-      });
-      
+      // Mock successful password reset
       setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+        setSuccess(true);
+        toast({
+          title: "Password changed",
+          description: "Your password has been changed successfully. You can now login with your new password.",
+        });
+        
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      }, 1500);
     } catch (error) {
       console.error('ResetPassword: Error:', error);
-      setError('فشل في تغيير كلمة المرور. يرجى المحاولة مرة أخرى.');
+      setError('Failed to change password. Please try again.');
       toast({
-        title: "خطأ",
-        description: "فشل في تغيير كلمة المرور. يرجى المحاولة مرة أخرى.",
+        title: "Error",
+        description: "Failed to change password. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -100,11 +97,11 @@ const ResetPassword: React.FC = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>إعادة تعيين كلمة المرور</CardTitle>
+            <CardTitle>Reset Password</CardTitle>
             <CardDescription>
               {success 
-                ? "تم تغيير كلمة المرور بنجاح. سيتم تحويلك إلى صفحة تسجيل الدخول..."
-                : "الرجاء إدخال كلمة المرور الجديدة"
+                ? "Password changed successfully. Redirecting to login page..."
+                : "Please enter your new password"
               }
             </CardDescription>
           </CardHeader>
@@ -119,7 +116,7 @@ const ResetPassword: React.FC = () => {
             {!success ? (
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <Label htmlFor="email">البريد الإلكتروني</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -130,13 +127,13 @@ const ResetPassword: React.FC = () => {
                   />
                 </div>
                 <div className="mb-4">
-                  <Label htmlFor="password">كلمة المرور الجديدة</Label>
+                  <Label htmlFor="password">New Password</Label>
                   <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <LockKeyhole className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="password"
                       type="password"
-                      placeholder="أدخل كلمة المرور الجديدة"
+                      placeholder="Enter new password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -145,13 +142,13 @@ const ResetPassword: React.FC = () => {
                   </div>
                 </div>
                 <div className="mb-6">
-                  <Label htmlFor="confirmPassword">تأكيد كلمة المرور</Label>
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <LockKeyhole className="h-4 w-4 mx-3 text-gray-500" />
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="أعد إدخال كلمة المرور الجديدة"
+                      placeholder="Confirm new password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -164,22 +161,22 @@ const ResetPassword: React.FC = () => {
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? 'جاري المعالجة...' : 'إعادة تعيين كلمة المرور'}
+                  {loading ? 'Processing...' : 'Reset Password'}
                 </Button>
               </form>
             ) : (
               <div className="text-center p-4">
                 <div className="bg-green-100 text-green-800 p-4 rounded-md mb-4">
-                  تم تغيير كلمة المرور بنجاح! سيتم تحويلك إلى صفحة تسجيل الدخول...
+                  Password changed successfully! Redirecting to login page...
                 </div>
               </div>
             )}
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              هل تريد العودة إلى{' '}
+              Want to go back to{' '}
               <Button variant="link" className="p-0 h-auto text-blue-600" onClick={() => navigate('/login')}>
-                تسجيل الدخول
+                Login
               </Button>
             </p>
           </CardFooter>

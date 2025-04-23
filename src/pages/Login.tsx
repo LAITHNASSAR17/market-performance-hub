@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
 import { LineChart, Mail, LockKeyhole, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,7 +12,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,25 +19,13 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  useEffect(() => {
+  // Mock verification message if coming from verification page
+  React.useEffect(() => {
     if (location.state?.verified) {
-      setSuccessMessage(location.state.message || "تم التحقق من بريدك الإلكتروني بنجاح.");
+      setSuccessMessage(location.state.message || "Your email has been verified successfully.");
       setEmail(location.state.email || "");
     }
   }, [location.state]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      console.log("User is authenticated, redirecting to dashboard");
-      const intendedPath = location.state?.from || '/dashboard';
-      
-      if (intendedPath !== '/login' && intendedPath !== '/') {
-        localStorage.setItem('last_path', intendedPath);
-      }
-      
-      navigate(intendedPath, { replace: true });
-    }
-  }, [isAuthenticated, navigate, location.state]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,23 +40,36 @@ const Login: React.FC = () => {
     
     try {
       console.log('Login page: Starting login for', email);
-      await login(email, password);
       
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
+      // Mock successful login after delay
+      setTimeout(() => {
+        // For demo purposes, let's consider these credentials as valid
+        if (email === 'demo@example.com' && password === 'password123') {
+          // Store auth status in localStorage for demo
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('user', JSON.stringify({ 
+            name: 'Demo User', 
+            email: email, 
+            role: 'user'
+          }));
+          
+          toast({
+            title: "Login successful",
+            description: "Welcome back!",
+          });
+          
+          navigate('/dashboard');
+        } else {
+          throw new Error('Invalid credentials');
+        }
+        setLoading(false);
+      }, 1500);
     } catch (error: any) {
       console.error('Login error:', error);
       let errorMessage = "Login failed. Please check your email and password.";
       
       if (error.message === 'Invalid credentials') {
         errorMessage = "Invalid email or password";
-      } else if (error.message === 'User is blocked') {
-        errorMessage = "This account has been blocked. Please contact support.";
-      } else if (error.message === 'Email is not activated') {
-        errorMessage = "Email is not activated. Please check your email to activate your account.";
       }
       
       setError(errorMessage);
@@ -78,7 +78,6 @@ const Login: React.FC = () => {
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -86,7 +85,6 @@ const Login: React.FC = () => {
   const handleForgotPassword = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Login page: Navigating to forgot password page');
     navigate('/forgot-password');
   };
 
