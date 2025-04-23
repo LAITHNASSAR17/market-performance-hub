@@ -1,0 +1,300 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - Market Performance Hub</title>
+    <meta name="description" content="View your trading performance dashboard" />
+    <meta name="author" content="Market Performance Hub" />
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+  </head>
+
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">Market Performance Hub</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="index.html">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="dashboard.html">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="trades.html">Trades</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="analytics.html">Analytics</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="journal.html">Journal</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center">
+            <span class="text-light me-3">Welcome, <span id="userName">User</span></span>
+            <div class="dropdown">
+              <button class="btn btn-outline-light dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user-circle"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                <li><a class="dropdown-item" href="profile.html">Profile</a></li>
+                <li><a class="dropdown-item" href="settings.html">Settings</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="logoutBtn">Logout</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="container py-4">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Trading Dashboard</h1>
+        <a href="add-trade.html" class="btn btn-primary">
+          <i class="fas fa-plus me-2"></i> Add New Trade
+        </a>
+      </div>
+
+      <!-- Stats Summary Cards -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-3">
+          <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+              <h5 class="card-title">Total P&L</h5>
+              <h2 class="card-text" id="totalProfitLoss">$1,250.50</h2>
+              <p class="card-text"><span class="badge bg-light text-primary">+12.5%</span> from last month</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-success text-white h-100">
+            <div class="card-body">
+              <h5 class="card-title">Win Rate</h5>
+              <h2 class="card-text" id="winRate">65%</h2>
+              <p class="card-text"><span class="badge bg-light text-success">+5%</span> from last month</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-info text-white h-100">
+            <div class="card-body">
+              <h5 class="card-title">Total Trades</h5>
+              <h2 class="card-text" id="totalTrades">42</h2>
+              <p class="card-text"><span class="badge bg-light text-info">+8</span> from last month</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-warning text-dark h-100">
+            <div class="card-body">
+              <h5 class="card-title">Avg. Trade</h5>
+              <h2 class="card-text" id="avgTrade">$29.77</h2>
+              <p class="card-text"><span class="badge bg-light text-warning">+$2.50</span> from last month</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="row mb-4">
+        <div class="col-lg-8">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+              <h5 class="card-title mb-0">Profit/Loss History</h5>
+            </div>
+            <div class="card-body">
+              <canvas id="profitLossChart" height="250"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-white">
+              <h5 class="card-title mb-0">Win/Loss Ratio</h5>
+            </div>
+            <div class="card-body">
+              <canvas id="winLossPieChart" height="250"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Trades -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Recent Trades</h5>
+          <a href="trades.html" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Date</th>
+                  <th>Symbol</th>
+                  <th>Type</th>
+                  <th>Entry</th>
+                  <th>Exit</th>
+                  <th>P/L</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="recentTradesTable">
+                <!-- Trade rows will be populated via JavaScript -->
+                <tr>
+                  <td>2025-04-22</td>
+                  <td>AAPL</td>
+                  <td>Long</td>
+                  <td>$175.25</td>
+                  <td>$178.50</td>
+                  <td class="text-success">+$325.00</td>
+                  <td><span class="badge bg-success">Win</span></td>
+                  <td>
+                    <a href="#" class="btn btn-sm btn-outline-secondary me-1">
+                      <i class="far fa-eye"></i>
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-primary">
+                      <i class="far fa-edit"></i>
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2025-04-21</td>
+                  <td>MSFT</td>
+                  <td>Short</td>
+                  <td>$420.75</td>
+                  <td>$415.25</td>
+                  <td class="text-success">+$550.00</td>
+                  <td><span class="badge bg-success">Win</span></td>
+                  <td>
+                    <a href="#" class="btn btn-sm btn-outline-secondary me-1">
+                      <i class="far fa-eye"></i>
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-primary">
+                      <i class="far fa-edit"></i>
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2025-04-20</td>
+                  <td>TSLA</td>
+                  <td>Long</td>
+                  <td>$180.00</td>
+                  <td>$175.50</td>
+                  <td class="text-danger">-$450.00</td>
+                  <td><span class="badge bg-danger">Loss</span></td>
+                  <td>
+                    <a href="#" class="btn btn-sm btn-outline-secondary me-1">
+                      <i class="far fa-eye"></i>
+                    </a>
+                    <a href="#" class="btn btn-sm btn-outline-primary">
+                      <i class="far fa-edit"></i>
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trading Journal Notes -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">Recent Journal Entries</h5>
+          <a href="journal.html" class="btn btn-sm btn-outline-primary">View Journal</a>
+        </div>
+        <div class="card-body">
+          <div class="list-group">
+            <a href="#" class="list-group-item list-group-item-action">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">Market Volatility Strategy Adjustments</h6>
+                <small class="text-muted">3 days ago</small>
+              </div>
+              <p class="mb-1">Adjusted stop-loss strategy due to increased market volatility...</p>
+            </a>
+            <a href="#" class="list-group-item list-group-item-action">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">AAPL Earnings Play Review</h6>
+                <small class="text-muted">1 week ago</small>
+              </div>
+              <p class="mb-1">Reviewing my trades around AAPL's earnings announcement...</p>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification System -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
+      <div id="toastNotification" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+          <strong class="me-auto" id="toastTitle">Notification</strong>
+          <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+          This is a notification message.
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-auto">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4">
+            <h5>Market Performance Hub</h5>
+            <p class="small">Your complete solution for trading performance tracking and analysis.</p>
+          </div>
+          <div class="col-md-4">
+            <h5>Quick Links</h5>
+            <ul class="list-unstyled">
+              <li><a href="index.html" class="text-white">Home</a></li>
+              <li><a href="dashboard.html" class="text-white">Dashboard</a></li>
+              <li><a href="trades.html" class="text-white">Trades</a></li>
+              <li><a href="analytics.html" class="text-white">Analytics</a></li>
+            </ul>
+          </div>
+          <div class="col-md-4">
+            <h5>Contact</h5>
+            <p class="small">Email: support@marketperformancehub.com</p>
+          </div>
+        </div>
+        <hr>
+        <div class="text-center small">
+          <p>&copy; 2025 Market Performance Hub. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <!-- Custom JavaScript -->
+    <script src="js/main.js"></script>
+    <script src="js/dashboard.js"></script>
+    <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
+    <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+  </body>
+</html>
