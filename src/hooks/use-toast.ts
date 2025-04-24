@@ -1,17 +1,22 @@
 
 import * as React from "react";
-import { toast as sonnerToast, type ToastT } from "sonner";
 
 const TOAST_LIMIT = 5;
 const TOAST_REMOVE_DELAY = 1000000;
 
-type ToasterToast = ToastT & {
+type ToastActionElement = React.ReactElement;
+
+export type ToastProps = {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
-  action?: React.ReactNode;
+  action?: ToastActionElement;
   variant?: "default" | "destructive";
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
+
+type ToasterToast = ToastProps;
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -183,7 +188,6 @@ function toast(props: Toast) {
   };
 }
 
-// Export the toast function so it can be imported elsewhere
 export { toast };
 
 toast.dismiss = (toastId?: string) => {
