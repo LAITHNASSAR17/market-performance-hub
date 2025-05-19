@@ -1,91 +1,26 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from './AuthContext';
 import { Trade } from '@/types/trade';
 import { tradeService } from '@/services/tradeService';
-import { userService } from '@/services/userService';
 
 export type { Trade } from '@/types/trade';
 
-export type TradingAccount = {
-  id: string;
-  userId: string;
-  name: string;
-  balance: number;
-  createdAt: string;
-};
+// Import from the smaller contexts
+import { useSymbols } from './SymbolsContext';
+import { useHashtags } from './HashtagsContext';
+import { useTradingAccounts } from './TradingAccountsContext';
+import { useTradeCalculations } from './TradeCalculationsContext';
 
-type TradeContextType = {
-  trades: Trade[];
-  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
-  updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
-  deleteTrade: (id: string) => Promise<void>;
-  getTrade: (id: string) => Trade | undefined;
-  getAllTrades: () => Trade[];
-  loading: boolean;
-  error: string | null;
-  refreshTrades: () => Promise<void>;
-  accounts: string[];
-  pairs: string[];
-  symbols: Symbol[];
-  addSymbol: (symbol: Symbol) => void;
-  allHashtags: string[];
-  addHashtag: (hashtag: string) => void;
-  calculateProfitLoss: (entry: number, exit: number, lotSize: number, type: 'Buy' | 'Sell', instrumentType: string) => number;
-  tradingAccounts: TradingAccount[];
-  createTradingAccount: (name: string, balance: number) => Promise<TradingAccount>;
-  fetchTradingAccounts: () => Promise<void>;
-};
+// Export all the hook types for backwards compatibility
+export { useSymbols } from './SymbolsContext';
+export { useHashtags } from './HashtagsContext';
+export { useTradingAccounts } from './TradingAccountsContext';
+export { useTradeCalculations } from './TradeCalculationsContext';
 
-export type Symbol = {
-  symbol: string;
-  name: string;
-  type: 'forex' | 'crypto' | 'stock' | 'index' | 'commodity' | 'other';
-};
-
-const sampleAccounts = ['Main Trading', 'Demo Account', 'Savings Account'];
-
-const defaultSymbols: Symbol[] = [
-  { symbol: 'EUR/USD', name: 'Euro / US Dollar', type: 'forex' },
-  { symbol: 'GBP/USD', name: 'British Pound / US Dollar', type: 'forex' },
-  { symbol: 'USD/JPY', name: 'US Dollar / Japanese Yen', type: 'forex' },
-  { symbol: 'AUD/USD', name: 'Australian Dollar / US Dollar', type: 'forex' },
-  { symbol: 'USD/CAD', name: 'US Dollar / Canadian Dollar', type: 'forex' },
-  { symbol: 'NZD/USD', name: 'New Zealand Dollar / US Dollar', type: 'forex' },
-  { symbol: 'EUR/GBP', name: 'Euro / British Pound', type: 'forex' },
-  { symbol: 'USD/CHF', name: 'US Dollar / Swiss Franc', type: 'forex' },
-  
-  { symbol: 'BTC/USD', name: 'Bitcoin / US Dollar', type: 'crypto' },
-  { symbol: 'ETH/USD', name: 'Ethereum / US Dollar', type: 'crypto' },
-  { symbol: 'XRP/USD', name: 'Ripple / US Dollar', type: 'crypto' },
-  { symbol: 'LTC/USD', name: 'Litecoin / US Dollar', type: 'crypto' },
-  { symbol: 'ADA/USD', name: 'Cardano / US Dollar', type: 'crypto' },
-  
-  { symbol: 'AAPL', name: 'Apple Inc.', type: 'stock' },
-  { symbol: 'MSFT', name: 'Microsoft Corporation', type: 'stock' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.', type: 'stock' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', type: 'stock' },
-  { symbol: 'META', name: 'Meta Platforms Inc.', type: 'stock' },
-  { symbol: 'TSLA', name: 'Tesla Inc.', type: 'stock' },
-  
-  { symbol: '2222.SR', name: 'Saudi Aramco', type: 'stock' },
-  { symbol: '1120.SR', name: 'Al Rajhi Bank', type: 'stock' },
-  { symbol: '2010.SR', name: 'Saudi Basic Industries Corp', type: 'stock' },
-  
-  { symbol: 'SPX', name: 'S&P 500', type: 'index' },
-  { symbol: 'NDX', name: 'Nasdaq 100', type: 'index' },
-  { symbol: 'TASI', name: 'Tadawul All Share Index', type: 'index' },
-  
-  { symbol: 'XAUUSD', name: 'Gold', type: 'commodity' },
-  { symbol: 'XAGUSD', name: 'Silver', type: 'commodity' },
-  { symbol: 'CL', name: 'Crude Oil', type: 'commodity' }
-];
-
-const symbolsToPairs = (symbols: Symbol[]): string[] => {
-  return symbols.map(symbol => symbol.symbol);
-};
-
+// Sample trades for when no user is logged in
 const sampleTrades: Trade[] = [
   {
     id: '1',
@@ -219,107 +154,27 @@ const sampleTrades: Trade[] = [
   }
 ];
 
+type TradeContextType = {
+  trades: Trade[];
+  addTrade: (trade: Omit<Trade, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  updateTrade: (id: string, trade: Partial<Trade>) => Promise<void>;
+  deleteTrade: (id: string) => Promise<void>;
+  getTrade: (id: string) => Trade | undefined;
+  getAllTrades: () => Trade[];
+  loading: boolean;
+  error: string | null;
+  refreshTrades: () => Promise<void>;
+};
+
 const TradeContext = createContext<TradeContextType | undefined>(undefined);
 
 export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [symbols, setSymbols] = useState<Symbol[]>(defaultSymbols);
-  const [allHashtags, setAllHashtags] = useState<string[]>([
-    'setup', 'momentum', 'breakout', 'retracement', 'technical', 'fundamental', 
-    'news', 'mistake', 'perfecttrade', 'patience', 'fakeout'
-  ]);
   const { toast } = useToast();
   const { user } = useAuth();
-  const [tradingAccounts, setTradingAccounts] = useState<TradingAccount[]>([]);
-
-  const calculateProfitLoss = (
-    entry: number, 
-    exit: number, 
-    lotSize: number, 
-    type: 'Buy' | 'Sell',
-    instrumentType: string = 'forex'
-  ): number => {
-    let pipValue = 0;
-    let pipMultiplier = 1;
-    let contractSize = 100000;
-
-    let detectedType = instrumentType.toLowerCase();
-    
-    if (!detectedType) {
-      if (/\//.test(instrumentType)) {
-        detectedType = 'forex';
-      } else if (/^(btc|eth|xrp|ada|dot|sol)/i.test(instrumentType)) {
-        detectedType = 'crypto';
-      } else if (/\.(sr|sa)$/i.test(instrumentType)) {
-        detectedType = 'stock';
-      } else if (/^(spx|ndx|dji|ftse|tasi)/i.test(instrumentType)) {
-        detectedType = 'index';
-      } else if (/^(xau|xag|cl|ng)/i.test(instrumentType)) {
-        detectedType = 'commodity';
-      } else {
-        detectedType = 'stock';
-      }
-    }
-    
-    switch (detectedType) {
-      case 'forex':
-        contractSize = 100000;
-        
-        if (instrumentType.includes('JPY')) {
-          pipMultiplier = 0.01;
-        } else {
-          pipMultiplier = 0.0001;
-        }
-        
-        pipValue = pipMultiplier * contractSize;
-        break;
-        
-      case 'crypto':
-        contractSize = 1;
-        pipMultiplier = 1;
-        pipValue = 1;
-        break;
-        
-      case 'stock':
-        contractSize = lotSize;
-        pipMultiplier = 1;
-        pipValue = 1;
-        break;
-        
-      case 'index':
-        contractSize = lotSize;
-        pipMultiplier = 1;
-        pipValue = 1;
-        break;
-        
-      case 'commodity':
-        if (instrumentType.toUpperCase().includes('XAU')) {
-          contractSize = 100;
-        } else if (instrumentType.toUpperCase().includes('XAG')) {
-          contractSize = 50;
-        } else {
-          contractSize = 1000;
-        }
-        pipMultiplier = 1;
-        pipValue = 1;
-        break;
-        
-      default:
-        contractSize = lotSize;
-        pipMultiplier = 1;
-        pipValue = 1;
-    }
-    
-    const priceDiff = type === 'Buy' 
-      ? exit - entry 
-      : entry - exit;
-    
-    const profitLoss = priceDiff * lotSize * contractSize;
-    
-    return Math.round(profitLoss * 100) / 100;
-  };
+  const { addHashtag } = useHashtags();
 
   const fetchTrades = async () => {
     if (!user) {
@@ -370,13 +225,12 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setTrades(formattedTrades);
 
+      // Extract unique hashtags and add them to the HashtagsContext
       const uniqueHashtags = Array.from(new Set(
         formattedTrades.flatMap(trade => trade.hashtags)
       ));
-      setAllHashtags(prevHashtags => [
-        ...prevHashtags,
-        ...uniqueHashtags.filter(tag => !prevHashtags.includes(tag))
-      ]);
+      uniqueHashtags.forEach(tag => addHashtag(tag));
+      
     } catch (err) {
       console.error('Error fetching trades:', err);
       setError("حدث خطأ أثناء جلب التداولات");
@@ -442,6 +296,11 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       setTrades(prevTrades => [newTrade, ...prevTrades]);
       
+      // Add any new hashtags to the global list
+      if (newTradeData.hashtags) {
+        newTradeData.hashtags.forEach(tag => addHashtag(tag));
+      }
+
       toast({
         title: "تم إضافة التداول",
         description: "تم إضافة التداول بنجاح",
@@ -500,6 +359,11 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         )
       );
 
+      // Add any new hashtags to the global list
+      if (tradeUpdate.hashtags) {
+        tradeUpdate.hashtags.forEach(tag => addHashtag(tag));
+      }
+
       toast({
         title: "تم تحديث التداول",
         description: "تم تحديث التداول بنجاح",
@@ -551,79 +415,6 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return trades;
   };
 
-  const addHashtag = (hashtag: string) => {
-    if (!allHashtags.includes(hashtag)) {
-      setAllHashtags([...allHashtags, hashtag]);
-    }
-  };
-  
-  const addSymbol = (symbol: Symbol) => {
-    if (!symbols.some(s => s.symbol === symbol.symbol)) {
-      const updatedSymbols = [...symbols, symbol];
-      setSymbols(updatedSymbols);
-      toast({
-        title: "Symbol Added",
-        description: `${symbol.name} has been added to your symbols list`,
-      });
-    }
-  };
-
-  const fetchTradingAccounts = async () => {
-    if (!user) return;
-
-    try {
-      const accounts = await userService.getTradingAccounts(user.id);
-      setTradingAccounts(accounts);
-    } catch (error) {
-      console.error('Error fetching trading accounts:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء جلب الحسابات",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const createTradingAccount = async (name: string, balance: number) => {
-    if (!user) throw new Error('User not authenticated');
-
-    if (!name.trim()) {
-      toast({
-        title: "خطأ",
-        description: "الرجاء إدخال اسم الحساب",
-        variant: "destructive"
-      });
-      throw new Error('Account name is required');
-    }
-
-    try {
-      const newAccount = await userService.createTradingAccount(user.id, name, balance);
-      
-      setTradingAccounts(prev => [...prev, newAccount]);
-      
-      toast({
-        title: "حساب جديد",
-        description: `تم إنشاء الحساب ${name}`,
-      });
-
-      return newAccount;
-    } catch (error: any) {
-      console.error('Error creating trading account:', error);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ أثناء إنشاء الحساب",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchTradingAccounts();
-    }
-  }, [user]);
-
   return (
     <TradeContext.Provider value={{ 
       trades, 
@@ -634,17 +425,7 @@ export const TradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       getAllTrades,
       loading,
       error,
-      refreshTrades,
-      accounts: sampleAccounts,
-      pairs: symbolsToPairs(symbols),
-      symbols,
-      addSymbol,
-      allHashtags,
-      addHashtag,
-      calculateProfitLoss,
-      tradingAccounts,
-      createTradingAccount,
-      fetchTradingAccounts,
+      refreshTrades
     }}>
       {children}
     </TradeContext.Provider>
