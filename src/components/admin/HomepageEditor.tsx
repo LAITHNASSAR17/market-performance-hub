@@ -80,13 +80,23 @@ const HomepageEditor: React.FC = () => {
           // Use default content if none exists
         } else if (data) {
           // Parse the features JSON if stored as string
-          const parsedData = {
-            ...data,
-            features: typeof data.features === 'string' 
-              ? JSON.parse(data.features) 
-              : data.features
+          const features = typeof data.features === 'string' 
+            ? JSON.parse(data.features) 
+            : data.features;
+          
+          // Map database field names to our interface field names
+          const mappedData: HomepageContent = {
+            title: data.title || defaultContent.title,
+            subtitle: data.subtitle || defaultContent.subtitle,
+            description: data.description || defaultContent.description,
+            primaryButtonText: data.primary_button_text || defaultContent.primaryButtonText,
+            primaryButtonUrl: data.primary_button_url || defaultContent.primaryButtonUrl,
+            secondaryButtonText: data.secondary_button_text || defaultContent.secondaryButtonText,
+            secondaryButtonUrl: data.secondary_button_url || defaultContent.secondaryButtonUrl,
+            features: features || defaultContent.features
           };
-          setContent(parsedData);
+          
+          setContent(mappedData);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -103,9 +113,15 @@ const HomepageEditor: React.FC = () => {
     setSaving(true);
     
     try {
-      // Convert features to string if needed for database storage
+      // Map our interface field names to database field names
       const dataToSave = {
-        ...content,
+        title: content.title,
+        subtitle: content.subtitle,
+        description: content.description,
+        primary_button_text: content.primaryButtonText,
+        primary_button_url: content.primaryButtonUrl,
+        secondary_button_text: content.secondaryButtonText,
+        secondary_button_url: content.secondaryButtonUrl,
         features: typeof content.features === 'object' 
           ? JSON.stringify(content.features) 
           : content.features

@@ -10,7 +10,7 @@ import {
   Search, 
   Lock, 
   ShieldAlert, 
-  User, 
+  User,
   Users, 
   BarChart3, 
   TrendingUp, 
@@ -50,46 +50,20 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/utils/encryption';
+import { createProfileObject } from '@/types/database';
 
-// Import our new components
-import UserTable from '@/components/admin/UserTable';
-import TradeTable from '@/components/admin/TradeTable';
-import HashtagsTable from '@/components/admin/HashtagsTable';
-import SystemSettings from '@/components/admin/SystemSettings';
-import AdminCharts from '@/components/admin/AdminCharts';
+interface Hashtag {
+  name: string;
+  count: number;
+  addedBy: string;
+  lastUsed: string;
+}
 
-// Sample data for hashtags
-const sampleHashtags = [
-  { 
-    name: 'setup', 
-    count: 25, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-10' 
-  },
-  { 
-    name: 'momentum', 
-    count: 18, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-09' 
-  },
-  { 
-    name: 'breakout', 
-    count: 22, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-11' 
-  },
-  { 
-    name: 'technical', 
-    count: 15, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-08' 
-  },
-  { 
-    name: 'fundamental', 
-    count: 10, 
-    addedBy: 'Admin', 
-    lastUsed: '2025-04-07' 
-  },
+const sampleHashtagsData: Hashtag[] = [
+  { name: 'trading', count: 145, addedBy: 'Admin', lastUsed: '2023-08-15' },
+  { name: 'forex', count: 87, addedBy: 'Admin', lastUsed: '2023-08-14' },
+  { name: 'crypto', count: 56, addedBy: 'Admin', lastUsed: '2023-08-12' },
+  { name: 'stocks', count: 42, addedBy: 'ModeratorUser', lastUsed: '2023-08-10' },
 ];
 
 const AdminDashboard: React.FC = () => {
@@ -101,39 +75,33 @@ const AdminDashboard: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [hashtags, setHashtags] = useState(sampleHashtags);
+  const [hashtags, setHashtags] = useState<Hashtag[]>(sampleHashtagsData);
   const [allTrades, setAllTrades] = useState<any[]>([]);
 
-  // Load initial data
   useEffect(() => {
     if (isAdmin) {
       handleRefreshData();
     }
   }, [isAdmin]);
 
-  // Statistics calculations - now derived from loaded data
   const totalUsers = users ? users.length : 0;
   const activeUsers = users ? users.filter(user => !user.isBlocked).length : 0;
   const blockedUsers = users ? users.filter(user => user.isBlocked).length : 0;
   
-  // All trades (from all users) for admin
   const totalTrades = allTrades.length;
   
-  // Calculate profit/loss and other trade statistics
   const allProfitLoss = allTrades.reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
   
   const winningTrades = allTrades.filter(trade => (trade.profitLoss || 0) > 0).length;
   const losingTrades = allTrades.filter(trade => (trade.profitLoss || 0) < 0).length;
   const winRate = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
   
-  // Today's trades
   const today = new Date().toISOString().split('T')[0];
   const todayTrades = allTrades.filter(trade => trade.date === today).length;
   const todayProfit = allTrades
     .filter(trade => trade.date === today)
     .reduce((sum, trade) => sum + (trade.profitLoss || 0), 0);
   
-  // Find most traded pair
   const pairCount: Record<string, number> = {};
   allTrades.forEach(trade => {
     pairCount[trade.pair] = (pairCount[trade.pair] || 0) + 1;
@@ -149,7 +117,6 @@ const AdminDashboard: React.FC = () => {
     }
   }
 
-  // Demo data
   const linkedAccounts = 12;
   const totalNotes = 87;
 
@@ -158,14 +125,11 @@ const AdminDashboard: React.FC = () => {
   }
 
   const handleRefreshData = () => {
-    // Fetch users data
     getAllUsers();
     
-    // Fetch ALL trades across users for admin dashboard
     const allTradesData = trades || [];
     setAllTrades(allTradesData);
     
-    // Update refresh timestamp
     setLastRefresh(new Date());
     
     toast({
@@ -207,7 +171,6 @@ const AdminDashboard: React.FC = () => {
           : `${user.name} admin privileges have been revoked`
       });
       
-      // Refresh users list
       getAllUsers();
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -223,15 +186,21 @@ const AdminDashboard: React.FC = () => {
     try {
       const hashedPassword = hashPassword(userData.password);
       
+      const profileData = createProfileObject({
+        id: self.crypto.randomUUID(),
+        name: userData.name,
+        email: userData.email,
+        password: hashedPassword,
+        role: userData.isAdmin ? 'admin' : 'user',
+        is_admin: userData.isAdmin,
+        is_blocked: false,
+        subscription_tier: 'free',
+        email_verified: true
+      });
+      
       const { data, error } = await supabase
-        .from('users')
-        .insert({
-          name: userData.name,
-          email: userData.email,
-          password: hashedPassword,
-          role: userData.isAdmin ? 'admin' : 'user',
-          is_blocked: false
-        })
+        .from('profiles')
+        .insert(profileData)
         .select();
       
       if (error) throw new Error(error.message);
@@ -241,7 +210,6 @@ const AdminDashboard: React.FC = () => {
         description: `${userData.name} has been added successfully`
       });
       
-      // Refresh users list
       getAllUsers();
     } catch (error) {
       console.error('Error adding user:', error);
@@ -293,7 +261,6 @@ const AdminDashboard: React.FC = () => {
       title: "View Trade",
       description: `Viewing trade ${id}`
     });
-    // Implementation would navigate to trade view
   };
 
   const handleEditTrade = (id: string) => {
@@ -301,12 +268,10 @@ const AdminDashboard: React.FC = () => {
       title: "Edit Trade",
       description: `Editing trade ${id}`
     });
-    // Implementation would navigate to trade edit
   };
 
   const handleDeleteTrade = (id: string) => {
     deleteTrade(id);
-    // Update local state to reflect the deletion
     setAllTrades(allTrades.filter(trade => trade.id !== id));
     toast({
       title: "Trade Deleted",
@@ -319,7 +284,6 @@ const AdminDashboard: React.FC = () => {
       title: "Export Initiated",
       description: "Trades export started"
     });
-    // Implementation would export trades
   };
 
   const handleViewUser = (userId: string) => {
@@ -327,8 +291,95 @@ const AdminDashboard: React.FC = () => {
       title: "View User",
       description: `Viewing user ${userId}`
     });
-    // Implementation would navigate to user view
   };
+
+  const AdminCharts: React.FC<{ className?: string }> = ({ className }) => (
+    <div className={className}>
+      <Card>
+        <CardHeader>
+          <CardTitle>Admin Charts</CardTitle>
+          <CardDescription>Analytics charts will be displayed here.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="p-8 text-center text-gray-500">
+            <BarChart3 className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium mb-2">Charts Coming Soon</h3>
+            <p>The analytics charts functionality is under development and will be available in a future update.</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  const UserTable: React.FC<{
+    users: any[];
+    onBlock: (user: any) => void;
+    onUnblock: (user: any) => void;
+    onChangePassword: (email: string, newPassword: string) => Promise<void>;
+    onViewUser: (userId: string) => void;
+    onSetAdmin: (user: any, isAdmin: boolean) => void;
+    onAddUser: (userData: any) => Promise<void>;
+    searchTerm: string;
+    setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+  }> = (props) => (
+    <div>
+      <div className="text-center p-8 text-gray-500">
+        <Users className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium mb-2">User Table Component</h3>
+        <p>Please create the UserTable component to display user data here.</p>
+      </div>
+    </div>
+  );
+
+  const TradeTable: React.FC<{
+    trades: any[];
+    onViewTrade: (id: string) => void;
+    onEditTrade: (id: string) => void;
+    onDeleteTrade: (id: string) => void;
+    onRefresh: () => void;
+    onExport: () => void;
+  }> = (props) => (
+    <div>
+      <div className="text-center p-8 text-gray-500">
+        <Activity className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium mb-2">Trade Table Component</h3>
+        <p>Please create the TradeTable component to display trade data here.</p>
+      </div>
+    </div>
+  );
+
+  const HashtagsTable: React.FC<{
+    hashtags: Hashtag[];
+    onAddHashtag: (name: string) => void;
+    onEditHashtag: (oldName: string, newName: string) => void;
+    onDeleteHashtag: (name: string) => void;
+  }> = (props) => (
+    <div>
+      <div className="text-center p-8 text-gray-500">
+        <Hash className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium mb-2">Hashtags Table Component</h3>
+        <p>Please create the HashtagsTable component to display hashtag data here.</p>
+      </div>
+    </div>
+  );
+
+  const SystemSettings: React.FC = () => (
+    <div>
+      <Card className="bg-white shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle>System Settings</CardTitle>
+          <CardDescription>Configure system-wide settings.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center p-8 text-gray-500">
+            <Settings className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium mb-2">System Settings Component</h3>
+            <p>Please create the SystemSettings component to manage system settings here.</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   return (
     <Layout>
@@ -358,7 +409,6 @@ const AdminDashboard: React.FC = () => {
             </div>
           </header>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <StatCard
               title="Total Users"
@@ -424,10 +474,8 @@ const AdminDashboard: React.FC = () => {
             />
           </div>
 
-          {/* Charts Section */}
           <AdminCharts className="mt-4" />
 
-          {/* Main Content */}
           <Tabs defaultValue="users" className="w-full mt-6">
             <TabsList className="mb-6 bg-white p-1 rounded-md overflow-x-auto flex whitespace-nowrap">
               <TabsTrigger value="users" className="flex items-center">

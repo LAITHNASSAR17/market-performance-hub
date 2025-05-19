@@ -11,13 +11,13 @@ import { DialogHeader, DialogFooter, Dialog, DialogContent, DialogTitle, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit2, Trash2, BookOpen, Tag, BookText } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Plus, Search, Edit2, Trash2, BookOpen, Tag, BookText, RefreshCw, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import HashtagInput from '@/components/HashtagInput';
 import { cn } from '@/lib/utils';
 
 const Notebook: React.FC = () => {
-  const { notes, addNote, updateNote, deleteNote, noteTags } = useNotebook();
+  const { notes, addNote, updateNote, deleteNote, noteTags, loading, error, refreshNotes } = useNotebook();
   const { trades } = useTrade();
   const { toast } = useToast();
   
@@ -27,6 +27,7 @@ const Notebook: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -64,8 +65,8 @@ const Notebook: React.FC = () => {
     if (!formData.title.trim()) {
       toast({
         variant: "destructive",
-        title: "Title is required",
-        description: "Please enter a title for your note",
+        title: "العنوان مطلوب",
+        description: "الرجاء إدخال عنوان للملاحظة",
       });
       return;
     }
@@ -98,8 +99,8 @@ const Notebook: React.FC = () => {
     if (!formData.title.trim()) {
       toast({
         variant: "destructive",
-        title: "Title is required",
-        description: "Please enter a title for your note",
+        title: "العنوان مطلوب",
+        description: "الرجاء إدخال عنوان للملاحظة",
       });
       return;
     }
@@ -128,6 +129,64 @@ const Notebook: React.FC = () => {
     setIsDeleteDialogOpen(false);
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshNotes();
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث الملاحظات بنجاح",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل تحديث الملاحظات",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center py-20">
+          <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+          <h2 className="text-xl font-bold mb-2">خطأ</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <Button onClick={handleRefresh} disabled={isRefreshing}>
+            {isRefreshing ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                جاري التحديث...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                إعادة المحاولة
+              </>
+            )}
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center py-20">
+          <RefreshCw className="h-16 w-16 text-blue-500 mb-4 animate-spin" />
+          <h2 className="text-xl font-bold mb-2">جاري التحميل...</h2>
+          <p className="text-gray-600">يرجى الانتظار بينما نقوم بتحميل الملاحظات</p>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
@@ -135,13 +194,22 @@ const Notebook: React.FC = () => {
           <h1 className="text-2xl font-bold mb-1">Notebook</h1>
           <p className="text-gray-500">Your trading notes and observations</p>
         </div>
-        <Button onClick={() => {
-          resetForm();
-          setIsAddDialogOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Note
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleRefresh} disabled={isRefreshing} className="mr-2">
+            {isRefreshing ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+          </Button>
+          <Button onClick={() => {
+            resetForm();
+            setIsAddDialogOpen(true);
+          }}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Note
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -300,7 +368,7 @@ const Notebook: React.FC = () => {
                   <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}
@@ -364,7 +432,7 @@ const Notebook: React.FC = () => {
                   <SelectValue placeholder="Select a trade (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="">None</SelectItem>
                   {trades.map(trade => (
                     <SelectItem key={trade.id} value={trade.id}>
                       {trade.pair} - {new Date(trade.date).toLocaleDateString()}

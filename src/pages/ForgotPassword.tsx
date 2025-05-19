@@ -1,26 +1,29 @@
-
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { LineChart, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ForgotPassword: React.FC = () => {
-  const navigate = useNavigate();
+  const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { sendPasswordResetEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) {
-      setError('Please enter your email');
+      setError('Email is required');
       return;
     }
 
@@ -28,23 +31,32 @@ const ForgotPassword: React.FC = () => {
     setError('');
     
     try {
-      // Mock password reset request
-      setTimeout(() => {
-        // For demo purposes, we'll just display success message
-        setSuccess(true);
-        toast({
-          title: "Reset link sent",
-          description: "Password reset instructions have been sent to your email.",
-        });
-      }, 1500);
-    } catch (error) {
-      console.error('Password reset error:', error);
-      setError('Failed to send password reset email. Please try again.');
+      console.log('ForgotPassword: Sending password reset email to:', email);
+      const response = await sendPasswordResetEmail(email);
+      console.log('ForgotPassword: Response from sendPasswordResetEmail:', response);
+      
+      setEmailSent(true);
       toast({
-        title: "Password reset failed",
-        description: "There was an error sending the password reset email.",
-        variant: "destructive",
+        title: "Password reset link has been sent",
+        description: "Please check your email for the password reset link",
       });
+    } catch (error: any) {
+      console.error('ForgotPassword: Error in password reset:', error);
+      if (error.message === "User not found") {
+        setError('Email is not registered in the system');
+        toast({
+          title: "Email not registered",
+          description: "We couldn't find a user account associated with this email",
+          variant: "destructive",
+        });
+      } else {
+        setError(error.message || 'Failed to send password reset email. Please try again.');
+        toast({
+          title: "Error",
+          description: "Failed to send password reset email. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -61,30 +73,24 @@ const ForgotPassword: React.FC = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Forgot Password</CardTitle>
+            <CardTitle>Reset Password</CardTitle>
             <CardDescription>
-              Enter your email and we'll send you a reset link
+              {emailSent 
+                ? "Password reset link has been sent. Please check your email."
+                : "Enter your email and we'll send you a link to reset your password"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent>
             {error && (
               <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
-            {success ? (
-              <Alert className="mb-4 bg-green-50 border-green-200">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-700">
-                  Password reset instructions have been sent to your email.
-                  Please check your inbox.
-                </AlertDescription>
-              </Alert>
-            ) : (
+            {!emailSent ? (
               <form onSubmit={handleSubmit}>
-                <div className="mb-6">
+                <div className="mb-4">
                   <Label htmlFor="email">Email</Label>
                   <div className="flex items-center border border-input rounded-md mt-1 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                     <Mail className="h-4 w-4 mx-3 text-gray-500" />
@@ -99,23 +105,41 @@ const ForgotPassword: React.FC = () => {
                     />
                   </div>
                 </div>
-                
                 <Button
                   type="submit"
                   className="w-full"
                   disabled={loading}
                 >
-                  {loading ? 'Sending Reset Link...' : 'Send Reset Link'}
+                  {loading ? 'Sending...' : 'Send Reset Link'}
                 </Button>
               </form>
+            ) : (
+              <div className="text-center">
+                <div className="bg-green-50 p-4 rounded-md mb-4">
+                  <p className="text-sm text-green-800">
+                    Password reset link has been sent to <strong>{email}</strong>. 
+                    Please check your email and follow the instructions.
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Button 
+                    onClick={() => setEmailSent(false)} 
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    Send Again
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-600">
-              Remember your password?{' '}
-              <Button variant="link" className="p-0 h-auto text-blue-600" onClick={() => navigate('/login')}>
-                Back to Login
-              </Button>
+              Remembered your password?{' '}
+              <Link to="/login" className="text-blue-600 hover:underline">
+                Sign In
+              </Link>
             </p>
           </CardFooter>
         </Card>

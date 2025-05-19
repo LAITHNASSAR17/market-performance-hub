@@ -1,6 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, Navigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { BarChart, BookText, Calendar, Home, LineChart, LogOut, PlusCircle, Sparkles, Menu, UserCog, LineChart as LineChart3, BarChart2, Shield, ChevronDown, Settings, Scroll, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { Moon, Sun } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,30 +20,26 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({
   children
 }) => {
-  const { toast } = useToast();
+  const {
+    isAuthenticated,
+    logout,
+    user,
+    isAdmin
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
+  const {
+    t
+  } = useLanguage();
   const location = useLocation();
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  const [theme, setTheme] = useState('light');
-  const [user, setUser] = useState<any>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const {
+    theme,
+    toggleTheme
+  } = useTheme();
   const siteName = localStorage.getItem('siteName') || 'TradeTracker';
-  
-  useEffect(() => {
-    // Check if user is authenticated (for demo)
-    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
-    setIsAuthenticated(authStatus);
-    
-    if (authStatus) {
-      const storedUser = localStorage.getItem('user');
-      setUser(storedUser ? JSON.parse(storedUser) : null);
-    } else if (location.pathname !== '/login' && location.pathname !== '/register' && 
-              location.pathname !== '/forgot-password' && location.pathname !== '/reset-password') {
-      // Redirect to login if not authenticated and trying to access protected routes
-      navigate('/login');
-    }
-  }, [location, navigate]);
 
   useEffect(() => {
     if (isMobile) {
@@ -51,11 +49,9 @@ const Layout: React.FC<LayoutProps> = ({
     }
   }, [isMobile]);
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark');
-  };
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   const navigation = [{
     name: 'Dashboard',
@@ -99,37 +95,25 @@ const Layout: React.FC<LayoutProps> = ({
     href: '/subscriptions'
   }];
 
-  const handleLogout = () => {
-    // Clear authentication for demo
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    setUser(null);
-    
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully"
-    });
-    
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged Out",
+        description: "You have been logged out successfully"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while logging out",
+        variant: "destructive"
+      });
+    }
   };
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-
-  // If not authenticated and on a protected route, show nothing while redirecting
-  if (!isAuthenticated && location.pathname !== '/login' && 
-      location.pathname !== '/register' && location.pathname !== '/forgot-password' && 
-      location.pathname !== '/reset-password') {
-    return null;
-  }
-
-  // If on auth pages, don't show the layout
-  if (location.pathname === '/login' || location.pathname === '/register' || 
-      location.pathname === '/forgot-password' || location.pathname === '/reset-password') {
-    return <>{children}</>;
-  }
 
   return <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <div className={cn("relative h-full bg-sidebar text-sidebar-foreground transition-all duration-300 ease-in-out z-30", sidebarOpen ? "w-64" : "w-16", "border-r", "dark:bg-indigo-900/90 dark:border-indigo-800")}>
@@ -154,7 +138,7 @@ const Layout: React.FC<LayoutProps> = ({
                         <span className="text-sm font-medium dark:text-white truncate">{user?.name || 'User'}</span>
                         <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email || 'user@example.com'}</span>
                       </div>
-                      {user?.role === 'admin' && <div className="flex-shrink-0 ms-1">
+                      {isAdmin && <div className="flex-shrink-0 ms-1">
                           <Shield className="h-4 w-4 text-purple-500" />
                         </div>}
                     </div>
@@ -163,13 +147,16 @@ const Layout: React.FC<LayoutProps> = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
+                    
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link to="/user-profile" className="flex items-center">
                       <UserCog className="mr-2 h-4 w-4" />
                       User Profile
                     </Link>
                   </DropdownMenuItem>
                   
-                  {user?.role === 'admin' && <>
+                  {isAdmin && <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
                         <Link to="/admin" className="flex items-center text-purple-600">

@@ -213,33 +213,49 @@ export type Database = {
         Row: {
           avatar_url: string | null
           country: string | null
-          created_at: string
+          created_at: string | null
+          email: string | null
+          email_verified: boolean | null
           id: string
-          updated_at: string
+          is_admin: boolean | null
+          is_blocked: boolean | null
+          name: string | null
+          password: string | null
+          role: string | null
+          subscription_tier: string | null
+          updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           country?: string | null
-          created_at?: string
+          created_at?: string | null
+          email?: string | null
+          email_verified?: boolean | null
           id: string
-          updated_at?: string
+          is_admin?: boolean | null
+          is_blocked?: boolean | null
+          name?: string | null
+          password?: string | null
+          role?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           country?: string | null
-          created_at?: string
+          created_at?: string | null
+          email?: string | null
+          email_verified?: boolean | null
           id?: string
-          updated_at?: string
+          is_admin?: boolean | null
+          is_blocked?: boolean | null
+          name?: string | null
+          password?: string | null
+          role?: string | null
+          subscription_tier?: string | null
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       site_settings: {
         Row: {
@@ -495,63 +511,12 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
-        Row: {
-          avatar_url: string | null
-          country: string | null
-          created_at: string | null
-          email: string | null
-          email_verified: boolean | null
-          id: string
-          is_admin: boolean | null
-          is_blocked: boolean | null
-          name: string | null
-          password: string | null
-          role: string | null
-          subscription_tier: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          country?: string | null
-          created_at?: string | null
-          email?: string | null
-          email_verified?: boolean | null
-          id: string
-          is_admin?: boolean | null
-          is_blocked?: boolean | null
-          name?: string | null
-          password?: string | null
-          role?: string | null
-          subscription_tier?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          country?: string | null
-          created_at?: string | null
-          email?: string | null
-          email_verified?: boolean | null
-          id?: string
-          is_admin?: boolean | null
-          is_blocked?: boolean | null
-          name?: string | null
-          password?: string | null
-          role?: string | null
-          subscription_tier?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      check_user_exists: {
-        Args: { email_param: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

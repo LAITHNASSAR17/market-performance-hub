@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Search, FileUp, RefreshCw, Eye, Edit, Trash2 } from 'lucide-react';
+import { Activity, RefreshCw, Download, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -11,16 +11,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from '@/lib/utils';
-import { Trade } from '@/contexts/TradeContext';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 interface TradeTableProps {
-  trades: Trade[];
+  trades: any[];
   onViewTrade: (id: string) => void;
   onEditTrade: (id: string) => void;
   onDeleteTrade: (id: string) => void;
   onRefresh: () => void;
   onExport: () => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 const TradeTable: React.FC<TradeTableProps> = ({
@@ -29,101 +31,122 @@ const TradeTable: React.FC<TradeTableProps> = ({
   onEditTrade,
   onDeleteTrade,
   onRefresh,
-  onExport
+  onExport,
+  isLoading = false,
+  error = null
 }) => {
-  return (
-    <>
-      <div className="flex flex-col sm:flex-row mb-4 gap-2">
-        <div className="relative flex-grow">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input
-            className="pl-10 pr-4"
-            placeholder="بحث في الصفقات..."
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex items-center" onClick={onExport}>
-            <FileUp className="mr-1 h-4 w-4" />
-            تصدير
+  if (isLoading) {
+    return (
+      <div className="text-center p-8 text-gray-500">
+        <Activity className="mx-auto h-12 w-12 text-gray-300 animate-pulse mb-4" />
+        <h3 className="text-lg font-medium mb-2">جاري تحميل البيانات...</h3>
+        <p>يرجى الانتظار بينما نجلب بيانات التداول الخاصة بك.</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="text-center p-8">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h3 className="text-lg font-medium mb-2 text-red-700">حدث خطأ أثناء جلب البيانات</h3>
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={onRefresh} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            إعادة المحاولة
           </Button>
-          <Button size="sm" className="flex items-center" onClick={onRefresh}>
-            <RefreshCw className="mr-1 h-4 w-4" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (trades.length === 0) {
+    return (
+      <div className="text-center p-8 text-gray-500">
+        <Activity className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-medium mb-2">لا توجد تداولات</h3>
+        <p>لم يتم العثور على أي تداولات. ابدأ بإضافة تداول جديد.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between mb-4">
+        <div className="space-x-2">
+          <Button variant="outline" size="sm" onClick={onRefresh} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
             تحديث
+          </Button>
+          <Button variant="outline" size="sm" onClick={onExport} className="gap-2">
+            <Download className="h-4 w-4" />
+            تصدير
           </Button>
         </div>
       </div>
-      
-      <div className="overflow-x-auto">
+
+      <div className="rounded-md border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>المعرف</TableHead>
-              <TableHead>المستخدم</TableHead>
-              <TableHead>الزوج</TableHead>
-              <TableHead>النوع</TableHead>
-              <TableHead>التاريخ</TableHead>
-              <TableHead>الربح/الخسارة</TableHead>
-              <TableHead className="text-right">الإجراءات</TableHead>
+              <TableHead className="font-semibold">التاريخ</TableHead>
+              <TableHead className="font-semibold">الزوج</TableHead>
+              <TableHead className="font-semibold">النوع</TableHead>
+              <TableHead className="font-semibold">الدخول</TableHead>
+              <TableHead className="font-semibold">الخروج</TableHead>
+              <TableHead className="font-semibold">الكمية</TableHead>
+              <TableHead className="font-semibold">الربح/الخسارة</TableHead>
+              <TableHead className="font-semibold">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {trades && trades.length > 0 ? (
-              trades.map((trade) => (
-                <TableRow key={trade.id} className="hover:bg-slate-50">
-                  <TableCell className="font-medium">{trade.id.substring(0, 5)}</TableCell>
-                  <TableCell>{trade.userId.substring(0, 5)}</TableCell>
-                  <TableCell>{trade.pair}</TableCell>
-                  <TableCell>{trade.type}</TableCell>
-                  <TableCell>{trade.date}</TableCell>
-                  <TableCell className={cn(
-                    trade.profitLoss > 0 ? "text-emerald-500" : "text-red-500"
-                  )}>
-                    ${trade.profitLoss.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => onViewTrade(trade.id)}
-                        className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
-                        title="عرض الصفقة"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => onEditTrade(trade.id)}
-                        className="text-amber-600 border-amber-600 hover:bg-amber-50 h-8 w-8 p-0"
-                        title="تعديل الصفقة"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => onDeleteTrade(trade.id)}
-                        className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
-                        title="حذف الصفقة"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  لا توجد صفقات متاحة. ستظهر الصفقات هنا بمجرد أن يبدأ المستخدمون في إضافتها.
+            {trades.map((trade) => (
+              <TableRow key={trade.id}>
+                <TableCell>{format(new Date(trade.date || trade.entryDate || trade.createdAt), 'yyyy/MM/dd')}</TableCell>
+                <TableCell>{trade.pair || trade.symbol}</TableCell>
+                <TableCell>
+                  <Badge variant={trade.type === 'Buy' || trade.direction === 'long' ? "success" : "destructive"}>
+                    {trade.type || (trade.direction === 'long' ? 'Buy' : 'Sell')}
+                  </Badge>
+                </TableCell>
+                <TableCell>{trade.entry || trade.entryPrice}</TableCell>
+                <TableCell>{trade.exit || trade.exitPrice || '-'}</TableCell>
+                <TableCell>{trade.lotSize || trade.quantity}</TableCell>
+                <TableCell className={`font-medium ${(trade.profitLoss || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {(trade.profitLoss || 0) >= 0 ? '+' : ''}{(trade.profitLoss || 0).toFixed(2)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => onViewTrade(trade.id)}
+                    >
+                      عرض
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => onEditTrade(trade.id)}
+                    >
+                      تعديل
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="destructive" 
+                      onClick={() => onDeleteTrade(trade.id)}
+                    >
+                      حذف
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
-            )}
+            ))}
           </TableBody>
         </Table>
       </div>
-    </>
+    </div>
   );
 };
 

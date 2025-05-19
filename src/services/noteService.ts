@@ -1,104 +1,159 @@
 
 import { supabase } from '@/lib/supabase';
 
-export interface INote {
-  id: string;
-  userId: string;
+export const createNote = async (noteData: { 
   title: string;
   content: string;
   tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
+  userId: string;
+  tradeId?: string;
+}) => {
+  try {
+    const note = {
+      title: noteData.title,
+      content: noteData.content,
+      tags: noteData.tags,
+      user_id: noteData.userId, // Convert camelCase to snake_case
+      trade_id: noteData.tradeId // Add trade_id mapping
+    };
 
-export const noteService = {
-  async getNoteById(id: string): Promise<INote | null> {
     const { data, error } = await supabase
       .from('notes')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
-    if (error || !data) return null;
-    return formatNote(data);
-  },
+      .insert(note)
+      .select();
 
-  async getAllNotes(): Promise<INote[]> {
-    const { data, error } = await supabase
-      .from('notes')
-      .select('*');
-    
-    if (error || !data) return [];
-    return data.map(formatNote);
-  },
+    if (error) {
+      console.error('Error creating note:', error);
+      throw error;
+    }
 
-  async createNote(noteData: Omit<INote, 'id' | 'createdAt' | 'updatedAt'>): Promise<INote> {
-    const now = new Date().toISOString();
-    const { data, error } = await supabase
-      .from('notes')
-      .insert({
-        ...noteData,
-        created_at: now,
-        updated_at: now
-      })
-      .select()
-      .single();
-    
-    if (error || !data) throw new Error(`Error creating note: ${error?.message}`);
-    return formatNote(data);
-  },
-
-  async updateNote(id: string, noteData: Partial<INote>): Promise<INote | null> {
-    const now = new Date().toISOString();
-    const { data, error } = await supabase
-      .from('notes')
-      .update({
-        ...noteData,
-        updated_at: now
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error || !data) return null;
-    return formatNote(data);
-  },
-
-  async deleteNote(id: string): Promise<boolean> {
-    const { error } = await supabase
-      .from('notes')
-      .delete()
-      .eq('id', id);
-    
-    return !error;
-  },
-
-  async findNotesByFilter(filter: Partial<INote>): Promise<INote[]> {
-    let query = supabase.from('notes').select('*');
-    
-    // Apply filters dynamically
-    Object.entries(filter).forEach(([key, value]) => {
-      if (value !== undefined) {
-        query = query.eq(key, value);
-      }
-    });
-    
-    const { data, error } = await query;
-    
-    if (error || !data) return [];
-    return data.map(formatNote);
+    return data;
+  } catch (error) {
+    console.error('Error in createNote:', error);
+    throw error;
   }
 };
 
-// Helper function to format Supabase data to our interface format
-function formatNote(data: any): INote {
-  return {
-    id: data.id,
-    userId: data.user_id,
-    title: data.title,
-    content: data.content,
-    tags: data.tags || [],
-    createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at)
-  };
-}
+export const getNotesByUserId = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching notes:', error);
+      throw error;
+    }
+
+    // Transform response to ensure consistent property names
+    const formattedNotes = (data || []).map(note => ({
+      id: note.id,
+      title: note.title,
+      content: note.content || '',
+      tags: note.tags || [],
+      userId: note.user_id,
+      tradeId: note.trade_id || undefined,
+      createdAt: note.created_at,
+      updatedAt: note.updated_at
+    }));
+
+    return formattedNotes;
+  } catch (error) {
+    console.error('Error in getNotesByUserId:', error);
+    throw error;
+  }
+};
+
+export const getNoteById = async (noteId: string) => {
+  try {
+    const { data: note, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('id', noteId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching note:', error);
+      throw error;
+    }
+
+    // Transform to ensure consistent property names
+    return {
+      id: note.id,
+      title: note.title,
+      content: note.content || '',
+      tags: note.tags || [],
+      userId: note.user_id,
+      tradeId: note.trade_id || undefined,
+      createdAt: note.created_at,
+      updatedAt: note.updated_at
+    };
+  } catch (error) {
+    console.error('Error in getNoteById:', error);
+    throw error;
+  }
+};
+
+export const updateNote = async (noteId: string, noteData: { 
+  title?: string; 
+  content?: string; 
+  tags?: string[]; 
+  tradeId?: string;
+}) => {
+  try {
+    // Convert to database format with snake_case
+    const updateData = {
+      title: noteData.title,
+      content: noteData.content,
+      tags: noteData.tags,
+      trade_id: noteData.tradeId
+    };
+
+    const { data, error } = await supabase
+      .from('notes')
+      .update(updateData)
+      .eq('id', noteId)
+      .select();
+
+    if (error) {
+      console.error('Error updating note:', error);
+      throw error;
+    }
+
+    // Transform response to ensure consistent property names
+    const formattedNotes = (data || []).map(note => ({
+      id: note.id,
+      title: note.title,
+      content: note.content || '',
+      tags: note.tags || [],
+      userId: note.user_id,
+      tradeId: note.trade_id || undefined,
+      createdAt: note.created_at,
+      updatedAt: note.updated_at
+    }));
+
+    return formattedNotes;
+  } catch (error) {
+    console.error('Error in updateNote:', error);
+    throw error;
+  }
+};
+
+export const deleteNote = async (noteId: string) => {
+  try {
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', noteId);
+
+    if (error) {
+      console.error('Error deleting note:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in deleteNote:', error);
+    throw error;
+  }
+};
